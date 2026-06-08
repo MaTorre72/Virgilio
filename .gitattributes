@@ -1,0 +1,16 @@
+* text=auto
+
+*.gs text
+*.html text
+*.md text
+*.py text
+*.svg text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.ipynb text

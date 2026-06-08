@@ -1,0 +1,37 @@
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+*.secret
+*service-account*.json
+*credentials*.json
+*token*.json
+
+# Google Apps Script / local tooling
+.clasp.json
+.clasprc.json
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vs/
+
+# Local exports, generated reports, and historical manual backups
+_old/
+*.zip
+*.tmp
+*.bak
+
+# Keep generated office/PDF material local unless explicitly added later.
+# Source code, README, images, and SVG architecture files remain trackable.
+*.pdf
+*.docx
+*.ipynb
