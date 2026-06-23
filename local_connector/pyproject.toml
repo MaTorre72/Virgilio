@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "virgilio-local-connector"
-version = "0.1.0"
-description = "Skeleton locale e senza rete del connettore di ingresso per Virgilio"
+version = "0.2.0"
+description = "Skeleton locale con stato SQLite del connettore di ingresso per Virgilio"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }
