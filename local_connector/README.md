@@ -184,6 +184,12 @@ In questa fase il bridge Apps Script non carica su Drive, non scrive Bucoliche,
 non invia notifiche e non modifica Gmail. La configurazione dell'accesso alla Web
 App e' una responsabilita' di deploy da verificare prima di una chiamata reale.
 
+Il primo test E2E metadata-only e' stato completato il 2026-06-23 con deployment
+Apps Script versione 11 e un singolo comando: risposta `ok=true`, un metadato
+allegato accettato e liste Drive/Bucoliche vuote. Il rapporto e' in
+`../docs/CARONTE_DRY_RUN_E2E_REPORT_2026-06-23.md`. Restano obbligatori i controlli
+manuali su Drive, Bucoliche, Gmail e notifiche prima di chiudere il collaudo.
+
 L'adapter usa TLS, apre esclusivamente la cartella configurata con
 `SELECT readonly=True` e acquisisce i messaggi con `UID FETCH (BODY.PEEK[])`, che
 non imposta il flag `Seen`. `acknowledge()` e' disabilitato: non vengono eseguiti
