@@ -7,6 +7,7 @@ from virgilio_connector.imap_readonly import DetectedAttachment
 from virgilio_connector.local_paths import LocalDataPaths
 from virgilio_connector.ports import MessageReference
 from virgilio_connector.readonly_quarantine import ReadonlyQuarantineRunner
+from virgilio_connector.scanner import LocalScanResult, ScanVerdict
 
 
 class FakeReadonlyMailbox:
@@ -32,11 +33,23 @@ def attachment(filename, payload=b"content", mime="application/octet-stream", or
     return DetectedAttachment(ordinal, filename, mime, payload)
 
 
-def run(tmp_path, attachments, *, dry_run=False, max_bytes=1024):
+class FakeScanner:
+    def __init__(self, verdict):
+        self.verdict = verdict
+
+    @property
+    def available(self):
+        return True
+
+    def scan(self, path):
+        return LocalScanResult("fake", self.verdict, f"fake {self.verdict.value}")
+
+
+def run(tmp_path, attachments, *, dry_run=False, max_bytes=1024, scanner=None):
     mailbox = FakeReadonlyMailbox(attachments)
     paths = LocalDataPaths(tmp_path / ".local_data")
     result = ReadonlyQuarantineRunner(mailbox=mailbox, paths=paths,
-        max_attachment_bytes=max_bytes).run(dry_run=dry_run)
+        max_attachment_bytes=max_bytes, scanner=scanner).run(dry_run=dry_run)
     return result, paths, mailbox
 
 
@@ -47,7 +60,7 @@ def run(tmp_path, attachments, *, dry_run=False, max_bytes=1024):
 ])
 def test_allowed_pdf_and_images_are_quarantined(tmp_path, filename, mime):
     result, paths, _ = run(tmp_path, [attachment(filename, mime=mime)])
-    assert result[0].decision == "ready_for_scan"
+    assert result[0].decision == "quarantined_unverified"
     assert result[0].saved is True
     assert len(list(paths.incoming.rglob(f"*{filename}"))) == 1
 
@@ -111,9 +124,31 @@ def test_sqlite_records_message_and_attachment_metadata(tmp_path):
     assert row[5] == "application/pdf"
     assert row[6] == 3
     assert len(row[7]) == 64
-    assert row[8] == "ready_for_scan"
+    assert row[8] == "quarantined_unverified"
 
 
 def test_pipeline_never_invokes_mailbox_mutation(tmp_path):
     _, _, mailbox = run(tmp_path, [attachment("report.pdf")])
     assert mailbox.mutating_calls == []
+
+
+def test_clean_scanner_promotes_to_ready_for_caronte(tmp_path):
+    result, paths, _ = run(tmp_path, [attachment("report.pdf")],
+                           scanner=FakeScanner(ScanVerdict.CLEAN))
+    assert result[0].decision == "ready_for_caronte"
+    assert len([p for p in paths.ready.rglob("*") if p.is_file()]) == 1
+    assert not [p for p in paths.incoming.rglob("*") if p.is_file()]
+
+
+def test_infected_scanner_rejects_attachment(tmp_path):
+    result, paths, _ = run(tmp_path, [attachment("report.pdf")],
+                           scanner=FakeScanner(ScanVerdict.INFECTED))
+    assert result[0].decision == "rejected_by_scanner"
+    assert len([p for p in paths.rejected.rglob("*") if p.is_file()]) == 1
+
+
+def test_unverified_scanner_never_promotes_to_caronte(tmp_path):
+    result, paths, _ = run(tmp_path, [attachment("report.pdf")])
+    assert result[0].decision == "quarantined_unverified"
+    with sqlite3.connect(paths.state_db) as db:
+        assert db.execute("SELECT COUNT(*) FROM attachments WHERE status='ready_for_caronte'").fetchone()[0] == 0

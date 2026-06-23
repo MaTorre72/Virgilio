@@ -123,8 +123,22 @@ python scripts/imap_readonly_probe.py --download
 
 La struttura generata e' `.local_data/quarantine/{incoming,rejected,ready}` con
 `.local_data/logs` e `.local_data/state.db`. In questa fase vengono scritti solo
-gli allegati ammessi dentro `incoming`; lo stato finale `ready_for_scan` significa
-soltanto che il file attende una futura scansione antivirus.
+gli allegati ammessi dentro `incoming`.
+
+### Scanner locale opzionale
+
+`VIRGILIO_SCANNER=auto` usa Microsoft Defender quando `MpCmdRun.exe` e'
+disponibile. La scansione passa `-DisableRemediation`: il connettore non chiede a
+Defender di cancellare o correggere il file. Modalita' disponibili:
+
+- `auto` o `windows_defender`: rileva Microsoft Defender;
+- `none`: conserva il file come `quarantined_unverified`;
+- `clamav`: interfaccia riservata, adapter non ancora configurato.
+
+Solo un esito pulito e completato produce `ready_for_caronte` e sposta il file in
+`quarantine/ready`. Scanner assente, timeout o codice ambiguo producono
+`quarantined_unverified`; una minaccia confermata da un adapter produce
+`rejected_by_scanner`. Questa fase non chiama comunque Caronte.
 
 L'adapter usa TLS, apre esclusivamente la cartella configurata con
 `SELECT readonly=True` e acquisisce i messaggi con `UID FETCH (BODY.PEEK[])`, che

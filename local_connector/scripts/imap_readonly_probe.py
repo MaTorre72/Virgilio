@@ -9,6 +9,7 @@ from pathlib import Path
 from virgilio_connector.imap_readonly import ImapReadonlyConfig, ImapReadonlyMailbox
 from virgilio_connector.local_paths import LocalDataPaths
 from virgilio_connector.readonly_quarantine import ReadonlyQuarantineRunner
+from virgilio_connector.scanner import select_scanner
 
 
 def load_env_file(path: Path) -> None:
@@ -48,7 +49,8 @@ def main() -> None:
     paths = LocalDataPaths(Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data")))
     runner = ReadonlyQuarantineRunner(
         mailbox=ImapReadonlyMailbox(config, paths.incoming), paths=paths,
-        max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", str(25 * 1024 * 1024))))
+        max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", str(25 * 1024 * 1024))),
+        scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")))
     items = runner.run(dry_run=args.dry_run)
     print(f"mode={'dry-run' if args.dry_run else 'download'} attachments={len(items)}")
     for item in items:

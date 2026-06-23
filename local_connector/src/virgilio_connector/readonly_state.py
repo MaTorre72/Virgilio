@@ -10,7 +10,8 @@ import sqlite3
 
 ATTACHMENT_STATES = (
     "detected", "rejected_by_extension", "rejected_by_size", "downloaded",
-    "quarantined", "ready_for_scan", "error",
+    "quarantined", "ready_for_scan", "quarantined_unverified",
+    "ready_for_caronte", "rejected_by_scanner", "error",
 )
 
 
@@ -44,12 +45,17 @@ class ReadonlyStateStore:
                     size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL,
                     status TEXT NOT NULL CHECK(status IN (
                         'detected','rejected_by_extension','rejected_by_size','downloaded',
-                        'quarantined','ready_for_scan','error')),
+                        'quarantined','ready_for_scan','quarantined_unverified',
+                        'ready_for_caronte','rejected_by_scanner','error')),
                     relative_path TEXT, duplicate_of_id INTEGER REFERENCES attachments(id),
-                    reason TEXT NOT NULL, created_at TEXT NOT NULL,
+                    reason TEXT NOT NULL, scanner_engine TEXT,
+                    scan_result TEXT, scanned_at TEXT, created_at TEXT NOT NULL,
                     UNIQUE(message_id, ordinal)
                 );
             """)
+            columns = {row[1] for row in db.execute("PRAGMA table_info(attachments)")}
+            if "scanner_engine" not in columns:
+                self._migrate_attachments_v2(db)
 
     def start_run(self) -> int:
         with self._connection() as db:
@@ -69,29 +75,75 @@ class ReadonlyStateStore:
     def add_attachment(self, message_id: int, *, ordinal: int, original_filename: str | None,
                        sanitized_filename: str | None, declared_mime_type: str,
                        size_bytes: int, sha256: str, status: str, relative_path: str | None,
-                       duplicate_of_id: int | None, reason: str) -> int:
+                       duplicate_of_id: int | None, reason: str,
+                       scanner_engine: str | None = None, scan_result: str | None = None) -> int:
         if status not in ATTACHMENT_STATES:
             raise ValueError(f"invalid attachment status: {status}")
         with self._connection() as db:
             cursor = db.execute("""INSERT INTO attachments(
                 message_id,ordinal,original_filename,sanitized_filename,declared_mime_type,
-                size_bytes,sha256,status,relative_path,duplicate_of_id,reason,created_at
-                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""", (message_id, ordinal, original_filename,
+                size_bytes,sha256,status,relative_path,duplicate_of_id,reason,
+                scanner_engine,scan_result,scanned_at,created_at
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (message_id, ordinal, original_filename,
                 sanitized_filename, declared_mime_type, size_bytes, sha256, status,
-                relative_path, duplicate_of_id, reason, _now()))
+                relative_path, duplicate_of_id, reason, scanner_engine, scan_result,
+                _now() if scanner_engine else None, _now()))
             return int(cursor.lastrowid)
 
     def find_by_sha256(self, sha256: str):
         with self._connection() as db:
-            return db.execute("""SELECT id, relative_path FROM attachments
-                WHERE sha256=? AND status='ready_for_scan' AND relative_path IS NOT NULL
+            return db.execute("""SELECT id, relative_path, status FROM attachments
+                WHERE sha256=? AND status IN ('quarantined_unverified','ready_for_caronte')
+                  AND relative_path IS NOT NULL
                 ORDER BY id LIMIT 1""", (sha256,)).fetchone()
+
+    @staticmethod
+    def _migrate_attachments_v2(db: sqlite3.Connection) -> None:
+        db.executescript("""
+            ALTER TABLE attachments RENAME TO attachments_v1;
+            CREATE TABLE attachments (
+                id INTEGER PRIMARY KEY, message_id INTEGER NOT NULL REFERENCES messages(id),
+                ordinal INTEGER NOT NULL, original_filename TEXT,
+                sanitized_filename TEXT, declared_mime_type TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL,
+                status TEXT NOT NULL CHECK(status IN (
+                    'detected','rejected_by_extension','rejected_by_size','downloaded',
+                    'quarantined','ready_for_scan','quarantined_unverified',
+                    'ready_for_caronte','rejected_by_scanner','error')),
+                relative_path TEXT, duplicate_of_id INTEGER REFERENCES attachments(id),
+                reason TEXT NOT NULL, scanner_engine TEXT, scan_result TEXT,
+                scanned_at TEXT, created_at TEXT NOT NULL,
+                UNIQUE(message_id, ordinal)
+            );
+            INSERT INTO attachments(
+                id,message_id,ordinal,original_filename,sanitized_filename,
+                declared_mime_type,size_bytes,sha256,status,relative_path,
+                duplicate_of_id,reason,created_at)
+            SELECT id,message_id,ordinal,original_filename,sanitized_filename,
+                declared_mime_type,size_bytes,sha256,
+                CASE WHEN status='ready_for_scan' THEN 'quarantined_unverified' ELSE status END,
+                relative_path,duplicate_of_id,
+                CASE WHEN status='ready_for_scan'
+                     THEN 'migrated: no scanner evidence available' ELSE reason END,
+                created_at
+            FROM attachments_v1;
+            DROP TABLE attachments_v1;
+        """)
 
     def complete_run(self, run_id: int, *, messages_seen: int, attachments_seen: int,
                      status: str = "completed") -> None:
         with self._connection() as db:
             db.execute("""UPDATE runs SET completed_at=?,status=?,messages_seen=?,attachments_seen=?
                 WHERE id=?""", (_now(), status, messages_seen, attachments_seen, run_id))
+
+    def update_scan_by_sha256(self, sha256: str, *, status: str, relative_path: str,
+                              scanner_engine: str, scan_result: str, reason: str) -> None:
+        if status not in ATTACHMENT_STATES:
+            raise ValueError(f"invalid attachment status: {status}")
+        with self._connection() as db:
+            db.execute("""UPDATE attachments SET status=?,relative_path=?,scanner_engine=?,
+                scan_result=?,scanned_at=?,reason=? WHERE sha256=?""",
+                (status, relative_path, scanner_engine, scan_result, _now(), reason, sha256))
 
     @contextmanager
     def _connection(self):

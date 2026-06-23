@@ -46,6 +46,14 @@ from .imap_readonly import (
 from .local_paths import LocalDataPaths
 from .readonly_quarantine import QuarantinePlanItem, ReadonlyQuarantineRunner
 from .readonly_state import ReadonlyStateStore
+from .scanner import (
+    LocalScanResult,
+    LocalScanner,
+    ScanVerdict,
+    UnconfiguredScanner,
+    WindowsDefenderScanner,
+    select_scanner,
+)
 
 __all__ = [
     "AckDecision",
@@ -65,6 +73,8 @@ __all__ = [
     "ImapReadonlyError",
     "ImapReadonlyMailbox",
     "LocalDataPaths",
+    "LocalScanResult",
+    "LocalScanner",
     "MessageStatus",
     "NewAttachment",
     "NewMessage",
@@ -73,6 +83,10 @@ __all__ = [
     "QuarantinePlanItem",
     "ReadonlyQuarantineRunner",
     "ReadonlyStateStore",
+    "ScanVerdict",
+    "UnconfiguredScanner",
+    "WindowsDefenderScanner",
+    "select_scanner",
     "StateConflictError",
     "StateDatabaseError",
     "StateEvent",
@@ -86,4 +100,4 @@ __all__ = [
     "response_to_json",
 ]
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"

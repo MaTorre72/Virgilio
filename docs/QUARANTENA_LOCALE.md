@@ -70,11 +70,14 @@ Il connettore dovra' acquisire codice di uscita, versione motore e risultato sen
 
 Su Windows si puo' valutare l'uso degli strumenti messi a disposizione da Microsoft Defender, se presenti e consentiti dalle policy aziendali. Percorso del comando, disponibilita' e codici di uscita devono essere rilevati, non hardcoded.
 
-L'invocazione di Defender non e' implementata in questa fase.
+Microsoft Defender e' disponibile come scanner opzionale tramite `MpCmdRun.exe`
+con `-DisableRemediation`. Un esito non-zero non viene interpretato automaticamente
+come pulito o infetto: resta non verificato per evitare falsi positivi decisionali.
 
 ### Scanner non configurato
 
-Comportamento prudenziale proposto: stato `scan_failed` e nessun passaggio automatico a `ready_for_caronte`. Le alternative sono conferma manuale esplicita o prosecuzione con warning. La decisione definitiva e' **DA DECIDERE**.
+Comportamento implementato: `quarantined_unverified` e nessun passaggio automatico
+a `ready_for_caronte`. La stessa regola vale per timeout ed esiti ambigui.
 
 ## Stati allegato
 

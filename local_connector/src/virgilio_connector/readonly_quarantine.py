@@ -10,6 +10,7 @@ from .files import sanitize_filename
 from .local_paths import LocalDataPaths
 from .policy import AttachmentPolicy, PolicyDecision
 from .readonly_state import ReadonlyStateStore
+from .scanner import LocalScanner, ScanVerdict, UnconfiguredScanner
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,13 +28,15 @@ class QuarantinePlanItem:
 class ReadonlyQuarantineRunner:
     def __init__(self, *, mailbox, paths: LocalDataPaths | None = None,
                  policy: AttachmentPolicy | None = None,
-                 max_attachment_bytes: int = 25 * 1024 * 1024) -> None:
+                 max_attachment_bytes: int = 25 * 1024 * 1024,
+                 scanner: LocalScanner | None = None) -> None:
         if max_attachment_bytes <= 0:
             raise ValueError("max_attachment_bytes must be positive")
         self.mailbox = mailbox
         self.paths = paths or LocalDataPaths()
         self.policy = policy or AttachmentPolicy()
         self.max_attachment_bytes = max_attachment_bytes
+        self.scanner = scanner or UnconfiguredScanner()
 
     def run(self, *, dry_run: bool) -> tuple[QuarantinePlanItem, ...]:
         messages = self.mailbox.list_pending()
@@ -82,12 +85,15 @@ class ReadonlyQuarantineRunner:
         relative_path = None
         duplicate_of_id = None
         saved = False
-        if status == "ready_for_scan":
+        scanner_engine = None
+        scan_result = None
+        if status == "quarantined_unverified":
             duplicate = store.find_by_sha256(digest)
             if duplicate:
                 duplicate_of_id = int(duplicate["id"])
                 relative_path = str(duplicate["relative_path"])
                 reason = "duplicate sha256; existing quarantined bytes reused"
+                scan_path = self.paths.root / relative_path
             else:
                 opaque_dir = f"{message.uidvalidity or 'unknown'}-{message.message_uid}"
                 target_dir = self.paths.incoming / sanitize_filename(opaque_dir)
@@ -98,11 +104,42 @@ class ReadonlyQuarantineRunner:
                 temporary.replace(target)
                 relative_path = target.relative_to(self.paths.root).as_posix()
                 saved = True
+                scan_path = target
+            scan = self.scanner.scan(scan_path)
+            scanner_engine = scan.engine
+            scan_result = scan.verdict.value
+            if scan.verdict is ScanVerdict.CLEAN:
+                status = "ready_for_caronte"
+                reason = scan.detail
+                if scan_path.is_relative_to(self.paths.incoming):
+                    destination_dir = self.paths.ready / scan_path.parent.name
+                    destination_dir.mkdir(parents=True, exist_ok=True)
+                    destination = destination_dir / scan_path.name
+                    scan_path.replace(destination)
+                    relative_path = destination.relative_to(self.paths.root).as_posix()
+            elif scan.verdict is ScanVerdict.INFECTED:
+                status = "rejected_by_scanner"
+                reason = scan.detail
+                if (scan_path.is_relative_to(self.paths.incoming)
+                        or scan_path.is_relative_to(self.paths.ready)):
+                    destination_dir = self.paths.rejected / scan_path.parent.name
+                    destination_dir.mkdir(parents=True, exist_ok=True)
+                    destination = destination_dir / scan_path.name
+                    scan_path.replace(destination)
+                    relative_path = destination.relative_to(self.paths.root).as_posix()
+            else:
+                status = "quarantined_unverified"
+                reason = scan.detail
+            if duplicate and relative_path:
+                store.update_scan_by_sha256(digest, status=status,
+                    relative_path=relative_path, scanner_engine=scanner_engine,
+                    scan_result=scan_result, reason=reason)
         store.add_attachment(message_row_id, ordinal=attachment.ordinal,
             original_filename=attachment.original_filename, sanitized_filename=filename,
             declared_mime_type=attachment.declared_mime_type, size_bytes=len(payload),
             sha256=digest, status=status, relative_path=relative_path,
-            duplicate_of_id=duplicate_of_id, reason=reason)
+            duplicate_of_id=duplicate_of_id, reason=reason,
+            scanner_engine=scanner_engine, scan_result=scan_result)
         return QuarantinePlanItem(message.message_uid, attachment.ordinal,
             attachment.original_filename, filename, len(payload), digest, status, saved)
 
@@ -114,4 +151,4 @@ class ReadonlyQuarantineRunner:
         result = self.policy.evaluate_filename(filename)
         if result.decision is not PolicyDecision.ALLOW:
             return "rejected_by_extension", result.reason
-        return "ready_for_scan", "extension allowed; awaiting future antivirus scan"
+        return "quarantined_unverified", "extension allowed; scanner evidence required"
