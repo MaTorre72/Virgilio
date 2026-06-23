@@ -115,6 +115,11 @@ function doPost(e) {
     return _rispostaJSON(caronteRiceviComandoDryRun(dati.payload));
   }
 
+  // Verifica read-only della cartella Drive Desktop sincronizzata.
+  if (dati.action === DRIVE_STAGING_VERIFY_ACTION) {
+    return _rispostaJSON(caronteVerificaStagingDriveDryRun(dati));
+  }
+
   // 2. Verifica token di sicurezza
   // ⚠ Non loggare mai CONFIG.VIRGILIO_TOKEN — usare solo nomi simbolici nei log
   if (!CONFIG.VIRGILIO_TOKEN || dati.token !== CONFIG.VIRGILIO_TOKEN) {

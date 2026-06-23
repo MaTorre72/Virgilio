@@ -32,7 +32,9 @@ class NoNetworkImplementationTests(unittest.TestCase):
                 for name in names:
                     if name == "imaplib" and path.name != "imap_readonly.py":
                         violations.append(f"{path.name}: {name}")
-                    if name.startswith("urllib") and path.name == "caronte_http.py":
+                    if name.startswith("urllib") and path.name in {
+                        "caronte_http.py", "drive_staging_verify.py"
+                    }:
                         continue
                     if any(name == item or name.startswith(f"{item}.") for item in FORBIDDEN_IMPORTS):
                         violations.append(f"{path.name}: {name}")

@@ -226,6 +226,31 @@ in Drive Desktop:
 usati Drive API, rclone, base64, Caronte, Bucoliche, notifiche o operazioni Gmail.
 Dettagli: `../docs/LOCAL_DRIVE_STAGING_TRANSPORT.md`.
 
+## Verifica cloud read-only dello staging
+
+Attendere prima che Drive Desktop mostri la sincronizzazione completata. Configurare
+in Apps Script la Script Property `VIRGILIO_DRIVE_STAGING_FOLDER_ID` con l'ID della
+sola cartella `Limbo_Test_Local`. Il Local Connector usa lo stesso deployment `/exec`
+gia' collaudato, configurato separatamente in `.env`:
+
+```dotenv
+VIRGILIO_CARONTE_DRIVE_VERIFY_URL=https://script.google.com/macros/s/.../exec
+```
+
+Eseguire una sola verifica indicando il manifest locale:
+
+```powershell
+python -m virgilio_connector verify-drive-staging `
+  --manifest "C:\percorso\Drive Desktop\Limbo_Test_Local\file.pdf.manifest.json"
+```
+
+La CLI legge il manifest locale, invia solo sei campi metadata e stampa la risposta
+JSON completa. Apps Script cerca file e manifest per nome, legge la dimensione del
+file e il contenuto del solo manifest. Non sposta, copia, cancella o modifica Drive;
+non aggiorna SQLite, Bucoliche o Gmail e non invia notifiche.
+
+Dettagli e configurazione: `../docs/DRIVE_STAGING_CLOUD_VERIFY.md`.
+
 L'adapter usa TLS, apre esclusivamente la cartella configurata con
 `SELECT readonly=True` e acquisisce i messaggi con `UID FETCH (BODY.PEEK[])`, che
 non imposta il flag `Seen`. `acknowledge()` e' disabilitato: non vengono eseguiti

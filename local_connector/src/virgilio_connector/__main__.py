@@ -14,6 +14,10 @@ from .staging_transport import (
     LocalDriveStagingTransport,
     StagingTransportError,
 )
+from .drive_staging_verify import (
+    DriveStagingVerifyClient,
+    DriveStagingVerifyError,
+)
 
 
 def _load_env_file(path: Path) -> None:
@@ -35,6 +39,8 @@ def main() -> int:
     sender.add_argument("--command-file", type=Path, required=True)
     staging = commands.add_parser("stage-ready-files")
     staging.add_argument("--dry-run", action="store_true")
+    verifier = commands.add_parser("verify-drive-staging")
+    verifier.add_argument("--manifest", type=Path, required=True)
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -69,6 +75,17 @@ def main() -> int:
         print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
                          separators=(",", ":")))
         return 0
+    if args.command == "verify-drive-staging":
+        client = DriveStagingVerifyClient(
+            os.environ.get("VIRGILIO_CARONTE_DRIVE_VERIFY_URL"),
+            timeout_seconds=float(os.environ.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15")),
+        )
+        try:
+            result = client.verify_manifest(args.manifest)
+        except DriveStagingVerifyError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.ok else 1
     return 2
 
 

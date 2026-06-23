@@ -74,6 +74,12 @@ from .staging_transport import (
     StagingResult,
     StagingTransportError,
 )
+from .drive_staging_verify import (
+    DriveStagingVerifyClient,
+    DriveStagingVerifyError,
+    DriveStagingVerifyResponse,
+    DriveStagingVerifyUrlNotConfigured,
+)
 
 __all__ = [
     "AckDecision",
@@ -100,6 +106,10 @@ __all__ = [
     "LocalDataPaths",
     "LocalDriveStagingConfig",
     "LocalDriveStagingTransport",
+    "DriveStagingVerifyClient",
+    "DriveStagingVerifyError",
+    "DriveStagingVerifyResponse",
+    "DriveStagingVerifyUrlNotConfigured",
     "LocalScanResult",
     "LocalScanner",
     "MessageStatus",
@@ -134,4 +144,4 @@ __all__ = [
     "response_to_json",
 ]
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
