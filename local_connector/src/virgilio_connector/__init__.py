@@ -36,6 +36,16 @@ from .state_models import (
     NewMessage,
     StateEvent,
 )
+from .orchestrator import ConnectorConfig, ConnectorOrchestrator, ProcessingResult
+from .imap_readonly import (
+    DetectedAttachment,
+    ImapReadonlyConfig,
+    ImapReadonlyError,
+    ImapReadonlyMailbox,
+)
+from .local_paths import LocalDataPaths
+from .readonly_quarantine import QuarantinePlanItem, ReadonlyQuarantineRunner
+from .readonly_state import ReadonlyStateStore
 
 __all__ = [
     "AckDecision",
@@ -46,12 +56,23 @@ __all__ = [
     "CommandAttemptRecord",
     "CommandAttemptStatus",
     "ContractValidationError",
+    "ConnectorConfig",
+    "ConnectorOrchestrator",
     "DATABASE_SCHEMA_VERSION",
     "MessageRecord",
+    "ImapReadonlyConfig",
+    "DetectedAttachment",
+    "ImapReadonlyError",
+    "ImapReadonlyMailbox",
+    "LocalDataPaths",
     "MessageStatus",
     "NewAttachment",
     "NewMessage",
     "QuarantineStatus",
+    "ProcessingResult",
+    "QuarantinePlanItem",
+    "ReadonlyQuarantineRunner",
+    "ReadonlyStateStore",
     "StateConflictError",
     "StateDatabaseError",
     "StateEvent",
@@ -65,4 +86,4 @@ __all__ = [
     "response_to_json",
 ]
 
-__version__ = "0.2.0"
+__version__ = "0.4.0"

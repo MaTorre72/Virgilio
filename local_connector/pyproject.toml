@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "virgilio-local-connector"
-version = "0.2.0"
-description = "Skeleton locale con stato SQLite del connettore di ingresso per Virgilio"
+version = "0.4.0"
+description = "Probe IMAP read-only con quarantena locale e stato SQLite"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }
@@ -14,9 +14,12 @@ authors = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+addopts = "-ra --basetemp=.pytest-tmp"

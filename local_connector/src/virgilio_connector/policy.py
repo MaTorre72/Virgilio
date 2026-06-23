@@ -7,7 +7,9 @@ from enum import StrEnum
 from pathlib import Path
 
 
-DEFAULT_ALLOWED_EXTENSIONS = frozenset({".pdf", ".jpg", ".jpeg", ".png", ".tif", ".tiff"})
+DEFAULT_ALLOWED_EXTENSIONS = frozenset(
+    {".pdf", ".jpg", ".jpeg", ".png", ".txt", ".csv", ".xml", ".p7m"}
+)
 DEFAULT_DENIED_EXTENSIONS = frozenset(
     {
         ".exe", ".com", ".dll", ".msi", ".scr",

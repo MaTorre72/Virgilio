@@ -15,6 +15,10 @@ class MessageReference:
     uidvalidity: str | None
     message_uid: str
     message_id: str
+    subject: str = ""
+    sender: str = "unknown@example.invalid"
+    date: str = "1970-01-01T00:00:00+00:00"
+    thread_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

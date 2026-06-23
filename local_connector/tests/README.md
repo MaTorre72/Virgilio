@@ -10,6 +10,7 @@ Copertura attuale:
 - policy iniziale sulle estensioni;
 - transizioni valide e non valide della quarantena;
 - regola di ack dopo conferma del Limbo Drive;
-- verifica statica dell'assenza di import di rete.
+- confinamento degli import di rete e adapter IMAP simulato;
+- garanzia read-only: `SELECT readonly=True`, `BODY.PEEK[]`, nessun comando mutante.
 
-La suite non usa mailbox, credenziali, Drive, Bucoliche o allegati reali.
+La suite automatica non usa mailbox, credenziali, Drive, Bucoliche o allegati reali.

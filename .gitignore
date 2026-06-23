@@ -2,6 +2,14 @@
 .env
 .env.*
 !.env.example
+.local_data/
+quarantine/
+logs/
+*.db
+*.db-wal
+*.db-shm
+*.attachment.tmp
+*.part
 *.secret
 *service-account*.json
 *credentials*.json
@@ -14,7 +22,9 @@
 # Python caches and virtual environments
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
+.pytest-tmp/
 .venv/
 venv/
 

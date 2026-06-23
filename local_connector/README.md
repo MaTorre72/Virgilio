@@ -4,7 +4,7 @@ Skeleton Python del connettore locale di ingresso per Virgilio.
 
 ## Stato
 
-Il package contiene esclusivamente logica locale e astratta:
+Il package contiene esclusivamente logica locale, astratta e simulata:
 
 - modelli immutabili del contratto JSON con Caronte;
 - parsing e serializzazione JSON;
@@ -13,13 +13,16 @@ Il package contiene esclusivamente logica locale e astratta:
 - macchina a stati della quarantena;
 - porte astratte per mailbox, antivirus e Caronte;
 - persistenza tecnica SQLite in `state.db`;
+- orchestratore di un ciclo completo e adapter finti in memoria;
 - test automatici senza rete.
 
-**Non contiene una connessione IMAP reale, chiamate HTTP, esecuzione antivirus o credenziali.**
+Contiene una connessione IMAP4/SSL strettamente read-only per LC3. **Non contiene
+chiamate HTTP, esecuzione antivirus, credenziali o operazioni IMAP di scrittura.**
 
 ## Confini
 
-Il connettore locale potra' occuparsi soltanto di lettura IMAP limitata, download nella quarantena, filtri locali, costruzione del comando e ack dopo conferma valida.
+La micro-fase corrente si limita a lettura IMAP, valutazione deterministica e
+quarantena locale. Non chiama Caronte, non carica su Drive e non esegue ack.
 
 Restano in Apps Script Drive, Limbo Drive, Bucoliche, notifiche, pratiche e nucleo operativo Caronte.
 
@@ -56,6 +59,8 @@ local_connector/
     quarantine.py
     state_db.py
     state_models.py
+    orchestrator.py
+    in_memory.py
   tests/
     test_*.py
 ```
@@ -78,6 +83,68 @@ Non e' necessario installare dipendenze esterne. I test SQLite usano soltanto di
 - [`../docs/QUARANTENA_LOCALE.md`](../docs/QUARANTENA_LOCALE.md)
 - [`../docs/STATE_DB.md`](../docs/STATE_DB.md)
 
+## Simulazione offline
+
+`ConnectorOrchestrator.run_once()` collega le porte mailbox, antivirus e Caronte.
+Gli adapter in `in_memory.py` permettono di verificare l'intero ciclo senza rete:
+registrazione, quarantena, policy, scansione, comando, conferma Limbo Drive e ack.
+L'ack resta bloccato se Caronte non conferma almeno un allegato con hash e ID Drive.
+
+La suite include inoltre email `.eml` generate con indirizzi `example.invalid` e
+allegati sintetici. Copre messaggi con PDF, allegati misti, solo testo e polling
+ripetuti; nessuna fixture contiene email, indirizzi o documenti reali.
+
+## Prova IMAP read-only
+
+### Configurazione `.env`
+
+Copiare `.env.example` in `.env` e sostituire i soli valori locali. `.env`,
+`.local_data/`, database, log e file temporanei sono esclusi da Git. Non usare
+credenziali della casella principale: predisporre un account e messaggi fittizi.
+
+### Dry-run
+
+Il dry-run legge la cartella con `BODY.PEEK[]`, mostra le decisioni della policy e
+non crea `.local_data`, file o database:
+
+```powershell
+$env:PYTHONPATH='src'
+python scripts/imap_readonly_probe.py --dry-run
+```
+
+### Download controllato in quarantena
+
+Dopo aver verificato manualmente il dry-run:
+
+```powershell
+$env:PYTHONPATH='src'
+python scripts/imap_readonly_probe.py --download
+```
+
+La struttura generata e' `.local_data/quarantine/{incoming,rejected,ready}` con
+`.local_data/logs` e `.local_data/state.db`. In questa fase vengono scritti solo
+gli allegati ammessi dentro `incoming`; lo stato finale `ready_for_scan` significa
+soltanto che il file attende una futura scansione antivirus.
+
+L'adapter usa TLS, apre esclusivamente la cartella configurata con
+`SELECT readonly=True` e acquisisce i messaggi con `UID FETCH (BODY.PEEK[])`, che
+non imposta il flag `Seen`. `acknowledge()` e' disabilitato: non vengono eseguiti
+`STORE`, `COPY`, `MOVE`, `DELETE` o `EXPUNGE`. Il probe stampa soltanto UID e numero
+di allegati, non oggetto, mittente, corpo, password o percorsi completi.
+
+**Avvertenza:** non usare su una casella principale finche' il collaudo controllato
+non e' stato completato e registrato nel template
+`../docs/LOCAL_IMAP_PROBE_REPORT_TEMPLATE.md`.
+
+## Test pytest
+
+```powershell
+python -m pip install -e ".[dev]"
+pytest
+```
+
 ## Prossima micro-fase proposta
 
-Creare adapter finti in memoria per simulare l'orchestrazione completa senza rete. La connessione IMAP reale resta esclusa dalla prossima micro-fase.
+Eseguire il probe LC3 su una casella di test, verificare la mappatura della cartella
+del provider e consolidare retry e recupero dopo interruzione. L'ack reale resta
+escluso fino a una decisione esplicita sulla strategia cartelle/label.

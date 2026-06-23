@@ -6,7 +6,6 @@ import unittest
 
 
 FORBIDDEN_IMPORTS = {
-    "imaplib",
     "socket",
     "smtplib",
     "urllib",
@@ -31,6 +30,8 @@ class NoNetworkImplementationTests(unittest.TestCase):
                 else:
                     continue
                 for name in names:
+                    if name == "imaplib" and path.name != "imap_readonly.py":
+                        violations.append(f"{path.name}: {name}")
                     if any(name == item or name.startswith(f"{item}.") for item in FORBIDDEN_IMPORTS):
                         violations.append(f"{path.name}: {name}")
 

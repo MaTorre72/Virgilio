@@ -4,7 +4,8 @@
 
 Il Local IMAP Connector e' una possibile porta di ingresso locale per Virgilio. Gira sul PC dell'utente, osserva una sola cartella IMAP convenzionale e prepara gli allegati per Caronte senza sostituire il client email abituale.
 
-Questa prima fase definisce soltanto architettura, confini e contratto dati. Non implementa una connessione IMAP reale.
+LC3 include ora un adapter IMAP4/SSL read-only per una casella di test. Non
+implementa scritture, ack o upload reali.
 
 ## Cosa fa
 
@@ -100,7 +101,7 @@ Il Limbo Drive resta sotto la responsabilita' di Apps Script. Un allegato passa 
 
 | Tema | Opzioni | Stato |
 |---|---|---|
-| Libreria IMAP | `imaplib`, IMAPClient, imap-tools | DA DECIDERE |
+| Libreria IMAP | `imaplib` standard library per il pilota read-only | SCELTA LC3 |
 | Parsing email | `email` standard library, mail-parser | DA DECIDERE |
 | Antivirus | ClamAV, Windows Defender, entrambi, nessuno obbligatorio | DA DECIDERE |
 | Scanner assente | Fail closed, conferma manuale, prosecuzione con warning | DA DECIDERE |
@@ -134,12 +135,24 @@ Il Limbo Drive resta sotto la responsabilita' di Apps Script. Un allegato passa 
 - Adapter antivirus simulato e testato.
 - Nessun accesso IMAP.
 
+Stato attuale: completata anche la simulazione offline del ciclo applicativo con
+adapter in memoria. Il test end-to-end verifica che l'ack segua soltanto una
+risposta Caronte coerente con hash e identificativo Limbo Drive.
+
 ### LC3 - Lettura IMAP in dry-run
 
 - Un account di test.
 - Una sola cartella convenzionale.
 - Nessun ack e nessun upload.
 - Log minimizzati.
+
+Implementazione disponibile: `ImapReadonlyMailbox`. Usa `SELECT readonly=True`,
+UID stabili nel contesto di UIDVALIDITY e `BODY.PEEK[]`. Le credenziali vengono
+lette solo da variabili d'ambiente dal probe manuale e non sono persistite.
+
+Il runner `ReadonlyQuarantineRunner` separa due modalita': dry-run senza scritture
+locali e download controllato degli allegati ammessi. Il secondo registra run,
+messaggi e allegati in `.local_data/state.db`; non importa ne' invoca Caronte.
 
 ### LC4 - Pilota end-to-end controllato
 
