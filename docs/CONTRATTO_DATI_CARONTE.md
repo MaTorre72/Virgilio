@@ -2,7 +2,9 @@
 
 ## Scopo e stato
 
-Questo documento propone il contratto tra un connettore di ingresso e Caronte. E' una specifica preliminare e non descrive ancora un endpoint implementato.
+Questo documento descrive il contratto tra un connettore di ingresso e Caronte.
+Il solo endpoint implementato in questa fase e' il bridge metadata-only dry-run;
+il trasporto operativo degli allegati resta escluso.
 
 Il contratto separa:
 
@@ -158,6 +160,50 @@ Forma proposta per un errore:
 ```
 
 Un successo parziale puo' avere `ok: true`, allegati sia accettati sia rifiutati e una lista `errors`. L'ack della mail intera in questo caso e' **DA DECIDERE**: le opzioni sono ack con log dei rifiuti, stato errore, oppure ack per-allegato non rappresentabile direttamente in IMAP.
+
+## Bridge HTTP dry-run metadata-only
+
+Il client invia un POST JSON alla Web App configurata esclusivamente tramite
+`VIRGILIO_CARONTE_DRY_RUN_URL`:
+
+```json
+{
+  "action": "local_imap_dry_run",
+  "payload": { "schema_version": "1.0", "dry_run": true }
+}
+```
+
+`payload` e' il comando completo documentato sopra. Il bridge accetta soltanto:
+
+- `schema_version = "1.0"`;
+- `connector_type = "local_imap"`;
+- `dry_run = true`;
+- `requested_action = "stage_attachments_in_limbo"`;
+- `attachments` come array;
+- allegati con `local_temp_id`, SHA-256 valido e stato `ready_for_caronte`.
+
+Sono vietate, a qualsiasi profondita', le chiavi `local_path`, `file_path`,
+`file_bytes`, `base64`, `content` e `raw`. Il bridge non riceve multipart, byte o
+file e non produce identificativi persistenti.
+
+Risposta dry-run:
+
+```json
+{
+  "ok": true,
+  "dry_run": true,
+  "accepted_attachments": 1,
+  "rejected_attachments": 0,
+  "limbo_drive_ids": [],
+  "bucoliche_rows": [],
+  "message": "Comando dry-run validato; nessun effetto operativo.",
+  "errors": []
+}
+```
+
+Una risposta valida deve mantenere vuoti `limbo_drive_ids` e `bucoliche_rows`.
+Un errore di validazione usa `ok: false`, conteggi coerenti ed elementi
+`{"code":"...","message":"..."}` in `errors`.
 
 ## Privacy e logging
 

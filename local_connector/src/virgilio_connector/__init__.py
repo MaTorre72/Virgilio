@@ -59,6 +59,12 @@ from .caronte_dry_run import (
     NoReadyAttachmentsError,
     generate_caronte_dry_run_files,
 )
+from .caronte_http import (
+    CaronteBridgeResponse,
+    CaronteDryRunClientError,
+    CaronteDryRunHttpClient,
+    CaronteDryRunUrlNotConfigured,
+)
 
 __all__ = [
     "AckDecision",
@@ -66,6 +72,10 @@ __all__ = [
     "AttachmentRecord",
     "CaronteCommand",
     "CaronteDryRunConfig",
+    "CaronteBridgeResponse",
+    "CaronteDryRunClientError",
+    "CaronteDryRunHttpClient",
+    "CaronteDryRunUrlNotConfigured",
     "CaronteResponse",
     "CommandAttemptRecord",
     "CommandAttemptStatus",
@@ -108,4 +118,4 @@ __all__ = [
     "response_to_json",
 ]
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"

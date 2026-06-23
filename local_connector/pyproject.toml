@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "virgilio-local-connector"
-version = "0.6.0"
-description = "Connettore IMAP read-only con quarantena e JSON Caronte dry-run"
+version = "0.7.0"
+description = "Connettore IMAP read-only con bridge HTTP Caronte metadata-only"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Proprietary" }

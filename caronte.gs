@@ -109,6 +109,12 @@ function doPost(e) {
     return _rispostaJSON({ status: 'error', messaggio: 'Body JSON non valido' });
   }
 
+  // Bridge Local IMAP metadata-only. Questo ramo precede intenzionalmente il
+  // flusso operativo e non usa token, Drive, Bucoliche, notifiche o Gmail.
+  if (dati.action === CARONTE_DRY_RUN_ACTION) {
+    return _rispostaJSON(caronteRiceviComandoDryRun(dati.payload));
+  }
+
   // 2. Verifica token di sicurezza
   // ⚠ Non loggare mai CONFIG.VIRGILIO_TOKEN — usare solo nomi simbolici nei log
   if (!CONFIG.VIRGILIO_TOKEN || dati.token !== CONFIG.VIRGILIO_TOKEN) {

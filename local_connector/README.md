@@ -157,6 +157,33 @@ ogni payload con il contratto `1.0` e imposta sempre `dry_run: true` e
 Caronte o chiamata Apps Script; percorsi locali e byte degli allegati non entrano
 nel JSON.
 
+### Invio HTTP metadata-only a Caronte
+
+Configurare localmente in `.env` l'URL della Web App dedicata al collaudo:
+
+```dotenv
+VIRGILIO_CARONTE_DRY_RUN_URL=https://script.google.com/macros/s/DEPLOYMENT_ID/exec
+VIRGILIO_CARONTE_TIMEOUT_SECONDS=15
+```
+
+L'URL reale non deve essere versionato. Senza questa variabile il client termina
+con un messaggio esplicito e non tenta alcuna connessione. Per inviare uno dei JSON:
+
+```powershell
+$env:PYTHONPATH='src'
+python -m virgilio_connector send-caronte-dry-run `
+  --command-file ".local_data\commands\dry-run\COMANDO.json"
+```
+
+Il client esegue un solo POST, senza retry, dentro l'envelope
+`{"action":"local_imap_dry_run","payload":{...}}`. Prima della rete valida il
+contratto, impone `dry_run=true` e blocca ricorsivamente campi con byte, base64 o
+percorsi locali. Non aggiorna SQLite e non invia file.
+
+In questa fase il bridge Apps Script non carica su Drive, non scrive Bucoliche,
+non invia notifiche e non modifica Gmail. La configurazione dell'accesso alla Web
+App e' una responsabilita' di deploy da verificare prima di una chiamata reale.
+
 L'adapter usa TLS, apre esclusivamente la cartella configurata con
 `SELECT readonly=True` e acquisisce i messaggi con `UID FETCH (BODY.PEEK[])`, che
 non imposta il flag `Seen`. `acknowledge()` e' disabilitato: non vengono eseguiti
