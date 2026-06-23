@@ -1,12 +1,21 @@
 # Virgilio Local Connector
 
-Scaffolding del possibile connettore IMAP locale di Virgilio.
+Skeleton Python del connettore locale di ingresso per Virgilio.
 
 ## Stato
 
-**Solo piano e struttura. Nessuna connessione IMAP e' implementata.**
+Il package contiene esclusivamente logica locale e astratta:
 
-Questo progetto Python e' separato dagli script Google Apps Script presenti nella radice del repository. Il suo scopo futuro e' acquisire allegati da una cartella IMAP convenzionale, conservarli temporaneamente in quarantena locale e produrre un comando standardizzato per Caronte.
+- modelli immutabili del contratto JSON con Caronte;
+- parsing e serializzazione JSON;
+- regola prudenziale per autorizzare un futuro ack;
+- sanitizzazione dei nomi e calcolo SHA-256;
+- policy iniziale sulle estensioni;
+- macchina a stati della quarantena;
+- porte astratte per mailbox, antivirus e Caronte;
+- test automatici senza rete.
+
+**Non contiene una connessione IMAP reale, chiamate HTTP, esecuzione antivirus o credenziali.**
 
 ## Confini
 
@@ -31,16 +40,34 @@ Restano in Apps Script:
 
 ```text
 local_connector/
-  README.md
   pyproject.toml
-  src/
-    virgilio_connector/
-      __init__.py
+  src/virgilio_connector/
+    ack.py
+    contract.py
+    files.py
+    models.py
+    policy.py
+    ports.py
+    quarantine.py
   tests/
-    README.md
+    fixtures.py
+    test_ack.py
+    test_contract.py
+    test_files_policy.py
+    test_no_network.py
+    test_quarantine.py
 ```
 
-I moduli applicativi verranno introdotti una micro-fase alla volta, soltanto dopo l'approvazione delle decisioni aperte.
+## Test
+
+Da `local_connector/`, con Python 3.11 o successivo:
+
+```powershell
+$env:PYTHONPATH='src'
+python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+Non e' necessario installare dipendenze esterne.
 
 ## Documentazione
 
@@ -50,18 +77,16 @@ I moduli applicativi verranno introdotti una micro-fase alla volta, soltanto dop
 
 ## Credenziali
 
-Non creare file di credenziali nel repository. La strategia futura per password applicative, OAuth2 o keyring locale e' **DA DECIDERE**.
-
-I pattern principali per `.env`, token e credenziali sono gia' esclusi dal `.gitignore` della radice, ma l'assenza dal versionamento non sostituisce una gestione sicura dei segreti.
+Non creare file di credenziali nel repository. La strategia futura per password applicative, OAuth2 o keyring locale resta da decidere.
 
 ## Prossima micro-fase proposta
 
-Implementare solo modelli dati e validazione locale, senza rete:
+Creare adapter finti in memoria per simulare l'orchestrazione completa senza rete:
 
-1. modelli richiesta/risposta coerenti con il contratto JSON;
-2. sanitizzazione dei nomi file;
-3. calcolo SHA-256 su file fittizi;
-4. macchina a stati della quarantena;
-5. test automatici deterministici.
+1. messaggio sintetico in ingresso;
+2. allegati fittizi in una directory temporanea;
+3. scanner finto configurabile;
+4. Caronte finto con successo ed errori;
+5. prova che l'ack astratto avvenga solo dopo conferma valida.
 
 La connessione IMAP reale resta esclusa dalla prossima micro-fase.

@@ -1,14 +1,15 @@
-# Test plan placeholder
+# Test suite
 
-Non sono presenti test eseguibili perche' questa fase non contiene ancora logica applicativa.
+La suite usa soltanto `unittest` e dati sintetici.
 
-La prossima micro-fase dovra' introdurre test isolati e senza rete per:
+Copertura attuale:
 
-- validazione del contratto JSON;
-- nomi file sicuri;
-- hash SHA-256;
-- transizioni di stato della quarantena;
-- idempotenza del `command_id` a livello di modello;
-- regola di ack basata sulla risposta di Caronte.
+- validazione e round-trip del contratto JSON;
+- blocco di campi inattesi e payload operativi non confermati;
+- sanitizzazione nomi e SHA-256;
+- policy iniziale sulle estensioni;
+- transizioni valide e non valide della quarantena;
+- regola di ack dopo conferma del Limbo Drive;
+- verifica statica dell'assenza di import di rete.
 
-I test non dovranno usare mailbox, credenziali, Drive, Bucoliche o allegati reali.
+La suite non usa mailbox, credenziali, Drive, Bucoliche o allegati reali.
