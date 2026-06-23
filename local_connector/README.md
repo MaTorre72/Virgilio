@@ -140,6 +140,23 @@ Solo un esito pulito e completato produce `ready_for_caronte` e sposta il file i
 `quarantined_unverified`; una minaccia confermata da un adapter produce
 `rejected_by_scanner`. Questa fase non chiama comunque Caronte.
 
+### Generazione JSON Caronte in dry-run
+
+Dopo una scansione pulita, il comando seguente genera un JSON standard per ogni
+messaggio dell'ultimo run completato:
+
+```powershell
+$env:PYTHONPATH='src'
+python scripts/generate_caronte_dry_run.py
+```
+
+I file vengono scritti in `.local_data/commands/dry-run/`. Il generatore apre
+SQLite in sola lettura, include esclusivamente allegati `ready_for_caronte`, valida
+ogni payload con il contratto `1.0` e imposta sempre `dry_run: true` e
+`user_confirmed_command: false`. Non contiene alcun client HTTP, trasporto verso
+Caronte o chiamata Apps Script; percorsi locali e byte degli allegati non entrano
+nel JSON.
+
 L'adapter usa TLS, apre esclusivamente la cartella configurata con
 `SELECT readonly=True` e acquisisce i messaggi con `UID FETCH (BODY.PEEK[])`, che
 non imposta il flag `Seen`. `acknowledge()` e' disabilitato: non vengono eseguiti

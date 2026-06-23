@@ -54,12 +54,18 @@ from .scanner import (
     WindowsDefenderScanner,
     select_scanner,
 )
+from .caronte_dry_run import (
+    CaronteDryRunConfig,
+    NoReadyAttachmentsError,
+    generate_caronte_dry_run_files,
+)
 
 __all__ = [
     "AckDecision",
     "Attachment",
     "AttachmentRecord",
     "CaronteCommand",
+    "CaronteDryRunConfig",
     "CaronteResponse",
     "CommandAttemptRecord",
     "CommandAttemptStatus",
@@ -78,6 +84,7 @@ __all__ = [
     "MessageStatus",
     "NewAttachment",
     "NewMessage",
+    "NoReadyAttachmentsError",
     "QuarantineStatus",
     "ProcessingResult",
     "QuarantinePlanItem",
@@ -87,6 +94,7 @@ __all__ = [
     "UnconfiguredScanner",
     "WindowsDefenderScanner",
     "select_scanner",
+    "generate_caronte_dry_run_files",
     "StateConflictError",
     "StateDatabaseError",
     "StateEvent",
@@ -100,4 +108,4 @@ __all__ = [
     "response_to_json",
 ]
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
