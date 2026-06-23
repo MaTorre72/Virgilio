@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
+import json
 import os
 from pathlib import Path
 
@@ -37,10 +39,7 @@ def main() -> int:
             result = client.send_command_file(args.command_file)
         except CaronteDryRunClientError as exc:
             parser.exit(2, f"error: {exc}\n")
-        print(
-            f"ok={str(result.ok).lower()} dry_run=true "
-            f"accepted={result.accepted_attachments} rejected={result.rejected_attachments}"
-        )
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.ok else 1
     return 2
 
