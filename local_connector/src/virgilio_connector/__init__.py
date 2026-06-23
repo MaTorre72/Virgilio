@@ -65,6 +65,15 @@ from .caronte_http import (
     CaronteDryRunHttpClient,
     CaronteDryRunUrlNotConfigured,
 )
+from .staging_transport import (
+    LocalDriveStagingConfig,
+    LocalDriveStagingTransport,
+    NoReadyFilesError,
+    StagingDirectoryError,
+    StagingDisabledError,
+    StagingResult,
+    StagingTransportError,
+)
 
 __all__ = [
     "AckDecision",
@@ -89,12 +98,15 @@ __all__ = [
     "ImapReadonlyError",
     "ImapReadonlyMailbox",
     "LocalDataPaths",
+    "LocalDriveStagingConfig",
+    "LocalDriveStagingTransport",
     "LocalScanResult",
     "LocalScanner",
     "MessageStatus",
     "NewAttachment",
     "NewMessage",
     "NoReadyAttachmentsError",
+    "NoReadyFilesError",
     "QuarantineStatus",
     "ProcessingResult",
     "QuarantinePlanItem",
@@ -110,6 +122,10 @@ __all__ = [
     "StateEvent",
     "StateNotFoundError",
     "StateStore",
+    "StagingDirectoryError",
+    "StagingDisabledError",
+    "StagingResult",
+    "StagingTransportError",
     "UnsupportedSchemaError",
     "command_from_json",
     "command_to_json",
@@ -118,4 +134,4 @@ __all__ = [
     "response_to_json",
 ]
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"

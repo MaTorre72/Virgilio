@@ -70,4 +70,6 @@ def test_existing_ready_for_scan_rows_migrate_to_unverified(tmp_path):
     ReadonlyStateStore(path).initialize()
     with sqlite3.connect(path) as db:
         row = db.execute("SELECT status,scanner_engine FROM attachments").fetchone()
+        columns = {item[1] for item in db.execute("PRAGMA table_info(attachments)")}
     assert row == ("quarantined_unverified", None)
+    assert {"staged_filename", "staging_manifest_path", "staged_at"}.issubset(columns)

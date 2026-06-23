@@ -190,6 +190,42 @@ allegato accettato e liste Drive/Bucoliche vuote. Il rapporto e' in
 `../docs/CARONTE_DRY_RUN_E2E_REPORT_2026-06-23.md`. Restano obbligatori i controlli
 manuali su Drive, Bucoliche, Gmail e notifiche prima di chiudere il collaudo.
 
+## Staging pilota con Google Drive Desktop
+
+La copia locale verso Drive Desktop e' disabilitata per default. Creare manualmente
+una cartella Limbo di test nel filesystem sincronizzato e configurare `.env`:
+
+```dotenv
+VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED=true
+VIRGILIO_LOCAL_DRIVE_STAGING_DIR=C:\percorso\Drive Desktop\Virgilio Limbo Test
+```
+
+Il percorso reale resta esclusivamente in `.env`, gia' ignorato da Git. Prima
+eseguire sempre:
+
+```powershell
+python -m virgilio_connector stage-ready-files --dry-run
+```
+
+Controllare l'elenco JSON e poi, soltanto sul Limbo di test:
+
+```powershell
+python -m virgilio_connector stage-ready-files
+```
+
+Il comando copia solo file `ready_for_caronte`, verifica nuovamente SHA-256, non
+cancella l'originale e crea un manifest accanto alla copia. Verificare manualmente
+in Drive Desktop:
+
+- presenza di file e manifest;
+- assenza di suffissi `.uploading` o `.partial` dopo un esito positivo;
+- completamento della sincronizzazione mostrato dal client;
+- nessun file nelle cartelle pratica.
+
+**Lo stato `staged_local_drive` non conferma la sincronizzazione cloud.** Non vengono
+usati Drive API, rclone, base64, Caronte, Bucoliche, notifiche o operazioni Gmail.
+Dettagli: `../docs/LOCAL_DRIVE_STAGING_TRANSPORT.md`.
+
 L'adapter usa TLS, apre esclusivamente la cartella configurata con
 `SELECT readonly=True` e acquisisce i messaggi con `UID FETCH (BODY.PEEK[])`, che
 non imposta il flag `Seen`. `acknowledge()` e' disabilitato: non vengono eseguiti

@@ -9,6 +9,11 @@ import os
 from pathlib import Path
 
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
+from .staging_transport import (
+    LocalDriveStagingConfig,
+    LocalDriveStagingTransport,
+    StagingTransportError,
+)
 
 
 def _load_env_file(path: Path) -> None:
@@ -28,6 +33,8 @@ def main() -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     sender = commands.add_parser("send-caronte-dry-run")
     sender.add_argument("--command-file", type=Path, required=True)
+    staging = commands.add_parser("stage-ready-files")
+    staging.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -41,6 +48,27 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.ok else 1
+    if args.command == "stage-ready-files":
+        enabled_text = os.environ.get("VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED", "false")
+        if enabled_text.lower() not in {"true", "false"}:
+            parser.exit(2, "error: VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED must be true or false\n")
+        staging_text = os.environ.get("VIRGILIO_LOCAL_DRIVE_STAGING_DIR", "").strip()
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        transport = LocalDriveStagingTransport(
+            state_db=local_root / "state.db", local_data_root=local_root,
+            config=LocalDriveStagingConfig(
+                enabled=enabled_text.lower() == "true",
+                staging_dir=Path(staging_text) if staging_text else None,
+                account_alias=os.environ.get("VIRGILIO_ACCOUNT_ALIAS", "gmail-test"),
+            ),
+        )
+        try:
+            results = transport.stage_ready_files(dry_run=args.dry_run)
+        except (StagingTransportError, FileNotFoundError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0
     return 2
 
 

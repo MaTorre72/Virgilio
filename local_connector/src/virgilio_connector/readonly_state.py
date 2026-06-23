@@ -11,7 +11,8 @@ import sqlite3
 ATTACHMENT_STATES = (
     "detected", "rejected_by_extension", "rejected_by_size", "downloaded",
     "quarantined", "ready_for_scan", "quarantined_unverified",
-    "ready_for_caronte", "rejected_by_scanner", "error",
+    "ready_for_caronte", "rejected_by_scanner", "staged_local_drive",
+    "staging_failed", "error",
 )
 
 
@@ -46,16 +47,21 @@ class ReadonlyStateStore:
                     status TEXT NOT NULL CHECK(status IN (
                         'detected','rejected_by_extension','rejected_by_size','downloaded',
                         'quarantined','ready_for_scan','quarantined_unverified',
-                        'ready_for_caronte','rejected_by_scanner','error')),
+                        'ready_for_caronte','rejected_by_scanner','staged_local_drive',
+                        'staging_failed','error')),
                     relative_path TEXT, duplicate_of_id INTEGER REFERENCES attachments(id),
                     reason TEXT NOT NULL, scanner_engine TEXT,
-                    scan_result TEXT, scanned_at TEXT, created_at TEXT NOT NULL,
+                    scan_result TEXT, scanned_at TEXT, staged_filename TEXT,
+                    staging_manifest_path TEXT, staged_at TEXT, created_at TEXT NOT NULL,
                     UNIQUE(message_id, ordinal)
                 );
             """)
             columns = {row[1] for row in db.execute("PRAGMA table_info(attachments)")}
             if "scanner_engine" not in columns:
                 self._migrate_attachments_v2(db)
+            columns = {row[1] for row in db.execute("PRAGMA table_info(attachments)")}
+            if "staged_filename" not in columns:
+                self._migrate_attachments_v3(db)
 
     def start_run(self) -> int:
         with self._connection() as db:
@@ -144,6 +150,47 @@ class ReadonlyStateStore:
             db.execute("""UPDATE attachments SET status=?,relative_path=?,scanner_engine=?,
                 scan_result=?,scanned_at=?,reason=? WHERE sha256=?""",
                 (status, relative_path, scanner_engine, scan_result, _now(), reason, sha256))
+
+    def update_staging(self, attachment_id: int, *, status: str, reason: str,
+                       staged_filename: str | None = None,
+                       manifest_path: str | None = None) -> None:
+        if status not in {"staged_local_drive", "staging_failed"}:
+            raise ValueError("invalid staging status")
+        with self._connection() as db:
+            db.execute("""UPDATE attachments SET status=?,reason=?,staged_filename=?,
+                staging_manifest_path=?,staged_at=? WHERE id=?""",
+                (status, reason, staged_filename, manifest_path, _now(), attachment_id))
+
+    @staticmethod
+    def _migrate_attachments_v3(db: sqlite3.Connection) -> None:
+        db.executescript("""
+            ALTER TABLE attachments RENAME TO attachments_v2;
+            CREATE TABLE attachments (
+                id INTEGER PRIMARY KEY, message_id INTEGER NOT NULL REFERENCES messages(id),
+                ordinal INTEGER NOT NULL, original_filename TEXT,
+                sanitized_filename TEXT, declared_mime_type TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL,
+                status TEXT NOT NULL CHECK(status IN (
+                    'detected','rejected_by_extension','rejected_by_size','downloaded',
+                    'quarantined','ready_for_scan','quarantined_unverified',
+                    'ready_for_caronte','rejected_by_scanner','staged_local_drive',
+                    'staging_failed','error')),
+                relative_path TEXT, duplicate_of_id INTEGER REFERENCES attachments(id),
+                reason TEXT NOT NULL, scanner_engine TEXT, scan_result TEXT,
+                scanned_at TEXT, staged_filename TEXT, staging_manifest_path TEXT,
+                staged_at TEXT, created_at TEXT NOT NULL,
+                UNIQUE(message_id, ordinal)
+            );
+            INSERT INTO attachments(
+                id,message_id,ordinal,original_filename,sanitized_filename,
+                declared_mime_type,size_bytes,sha256,status,relative_path,
+                duplicate_of_id,reason,scanner_engine,scan_result,scanned_at,created_at)
+            SELECT id,message_id,ordinal,original_filename,sanitized_filename,
+                declared_mime_type,size_bytes,sha256,status,relative_path,
+                duplicate_of_id,reason,scanner_engine,scan_result,scanned_at,created_at
+            FROM attachments_v2;
+            DROP TABLE attachments_v2;
+        """)
 
     @contextmanager
     def _connection(self):
