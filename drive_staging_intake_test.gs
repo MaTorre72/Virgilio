@@ -4,6 +4,8 @@ const DRIVE_STAGING_INTAKE_TEST_ACTION = 'intake_drive_staging_test';
 const INTAKE_TEST_SPREADSHEET_PROPERTY = 'VIRGILIO_INTAKE_TEST_SPREADSHEET_ID';
 const INTAKE_TEST_SHEET_PROPERTY = 'VIRGILIO_INTAKE_TEST_SHEET_NAME';
 const INTAKE_TEST_DEFAULT_SHEET = 'Staging_Local_Test';
+const INTAKE_TEST_ATTACHMENT_ID_COLUMN = 6;
+const INTAKE_TEST_SHA256_COLUMN = 9;
 const INTAKE_TEST_HEADERS = [
   'timestamp', 'connector_type', 'account_alias', 'source_message_id',
   'source_message_uid', 'attachment_id', 'original_filename', 'staged_filename',
@@ -61,10 +63,25 @@ function caronteRegistraStagingDriveTest(payload) {
           _driveStagingError_('INTAKE_TEST_SHEET_MISSING', 'Il tab deve essere creato dal setup esplicito.')
         ]);
     }
+    const existingRow = _trovaRigaPerAttachmentId_(sheet, payload.attachment_id);
+    if (existingRow > 0) {
+      const existingSha256 = _leggiSha256Riga_(sheet, existingRow);
+      if (existingSha256 !== payload.sha256) {
+        return _intakeTestResponse_(payload, false, true, true, true, false, '',
+          'attachment_id gia registrato con SHA-256 differente.', [
+            _driveStagingError_('ATTACHMENT_SHA256_CONFLICT',
+              'Lo stesso attachment_id risulta associato a un SHA-256 diverso.')
+          ], false, true, existingRow);
+      }
+      return _intakeTestResponse_(payload, true, true, true, true, false,
+        'presa_in_carico_test', 'Presa in carico test gia registrata; nessuna nuova riga.',
+        [], true, true, existingRow);
+    }
     _intakeTestAppendRow_(sheet, checked.manifest, checked.staged.file.getId(),
       checked.manifestFile.file.getId(), new Date());
     return _intakeTestResponse_(payload, true, true, true, true, true,
-      'presa_in_carico_test', 'Presa in carico di test registrata; nessun file spostato.', []);
+      'presa_in_carico_test', 'Presa in carico di test registrata; nessun file spostato.',
+      [], false, false, 0);
   } catch (err) {
     return _intakeTestResponse_(payload, false, false, false, false, false, '',
       'Presa in carico di test non completata.', [
@@ -153,12 +170,32 @@ function _intakeTestAppendRow_(sheet, manifest, driveFileId, manifestFileId, now
   ]);
 }
 
+function _trovaRigaPerAttachmentId_(sheet, attachmentId) {
+  if (typeof attachmentId !== 'string' || !attachmentId.trim()) return 0;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  const values = sheet.getRange(2, INTAKE_TEST_ATTACHMENT_ID_COLUMN,
+    lastRow - 1, 1).getValues();
+  for (let index = 0; index < values.length; index++) {
+    if (String(values[index][0]).trim() === attachmentId) return index + 2;
+  }
+  return 0;
+}
+
+function _leggiSha256Riga_(sheet, row) {
+  return String(sheet.getRange(row, INTAKE_TEST_SHA256_COLUMN).getValue() || '').trim();
+}
+
 function _intakeTestResponse_(payload, ok, fileFound, manifestFound, consistent,
-                              rowWritten, state, message, errors) {
+                              rowWritten, state, message, errors, idempotent,
+                              alreadyRegistered, existingRow) {
   return { ok: ok, test_mode: true, action: DRIVE_STAGING_INTAKE_TEST_ACTION,
     attachment_id: payload.attachment_id || '', staged_filename: payload.staged_filename || '',
     drive_file_found: fileFound, manifest_found: manifestFound,
     manifest_consistent: consistent, test_row_written: rowWritten,
+    idempotent: idempotent === true,
+    already_registered: alreadyRegistered === true,
+    existing_row: Number.isInteger(existingRow) ? existingRow : 0,
     state: state, message: message, errors: errors };
 }
 
@@ -188,11 +225,49 @@ function testDriveStagingIntakeTest() {
   _driveStagingAssert_(!_intakeTestInspectFolder_(payload,
     _intakeTestFakeFolder_(payload, true, true, true)).ok, 'manifest incoerente');
   const rows = [];
-  _intakeTestAppendRow_({ getName: () => 'Staging_Local_Test', appendRow: row => rows.push(row) },
+  const fakeSheet = _intakeTestFakeSheet_(rows);
+  _intakeTestAppendRow_(fakeSheet,
     payload, 'drive-id', 'manifest-id', new Date(0));
   _driveStagingAssert_(rows.length === 1 && rows[0][19] === 'presa_in_carico_test',
     'scrittura tab test');
+  _driveStagingAssert_(_trovaRigaPerAttachmentId_(fakeSheet, payload.attachment_id) === 2,
+    'attachment_id trovato');
+  _driveStagingAssert_(_leggiSha256Riga_(fakeSheet, 2) === payload.sha256,
+    'sha256 coerente');
+  const identical = _intakeTestIdempotencyResult_(fakeSheet, payload);
+  _driveStagingAssert_(identical.idempotent && identical.already_registered &&
+    identical.existing_row === 2 && !identical.test_row_written, 'retry idempotente');
+  const conflict = _intakeTestIdempotencyResult_(fakeSheet,
+    Object.assign({}, payload, { sha256: 'b'.repeat(64) }));
+  _driveStagingAssert_(!conflict.ok && conflict.errors[0].code ===
+    'ATTACHMENT_SHA256_CONFLICT', 'conflitto sha256');
   Logger.log('testDriveStagingIntakeTest: OK');
+}
+
+function _intakeTestIdempotencyResult_(sheet, payload) {
+  const row = _trovaRigaPerAttachmentId_(sheet, payload.attachment_id);
+  if (!row) return _intakeTestResponse_(payload, true, true, true, true, true,
+    'presa_in_carico_test', 'Nuova riga.', [], false, false, 0);
+  if (_leggiSha256Riga_(sheet, row) !== payload.sha256) {
+    return _intakeTestResponse_(payload, false, true, true, true, false, '',
+      'Conflitto SHA-256.', [_driveStagingError_('ATTACHMENT_SHA256_CONFLICT',
+        'SHA-256 differente.')], false, true, row);
+  }
+  return _intakeTestResponse_(payload, true, true, true, true, false,
+    'presa_in_carico_test', 'Gia registrata.', [], true, true, row);
+}
+
+function _intakeTestFakeSheet_(rows) {
+  return {
+    getName: () => 'Staging_Local_Test',
+    appendRow: row => rows.push(row),
+    getLastRow: () => rows.length + 1,
+    getRange: (row, column, numRows) => ({
+      getValues: () => rows.slice(row - 2, row - 2 + numRows)
+        .map(value => [value[column - 1]]),
+      getValue: () => rows[row - 2][column - 1]
+    })
+  };
 }
 
 function _intakeTestFakeFolder_(payload, includeFile, includeManifest, mismatch) {

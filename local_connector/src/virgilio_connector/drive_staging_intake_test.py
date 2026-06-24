@@ -33,6 +33,9 @@ class DriveStagingIntakeTestResponse:
     manifest_found: bool
     manifest_consistent: bool
     test_row_written: bool
+    idempotent: bool
+    already_registered: bool
+    existing_row: int
     state: str
     message: str
     errors: tuple[dict[str, Any], ...]
@@ -44,20 +47,29 @@ class DriveStagingIntakeTestResponse:
         required = {
             "ok", "test_mode", "action", "attachment_id", "staged_filename",
             "drive_file_found", "manifest_found", "manifest_consistent",
-            "test_row_written", "state", "message", "errors",
+            "test_row_written", "idempotent", "already_registered",
+            "existing_row", "state", "message", "errors",
         }
         if not required.issubset(raw):
             raise DriveStagingIntakeTestError("intake test response is missing required fields")
         if raw["test_mode"] is not True or raw["action"] != INTAKE_DRIVE_STAGING_TEST_ACTION:
             raise DriveStagingIntakeTestError("response is not a staging test intake result")
         for field in ("ok", "drive_file_found", "manifest_found",
-                      "manifest_consistent", "test_row_written"):
+                      "manifest_consistent", "test_row_written", "idempotent",
+                      "already_registered"):
             if not isinstance(raw[field], bool):
                 raise DriveStagingIntakeTestError(f"intake response field {field} is invalid")
         if not isinstance(raw["message"], str) or not isinstance(raw["errors"], list):
             raise DriveStagingIntakeTestError("intake response error fields are invalid")
-        if raw["ok"] and (not raw["test_row_written"] or raw["state"] != "presa_in_carico_test"):
+        if not isinstance(raw["existing_row"], int) or raw["existing_row"] < 0:
+            raise DriveStagingIntakeTestError("intake response existing_row is invalid")
+        if raw["ok"] and raw["state"] != "presa_in_carico_test":
             raise DriveStagingIntakeTestError("successful intake response is inconsistent")
+        if raw["ok"] and not raw["test_row_written"] and not (
+                raw["idempotent"] and raw["already_registered"] and raw["existing_row"] >= 2):
+            raise DriveStagingIntakeTestError("idempotent intake response is inconsistent")
+        if raw["test_row_written"] and (raw["idempotent"] or raw["already_registered"]):
+            raise DriveStagingIntakeTestError("written intake response cannot be idempotent")
         return cls(
             ok=raw["ok"], test_mode=True, action=raw["action"],
             attachment_id=str(raw["attachment_id"]),
@@ -65,7 +77,9 @@ class DriveStagingIntakeTestResponse:
             drive_file_found=raw["drive_file_found"],
             manifest_found=raw["manifest_found"],
             manifest_consistent=raw["manifest_consistent"],
-            test_row_written=raw["test_row_written"], state=str(raw["state"]),
+            test_row_written=raw["test_row_written"], idempotent=raw["idempotent"],
+            already_registered=raw["already_registered"],
+            existing_row=raw["existing_row"], state=str(raw["state"]),
             message=raw["message"], errors=tuple(raw["errors"]),
         )
 

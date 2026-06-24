@@ -24,14 +24,18 @@ def manifest_payload():
     }
 
 
-def response_payload(ok=True):
+def response_payload(ok=True, *, idempotent=False, conflict=False):
     manifest = manifest_payload()
     return {
         "ok": ok, "test_mode": True, "action": INTAKE_DRIVE_STAGING_TEST_ACTION,
         "attachment_id": manifest["attachment_id"],
         "staged_filename": manifest["staged_filename"],
         "drive_file_found": ok, "manifest_found": ok,
-        "manifest_consistent": ok, "test_row_written": ok,
+        "manifest_consistent": ok or conflict,
+        "test_row_written": ok and not idempotent,
+        "idempotent": idempotent,
+        "already_registered": idempotent or conflict,
+        "existing_row": 2 if idempotent or conflict else 0,
         "state": "presa_in_carico_test" if ok else "",
         "message": "written" if ok else "rejected",
         "errors": [] if ok else [{"code": "REJECTED", "message": "rejected"}],
@@ -116,3 +120,25 @@ def test_payload_has_no_gmail_or_drive_api_instructions(tmp_path):
         "https://example.invalid/exec", opener=opener
     ).intake_manifest(write_manifest(tmp_path))
     assert not ({"gmail", "drive_api", "ack", "move", "delete"} & set(captured["payload"]))
+
+
+def test_already_registered_response_is_supported(tmp_path):
+    result = DriveStagingIntakeTestClient(
+        "https://example.invalid/exec",
+        opener=lambda request, timeout: FakeResponse(response_payload(True, idempotent=True)),
+    ).intake_manifest(write_manifest(tmp_path))
+    assert result.ok is True
+    assert result.idempotent is True
+    assert result.already_registered is True
+    assert result.existing_row == 2
+    assert result.test_row_written is False
+
+
+def test_sha256_conflict_response_is_supported(tmp_path):
+    result = DriveStagingIntakeTestClient(
+        "https://example.invalid/exec",
+        opener=lambda request, timeout: FakeResponse(response_payload(False, conflict=True)),
+    ).intake_manifest(write_manifest(tmp_path))
+    assert result.ok is False
+    assert result.already_registered is True
+    assert result.test_row_written is False

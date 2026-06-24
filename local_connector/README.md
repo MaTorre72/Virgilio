@@ -272,6 +272,11 @@ Controllare la riga nel tab `Staging_Local_Test`. Il comando non invia file o
 percorsi locali, non usa Drive API dal connettore, non sposta file e non tocca
 Gmail, notifiche o il tab Bucoliche operativo.
 
+Un retry identico può restituire `ok=true`, `already_registered=true` e
+`test_row_written=false`: è il comportamento idempotente atteso e indica che la
+riga esistente non è stata duplicata. Un errore `ATTACHMENT_SHA256_CONFLICT`
+indica invece che lo stesso `attachment_id` è associato a un hash differente.
+
 L'adapter usa TLS, apre esclusivamente la cartella configurata con
 `SELECT readonly=True` e acquisisce i messaggi con `UID FETCH (BODY.PEEK[])`, che
 non imposta il flag `Seen`. `acknowledge()` e' disabilitato: non vengono eseguiti

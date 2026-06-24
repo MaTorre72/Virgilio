@@ -45,3 +45,18 @@ Rischi residui: doppia esecuzione manuale, permessi spreadsheet e modifica
 accidentale delle Script Properties. Il rollback è manuale: eliminare la riga
 test (o l'intero tab test) e rimuovere le due proprietà. Non cancellare i file
 staged come parte del rollback di questa fase.
+
+## Idempotenza della presa in carico test
+
+L'idempotenza impedisce che un retry dello stesso comando produca più righe.
+La chiave primaria è `attachment_id`, cercata esattamente nella colonna 6 del
+tab test; la colonna 9 (`sha256`) è il controllo aggiuntivo di coerenza.
+
+- stesso `attachment_id` e stesso SHA-256: nessuna append, risposta
+  `already_registered=true`, `idempotent=true` ed `existing_row` valorizzato;
+- stesso `attachment_id` e SHA-256 diverso: richiesta rifiutata con
+  `ATTACHMENT_SHA256_CONFLICT`, senza scritture;
+- `attachment_id` assente o non valido: validazione fallita prima della ricerca.
+
+Non vengono ancora aggiornate righe esistenti, rimossi file, applicata retention,
+eseguiti spostamenti o effettuata una presa in carico operativa.
