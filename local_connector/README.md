@@ -251,6 +251,27 @@ non aggiorna SQLite, Bucoliche o Gmail e non invia notifiche.
 
 Dettagli e configurazione: `../docs/DRIVE_STAGING_CLOUD_VERIFY.md`.
 
+### Presa in carico di test
+
+Dopo una verifica `cloud_visible=true`, configurare lo stesso endpoint Web App:
+
+```dotenv
+VIRGILIO_CARONTE_INTAKE_TEST_URL=https://script.google.com/macros/s/.../exec
+```
+
+Il tab `Staging_Local_Test` deve essere creato una sola volta tramite il setup
+Apps Script esplicito descritto in
+[`../docs/DRIVE_STAGING_TEST_INTAKE.md`](../docs/DRIVE_STAGING_TEST_INTAKE.md).
+Quindi inviare un solo manifest:
+
+```powershell
+python -m virgilio_connector intake-drive-staging-test --manifest "G:\...\file.pdf.manifest.json"
+```
+
+Controllare la riga nel tab `Staging_Local_Test`. Il comando non invia file o
+percorsi locali, non usa Drive API dal connettore, non sposta file e non tocca
+Gmail, notifiche o il tab Bucoliche operativo.
+
 L'adapter usa TLS, apre esclusivamente la cartella configurata con
 `SELECT readonly=True` e acquisisce i messaggi con `UID FETCH (BODY.PEEK[])`, che
 non imposta il flag `Seen`. `acknowledge()` e' disabilitato: non vengono eseguiti

@@ -18,6 +18,10 @@ from .drive_staging_verify import (
     DriveStagingVerifyClient,
     DriveStagingVerifyError,
 )
+from .drive_staging_intake_test import (
+    DriveStagingIntakeTestClient,
+    DriveStagingIntakeTestError,
+)
 
 
 def _load_env_file(path: Path) -> None:
@@ -41,6 +45,8 @@ def main() -> int:
     staging.add_argument("--dry-run", action="store_true")
     verifier = commands.add_parser("verify-drive-staging")
     verifier.add_argument("--manifest", type=Path, required=True)
+    intake = commands.add_parser("intake-drive-staging-test")
+    intake.add_argument("--manifest", type=Path, required=True)
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -83,6 +89,17 @@ def main() -> int:
         try:
             result = client.verify_manifest(args.manifest)
         except DriveStagingVerifyError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.ok else 1
+    if args.command == "intake-drive-staging-test":
+        client = DriveStagingIntakeTestClient(
+            os.environ.get("VIRGILIO_CARONTE_INTAKE_TEST_URL"),
+            timeout_seconds=float(os.environ.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15")),
+        )
+        try:
+            result = client.intake_manifest(args.manifest)
+        except DriveStagingIntakeTestError as exc:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.ok else 1

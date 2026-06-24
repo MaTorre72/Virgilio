@@ -120,6 +120,10 @@ function doPost(e) {
     return _rispostaJSON(caronteVerificaStagingDriveDryRun(dati));
   }
 
+  if (dati.action === DRIVE_STAGING_INTAKE_TEST_ACTION) {
+    return _rispostaJSON(caronteRegistraStagingDriveTest(dati));
+  }
+
   // 2. Verifica token di sicurezza
   // ⚠ Non loggare mai CONFIG.VIRGILIO_TOKEN — usare solo nomi simbolici nei log
   if (!CONFIG.VIRGILIO_TOKEN || dati.token !== CONFIG.VIRGILIO_TOKEN) {

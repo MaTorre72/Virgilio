@@ -80,6 +80,12 @@ from .drive_staging_verify import (
     DriveStagingVerifyResponse,
     DriveStagingVerifyUrlNotConfigured,
 )
+from .drive_staging_intake_test import (
+    DriveStagingIntakeTestClient,
+    DriveStagingIntakeTestError,
+    DriveStagingIntakeTestResponse,
+    DriveStagingIntakeTestUrlNotConfigured,
+)
 
 __all__ = [
     "AckDecision",
@@ -110,6 +116,10 @@ __all__ = [
     "DriveStagingVerifyError",
     "DriveStagingVerifyResponse",
     "DriveStagingVerifyUrlNotConfigured",
+    "DriveStagingIntakeTestClient",
+    "DriveStagingIntakeTestError",
+    "DriveStagingIntakeTestResponse",
+    "DriveStagingIntakeTestUrlNotConfigured",
     "LocalScanResult",
     "LocalScanner",
     "MessageStatus",
@@ -144,4 +154,4 @@ __all__ = [
     "response_to_json",
 ]
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"
