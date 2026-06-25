@@ -2,6 +2,36 @@
 
 Questo documento descrive l'architettura attuale di Virgilio e la direzione modulare da discutere prima di ogni sviluppo ulteriore.
 
+## Aggiornamento 2026-06-25
+
+Gli ultimi sviluppi chiariscono che la v1.1 deve evolvere verso Caronte Locale come nucleo operativo local-first, multi-casella e provider-agnostico. Apps Script resta utile come adapter Google opzionale, ma non deve essere il nucleo del multi-mailbox.
+
+Punti gia' risolti:
+
+- IMAP read-only;
+- quarantena/staging locale;
+- scansione locale opzionale;
+- manifest JSON;
+- staging Drive Desktop;
+- verifica cloud read-only;
+- intake test;
+- P4 chiuso solo su casella Apps Script/GmailApp.
+
+Punti da fare:
+
+- multi-account IMAP locale;
+- ack IMAP locale;
+- registro SQLite come fonte primaria;
+- adapter Bucoliche;
+- storage adapter cartelle pratica;
+- pilota 2 utenti.
+
+Punti da cambiare rispetto alla roadmap iniziale:
+
+- il multi-mailbox non va piu' risolto con GmailApp/Apps Script come nucleo;
+- Caronte Locale deve diventare il motore operativo;
+- Apps Script va trattato come adapter Google, non come piattaforma centrale.
+
 ## Architettura attuale
 
 La v1.0 e' un MVP Google Workspace mono-utente.

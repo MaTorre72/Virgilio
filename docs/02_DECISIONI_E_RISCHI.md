@@ -65,6 +65,18 @@ Questo documento raccoglie decisioni aperte, decisioni architetturali gia' assun
 
 **Alternative considerate:** database relazionale, CRM, data warehouse, archivio su file. Nessuna alternativa e' scelta in questa fase.
 
+### ADR-004 - Caronte Locale come nucleo local-first
+
+**Contesto:** gli sviluppi sul Local IMAP Connector hanno introdotto lettura IMAP read-only, quarantena locale, scansione opzionale, SQLite, manifest JSON e staging controllato. Questo rende possibile una linea v1.1 meno dipendente da GmailApp e Apps Script.
+
+**Decisione:** Caronte Locale diventa il nucleo operativo multi-casella. Apps Script resta un adapter Google opzionale per i casi in cui servono Drive, Bucoliche o altri servizi Workspace.
+
+**Motivazione:** un nucleo locale e provider-agnostico riduce il lock-in Google, rende piu' naturale il multi-account IMAP e mantiene lo stato operativo primario sotto controllo locale.
+
+**Conseguenze:** la roadmap v1.1 deve dare priorita' a multi-account IMAP, ack locale, SQLite come fonte primaria, adapter Bucoliche e storage adapter per cartelle pratica.
+
+**Limiti:** aumentano responsabilita' locali di installazione, configurazione credenziali IMAP/app password, manutenzione e supervisione operativa.
+
 ## Decisioni implicite rilevate
 
 | ID | Decisione implicita | Dove emerge | Nota |

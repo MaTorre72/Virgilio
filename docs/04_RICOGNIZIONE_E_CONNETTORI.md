@@ -72,6 +72,7 @@ Questo documento serve per la revisione con Federico e Luca. Non sceglie una sol
 | Trigger Apps Script personali | Ogni utente lavora nel proprio contesto | Installazione e manutenzione per utente | Media | Piccolo team, governance leggera |
 | Workspace Studio Flow | Approccio visuale e vicino agli utenti | Limiti su etichette, allegati, disponibilita' feature | Media | Da prototipare se disponibile nel dominio |
 | Gmail API + DWD | Centralizzato, adatto al multi-mailbox Google | Richiede admin, service account, sicurezza forte | Alta | Se Google Workspace resta centrale |
+| Local IMAP / Caronte Locale | Multi-casella, provider-agnostico, meno lock-in Google | Installazione locale, credenziali IMAP/app password, gestione manutenzione | Media | v1.1 e pilota multi-casella |
 | Upload manuale Virgilio | Massimo controllo umano, indipendente dalla posta | Meno automatico | Bassa | Fallback sempre disponibile |
 | Outlook / Power Automate | Integrato in Microsoft 365 | Dipende da licenze e governance tenant | Media | Se il team usa Outlook/Microsoft |
 | Microsoft Graph | Potente e centralizzato | Richiede competenze cloud e permessi admin | Alta | Se Microsoft 365 diventa piattaforma principale |

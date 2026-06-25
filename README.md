@@ -10,6 +10,10 @@ La versione corrente usa Google Apps Script, Google Drive, Google Sheets, Gmail 
 
 La v1.0 dimostra il flusso end-to-end su una singola casella Gmail e su un set controllato di cartelle e fogli Google. La prossima fase deve consolidare il prototipo, documentare i limiti e preparare l'evoluzione modulare senza trasformare Google Workspace in un vincolo definitivo.
 
+**v1.1 - Evoluzione verso Caronte Locale**
+
+La v1.1 sposta il baricentro verso un nucleo locale multi-casella: Apps Script resta un adapter Google opzionale, mentre Caronte Locale diventa il motore operativo provider-agnostico. SQLite locale diventa il registro primario; Bucoliche resta un output adapter ispezionabile; Drive Desktop e' lo storage adapter iniziale per il pilota, non l'architettura definitiva.
+
 ## Obiettivo operativo
 
 Virgilio riduce il costo operativo di apertura pratica e archiviazione documentale:
