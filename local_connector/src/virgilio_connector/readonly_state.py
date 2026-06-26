@@ -40,6 +40,10 @@ class ReadonlyStateStore:
                     mailbox TEXT NOT NULL, uidvalidity TEXT, message_uid TEXT NOT NULL,
                     message_id TEXT, subject TEXT NOT NULL, sender TEXT NOT NULL,
                     message_date TEXT NOT NULL,
+                    message_state TEXT NOT NULL DEFAULT 'open',
+                    ack_attempted_at TEXT, ack_completed_at TEXT,
+                    ack_strategy TEXT, ack_result TEXT,
+                    completed_at TEXT, completion_report_path TEXT,
                     UNIQUE(run_id, account_alias, mailbox, uidvalidity, message_uid)
                 );
                 CREATE TABLE IF NOT EXISTS attachments (
@@ -195,6 +199,25 @@ class ReadonlyStateStore:
                 WHERE id=?""", (status, reason, storage_adapter, staged_path,
                 staged_manifest_path, staged_filename, _now(), attachment_row_id))
 
+    def update_message_completion(self, message_row_id: int, *, message_state: str,
+                                  ack_strategy: str | None, ack_result: str,
+                                  report_path: str | None = None,
+                                  attempted: bool = False,
+                                  completed: bool = False) -> None:
+        allowed = {"ready_for_ack", "acked", "ack_failed", "completed", "completion_skipped"}
+        if message_state not in allowed:
+            raise ValueError("invalid message_state")
+        now = _now()
+        with self._connection() as db:
+            db.execute("""UPDATE messages SET message_state=?,ack_strategy=?,
+                ack_result=?,completion_report_path=COALESCE(?,completion_report_path),
+                ack_attempted_at=CASE WHEN ? THEN ? ELSE ack_attempted_at END,
+                ack_completed_at=CASE WHEN ? THEN ? ELSE ack_completed_at END,
+                completed_at=CASE WHEN ? THEN ? ELSE completed_at END
+                WHERE id=?""", (message_state, ack_strategy, ack_result, report_path,
+                1 if attempted else 0, now, 1 if completed else 0, now,
+                1 if completed else 0, now, message_row_id))
+
     @staticmethod
     def _migrate_attachments_v3(db: sqlite3.Connection) -> None:
         db.executescript("""
@@ -235,6 +258,17 @@ class ReadonlyStateStore:
         message_columns = {row[1] for row in db.execute("PRAGMA table_info(messages)")}
         if "account_alias" not in message_columns:
             db.execute("ALTER TABLE messages ADD COLUMN account_alias TEXT NOT NULL DEFAULT 'default'")
+        for name, ddl in {
+            "message_state": "ALTER TABLE messages ADD COLUMN message_state TEXT NOT NULL DEFAULT 'open'",
+            "ack_attempted_at": "ALTER TABLE messages ADD COLUMN ack_attempted_at TEXT",
+            "ack_completed_at": "ALTER TABLE messages ADD COLUMN ack_completed_at TEXT",
+            "ack_strategy": "ALTER TABLE messages ADD COLUMN ack_strategy TEXT",
+            "ack_result": "ALTER TABLE messages ADD COLUMN ack_result TEXT",
+            "completed_at": "ALTER TABLE messages ADD COLUMN completed_at TEXT",
+            "completion_report_path": "ALTER TABLE messages ADD COLUMN completion_report_path TEXT",
+        }.items():
+            if name not in message_columns:
+                db.execute(ddl)
 
     @staticmethod
     def _ensure_attachment_identity_columns(db: sqlite3.Connection) -> None:

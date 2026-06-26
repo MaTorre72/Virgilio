@@ -42,6 +42,8 @@ class LocalImapAccount:
     error_folder: str
     enabled: bool = True
     max_messages: int = 25
+    ack_enabled: bool = False
+    ack_strategy: str = "no_ack_manual"
 
     def __post_init__(self) -> None:
         if not _ALIAS_RE.fullmatch(self.account_alias):
@@ -65,6 +67,8 @@ class LocalImapAccount:
                 raise MultiAccountConfigError(f"{field_name} is required")
         if self.max_messages <= 0:
             raise MultiAccountConfigError("max_messages must be positive")
+        if self.ack_strategy not in {"no_ack_manual", "add_done_label_only"}:
+            raise MultiAccountConfigError(f"unsupported ack_strategy: {self.ack_strategy}")
 
     def to_imap_config(self, environ: Mapping[str, str] | None = None) -> ImapReadonlyConfig:
         env = os.environ if environ is None else environ
@@ -469,6 +473,8 @@ def _account_from_mapping(raw: Mapping[str, object]) -> LocalImapAccount:
         error_folder=str(raw["error_folder"]),
         enabled=_to_bool(raw.get("enabled", True)),
         max_messages=int(raw.get("max_messages", 25)),
+        ack_enabled=_to_bool(raw.get("ack_enabled", False)),
+        ack_strategy=str(raw.get("ack_strategy", "no_ack_manual")),
     )
 
 

@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
+from .completion import CompletionError, LocalCompletionRunner
 from .staging_transport import (
     LocalDriveStagingConfig,
     LocalDriveStagingTransport,
@@ -67,6 +68,9 @@ def main() -> int:
     storage = commands.add_parser("stage-ready-attachments")
     storage.add_argument("--config", type=Path, required=True)
     storage.add_argument("--dry-run", action="store_true")
+    completer = commands.add_parser("complete-staged-messages")
+    completer.add_argument("--config", type=Path, required=True)
+    completer.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -166,6 +170,19 @@ def main() -> int:
                          separators=(",", ":")))
         return 0 if all(item.status not in {"staging_failed", "staging_conflict"}
                         for item in results) else 1
+    if args.command == "complete-staged-messages":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            accounts = load_multi_account_config(args.config)
+            results = LocalCompletionRunner(
+                accounts,
+                paths=LocalDataPaths(local_root),
+            ).complete(dry_run=args.dry_run)
+        except (MultiAccountConfigError, CompletionError, FileNotFoundError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0 if all(item.status != "ack_failed" for item in results) else 1
     return 2
 
 

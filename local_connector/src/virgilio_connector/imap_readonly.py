@@ -159,3 +159,57 @@ class ImapReadonlyMailbox:
             client.logout()
         except (imaplib.IMAP4.error, OSError):
             pass
+
+
+class ImapCompletionMailbox:
+    """Minimal IMAP completion adapter: SEARCH + COPY only, no EXPUNGE/STORE."""
+
+    def __init__(self, config: ImapReadonlyConfig, *,
+                 done_folder: str,
+                 client_factory: Callable[..., object] = imaplib.IMAP4_SSL) -> None:
+        self.config = config
+        self.done_folder = done_folder
+        self._client_factory = client_factory
+
+    def input_contains_uid(self, uid: str) -> bool:
+        client = self._connect()
+        try:
+            self._select(client, self.config.mailbox, readonly=True)
+            status, data = client.uid("SEARCH", None, "UID", str(uid))
+            ImapReadonlyMailbox._require_ok(status, "UID SEARCH INPUT")
+            return bool(data and data[0] and data[0].split())
+        finally:
+            ImapReadonlyMailbox._close(client)
+
+    def done_contains_message_id(self, message_id: str) -> bool:
+        if not message_id:
+            return False
+        client = self._connect()
+        try:
+            self._select(client, self.done_folder, readonly=True)
+            status, data = client.uid("SEARCH", None, "HEADER", "Message-ID", message_id)
+            ImapReadonlyMailbox._require_ok(status, "UID SEARCH DONE")
+            return bool(data and data[0] and data[0].split())
+        finally:
+            ImapReadonlyMailbox._close(client)
+
+    def add_done_label_only(self, uid: str) -> None:
+        client = self._connect()
+        try:
+            self._select(client, self.config.mailbox, readonly=False)
+            status, _ = client.uid("COPY", str(uid), self.done_folder)
+            ImapReadonlyMailbox._require_ok(status, "UID COPY DONE")
+        finally:
+            ImapReadonlyMailbox._close(client)
+
+    def _connect(self):
+        client = self._client_factory(self.config.host, self.config.port,
+                                      timeout=self.config.timeout_seconds)
+        status, _ = client.login(self.config.username, self.config.password)
+        ImapReadonlyMailbox._require_ok(status, "LOGIN")
+        return client
+
+    @staticmethod
+    def _select(client, mailbox: str, *, readonly: bool) -> None:
+        status, _ = client.select(mailbox, readonly=readonly)
+        ImapReadonlyMailbox._require_ok(status, "SELECT")

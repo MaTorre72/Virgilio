@@ -6,6 +6,7 @@ import sys
 import pytest
 
 from virgilio_connector.imap_readonly import DetectedAttachment
+from virgilio_connector.completion import LocalCompletionRunner
 from virgilio_connector.multi_account import (
     LocalImapAccount,
     MultiAccountImapProcessor,
@@ -40,6 +41,8 @@ def write_config(tmp_path: Path) -> Path:
     error_folder: Virgilio/errore
     enabled: true
     max_messages: 7
+    ack_enabled: true
+    ack_strategy: add_done_label_only
   - account_alias: disabled_box
     email: disabled@example.invalid
     provider_hint: generic_imap
@@ -128,6 +131,32 @@ class FailingScanner:
 
     def scan(self, path):
         raise RuntimeError("boom")
+
+
+class FakeAckMailbox:
+    instances = []
+
+    def __init__(self, account, *, input_present=True, done_present=False, fail=False):
+        self.account = account
+        self.input_present = input_present
+        self.done_present = done_present
+        self.fail = fail
+        self.calls = []
+        self.__class__.instances.append(self)
+
+    def input_contains_uid(self, uid):
+        self.calls.append(("input_contains_uid", self.account.account_alias, uid))
+        return self.input_present
+
+    def done_contains_message_id(self, message_id):
+        self.calls.append(("done_contains_message_id", self.account.account_alias, message_id))
+        return self.done_present
+
+    def add_done_label_only(self, uid):
+        self.calls.append(("add_done_label_only", self.account.account_alias,
+                           self.account.done_folder, uid))
+        if self.fail:
+            raise RuntimeError("ack boom")
 
 
 def test_loads_multi_account_yaml_without_secret_values(tmp_path):
@@ -469,3 +498,168 @@ def test_stage_ready_attachments_cli_real(tmp_path, monkeypatch, capsys):
     assert output[0]["status"] == "staged_storage"
     assert (staging / output[0]["staged_path"]).is_file()
     assert (staging / output[0]["staged_manifest_path"]).is_file()
+
+
+def staged_fixture(tmp_path):
+    _, paths = ready_fixture(tmp_path)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    stage(paths, staging)
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    return accounts, paths
+
+
+def complete(paths, accounts, *, dry_run=False, mailbox_factory=None):
+    return LocalCompletionRunner(
+        accounts,
+        paths=paths,
+        environ={
+            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+        },
+        mailbox_factory=mailbox_factory or (lambda account: FakeAckMailbox(account)),
+    ).complete(dry_run=dry_run)
+
+
+def test_completion_dry_run_plans_without_imap_or_sqlite_changes(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    calls = []
+    result = complete(paths, accounts, dry_run=True,
+                      mailbox_factory=lambda account: calls.append(account))
+    assert result[0].status == "planned"
+    assert calls == []
+    assert result[0].report_path is None
+    with sqlite3.connect(paths.state_db) as db:
+        states = db.execute("SELECT DISTINCT message_state FROM messages").fetchall()
+    assert states == [("open",)]
+
+
+def test_completion_real_ack_updates_sqlite_and_report(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    FakeAckMailbox.instances.clear()
+    result = complete(paths, accounts)
+    assert result[0].status == "completed"
+    assert result[0].report_path
+    assert FakeAckMailbox.instances[0].calls == [
+        ("input_contains_uid", "marco_sigmapiu", "41"),
+        ("add_done_label_only", "marco_sigmapiu", "Virgilio/traghettate", "41"),
+    ]
+    all_calls = [str(call).upper() for inst in FakeAckMailbox.instances for call in inst.calls]
+    for forbidden in ("EXPUNGE", "STORE", "DELETE", "MOVE", "SEEN"):
+        assert not any(forbidden in call for call in all_calls)
+    report = json.loads((paths.root / result[0].report_path).read_text(encoding="utf-8"))
+    assert report["messages_completed"] == 2
+    assert report["results"][0]["account_alias"] == "marco_sigmapiu"
+    assert report["results"][0]["staged_attachments"]
+    assert "password" not in json.dumps(report).lower()
+    assert "base64" not in json.dumps(report).lower()
+    with sqlite3.connect(paths.state_db) as db:
+        rows = db.execute("""SELECT message_state,ack_strategy,ack_result,
+            ack_attempted_at,ack_completed_at,completed_at,completion_report_path
+            FROM messages ORDER BY id""").fetchall()
+        attachments = db.execute("SELECT COUNT(*) FROM attachments").fetchone()[0]
+    assert rows[0][0] == "completed"
+    assert rows[0][1] == "add_done_label_only"
+    assert rows[0][2] in {"completed", "already_acked"}
+    assert rows[0][3] is not None
+    assert rows[0][4] is not None
+    assert rows[0][5] is not None
+    assert rows[0][6] == result[0].report_path
+    assert attachments == 2
+
+
+def test_completion_skips_blocking_attachment_states(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    with sqlite3.connect(paths.state_db) as db:
+        db.execute("UPDATE attachments SET status='staging_failed' WHERE id=1")
+        db.commit()
+    result = complete(paths, accounts)
+    assert result[0].status == "completion_skipped"
+    assert "blocking" in result[0].reason
+
+
+def test_completion_ack_disabled_skips_without_imap(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    disabled = (LocalImapAccount(
+        account_alias=accounts[0].account_alias,
+        email=accounts[0].email,
+        provider_hint=accounts[0].provider_hint,
+        imap_host=accounts[0].imap_host,
+        imap_port=accounts[0].imap_port,
+        username_env=accounts[0].username_env,
+        password_env=accounts[0].password_env,
+        input_folder=accounts[0].input_folder,
+        done_folder=accounts[0].done_folder,
+        error_folder=accounts[0].error_folder,
+        ack_enabled=False,
+        ack_strategy="add_done_label_only",
+    ),)
+    calls = []
+    result = complete(paths, disabled, mailbox_factory=lambda account: calls.append(account))
+    assert result[0].status == "completion_skipped"
+    assert "ack_enabled" in result[0].reason
+    assert calls == []
+
+
+def test_completion_retry_after_completed_is_idempotent(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    first = complete(paths, accounts)
+    retry = complete(paths, accounts, mailbox_factory=lambda account: (_ for _ in ()).throw(AssertionError("no ack")))
+    assert first[0].status == "completed"
+    assert retry[0].status == "already_completed"
+
+
+def test_completion_already_in_done_folder(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    result = complete(paths, accounts,
+        mailbox_factory=lambda account: FakeAckMailbox(account, input_present=False, done_present=True))
+    assert result[0].status == "already_acked"
+    with sqlite3.connect(paths.state_db) as db:
+        assert db.execute("SELECT message_state FROM messages WHERE id=1").fetchone()[0] == "completed"
+
+
+def test_completion_ack_failure_does_not_block_other_account(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    with sqlite3.connect(paths.state_db) as db:
+        db.execute("""INSERT INTO runs(started_at,dry_run,status,messages_seen,attachments_seen,account_alias)
+            VALUES('now',0,'completed',1,1,'second_box')""")
+        run_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        db.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
+            message_id,subject,sender,message_date) VALUES(?,?,?,?,?,?,?,?,?)""",
+            (run_id, "second_box", "INBOX", "222", "99", "<second@example.invalid>",
+             "Second", "sender@example.invalid", "2026-06-25T10:00:00+00:00"))
+        message_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        db.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
+            ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
+            status,relative_path,reason,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (message_id, "second_box", "second-222-99-1", "second@example.invalid", 1,
+             "x.pdf", "x.pdf", "application/pdf", 1, "a" * 64, "staged_storage",
+             "accounts/marco_sigmapiu/quarantine/ready/41/001-report.pdf", "test", "now"))
+        db.commit()
+    second = LocalImapAccount(
+        account_alias="second_box", email="second@example.invalid",
+        provider_hint="generic", imap_host="imap.example.invalid", imap_port=993,
+        username_env="VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME",
+        password_env="VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD",
+        input_folder="INBOX", done_folder="done", error_folder="error",
+        ack_enabled=True, ack_strategy="add_done_label_only",
+    )
+    results = complete(paths, (accounts[0], second),
+        mailbox_factory=lambda account: FakeAckMailbox(account, fail=account.account_alias == "marco_sigmapiu"))
+    statuses = {item.account_alias: item.status for item in results}
+    assert statuses["marco_sigmapiu"] == "ack_failed"
+    assert statuses["second_box"] == "completed"
+
+
+def test_complete_staged_messages_cli_dry_run(tmp_path, monkeypatch, capsys):
+    accounts, paths = staged_fixture(tmp_path)
+    config = write_config(tmp_path / "cli-complete")
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(paths.root))
+    monkeypatch.setattr(sys, "argv", [
+        "python -m virgilio_connector", "complete-staged-messages",
+        "--config", str(config), "--dry-run",
+    ])
+    from virgilio_connector.__main__ import main
+    assert main() == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output[0]["status"] == "planned"

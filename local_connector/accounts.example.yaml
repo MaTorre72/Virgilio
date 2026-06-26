@@ -11,6 +11,8 @@ accounts:
     error_folder: Virgilio/errore
     enabled: true
     max_messages: 25
+    ack_enabled: false
+    ack_strategy: add_done_label_only
 
 storage:
   adapter: local_filesystem

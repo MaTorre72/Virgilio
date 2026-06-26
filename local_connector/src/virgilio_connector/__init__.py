@@ -145,6 +145,9 @@ __all__ = [
     "MultiAccountScanResult",
     "load_storage_config",
     "load_multi_account_config",
+    "CompletionError",
+    "CompletionResult",
+    "LocalCompletionRunner",
     "LocalFilesystemStorageAdapter",
     "StorageAdapterError",
     "StorageStageResult",
@@ -183,3 +186,8 @@ __all__ = [
 ]
 
 __version__ = "0.10.0"
+from .completion import (
+    CompletionError,
+    CompletionResult,
+    LocalCompletionRunner,
+)

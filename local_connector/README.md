@@ -193,6 +193,35 @@ SHA-256 post-copia e genera un manifest staged accanto al file. I file restano i
 quarantena; non viene fatto ack IMAP, non vengono chiamati Apps Script, Bucoliche,
 notifiche o staging Drive Desktop automatico.
 
+### Completamento locale controllato
+
+L'ack IMAP e' disabilitato per default. Abilitarlo solo in una casella di test:
+
+```yaml
+ack_enabled: true
+ack_strategy: add_done_label_only
+done_folder: Virgilio/traghettate
+```
+
+La strategia iniziale `add_done_label_only` copia il messaggio nella cartella/label
+`done_folder` con IMAP `COPY`. Non rimuove il messaggio dalla cartella input, non
+usa `STORE`, `MOVE`, `DELETE` o `EXPUNGE` e non marca il messaggio come letto.
+
+Esecuzione:
+
+```powershell
+python -m virgilio_connector complete-staged-messages `
+  --config accounts.local.yaml `
+  --dry-run
+python -m virgilio_connector complete-staged-messages `
+  --config accounts.local.yaml
+```
+
+Il comando completa solo messaggi con almeno un allegato `staged_storage` e senza
+stati bloccanti come `scan_failed`, `rejected_malware`, `staging_failed` o
+`staging_conflict`. Genera un report JSON in `.local_data/reports/`. Non chiama
+Apps Script, non scrive Bucoliche, non invia notifiche e non cancella messaggi.
+
 ### Scanner locale opzionale
 
 `VIRGILIO_SCANNER=auto` usa Microsoft Defender quando `MpCmdRun.exe` e'
