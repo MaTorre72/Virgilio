@@ -161,6 +161,38 @@ calcola SHA-256, esegue lo scanner locale configurato e crea un manifest JSON pe
 allegato. Non fa staging Drive Desktop, non chiama Apps Script, non scrive
 Bucoliche, non invia notifiche e non esegue ack IMAP.
 
+### Storage adapter locale
+
+Configurare nel file account locale una sezione storage, oppure usare le variabili
+`VIRGILIO_STORAGE_ADAPTER=local_filesystem` e `VIRGILIO_STORAGE_STAGING_DIR`.
+Default prudente: la cartella di destinazione deve gia' esistere.
+
+```yaml
+storage:
+  adapter: local_filesystem
+  staging_dir: C:\Percorso\Virgilio_Staging
+  use_account_subfolders: true
+  copy_manifest: true
+  overwrite: false
+  create_staging_dir: false
+```
+
+Esecuzione:
+
+```powershell
+python -m virgilio_connector stage-ready-attachments `
+  --config accounts.local.yaml `
+  --dry-run
+python -m virgilio_connector stage-ready-attachments `
+  --config accounts.local.yaml
+```
+
+Lo storage adapter copia solo allegati `ready_for_caronte`, verifica SQLite,
+manifest e file in quarantena, usa copia atomica `.uploading`/`.partial`, verifica
+SHA-256 post-copia e genera un manifest staged accanto al file. I file restano in
+quarantena; non viene fatto ack IMAP, non vengono chiamati Apps Script, Bucoliche,
+notifiche o staging Drive Desktop automatico.
+
 ### Scanner locale opzionale
 
 `VIRGILIO_SCANNER=auto` usa Microsoft Defender quando `MpCmdRun.exe` e'

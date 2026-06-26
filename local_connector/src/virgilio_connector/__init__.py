@@ -88,12 +88,19 @@ from .drive_staging_intake_test import (
 )
 from .multi_account import (
     LocalImapAccount,
+    LocalStorageConfig,
     MultiAccountAttachmentResult,
     MultiAccountConfigError,
     MultiAccountImapProcessor,
     MultiAccountReadonlyScanner,
     MultiAccountScanResult,
+    load_storage_config,
     load_multi_account_config,
+)
+from .storage_adapter import (
+    LocalFilesystemStorageAdapter,
+    StorageAdapterError,
+    StorageStageResult,
 )
 
 __all__ = [
@@ -130,12 +137,17 @@ __all__ = [
     "DriveStagingIntakeTestResponse",
     "DriveStagingIntakeTestUrlNotConfigured",
     "LocalImapAccount",
+    "LocalStorageConfig",
     "MultiAccountAttachmentResult",
     "MultiAccountConfigError",
     "MultiAccountImapProcessor",
     "MultiAccountReadonlyScanner",
     "MultiAccountScanResult",
+    "load_storage_config",
     "load_multi_account_config",
+    "LocalFilesystemStorageAdapter",
+    "StorageAdapterError",
+    "StorageStageResult",
     "LocalScanResult",
     "LocalScanner",
     "MessageStatus",

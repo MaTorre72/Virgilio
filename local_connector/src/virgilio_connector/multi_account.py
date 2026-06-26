@@ -89,6 +89,26 @@ class LocalImapAccount:
 
 
 @dataclass(frozen=True, slots=True)
+class LocalStorageConfig:
+    adapter: str
+    staging_dir: Path | None
+    use_account_subfolders: bool = True
+    copy_manifest: bool = True
+    overwrite: bool = False
+    create_staging_dir: bool = False
+
+    def __post_init__(self) -> None:
+        if self.adapter != "local_filesystem":
+            raise MultiAccountConfigError(f"unsupported storage adapter: {self.adapter}")
+        if self.staging_dir is None or not str(self.staging_dir).strip():
+            raise MultiAccountConfigError("storage.staging_dir is required")
+        if self.overwrite:
+            raise MultiAccountConfigError("storage overwrite must remain false in this phase")
+        if not self.copy_manifest:
+            raise MultiAccountConfigError("storage copy_manifest must remain true in this phase")
+
+
+@dataclass(frozen=True, slots=True)
 class MultiAccountScanResult:
     account_alias: str
     email: str
@@ -130,7 +150,7 @@ def load_multi_account_config(path: str | Path) -> tuple[LocalImapAccount, ...]:
         email: marco@example.invalid
         ...
     """
-    raw_accounts = _parse_accounts_yaml(Path(path))
+    raw_accounts, _ = _parse_config_yaml(Path(path))
     accounts = tuple(_account_from_mapping(item) for item in raw_accounts)
     if not accounts:
         raise MultiAccountConfigError("configuration must contain at least one account")
@@ -138,6 +158,25 @@ def load_multi_account_config(path: str | Path) -> tuple[LocalImapAccount, ...]:
     if len(set(aliases)) != len(aliases):
         raise MultiAccountConfigError("account_alias values must be unique")
     return accounts
+
+
+def load_storage_config(path: str | Path,
+                        environ: Mapping[str, str] | None = None) -> LocalStorageConfig:
+    _, raw_storage = _parse_config_yaml(Path(path))
+    env = os.environ if environ is None else environ
+    if raw_storage is None:
+        adapter = env.get("VIRGILIO_STORAGE_ADAPTER", "local_filesystem")
+        staging = env.get("VIRGILIO_STORAGE_STAGING_DIR", "").strip()
+        return LocalStorageConfig(adapter, Path(staging) if staging else None)
+    staging_dir = str(raw_storage.get("staging_dir", "")).strip()
+    return LocalStorageConfig(
+        adapter=str(raw_storage.get("adapter", "local_filesystem")),
+        staging_dir=Path(staging_dir) if staging_dir else None,
+        use_account_subfolders=_to_bool(raw_storage.get("use_account_subfolders", True)),
+        copy_manifest=_to_bool(raw_storage.get("copy_manifest", True)),
+        overwrite=_to_bool(raw_storage.get("overwrite", False)),
+        create_staging_dir=_to_bool(raw_storage.get("create_staging_dir", False)),
+    )
 
 
 class MultiAccountReadonlyScanner:
@@ -433,23 +472,34 @@ def _account_from_mapping(raw: Mapping[str, object]) -> LocalImapAccount:
     )
 
 
-def _parse_accounts_yaml(path: Path) -> list[dict[str, object]]:
+def _parse_config_yaml(path: Path) -> tuple[list[dict[str, object]], dict[str, object] | None]:
     if not path.is_file():
         raise MultiAccountConfigError(f"configuration file not found: {path}")
     accounts: list[dict[str, object]] = []
+    storage: dict[str, object] | None = None
     current: dict[str, object] | None = None
-    in_accounts = False
+    section: str | None = None
     for line_number, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         line = raw_line.split("#", 1)[0].rstrip()
         if not line.strip():
             continue
         if line.strip() == "accounts:":
-            in_accounts = True
+            if current is not None:
+                accounts.append(current)
+                current = None
+            section = "accounts"
             continue
-        if not in_accounts:
-            raise MultiAccountConfigError(f"unsupported content before accounts at line {line_number}")
+        if line.strip() == "storage:":
+            if current is not None:
+                accounts.append(current)
+                current = None
+            section = "storage"
+            storage = {}
+            continue
+        if section is None:
+            raise MultiAccountConfigError(f"unsupported content before a section at line {line_number}")
         stripped = line.strip()
-        if stripped.startswith("- "):
+        if section == "accounts" and stripped.startswith("- "):
             if current is not None:
                 accounts.append(current)
             current = {}
@@ -458,13 +508,19 @@ def _parse_accounts_yaml(path: Path) -> list[dict[str, object]]:
                 key, value = _split_key_value(stripped, line_number)
                 current[key] = _parse_scalar(value)
             continue
+        if section == "storage":
+            if storage is None:
+                storage = {}
+            key, value = _split_key_value(stripped, line_number)
+            storage[key] = _parse_scalar(value)
+            continue
         if current is None:
             raise MultiAccountConfigError(f"account item expected at line {line_number}")
         key, value = _split_key_value(stripped, line_number)
         current[key] = _parse_scalar(value)
     if current is not None:
         accounts.append(current)
-    return accounts
+    return accounts, storage
 
 
 def _split_key_value(text: str, line_number: int) -> tuple[str, str]:

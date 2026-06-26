@@ -24,12 +24,15 @@ from .drive_staging_intake_test import (
 )
 from .local_paths import LocalDataPaths
 from .multi_account import (
+    LocalStorageConfig,
     MultiAccountConfigError,
     MultiAccountImapProcessor,
     MultiAccountReadonlyScanner,
+    load_storage_config,
     load_multi_account_config,
 )
 from .scanner import select_scanner
+from .storage_adapter import LocalFilesystemStorageAdapter, StorageAdapterError
 
 
 def _load_env_file(path: Path) -> None:
@@ -61,6 +64,9 @@ def main() -> int:
     processor = commands.add_parser("process-imap-accounts")
     processor.add_argument("--config", type=Path, required=True)
     processor.add_argument("--dry-run", action="store_true")
+    storage = commands.add_parser("stage-ready-attachments")
+    storage.add_argument("--config", type=Path, required=True)
+    storage.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -143,6 +149,23 @@ def main() -> int:
         print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
                          separators=(",", ":")))
         return 0 if all(item.quarantine_status != "error" for item in results) else 1
+    if args.command == "stage-ready-attachments":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            # Validate account configuration too; the storage rows are keyed by account_alias.
+            load_multi_account_config(args.config)
+            storage_config = load_storage_config(args.config)
+            results = LocalFilesystemStorageAdapter(
+                state_db=local_root / "state.db",
+                local_data_root=local_root,
+                config=storage_config,
+            ).stage_ready(dry_run=args.dry_run)
+        except (MultiAccountConfigError, StorageAdapterError, FileNotFoundError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0 if all(item.status not in {"staging_failed", "staging_conflict"}
+                        for item in results) else 1
     return 2
 
 

@@ -12,7 +12,8 @@ ATTACHMENT_STATES = (
     "detected", "rejected_by_extension", "rejected_by_size", "downloaded",
     "quarantined", "ready_for_scan", "quarantined_unverified",
     "ready_for_caronte", "rejected_by_scanner", "rejected_malware",
-    "scan_failed", "staged_local_drive", "staging_failed", "error",
+    "scan_failed", "staged_local_drive", "staged_storage",
+    "staging_failed", "staging_conflict", "error",
 )
 
 
@@ -53,12 +54,13 @@ class ReadonlyStateStore:
                         'detected','rejected_by_extension','rejected_by_size','downloaded',
                         'quarantined','ready_for_scan','quarantined_unverified',
                         'ready_for_caronte','rejected_by_scanner','rejected_malware',
-                        'scan_failed','staged_local_drive',
-                        'staging_failed','error')),
+                        'scan_failed','staged_local_drive','staged_storage',
+                        'staging_failed','staging_conflict','error')),
                     relative_path TEXT, duplicate_of_id INTEGER REFERENCES attachments(id),
                     reason TEXT NOT NULL, scanner_engine TEXT,
                     scan_result TEXT, scanned_at TEXT, staged_filename TEXT,
                     staging_manifest_path TEXT, manifest_path TEXT,
+                    storage_adapter TEXT, staged_path TEXT,
                     staged_at TEXT, created_at TEXT NOT NULL,
                     UNIQUE(message_id, ordinal)
                 );
@@ -71,6 +73,7 @@ class ReadonlyStateStore:
                 self._migrate_attachments_v3(db)
             self._ensure_account_alias_columns(db)
             self._ensure_attachment_identity_columns(db)
+            self._ensure_attachment_storage_states(db)
 
     def start_run(self, account_alias: str = "default") -> int:
         with self._connection() as db:
@@ -180,6 +183,18 @@ class ReadonlyStateStore:
                 staging_manifest_path=?,staged_at=? WHERE id=?""",
                 (status, reason, staged_filename, manifest_path, _now(), attachment_id))
 
+    def update_storage(self, attachment_row_id: int, *, status: str, reason: str,
+                       storage_adapter: str | None = None, staged_path: str | None = None,
+                       staged_manifest_path: str | None = None,
+                       staged_filename: str | None = None) -> None:
+        if status not in {"staged_storage", "staging_failed", "staging_conflict"}:
+            raise ValueError("invalid storage status")
+        with self._connection() as db:
+            db.execute("""UPDATE attachments SET status=?,reason=?,storage_adapter=?,
+                staged_path=?,staging_manifest_path=?,staged_filename=?,staged_at=?
+                WHERE id=?""", (status, reason, storage_adapter, staged_path,
+                staged_manifest_path, staged_filename, _now(), attachment_row_id))
+
     @staticmethod
     def _migrate_attachments_v3(db: sqlite3.Connection) -> None:
         db.executescript("""
@@ -193,8 +208,8 @@ class ReadonlyStateStore:
                     'detected','rejected_by_extension','rejected_by_size','downloaded',
                     'quarantined','ready_for_scan','quarantined_unverified',
                     'ready_for_caronte','rejected_by_scanner','rejected_malware',
-                    'scan_failed','staged_local_drive',
-                    'staging_failed','error')),
+                    'scan_failed','staged_local_drive','staged_storage',
+                    'staging_failed','staging_conflict','error')),
                 relative_path TEXT, duplicate_of_id INTEGER REFERENCES attachments(id),
                 reason TEXT NOT NULL, scanner_engine TEXT, scan_result TEXT,
                 scanned_at TEXT, staged_filename TEXT, staging_manifest_path TEXT,
@@ -232,8 +247,58 @@ class ReadonlyStateStore:
             db.execute("ALTER TABLE attachments ADD COLUMN source_email TEXT")
         if "manifest_path" not in columns:
             db.execute("ALTER TABLE attachments ADD COLUMN manifest_path TEXT")
+        if "storage_adapter" not in columns:
+            db.execute("ALTER TABLE attachments ADD COLUMN storage_adapter TEXT")
+        if "staged_path" not in columns:
+            db.execute("ALTER TABLE attachments ADD COLUMN staged_path TEXT")
         db.execute("""CREATE UNIQUE INDEX IF NOT EXISTS idx_attachments_attachment_id
             ON attachments(attachment_id) WHERE attachment_id IS NOT NULL""")
+
+    @staticmethod
+    def _ensure_attachment_storage_states(db: sqlite3.Connection) -> None:
+        row = db.execute("""SELECT sql FROM sqlite_master
+            WHERE type='table' AND name='attachments'""").fetchone()
+        if row is None or "staged_storage" in str(row[0]):
+            return
+        db.executescript("""
+            ALTER TABLE attachments RENAME TO attachments_before_storage_states;
+            CREATE TABLE attachments (
+                id INTEGER PRIMARY KEY, message_id INTEGER NOT NULL REFERENCES messages(id),
+                account_alias TEXT NOT NULL DEFAULT 'default',
+                attachment_id TEXT, source_email TEXT,
+                ordinal INTEGER NOT NULL, original_filename TEXT,
+                sanitized_filename TEXT, declared_mime_type TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL,
+                status TEXT NOT NULL CHECK(status IN (
+                    'detected','rejected_by_extension','rejected_by_size','downloaded',
+                    'quarantined','ready_for_scan','quarantined_unverified',
+                    'ready_for_caronte','rejected_by_scanner','rejected_malware',
+                    'scan_failed','staged_local_drive','staged_storage',
+                    'staging_failed','staging_conflict','error')),
+                relative_path TEXT, duplicate_of_id INTEGER REFERENCES attachments(id),
+                reason TEXT NOT NULL, scanner_engine TEXT,
+                scan_result TEXT, scanned_at TEXT, staged_filename TEXT,
+                staging_manifest_path TEXT, manifest_path TEXT,
+                storage_adapter TEXT, staged_path TEXT,
+                staged_at TEXT, created_at TEXT NOT NULL,
+                UNIQUE(message_id, ordinal)
+            );
+            INSERT INTO attachments(
+                id,message_id,account_alias,attachment_id,source_email,ordinal,
+                original_filename,sanitized_filename,declared_mime_type,size_bytes,
+                sha256,status,relative_path,duplicate_of_id,reason,scanner_engine,
+                scan_result,scanned_at,staged_filename,staging_manifest_path,
+                manifest_path,storage_adapter,staged_path,staged_at,created_at)
+            SELECT id,message_id,account_alias,attachment_id,source_email,ordinal,
+                original_filename,sanitized_filename,declared_mime_type,size_bytes,
+                sha256,status,relative_path,duplicate_of_id,reason,scanner_engine,
+                scan_result,scanned_at,staged_filename,staging_manifest_path,
+                manifest_path,storage_adapter,staged_path,staged_at,created_at
+            FROM attachments_before_storage_states;
+            DROP TABLE attachments_before_storage_states;
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_attachments_attachment_id
+                ON attachments(attachment_id) WHERE attachment_id IS NOT NULL;
+        """)
 
     @contextmanager
     def _connection(self):

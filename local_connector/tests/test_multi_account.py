@@ -1,6 +1,7 @@
 from pathlib import Path
 import sqlite3
 import json
+import sys
 
 import pytest
 
@@ -10,11 +11,17 @@ from virgilio_connector.multi_account import (
     MultiAccountImapProcessor,
     MultiAccountConfigError,
     MultiAccountReadonlyScanner,
+    LocalStorageConfig,
+    load_storage_config,
     load_multi_account_config,
 )
 from virgilio_connector.local_paths import LocalDataPaths
 from virgilio_connector.ports import MessageReference
 from virgilio_connector.scanner import LocalScanResult, ScanVerdict
+from virgilio_connector.storage_adapter import (
+    LocalFilesystemStorageAdapter,
+    StorageAdapterError,
+)
 
 
 def write_config(tmp_path: Path) -> Path:
@@ -45,6 +52,22 @@ def write_config(tmp_path: Path) -> Path:
     error_folder: error
     enabled: false
 """, encoding="utf-8")
+    return path
+
+
+def write_storage_config(tmp_path: Path, staging_dir: Path, *,
+                         use_account_subfolders=True) -> Path:
+    path = write_config(tmp_path)
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write(f"""
+storage:
+  adapter: local_filesystem
+  staging_dir: "{staging_dir}"
+  use_account_subfolders: {str(use_account_subfolders).lower()}
+  copy_manifest: true
+  overwrite: false
+  create_staging_dir: false
+""")
     return path
 
 
@@ -301,3 +324,148 @@ def test_process_maps_scanner_verdicts_prudently(tmp_path):
     failed, _ = process(tmp_path / "failed", scanner=FailingScanner())
     assert failed[0].quarantine_status == "scan_failed"
     assert failed[0].scan_result == "failed"
+
+
+def ready_fixture(tmp_path):
+    result, paths = process(tmp_path, scanner=FakeScanner(ScanVerdict.CLEAN))
+    assert all(item.quarantine_status == "ready_for_caronte" for item in result)
+    return result, paths
+
+
+def stage(paths, staging_dir, *, dry_run=False, use_account_subfolders=True):
+    config = LocalStorageConfig(
+        "local_filesystem", staging_dir,
+        use_account_subfolders=use_account_subfolders,
+        copy_manifest=True, overwrite=False, create_staging_dir=False,
+    )
+    return LocalFilesystemStorageAdapter(
+        state_db=paths.state_db, local_data_root=paths.root, config=config
+    ).stage_ready(dry_run=dry_run)
+
+
+def test_storage_config_validation(tmp_path):
+    with pytest.raises(MultiAccountConfigError, match="staging_dir"):
+        LocalStorageConfig("local_filesystem", None)
+    with pytest.raises(MultiAccountConfigError, match="unsupported"):
+        LocalStorageConfig("ftp", tmp_path)
+    staging = tmp_path / "staging"
+    path = write_storage_config(tmp_path, staging, use_account_subfolders=False)
+    config = load_storage_config(path)
+    assert config.staging_dir == staging
+    assert config.use_account_subfolders is False
+
+
+def test_storage_missing_directory_errors(tmp_path):
+    _, paths = ready_fixture(tmp_path)
+    with pytest.raises(StorageAdapterError, match="does not exist"):
+        stage(paths, tmp_path / "missing")
+
+
+def test_storage_dry_run_does_not_copy_or_update_sqlite(tmp_path):
+    _, paths = ready_fixture(tmp_path)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    results = stage(paths, staging, dry_run=True)
+    assert len(results) == 2
+    assert all(item.status == "planned" and item.copied is False for item in results)
+    assert not list(staging.rglob("*"))
+    with sqlite3.connect(paths.state_db) as db:
+        assert db.execute("SELECT DISTINCT status FROM attachments").fetchall() == [("ready_for_caronte",)]
+
+
+def test_storage_real_copy_manifest_hash_and_sqlite(tmp_path):
+    _, paths = ready_fixture(tmp_path)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    results = stage(paths, staging)
+    assert len(results) == 2
+    first = results[0]
+    assert first.status == "staged_storage"
+    assert first.copied is True
+    staged_file = staging / first.staged_path
+    staged_manifest = staging / first.staged_manifest_path
+    assert staged_file.is_file()
+    assert staged_manifest.is_file()
+    assert staged_file.read_bytes() == b"%PDF"
+    assert (paths.root / first.source_relative_path).is_file()
+    manifest = json.loads(staged_manifest.read_text(encoding="utf-8"))
+    assert manifest["storage_adapter"] == "local_filesystem"
+    assert manifest["staged_filename"] == staged_file.name
+    assert manifest["account_alias"] == "marco_sigmapiu"
+    forbidden = {"password", "token", "file_bytes", "base64", "content", "raw"}
+    assert not (forbidden & set(manifest))
+    with sqlite3.connect(paths.state_db) as db:
+        rows = db.execute("""SELECT status,storage_adapter,staged_path,
+            staging_manifest_path,staged_filename FROM attachments ORDER BY id""").fetchall()
+    assert rows[0][0] == "staged_storage"
+    assert rows[0][1] == "local_filesystem"
+    assert rows[0][2] == first.staged_path
+    assert rows[0][3] == first.staged_manifest_path
+    assert rows[0][4] == staged_file.name
+
+
+def test_storage_account_subfolders_can_be_disabled(tmp_path):
+    _, paths = ready_fixture(tmp_path)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    result = stage(paths, staging, use_account_subfolders=False)[0]
+    assert "/" not in result.staged_path
+    assert (staging / result.staged_path).is_file()
+
+
+def test_storage_idempotency_and_conflict(tmp_path):
+    _, paths = ready_fixture(tmp_path)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    first = stage(paths, staging)[0]
+    retry = stage(paths, staging)
+    assert retry[0].status == "already_staged"
+    with sqlite3.connect(paths.state_db) as db:
+        db.execute("UPDATE attachments SET status='ready_for_caronte' WHERE id=1")
+        db.commit()
+    same_hash = stage(paths, staging)[0]
+    assert same_hash.status == "staged_storage"
+    staged_file = staging / first.staged_path
+    staged_file.write_bytes(b"different")
+    with sqlite3.connect(paths.state_db) as db:
+        db.execute("UPDATE attachments SET status='ready_for_caronte' WHERE id=1")
+        db.commit()
+    conflict = stage(paths, staging)[0]
+    assert conflict.status == "staging_conflict"
+    with sqlite3.connect(paths.state_db) as db:
+        assert db.execute("SELECT status FROM attachments WHERE id=1").fetchone()[0] == "staging_conflict"
+
+
+def test_stage_ready_attachments_cli_dry_run(tmp_path, monkeypatch, capsys):
+    _, paths = ready_fixture(tmp_path)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    config = write_storage_config(tmp_path / "cli", staging)
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(paths.root))
+    monkeypatch.setattr(sys, "argv", [
+        "python -m virgilio_connector", "stage-ready-attachments",
+        "--config", str(config), "--dry-run",
+    ])
+    from virgilio_connector.__main__ import main
+    assert main() == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output[0]["status"] == "planned"
+    assert not list(staging.rglob("*"))
+
+
+def test_stage_ready_attachments_cli_real(tmp_path, monkeypatch, capsys):
+    _, paths = ready_fixture(tmp_path)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    config = write_storage_config(tmp_path / "cli-real", staging)
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(paths.root))
+    monkeypatch.setattr(sys, "argv", [
+        "python -m virgilio_connector", "stage-ready-attachments",
+        "--config", str(config),
+    ])
+    from virgilio_connector.__main__ import main
+    assert main() == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output[0]["status"] == "staged_storage"
+    assert (staging / output[0]["staged_path"]).is_file()
+    assert (staging / output[0]["staged_manifest_path"]).is_file()
