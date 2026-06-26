@@ -23,6 +23,7 @@ from .drive_staging_intake_test import (
     DriveStagingIntakeTestClient,
     DriveStagingIntakeTestError,
 )
+from .doctor import LocalDoctor
 from .local_paths import LocalDataPaths
 from .multi_account import (
     LocalStorageConfig,
@@ -75,6 +76,8 @@ def main() -> int:
     pipeline = commands.add_parser("run-local-pipeline")
     pipeline.add_argument("--config", type=Path, required=True)
     pipeline.add_argument("--dry-run", action="store_true")
+    doctor = commands.add_parser("doctor")
+    doctor.add_argument("--config", type=Path, required=True)
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -210,6 +213,21 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.status == "ok" else 1
+    if args.command == "doctor":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            accounts = load_multi_account_config(args.config)
+            storage_config = load_storage_config(args.config)
+            result = LocalDoctor(
+                accounts, storage=storage_config, paths=LocalDataPaths(local_root),
+                scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+            ).run()
+        except MultiAccountConfigError as exc:
+            parser.exit(2, json.dumps({
+                "status": "BLOCKED", "errors": [str(exc)], "warnings": [], "accounts": []
+            }, ensure_ascii=False, separators=(",", ":")) + "\n")
+        print(result.to_json())
+        return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     return 2
 
 

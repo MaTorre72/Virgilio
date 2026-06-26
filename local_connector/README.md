@@ -234,6 +234,21 @@ esistenti. Con `ack_enabled: false` arriva allo staging/report ma non chiude le
 mail. Il report unico viene scritto in `.local_data/reports/pipeline_report_*.json`.
 Non chiama Apps Script, Bucoliche o notifiche.
 
+### Doctor locale
+
+Prima di un pilota reale:
+
+```powershell
+python -m virgilio_connector doctor --config accounts.local.yaml
+```
+
+Il doctor verifica config, variabili ambiente senza stampare segreti, IMAP
+read-only, SQLite locale, storage e scanner. Stato globale:
+
+- `READY`: prerequisiti ok;
+- `READY_WITH_WARNINGS`: eseguibile ma con avvisi, ad esempio scanner assente;
+- `BLOCKED`: correggere errori prima della pipeline.
+
 ### Scanner locale opzionale
 
 `VIRGILIO_SCANNER=auto` usa Microsoft Defender quando `MpCmdRun.exe` e'

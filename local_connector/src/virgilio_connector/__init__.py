@@ -103,6 +103,7 @@ from .storage_adapter import (
     StorageStageResult,
 )
 from .pipeline import LocalPipelineRunner, PipelineResult
+from .doctor import DoctorResult, LocalDoctor
 
 __all__ = [
     "AckDecision",
@@ -154,6 +155,8 @@ __all__ = [
     "StorageStageResult",
     "LocalPipelineRunner",
     "PipelineResult",
+    "DoctorResult",
+    "LocalDoctor",
     "LocalScanResult",
     "LocalScanner",
     "MessageStatus",

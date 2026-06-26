@@ -24,6 +24,7 @@ from virgilio_connector.storage_adapter import (
     StorageAdapterError,
 )
 from virgilio_connector.pipeline import LocalPipelineRunner
+from virgilio_connector.doctor import LocalDoctor
 
 
 def write_config(tmp_path: Path) -> Path:
@@ -746,3 +747,131 @@ def test_run_local_pipeline_cli_invalid_config(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as exc:
         main()
     assert exc.value.code == 2
+
+
+class FakeDoctorMailbox:
+    instances = []
+
+    def __init__(self, config, fail=False):
+        self.config = config
+        self.fail = fail
+        self.calls = []
+        self.__class__.instances.append(self)
+
+    def list_pending(self):
+        self.calls.append(("select_readonly", self.config.mailbox))
+        if self.fail:
+            raise RuntimeError("imap down")
+        return ()
+
+
+class FakeUnavailableScanner:
+    @property
+    def available(self):
+        return False
+
+
+def doctor_config(tmp_path, staging):
+    return write_storage_config(tmp_path, staging)
+
+
+def test_doctor_ready_with_scanner_warning(tmp_path):
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    accounts = load_multi_account_config(doctor_config(tmp_path, staging))[:1]
+    result = LocalDoctor(
+        accounts,
+        storage=load_storage_config(doctor_config(tmp_path, staging)),
+        paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner=FakeUnavailableScanner(),
+        environ={
+            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+        },
+        mailbox_factory=lambda config: FakeDoctorMailbox(config),
+    ).run()
+    assert result.status == "READY_WITH_WARNINGS"
+    assert result.accounts[0]["username_env"] == "OK"
+    assert result.accounts[0]["password_env"] == "OK"
+    assert "secret" not in result.to_json()
+
+
+def test_doctor_missing_config_cli_blocked(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", [
+        "python -m virgilio_connector", "doctor",
+        "--config", str(tmp_path / "missing.yaml"),
+    ])
+    from virgilio_connector.__main__ import main
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 2
+    captured = capsys.readouterr()
+    assert json.loads(captured.err or captured.out)["status"] == "BLOCKED"
+
+
+def test_doctor_duplicate_alias_blocked(tmp_path):
+    path = tmp_path / "dup.yaml"
+    path.write_text("""accounts:
+  - account_alias: same_alias
+    email: a@example.invalid
+    provider_hint: generic
+    imap_host: imap.example.invalid
+    imap_port: 993
+    username_env: VIRGILIO_A_USERNAME
+    password_env: VIRGILIO_A_PASSWORD
+    input_folder: INBOX
+    done_folder: done
+    error_folder: error
+  - account_alias: same_alias
+    email: b@example.invalid
+    provider_hint: generic
+    imap_host: imap.example.invalid
+    imap_port: 993
+    username_env: VIRGILIO_B_USERNAME
+    password_env: VIRGILIO_B_PASSWORD
+    input_folder: INBOX
+    done_folder: done
+    error_folder: error
+storage:
+  adapter: local_filesystem
+  staging_dir: "C:\\Temp"
+""", encoding="utf-8")
+    with pytest.raises(MultiAccountConfigError):
+        load_multi_account_config(path)
+
+
+def test_doctor_env_and_storage_missing_blocked(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    result = LocalDoctor(
+        accounts,
+        storage=LocalStorageConfig("local_filesystem", tmp_path / "missing"),
+        paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner=FakeUnavailableScanner(),
+        environ={},
+        mailbox_factory=lambda config: FakeDoctorMailbox(config),
+    ).run()
+    assert result.status == "BLOCKED"
+    assert any("username_env missing" in item for item in result.errors)
+    assert any("staging_dir does not exist" in item for item in result.errors)
+
+
+def test_doctor_imap_error_does_not_block_other_account(tmp_path):
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    accounts = (
+        LocalImapAccount("a_box", "a@example.invalid", "generic", "imap.example.invalid", 993,
+                         "A_USER", "A_PASS", "INBOX", "done", "err"),
+        LocalImapAccount("b_box", "b@example.invalid", "generic", "imap.example.invalid", 993,
+                         "B_USER", "B_PASS", "INBOX", "done", "err"),
+    )
+    result = LocalDoctor(
+        accounts, storage=LocalStorageConfig("local_filesystem", staging),
+        paths=LocalDataPaths(tmp_path / ".local_data"), scanner=FakeUnavailableScanner(),
+        environ={"A_USER": "a", "A_PASS": "a", "B_USER": "b", "B_PASS": "b"},
+        mailbox_factory=lambda config: FakeDoctorMailbox(config, fail=config.username == "a"),
+    ).run()
+    assert result.status == "BLOCKED"
+    assert [row["imap"] for row in result.accounts] == ["ERROR", "OK_READONLY"]
+    calls = [str(call).upper() for inst in FakeDoctorMailbox.instances for call in inst.calls]
+    for forbidden in ("STORE", "COPY", "MOVE", "DELETE", "EXPUNGE"):
+        assert not any(forbidden in call for call in calls)
