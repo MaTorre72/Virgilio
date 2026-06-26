@@ -1,46 +1,28 @@
 # Architettura e roadmap
 
-Questo documento descrive l'architettura attuale di Virgilio e la direzione modulare da discutere prima di ogni sviluppo ulteriore.
+Questo documento descrive l'architettura di Virgilio e la direzione di sviluppo aggiornata dopo i test sul connettore locale.
 
-## Aggiornamento 2026-06-25
+## Revisione 2026-06-26
 
-Gli ultimi sviluppi chiariscono che la v1.1 deve evolvere verso Caronte Locale come nucleo operativo local-first, multi-casella e provider-agnostico. Apps Script resta utile come adapter Google opzionale, ma non deve essere il nucleo del multi-mailbox.
+Gli ultimi sviluppi hanno chiarito un punto decisivo: il multi-casella non deve essere costruito intorno ad Apps Script/GmailApp. `GmailApp` resta utile nel prototipo Google, ma opera solo nel contesto della casella dell'account esecutore.
 
-Punti gia' risolti:
+La linea v1.1 deve quindi evolvere verso **Caronte Locale**:
 
-- IMAP read-only;
-- quarantena/staging locale;
-- scansione locale opzionale;
-- manifest JSON;
-- staging Drive Desktop;
-- verifica cloud read-only;
-- intake test;
-- P4 chiuso solo su casella Apps Script/GmailApp.
+```text
+Virgilio = interfaccia, guida, supervisione
+Caronte Locale = motore operativo locale multi-casella
+Apps Script = adapter Google opzionale
+```
 
-Punti da fare:
-
-- multi-account IMAP locale;
-- ack IMAP locale;
-- registro SQLite come fonte primaria;
-- adapter Bucoliche;
-- storage adapter cartelle pratica;
-- pilota 2 utenti.
-
-Punti da cambiare rispetto alla roadmap iniziale:
-
-- il multi-mailbox non va piu' risolto con GmailApp/Apps Script come nucleo;
-- Caronte Locale deve diventare il motore operativo;
-- Apps Script va trattato come adapter Google, non come piattaforma centrale.
-
-## Architettura attuale
+## Architettura v1.0
 
 La v1.0 e' un MVP Google Workspace mono-utente.
 
-| Livello | Implementazione attuale | Note |
+| Livello | Implementazione v1.0 | Note |
 |---|---|---|
-| Interfaccia utente | `virgilio.html` servito da `webapp.gs` | Form guidato per apertura pratica |
+| Interfaccia utente | `virgilio.html` servito da `webapp.gs` | Form guidato |
 | Automazione | Apps Script | Logica principale nel componente Caronte |
-| Posta | Gmail personale via `GmailApp` | Mono-utente, contesto dell'esecutore |
+| Posta | Gmail via `GmailApp` | Mono-utente, contesto dell'esecutore |
 | Coda temporanea | Limbo su Google Drive | Deposito allegati non ancora assegnati |
 | Archivio documentale | Google Drive / Empireo | Struttura cliente, sito, pratica |
 | Registro | Bucoliche su Google Sheets | Registro operativo, non database definitivo |
@@ -56,175 +38,183 @@ Email Gmail o form Virgilio
   -> Chat / Telegram
 ```
 
-## Architettura target modulare
+La v1.0 resta funzionante come prototipo, ma non va estesa in modo ingenuo al multi-utente.
 
-La direzione target non deve assumere che Google Workspace sia il vincolo definitivo. Il modello da valutare e':
+## Sviluppi locali gia' realizzati
+
+La linea sperimentale ha gia' validato molti pezzi utili:
+
+| Area | Stato | Nota |
+|---|---|---|
+| IMAP read-only | Fatto | Lettura senza modificare la casella |
+| `BODY.PEEK` | Fatto | Evita marcatura automatica come letta |
+| Quarantena locale | Fatto | Allegati salvati localmente prima del passaggio successivo |
+| Scanner locale opzionale | Fatto | Windows Defender integrato; ClamAV predisponibile |
+| SQLite locale | Fatto | Stato e tracciamento locale |
+| Manifest JSON | Fatto | Metadati standard per allegato |
+| Staging Drive Desktop | Fatto | Copia controllata in cartella sincronizzata |
+| Verifica cloud read-only | Fatto | Apps Script verifica presenza file/manifest senza prenderli in carico |
+| Intake test | Fatto | Scrittura su tab `Staging_Local_Test` |
+| P4 GmailApp | Fatto solo sul contesto esecutore | Confermato il limite multi-casella di Apps Script |
+
+Questi blocchi vanno consolidati, non riscritti.
+
+## Architettura target v1.1 local-first
+
+La direzione aggiornata e':
 
 ```text
-UTENTE
-  -> connettore di ingresso
-  -> comando standardizzato Caronte
-  -> Limbo controllato
-  -> Virgilio
-  -> archivio documentale definitivo
-  -> eventuale VTEnext
+Utente
+  -> client email esistente
+  -> label/cartella Virgilio/da-traghettare
+  -> Caronte Locale
+      -> lettura IMAP multi-account
+      -> quarantena locale
+      -> scansione allegati
+      -> manifest JSON
+      -> SQLite locale
+      -> storage adapter
+      -> notifier adapter
+      -> ack IMAP locale
+  -> eventuali adapter Google / Bucoliche / Drive
 ```
 
 ```mermaid
 flowchart TD
-  U["Utente"] --> C["Connettore di ingresso"]
-  C --> CMD["Comando standardizzato"]
-  CMD --> L["Limbo / coda temporanea"]
-  L --> V["Virgilio / revisione umana"]
-  V --> A["Archivio documentale"]
-  V --> B["Bucoliche / registro operativo"]
-  V --> N["Notifiche"]
-  A --> CRM["Eventuale VTEnext"]
-  AI["AI assistiva"] -. propone .-> V
+  U["Utente"] --> M["Client email"]
+  M --> I["Cartella/label Virgilio da-traghettare"]
+  I --> C["Caronte Locale"]
+  C --> Q["Quarantena locale"]
+  Q --> S["Scanner locale"]
+  S --> DB["SQLite locale"]
+  C --> ST["Storage adapter"]
+  C --> N["Notifier adapter"]
+  C --> ACK["Ack IMAP locale"]
+  C -. opzionale .-> AS["Apps Script / Google adapter"]
+  AS -. opzionale .-> B["Bucoliche"]
+  AS -. opzionale .-> D["Google Drive"]
 ```
 
-## Livelli del sistema
+## Ruoli aggiornati
 
-1. **Interfaccia utente**: form, upload manuale, eventuali viste future.
-2. **Connettori**: Gmail, Outlook, Workspace Studio, Power Automate, upload manuale.
-3. **Coda / Limbo**: area temporanea controllata, con regole di conservazione e verifica.
-4. **Nucleo Caronte**: comandi deterministici per cartelle, registro, notifiche.
-5. **Archivio documentale**: Drive, Shared Drive, SharePoint o altra scelta futura.
-6. **CRM**: VTEnext solo dopo chiarimento del flusso operativo.
-7. **AI**: supporto progressivo, sempre con revisione umana.
-
-## Roadmap
-
-### Fase 0 - Consolidamento
-
-| Voce | Contenuto |
+| Componente | Ruolo aggiornato |
 |---|---|
-| Obiettivo | Congelare v1.0 e rendere il progetto leggibile |
-| Prerequisiti | Repository Git, tag v1.0, documentazione minima |
-| Output atteso | README, changelog, roadmap, rischi documentati |
-| Criteri di completamento | Nessun nuovo sviluppo, test manuali verificati |
-| Rischi | Confondere prototipo con sistema produttivo |
-| Decisioni necessarie | Chi approva il passaggio alla fase successiva |
+| Virgilio | Interfaccia, guida, supervisione e punto di coordinamento |
+| Caronte Locale | Motore operativo locale, multi-casella e provider-agnostico |
+| Apps Script | Adapter Google opzionale, utile per Drive, Sheets o compatibilita' v1.0 |
+| Bucoliche | Registro ispezionabile/output adapter, non database primario |
+| SQLite | Registro operativo primario locale |
+| Drive Desktop | Storage adapter iniziale e reversibile |
+| AI | Funzione futura, non necessaria per il pilota v1.1 |
 
-Attivita':
+## Roadmap aggiornata
 
-- congelare v1.0;
-- verificare test;
-- documentare limiti;
-- introdurre changelog;
-- nessun nuovo sviluppo.
+### Fase A - Consolidamento
 
-### Fase 1 - Modularizzazione minima
+Obiettivo: portare su `codex/v1.1-development` solo i blocchi stabili, riducendo rami e documenti duplicati.
 
-| Voce | Contenuto |
-|---|---|
-| Obiettivo | Separare ingresso email dal nucleo operativo |
-| Prerequisiti | Formato comando di ingresso definito |
-| Output atteso | Contratto dati stabile e fallback manuale |
-| Criteri di completamento | Stesso comportamento v1.0, minore dipendenza dal client posta |
-| Rischi | Refactoring prematuro o perdita di tracciabilita' |
-| Decisioni necessarie | Quale parte resta in Apps Script |
+Output minimo:
 
-Attivita':
+- README aggiornato;
+- roadmap aggiornata;
+- decisioni architetturali chiare;
+- test locali ripetibili;
+- branch sperimentali candidate a eliminazione documentate.
 
-- separare ingresso Gmail dal nucleo Caronte;
-- definire formato standard del comando di ingresso;
-- mantenere fallback manuale;
-- migliorare log;
-- migliorare gestione allegati;
-- mantenere revisione umana.
+### Fase B - Multi-account IMAP locale
 
-### Fase 2 - Ricognizione infrastrutturale
+Obiettivo: configurare piu' caselle IMAP in Caronte Locale.
 
-| Voce | Contenuto |
-|---|---|
-| Obiettivo | Capire l'ambiente reale prima di scegliere tecnologia |
-| Prerequisiti | Riunione con utenti e responsabili |
-| Output atteso | Scheda infrastruttura compilata |
-| Criteri di completamento | Decisioni aperte aggiornate |
-| Rischi | Scegliere connettori senza conoscere vincoli reali |
-| Decisioni necessarie | Google, Microsoft o architettura ibrida |
+Requisiti:
 
-Ambiti:
+- `account_alias` obbligatorio;
+- nessuna credenziale nel repository;
+- errore su una casella non deve bloccare le altre;
+- scan read-only iniziale;
+- log separati per account.
 
-- Google Workspace;
-- Microsoft 365;
-- client email;
-- dispositivi;
-- archivio condiviso;
-- permessi;
-- backup;
-- stato VTEnext;
-- responsabilita' manutenzione.
+### Fase C - Quarantena e staging per account
 
-### Fase 3 - Pilota multi-utente
+Obiettivo: evitare commistioni tra caselle.
 
-| Voce | Contenuto |
-|---|---|
-| Obiettivo | Provare il flusso con 2-3 utenti |
-| Prerequisiti | Permessi e test sicurezza minimi |
-| Output atteso | Misure d'uso, errori, casi non previsti |
-| Criteri di completamento | Pilota concluso senza perdita documentale |
-| Rischi | Allegati malevoli, permessi errati, duplicazioni |
-| Decisioni necessarie | Criteri di estensione al resto del team |
+Requisiti:
 
-Vincoli:
+- `account_alias` in ogni record SQLite;
+- `account_alias` in ogni manifest;
+- percorsi locali separati o namespace separati;
+- idempotenza su `attachment_id` e `sha256`.
 
-- 2-3 utenti;
-- 1 sola tipologia di pratica;
-- 1 solo archivio condiviso;
-- nessuna AI su documenti riservati;
-- metriche di utilizzo.
+### Fase D - Ack IMAP locale
 
-### Fase 4 - Connettori
+Obiettivo: chiudere la mail nella stessa casella da cui e' stata letta.
 
-| Voce | Contenuto |
-|---|---|
-| Obiettivo | Scegliere una strategia di ingresso sostenibile |
-| Prerequisiti | Ricognizione completata |
-| Output atteso | Connettore pilota scelto |
-| Criteri di completamento | Decisione motivata e reversibile |
-| Rischi | Lock-in, complessita' eccessiva, costi nascosti |
-| Decisioni necessarie | Strategia multi-mailbox |
+Regola:
 
-Opzioni da valutare:
+```text
+ack solo dopo presa in carico riuscita,
+stato locale coerente,
+file gestito,
+registro aggiornato.
+```
 
-- Workspace Studio Flow;
-- trigger Apps Script personali;
-- Gmail API + Domain-Wide Delegation;
-- Power Automate;
-- Microsoft Graph;
-- upload manuale.
+Apps Script/GmailApp non deve piu' essere il meccanismo principale di ack multi-casella.
 
-### Fase 5 - AI mirata
+### Fase E - Registro SQLite e Bucoliche adapter
 
-| Voce | Contenuto |
-|---|---|
-| Obiettivo | Introdurre un agente alla volta |
-| Prerequisiti | Privacy, costi, test e revisione umana definiti |
-| Output atteso | Primo caso AI controllato |
-| Criteri di completamento | Accuratezza misurata, rollback possibile |
-| Rischi | Dati riservati, costi API, affidamento improprio |
-| Decisioni necessarie | Provider AI e categorie dati ammesse |
+Obiettivo: SQLite diventa fonte primaria locale; Bucoliche resta un output adapter opzionale.
 
-Agenti previsti:
+Requisiti:
 
-| Nome | Funzione | Input | Output | Rischio | Revisione umana | Priorita' |
-|---|---|---|---|---|---|---|
-| Minosse | Classificatore | Email, metadati, allegati selezionati | Cliente, sito, tipo pratica suggeriti | Alto | Obbligatoria | Media |
-| Dante | Ghostwriter | Dati pratica e contesto | Bozze email o note | Medio | Obbligatoria | Bassa |
-| Ulisse | Estrattore dati | Documenti tecnici | Dati strutturati | Alto | Obbligatoria | Media |
-| Cerbero | Guardiano scadenze | Registro e date | Avvisi scadenze | Medio | Necessaria per azioni | Media |
-| Lettore documentale | Da definire | Documenti | Sintesi e riferimenti | Alto | Obbligatoria | Bassa |
-| Radar normativo | Da definire | Fonti normative | Segnalazioni | Medio | Obbligatoria | Bassa |
-| Beatrice | Amministrazione futura | Dati economici | Supporto fatture/pagamenti | Alto | Obbligatoria | Futura |
+- stato operativo persistente;
+- idempotenza;
+- export/sync verso Bucoliche solo se configurato;
+- nessun blocco del flusso locale se Bucoliche non e' disponibile.
 
-Principi AI:
+### Fase F - Storage adapter cartelle pratica
 
-- niente autonomia decisionale su attivita' critiche;
-- niente invio automatico senza validazione;
-- niente archiviazione automatica senza controllo;
-- test iniziali solo su dati fittizi o anonimizzati;
-- misurazione costi API;
-- logging delle proposte AI;
-- possibilita' di rollback.
+Obiettivo: spostare/copiare file verso una destinazione documentale configurabile.
+
+Opzioni:
+
+- filesystem locale;
+- cartella server;
+- Drive Desktop;
+- OneDrive/SharePoint sincronizzato;
+- futuro rclone/API.
+
+### Fase G - Notifiche adapter
+
+Obiettivo: isolare le notifiche dal nucleo operativo.
+
+Canali possibili:
+
+- console/log;
+- Telegram;
+- Google Chat;
+- email;
+- futuro CRM.
+
+Le notifiche non devono essere la fonte primaria dello stato.
+
+### Fase H - Pilota 2 utenti
+
+Obiettivo: testare il flusso con due caselle reali e dati non critici.
+
+Criteri minimi:
+
+- due account IMAP configurati;
+- una mail di prova per casella;
+- allegati innocui;
+- registro SQLite coerente;
+- ack locale verificato;
+- nessuna perdita documentale;
+- rollback manuale documentato.
+
+## Cosa non fare ora
+
+- Non riscrivere tutta la v1.0.
+- Non costruire il multi-casella su GmailApp.
+- Non introdurre AI.
+- Non rendere Bucoliche un database.
+- Non moltiplicare branch e documenti.
+- Non cancellare lavoro storico senza tag/commit o conferma.

@@ -1,51 +1,78 @@
-# Workflow Git per Virgilio/Caronte
+# Workflow Git per Virgilio
 
-Questo repository usa Git per separare la versione stabile dallo sviluppo.
+Questo repository usa Git per separare versione stabile, sviluppo sperimentale e documentazione.
 
-## Rami
+## Rami principali
 
-- `main`: versione stabile.
-- `codex/v1.1-development`: sviluppo della prossima versione.
+| Ramo | Uso |
+|---|---|
+| `main` | Versione stabile o fotografia consolidata |
+| `codex/v1.1-development` | Sviluppo tecnico v1.1 |
+| `docs/roadmap-architettura-modulare` | Documentazione roadmap; puo' essere rinominato `roadmap` |
+
+## Regola pratica
+
+Non moltiplicare branch se non serve. Per la fase attuale:
+
+- documentazione: lavorare su `docs/roadmap-architettura-modulare`;
+- sviluppo tecnico: lavorare su `codex/v1.1-development`;
+- prototipi brevi: branch dedicata solo se il rischio e' reale;
+- branch superate: eliminare solo dopo conferma e dopo avere consolidato documentazione/codice utile.
 
 ## Versioni
 
-- `v1.0`: fotografia della versione funzionante mono-utente.
-- `v1.1`: prossima versione, dedicata a multi-mailbox, Gmail bridge, sicurezza Limbo e integrazioni successive.
+| Versione | Significato |
+|---|---|
+| `v1.0` | MVP Google Workspace mono-utente funzionante |
+| `v1.1` | Evoluzione sperimentale verso Caronte Locale multi-casella |
 
-## Procedura ordinaria
+## Procedura per aggiornare documentazione
 
-1. Lavorare sul ramo di sviluppo:
+```powershell
+git switch docs/roadmap-architettura-modulare
+git pull
+git status
+```
 
-   ```powershell
-   git switch codex/v1.1-development
-   ```
+Modificare i file `.md`, poi:
 
-2. Controllare le modifiche:
+```powershell
+git diff
+git add README.md docs
+git commit -m "docs: aggiorna roadmap Caronte locale"
+git push
+```
 
-   ```powershell
-   git status
-   git diff
-   ```
+## Procedura per sviluppo tecnico
 
-3. Salvare un avanzamento:
+```powershell
+git switch codex/v1.1-development
+git pull
+git status
+```
 
-   ```powershell
-   git add .
-   git commit -m "Descrizione breve della modifica"
-   ```
+Poi lavorare su una funzione alla volta. Prima del commit:
 
-4. Quando la versione e pronta, rientrare su `main` e integrare:
+```powershell
+git diff
+python -m pytest local_connector
+git status
+```
 
-   ```powershell
-   git switch main
-   git merge codex/v1.1-development
-   git tag v1.1
-   ```
+Commit:
+
+```powershell
+git add .
+git commit -m "feat: descrizione sintetica"
+git push
+```
 
 ## Regole pratiche
 
 - Non inserire credenziali reali nel repository.
-- Tenere i segreti in Apps Script Properties, Secret Manager o variabili ambiente.
-- Non modificare il tag `v1.0`: serve come punto di ripristino.
-- Prima di ogni modifica importante, creare un commit piccolo e leggibile.
-- I file in `_old/`, PDF, DOCX e notebook generati restano locali salvo decisione esplicita.
+- Non committare `.env`.
+- Tenere segreti in variabili ambiente, PropertiesService o strumenti equivalenti.
+- Non modificare il tag `v1.0`.
+- Fare commit piccoli e leggibili.
+- Non usare Codex per cancellare branch senza conferma esplicita.
+- Non fare merge su `main` finche' v1.1 non e' collaudata.

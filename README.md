@@ -1,86 +1,80 @@
 # Virgilio
 
-Virgilio e' un MVP interno per aiutare Sigma+ ad aprire pratiche, archiviare allegati e registrare le operazioni in modo piu' ordinato dentro l'ambiente Google Workspace.
+Virgilio e' il progetto interno Sigma+ per guidare apertura pratiche, presa in carico allegati e tracciamento operativo.
 
-La versione corrente usa Google Apps Script, Google Drive, Google Sheets, Gmail personale, Google Chat e Telegram. Il progetto e' funzionante come prototipo mono-utente, ma non e' ancora pronto per un deploy generalizzato a tutto il team.
+Il progetto nasce come MVP Google Workspace mono-utente, ma la direzione v1.1 e' ora piu' chiara: evolvere verso **Caronte Locale**, un motore operativo locale, multi-casella e meno dipendente da Google Workspace.
 
 ## Stato attuale
 
-**v1.0 - MVP Google Workspace mono-utente funzionante**
+### v1.0 - MVP Google Workspace mono-utente
 
-La v1.0 dimostra il flusso end-to-end su una singola casella Gmail e su un set controllato di cartelle e fogli Google. La prossima fase deve consolidare il prototipo, documentare i limiti e preparare l'evoluzione modulare senza trasformare Google Workspace in un vincolo definitivo.
+La v1.0 usa Google Apps Script, Google Drive, Google Sheets, Gmail, Google Chat e Telegram.
 
-**v1.1 - Evoluzione verso Caronte Locale**
-
-La v1.1 sposta il baricentro verso un nucleo locale multi-casella: Apps Script resta un adapter Google opzionale, mentre Caronte Locale diventa il motore operativo provider-agnostico. SQLite locale diventa il registro primario; Bucoliche resta un output adapter ispezionabile; Drive Desktop e' lo storage adapter iniziale per il pilota, non l'architettura definitiva.
-
-## Obiettivo operativo
-
-Virgilio riduce il costo operativo di apertura pratica e archiviazione documentale:
+Ha validato il flusso di base:
 
 1. il tecnico compila un form o marca una email da lavorare;
-2. il sistema crea o aggiorna la struttura Drive;
-3. gli allegati utili vengono depositati nel Limbo;
+2. Apps Script esegue la logica Caronte;
+3. gli allegati vengono depositati nel Limbo;
 4. le operazioni vengono registrate in Bucoliche;
-5. il team riceve una notifica strutturata.
+5. il team riceve una notifica.
 
-## Principio di sviluppo
+La v1.0 resta utile come prototipo funzionante, ma non risolve il multi-casella: `GmailApp` opera solo sulla casella dell'account che esegue lo script.
 
-**L'AI propone. Il tecnico valida. Il sistema registra.**
+### v1.1 - Evoluzione verso Caronte Locale
 
-Questo principio vale anche per le evoluzioni future: nessuna automazione critica deve archiviare, inviare, classificare in modo definitivo o produrre effetti operativi senza revisione umana esplicita.
+La v1.1 sposta il baricentro verso un nucleo locale:
 
-## Componenti attuali
+- **Virgilio**: interfaccia, guida e supervisione umana;
+- **Caronte Locale**: motore operativo locale, multi-casella e provider-agnostico;
+- **Apps Script**: adapter Google opzionale;
+- **SQLite locale**: registro operativo primario;
+- **Bucoliche**: output adapter ispezionabile, non database definitivo;
+- **Drive Desktop / filesystem**: storage adapter iniziale, non architettura definitiva.
 
-| Componente | File | Ruolo |
-|---|---|---|
-| Virgilio HTML | `virgilio.html` | Interfaccia guidata per apertura pratica |
-| Web App | `webapp.gs` | Pubblicazione e caricamento interfaccia |
-| Caronte | `caronte.gs` | Creazione cartelle, Limbo, Gmail v1.0, Drive |
-| Bucoliche | `bucoliche.gs` | Registro operativo su Google Sheets |
-| Notifiche | `notifiche.gs` | Google Chat e Telegram |
-| Anagrafiche | `anagrafiche.gs` | Clienti, siti, team, tipi pratica |
-| Setup | `setup.gs` | Trigger, credenziali in PropertiesService |
-| Test | `test.gs` | Test manuali del prototipo |
+## Sviluppi gia' completati nella linea locale
 
-## Flusso attuale
+Sono stati sviluppati e testati i seguenti blocchi:
+
+- lettura IMAP read-only;
+- uso di `BODY.PEEK` senza marcare automaticamente le mail come lette;
+- quarantena/staging locale degli allegati;
+- scansione locale opzionale;
+- manifest JSON per allegato;
+- SQLite locale per stato e tracciamento;
+- staging verso cartella locale sincronizzata con Drive Desktop;
+- verifica cloud read-only tramite Apps Script;
+- intake test su tab `Staging_Local_Test`;
+- P4 chiuso solo sul contesto Gmail visto da Apps Script/GmailApp.
+
+Questi sviluppi non vanno buttati: vanno ricondotti dentro la linea v1.1 come laboratorio e base tecnica di Caronte Locale.
+
+## Punto chiave emerso
+
+Il test P4 ha confermato il limite strutturale di Apps Script/GmailApp: lo script vede solo la casella dell'account esecutore. Per questo, il multi-casella reale non puo' dipendere da GmailApp come nucleo.
+
+La direzione corretta e':
 
 ```text
-Tecnico
-  -> Virgilio HTML oppure etichetta Gmail
-  -> Apps Script
-  -> Drive: Empireo / Limbo / cartelle pratica
-  -> Sheets: Bucoliche
-  -> Google Chat / Telegram
+Caronte Locale legge N caselle IMAP
+  -> gestisce quarantena e scansione
+  -> registra stato locale
+  -> archivia tramite storage adapter
+  -> invia notifiche tramite adapter
+  -> esegue ack IMAP sulla casella di origine
 ```
 
-Per Gmail, la v1.0 usa `GmailApp` e quindi opera nel contesto della casella dell'utente esecutore. Il multi-mailbox non e' parte della v1.0.
+Apps Script resta utile per compatibilita' Google, ma non e' piu' il centro dell'architettura futura.
 
-## Limiti noti
+## Prossime priorita'
 
-- Il flusso Gmail e' mono-utente.
-- Il Limbo e' una coda temporanea, non una quarantena completa.
-- Bucoliche e' un registro operativo, non un database definitivo.
-- Lo spostamento degli allegati richiede criteri piu' robusti prima di un uso condiviso.
-- Le notifiche sono utili al prototipo, ma il canale definitivo e' da decidere.
-- VTEnext, Cloud Run, Domain-Wide Delegation, Workspace Studio, Microsoft Graph e AI operativa sono opzioni future, non implementazioni correnti.
-- Il progetto richiede una revisione di sicurezza prima del deploy condiviso.
-
-## Test
-
-I test Apps Script sono manuali e vanno eseguiti dall'editor Google Apps Script:
-
-1. `caronteStatoCredenziali()`
-2. `caronteTest()`
-3. `testVirgilioSenzaDeploy()`
-4. `testGmailDaTraghettare()` solo con una email di prova etichettata
-
-Prima di eseguire test reali:
-
-- usare dati fittizi o non riservati;
-- non inserire token o webhook nel codice;
-- verificare permessi Drive e Sheets;
-- eliminare manualmente eventuali cartelle di test create nell'Empireo.
+1. Consolidare su `codex/v1.1-development` solo il codice stabile.
+2. Implementare configurazione multi-account IMAP.
+3. Eseguire scan read-only su due caselle.
+4. Implementare ack IMAP locale sulla casella di origine.
+5. Consolidare SQLite come registro primario.
+6. Rendere Bucoliche un adapter opzionale.
+7. Preparare storage adapter per cartelle pratica.
+8. Fare pilota con due utenti/caselle e dati non critici.
 
 ## Documentazione
 
@@ -91,8 +85,8 @@ Prima di eseguire test reali:
 - [Workflow Git](docs/GIT_WORKFLOW.md)
 - [Struttura repository](docs/REPO_STRUCTURE.md)
 
-## Avvertenza
+## Principio operativo
 
-Virgilio e' un MVP interno. Non va considerato un prodotto pronto per l'uso generalizzato, ne' una piattaforma definitiva di gestione documentale, CRM o automazione AI.
+**L'AI propone. Il tecnico valida. Il sistema registra.**
 
-Ogni estensione multi-utente deve passare da revisione condivisa, test progressivi, controllo sicurezza e decisioni esplicite su responsabilita', permessi, dati e manutenzione.
+Nessuna automazione critica deve archiviare, notificare, spostare o chiudere una mail senza stato tracciabile, idempotenza e possibilita' di verifica o rollback.

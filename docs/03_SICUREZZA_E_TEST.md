@@ -1,94 +1,130 @@
 # Sicurezza e test
 
-Questo documento raccoglie checklist e matrice test. Le voci sono formulate in modo prudenziale: indicano controlli da completare o verificare, non garanzie assolute.
+Questo documento raccoglie criteri di sicurezza e test per Virgilio/Caronte. Le voci sono prudenziali: indicano controlli da completare o verificare, non garanzie assolute.
 
-## Checklist sicurezza
+## Principio
 
-### Da completare prima del deploy condiviso
+Il sistema deve essere:
 
-- Verificare permessi delle cartelle Drive.
-- Limitare accesso al Limbo agli utenti autorizzati.
-- Tenere segreti, token e webhook fuori dal codice.
-- Verificare utenti autorizzati alla Web App.
-- Definire cosa viene loggato e cosa non deve essere loggato.
-- Verificare backup di Drive, Sheets e codice.
-- Definire gestione degli allegati potenzialmente malevoli.
-- Stabilire estensioni ammesse e vietate.
-- Valutare quarantena o area di staging separata.
-- Definire comportamento su errore parziale.
-- Definire tempo di conservazione nel Limbo.
-- Documentare procedura di recupero manuale.
+- tracciabile;
+- idempotente;
+- reversibile;
+- configurabile senza credenziali nel repository;
+- capace di fermarsi in sicurezza su errore parziale.
 
-### Da completare prima di usare AI su documenti reali
+## Sicurezza v1.0 Google Workspace
 
-- Verificare DPA o accordi con il provider.
-- Scegliere provider e regione dati.
-- Chiarire se i dati sono usati per training.
-- Definire localizzazione e conservazione dati.
-- Stabilire anonimizzazione o pseudonimizzazione.
-- Aggiornare registro trattamenti se necessario.
-- Escludere categorie documentali non adatte.
-- Rendere obbligatoria la revisione umana.
-- Testare prima con dati fittizi o anonimizzati.
-- Misurare costi API e limiti.
+Prima di usare o estendere la v1.0:
 
-### Da completare prima del multi-utente
+- verificare permessi Drive;
+- limitare accesso al Limbo;
+- tenere token, webhook e segreti fuori dal codice;
+- verificare utenti autorizzati alla Web App;
+- documentare cosa viene loggato;
+- verificare backup di Drive, Sheets e codice;
+- separare test e produzione;
+- mantenere possibilita' di rollback alla v1.0.
 
-- Definire identita' e autorizzazioni.
-- Separare ruoli utente, amministratore e manutentore.
-- Stabilire audit minimo delle operazioni.
-- Verificare permessi su ogni archivio condiviso.
-- Decidere chi mantiene il sistema.
-- Separare ambiente test e produzione.
-- Definire procedura di onboarding e offboarding utenti.
+## Sicurezza Caronte Locale v1.1
+
+Prima del pilota multi-casella:
+
+- nessuna credenziale reale nel repository;
+- `.env` escluso da Git;
+- account IMAP configurati con `account_alias`;
+- password/app password lette da variabili ambiente;
+- log senza password, token o URL segreti;
+- errore su una casella non deve bloccare le altre;
+- stato separato per account;
+- quarantena locale prima di ogni staging;
+- scanner locale ove disponibile;
+- nessuna apertura automatica degli allegati;
+- nessun ack prima di presa in carico riuscita;
+- idempotenza su `attachment_id` e `sha256`.
 
 ## Allegati malevoli
 
-Il salvataggio su Drive non deve essere considerato equivalente a una verifica completa di sicurezza. Un file puo' essere innocuo finche' resta non aperto, ma diventare rischioso se scaricato, sincronizzato, eseguito o aperto con software locale.
+Il salvataggio su Drive o su una cartella sincronizzata non equivale a verifica di sicurezza. Un file puo' restare innocuo finche' non viene aperto, eseguito o sincronizzato in ambienti non controllati.
 
-Contromisure da valutare:
+Contromisure minime per il pilota:
 
-- allowlist di estensioni;
-- blocco di eseguibili, script, macro e archivi cifrati;
-- Limbo non sincronizzato automaticamente sui client;
-- accesso limitato al Limbo;
-- naming che evidenzi stato "da verificare";
-- procedura manuale per sbloccare o archiviare;
-- configurazioni di sicurezza Google Workspace o Microsoft 365 disponibili.
+- allowlist iniziale di estensioni;
+- blocco di eseguibili, script, macro e archivi rischiosi;
+- quarantena locale;
+- scanner locale;
+- manifest JSON;
+- hash SHA256;
+- divieto di apertura automatica;
+- staging separato dall'archivio definitivo;
+- procedura manuale per file sospetti.
 
-## Matrice test
+## Stati importanti
 
-| ID | Funzione | Scenario | Input | Output atteso | Stato | Note |
-|---|---|---|---|---|---|---|
-| T01 | Virgilio | Apertura form | Accesso Web App | Form caricato | Da eseguire | Test manuale |
-| T02 | Cartelle | Creazione pratica | Cliente, sito, anno, tipo | Cartella pratica creata | Da eseguire | Dati fittizi |
-| T03 | Cartelle | Struttura trasversale | Sito senza sottocartelle | Cartelle standard presenti | Da eseguire | Verificare Adamo |
-| T04 | Limbo | Salvataggio allegato | Email con PDF > 5 KB | File nel Limbo | Da eseguire | Gmail v1.0 |
-| T05 | Limbo | Spostamento allegati | Pratica aperta dopo staging | File in corrispondenza | Da eseguire | Rischio matching temporale |
-| T06 | Allegati | File piccolo | Immagine firma | File scartato | Da eseguire | Verifica filtro |
-| T07 | Allegati | File grande | Allegato oltre limite | File scartato e log errore | Da eseguire | Limite configurato |
-| T08 | Allegati | File sospetto | Estensione da definire | Comportamento da decidere | Futuro | Richiede policy |
-| T09 | Gmail | Mono-utente | Etichetta `da-traghettare` | Thread elaborato se almeno un file salvato | Da eseguire | Solo esecutore |
-| T10 | Notifiche | Google Chat | Pratica aperta | Messaggio inviato o errore non bloccante | Da eseguire | No token in log |
-| T11 | Notifiche | Telegram | Pratica aperta | Messaggio inviato o errore non bloccante | Da eseguire | HTML escapato |
-| T12 | Errori | Webhook Chat errato | URL non valido | Operazione principale continua | Da eseguire | Log errore |
-| T13 | Errori | Telegram errato | Token/chat non validi | Operazione principale continua | Da eseguire | Log errore |
-| T14 | Errori | Drive non raggiungibile | ID cartella errato | Errore gestito | Da eseguire | Non usare dati reali |
-| T15 | Errori | Bucoliche non raggiungibile | ID foglio errato | Operazione principale da verificare | Da eseguire | Comportamento attuale tollerante |
-| T16 | Cartelle | Assenza cartella | Adamo non raggiungibile | Fallback o errore documentato | Da eseguire | Dipende dal caso |
-| T17 | Pratica | Duplicazione pratica | Stesso cliente/sito/tipo/anno | Cartella esistente riusata | Da eseguire | Verificare log |
-| T18 | Ripristino | Rollback manuale | Errore dopo creazione | Procedura documentata | Futuro | Da definire |
-| T19 | Multi-utente | Due utenti | Due caselle | Nessun blocco reciproco | Futuro | Non implementato |
-| T20 | Workspace Studio | Flow | Email con allegato | Valutazione fattibilita' | Futuro | Non implementato |
-| T21 | VTEnext | Webhook | Payload pratica | Flusso da definire | Futuro | Non implementato |
-| T22 | AI | Classificazione | Dati fittizi | Suggerimento non operativo | Futuro | Revisione umana |
+Gli stati devono essere espliciti. In particolare:
 
-## Criteri pre-deploy condiviso
+| Stato | Significato |
+|---|---|
+| `ready_for_scan` | Allegato scaricato ma non ancora verificato |
+| `ready_for_caronte` | Allegato verificato localmente e pronto per fase successiva |
+| `staged_local_drive` | Copia locale riuscita in cartella sincronizzata |
+| `cloud_visible` | File/manifest visibili lato cloud |
+| `presa_in_carico_test` | Registrazione test avvenuta |
+| `registered_local` | Stato futuro: registrazione SQLite completata |
+| `acked` | Stato futuro: mail chiusa sulla casella di origine |
 
-Prima di allargare il prototipo:
+`staged_local_drive` non significa `uploaded_to_drive`. `cloud_visible` non significa `archiviato`.
 
-- completare test T01-T17 con dati fittizi;
-- decidere D01, D03, D04, D08, D10 e D12;
-- documentare procedura di incidente;
-- verificare permessi reali con almeno due utenti pilota;
-- mantenere possibilita' di rollback alla v1.0.
+## Matrice test aggiornata
+
+| ID | Area | Scenario | Output atteso | Stato |
+|---|---|---|---|---|
+| T01 | v1.0 | Apertura form Virgilio | Form caricato | Da verificare se serve |
+| T02 | v1.0 | Creazione pratica | Cartella pratica creata | Da verificare se serve |
+| T03 | v1.0 | GmailApp mono-utente | Thread elaborato solo nella casella esecutore | Limite confermato |
+| T04 | IMAP | Lettura read-only | Nessuna modifica alla mail | Fatto |
+| T05 | IMAP | `BODY.PEEK` | Nessun flag Seen involontario | Fatto |
+| T06 | Quarantena | Download allegato | File locale + stato SQLite | Fatto |
+| T07 | Scanner | File consentito | Stato `ready_for_caronte` | Fatto |
+| T08 | Scanner | Scanner assente/errore | Stato prudenziale, non operativo | Fatto |
+| T09 | Manifest | Generazione JSON | Manifest senza path locali/byte | Fatto |
+| T10 | Dry-run | Invio metadata-only ad Apps Script | Nessun effetto operativo | Fatto |
+| T11 | Drive Desktop | Staging locale | File + manifest copiati atomicamente | Fatto |
+| T12 | Cloud verify | Verifica read-only | `cloud_visible=true` | Fatto |
+| T13 | Intake test | Scrittura tab test | Una riga in `Staging_Local_Test` | Fatto |
+| T14 | Idempotenza | Retry stesso allegato | Nessuna duplicazione | Da completare/verificare |
+| T15 | Multi-account | Due caselle IMAP | Account separati, errore isolato | Da fare |
+| T16 | Ack locale | Mail di origine | Spostamento/label sulla stessa casella IMAP | Da fare |
+| T17 | SQLite primario | Registro locale | Stato completo senza Bucoliche | Da fare |
+| T18 | Bucoliche adapter | Export opzionale | Nessun blocco se adapter fallisce | Da fare |
+| T19 | Storage adapter | Cartella pratica | File assegnato correttamente | Da fare |
+| T20 | Notifiche adapter | Notifica opzionale | Non blocca stato primario | Da fare |
+| T21 | Pilota | Due utenti/caselle | Flusso completo con rollback | Da fare |
+| T22 | AI | Classificazione | Fuori dal pilota v1.1 | Sospeso |
+
+## Criteri pre-pilota v1.1
+
+Prima del pilota con due utenti:
+
+- multi-account IMAP locale configurato;
+- almeno due caselle testate in read-only;
+- quarantena separata o tracciata per account;
+- ack IMAP locale testato su mail non critiche;
+- SQLite locale come fonte primaria;
+- Bucoliche solo come adapter opzionale;
+- storage adapter scelto per il test;
+- procedura rollback scritta;
+- nessuna AI su dati reali;
+- nessun segreto nel repository.
+
+## Criteri di stop
+
+Il sistema deve fermarsi senza procedere se:
+
+- mancano credenziali/configurazione account;
+- la cartella di staging non esiste;
+- lo scanner segnala rischio o fallisce in modo ambiguo;
+- hash post-copia non coincide;
+- manifest non coerente;
+- stato gia' registrato con hash diverso;
+- ack richiesto prima del completamento dello stato locale;
+- una casella non autorizzata viene trovata in configurazione.
