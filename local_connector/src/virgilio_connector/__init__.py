@@ -102,6 +102,7 @@ from .storage_adapter import (
     StorageAdapterError,
     StorageStageResult,
 )
+from .pipeline import LocalPipelineRunner, PipelineResult
 
 __all__ = [
     "AckDecision",
@@ -151,6 +152,8 @@ __all__ = [
     "LocalFilesystemStorageAdapter",
     "StorageAdapterError",
     "StorageStageResult",
+    "LocalPipelineRunner",
+    "PipelineResult",
     "LocalScanResult",
     "LocalScanner",
     "MessageStatus",

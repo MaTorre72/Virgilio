@@ -32,6 +32,7 @@ from .multi_account import (
     load_storage_config,
     load_multi_account_config,
 )
+from .pipeline import LocalPipelineRunner
 from .scanner import select_scanner
 from .storage_adapter import LocalFilesystemStorageAdapter, StorageAdapterError
 
@@ -71,6 +72,9 @@ def main() -> int:
     completer = commands.add_parser("complete-staged-messages")
     completer.add_argument("--config", type=Path, required=True)
     completer.add_argument("--dry-run", action="store_true")
+    pipeline = commands.add_parser("run-local-pipeline")
+    pipeline.add_argument("--config", type=Path, required=True)
+    pipeline.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -183,6 +187,29 @@ def main() -> int:
         print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
                          separators=(",", ":")))
         return 0 if all(item.status != "ack_failed" for item in results) else 1
+    if args.command == "run-local-pipeline":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            accounts = load_multi_account_config(args.config)
+            storage_config = load_storage_config(args.config)
+            paths = LocalDataPaths(local_root)
+            result = LocalPipelineRunner(
+                accounts, paths=paths, config_path=args.config,
+                scanner_factory=lambda: MultiAccountReadonlyScanner(accounts, paths=paths),
+                processor_factory=lambda: MultiAccountImapProcessor(
+                    accounts, paths=paths,
+                    scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+                    max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
+                ),
+                storage_factory=lambda: LocalFilesystemStorageAdapter(
+                    state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
+                ),
+                completion_factory=lambda: LocalCompletionRunner(accounts, paths=paths),
+            ).run(dry_run=args.dry_run)
+        except (MultiAccountConfigError, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.status == "ok" else 1
     return 2
 
 

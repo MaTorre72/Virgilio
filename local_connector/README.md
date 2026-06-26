@@ -222,6 +222,18 @@ stati bloccanti come `scan_failed`, `rejected_malware`, `staging_failed` o
 `staging_conflict`. Genera un report JSON in `.local_data/reports/`. Non chiama
 Apps Script, non scrive Bucoliche, non invia notifiche e non cancella messaggi.
 
+### Pipeline locale unica
+
+```powershell
+python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run
+python -m virgilio_connector run-local-pipeline --config accounts.local.yaml
+```
+
+La pipeline esegue scan, process, storage e completamento riusando i blocchi
+esistenti. Con `ack_enabled: false` arriva allo staging/report ma non chiude le
+mail. Il report unico viene scritto in `.local_data/reports/pipeline_report_*.json`.
+Non chiama Apps Script, Bucoliche o notifiche.
+
 ### Scanner locale opzionale
 
 `VIRGILIO_SCANNER=auto` usa Microsoft Defender quando `MpCmdRun.exe` e'

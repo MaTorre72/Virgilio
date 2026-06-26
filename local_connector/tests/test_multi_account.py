@@ -23,6 +23,7 @@ from virgilio_connector.storage_adapter import (
     LocalFilesystemStorageAdapter,
     StorageAdapterError,
 )
+from virgilio_connector.pipeline import LocalPipelineRunner
 
 
 def write_config(tmp_path: Path) -> Path:
@@ -663,3 +664,85 @@ def test_complete_staged_messages_cli_dry_run(tmp_path, monkeypatch, capsys):
     assert main() == 0
     output = json.loads(capsys.readouterr().out)
     assert output[0]["status"] == "planned"
+
+
+class FakePhase:
+    def __init__(self, name, log, result=(), fail=False):
+        self.name = name
+        self.log = log
+        self.result = result
+        self.fail = fail
+
+    def scan(self, dry_run):
+        self.log.append((self.name, dry_run))
+        if self.fail:
+            raise RuntimeError("phase boom")
+        return self.result
+
+    def process(self, dry_run):
+        self.log.append((self.name, dry_run))
+        if self.fail:
+            raise RuntimeError("phase boom")
+        return self.result
+
+    def stage_ready(self, dry_run):
+        self.log.append((self.name, dry_run))
+        if self.fail:
+            raise RuntimeError("phase boom")
+        return self.result
+
+    def complete(self, dry_run):
+        self.log.append((self.name, dry_run))
+        if self.fail:
+            raise RuntimeError("phase boom")
+        return self.result
+
+
+def test_pipeline_dry_run_no_report_and_order(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    log = []
+    runner = LocalPipelineRunner(
+        accounts, paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner_factory=lambda: FakePhase("scan", log),
+        processor_factory=lambda: FakePhase("process", log),
+        storage_factory=lambda: FakePhase("storage", log),
+        completion_factory=lambda: FakePhase("completion", log),
+        config_path=tmp_path / "accounts.yaml",
+    )
+    result = runner.run(dry_run=True)
+    assert result.status == "ok"
+    assert result.report_path is None
+    assert log == [("scan", True), ("process", True), ("storage", True), ("completion", True)]
+    assert not (tmp_path / ".local_data").exists()
+
+
+def test_pipeline_real_report_and_error_collection(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    log = []
+    runner = LocalPipelineRunner(
+        accounts, paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner_factory=lambda: FakePhase("scan", log),
+        processor_factory=lambda: FakePhase("process", log, fail=True),
+        storage_factory=lambda: FakePhase("storage", log),
+        completion_factory=lambda: FakePhase("completion", log),
+    )
+    result = runner.run(dry_run=False)
+    assert result.status == "completed_with_errors"
+    assert result.report_path
+    assert log == [("scan", False), ("process", False), ("storage", False), ("completion", False)]
+    report = json.loads((tmp_path / ".local_data" / result.report_path).read_text(encoding="utf-8"))
+    assert report["errors"]
+    text = json.dumps(report).lower()
+    for forbidden in ("password", "token", "base64", "file_bytes"):
+        assert forbidden not in text
+
+
+def test_run_local_pipeline_cli_invalid_config(tmp_path, monkeypatch):
+    monkeypatch.setattr(sys, "argv", [
+        "python -m virgilio_connector", "run-local-pipeline",
+        "--config", str(tmp_path / "missing.yaml"), "--dry-run",
+    ])
+    from virgilio_connector.__main__ import main
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 2
