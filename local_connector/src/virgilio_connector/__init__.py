@@ -88,7 +88,9 @@ from .drive_staging_intake_test import (
 )
 from .multi_account import (
     LocalImapAccount,
+    MultiAccountAttachmentResult,
     MultiAccountConfigError,
+    MultiAccountImapProcessor,
     MultiAccountReadonlyScanner,
     MultiAccountScanResult,
     load_multi_account_config,
@@ -128,7 +130,9 @@ __all__ = [
     "DriveStagingIntakeTestResponse",
     "DriveStagingIntakeTestUrlNotConfigured",
     "LocalImapAccount",
+    "MultiAccountAttachmentResult",
     "MultiAccountConfigError",
+    "MultiAccountImapProcessor",
     "MultiAccountReadonlyScanner",
     "MultiAccountScanResult",
     "load_multi_account_config",

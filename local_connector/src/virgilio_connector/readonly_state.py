@@ -11,8 +11,8 @@ import sqlite3
 ATTACHMENT_STATES = (
     "detected", "rejected_by_extension", "rejected_by_size", "downloaded",
     "quarantined", "ready_for_scan", "quarantined_unverified",
-    "ready_for_caronte", "rejected_by_scanner", "staged_local_drive",
-    "staging_failed", "error",
+    "ready_for_caronte", "rejected_by_scanner", "rejected_malware",
+    "scan_failed", "staged_local_drive", "staging_failed", "error",
 )
 
 
@@ -43,18 +43,23 @@ class ReadonlyStateStore:
                 );
                 CREATE TABLE IF NOT EXISTS attachments (
                     id INTEGER PRIMARY KEY, message_id INTEGER NOT NULL REFERENCES messages(id),
+                    account_alias TEXT NOT NULL DEFAULT 'default',
+                    attachment_id TEXT,
+                    source_email TEXT,
                     ordinal INTEGER NOT NULL, original_filename TEXT,
                     sanitized_filename TEXT, declared_mime_type TEXT NOT NULL,
                     size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL,
                     status TEXT NOT NULL CHECK(status IN (
                         'detected','rejected_by_extension','rejected_by_size','downloaded',
                         'quarantined','ready_for_scan','quarantined_unverified',
-                        'ready_for_caronte','rejected_by_scanner','staged_local_drive',
+                        'ready_for_caronte','rejected_by_scanner','rejected_malware',
+                        'scan_failed','staged_local_drive',
                         'staging_failed','error')),
                     relative_path TEXT, duplicate_of_id INTEGER REFERENCES attachments(id),
                     reason TEXT NOT NULL, scanner_engine TEXT,
                     scan_result TEXT, scanned_at TEXT, staged_filename TEXT,
-                    staging_manifest_path TEXT, staged_at TEXT, created_at TEXT NOT NULL,
+                    staging_manifest_path TEXT, manifest_path TEXT,
+                    staged_at TEXT, created_at TEXT NOT NULL,
                     UNIQUE(message_id, ordinal)
                 );
             """)
@@ -65,6 +70,7 @@ class ReadonlyStateStore:
             if "staged_filename" not in columns:
                 self._migrate_attachments_v3(db)
             self._ensure_account_alias_columns(db)
+            self._ensure_attachment_identity_columns(db)
 
     def start_run(self, account_alias: str = "default") -> int:
         with self._connection() as db:
@@ -85,19 +91,29 @@ class ReadonlyStateStore:
                        sanitized_filename: str | None, declared_mime_type: str,
                        size_bytes: int, sha256: str, status: str, relative_path: str | None,
                        duplicate_of_id: int | None, reason: str,
-                       scanner_engine: str | None = None, scan_result: str | None = None) -> int:
+                       scanner_engine: str | None = None, scan_result: str | None = None,
+                       account_alias: str = "default", attachment_id: str | None = None,
+                       source_email: str | None = None, manifest_path: str | None = None) -> int:
         if status not in ATTACHMENT_STATES:
             raise ValueError(f"invalid attachment status: {status}")
         with self._connection() as db:
             cursor = db.execute("""INSERT INTO attachments(
-                message_id,ordinal,original_filename,sanitized_filename,declared_mime_type,
+                message_id,account_alias,attachment_id,source_email,
+                ordinal,original_filename,sanitized_filename,declared_mime_type,
                 size_bytes,sha256,status,relative_path,duplicate_of_id,reason,
-                scanner_engine,scan_result,scanned_at,created_at
-                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (message_id, ordinal, original_filename,
+                scanner_engine,scan_result,scanned_at,manifest_path,created_at
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (message_id, account_alias,
+                attachment_id, source_email, ordinal, original_filename,
                 sanitized_filename, declared_mime_type, size_bytes, sha256, status,
                 relative_path, duplicate_of_id, reason, scanner_engine, scan_result,
-                _now() if scanner_engine else None, _now()))
+                _now() if scanner_engine else None, manifest_path, _now()))
             return int(cursor.lastrowid)
+
+    def find_by_attachment_id(self, attachment_id: str):
+        with self._connection() as db:
+            return db.execute("""SELECT id, sha256, status, relative_path, manifest_path
+                FROM attachments WHERE attachment_id=? ORDER BY id LIMIT 1""",
+                (attachment_id,)).fetchone()
 
     def find_by_sha256(self, sha256: str):
         with self._connection() as db:
@@ -176,7 +192,8 @@ class ReadonlyStateStore:
                 status TEXT NOT NULL CHECK(status IN (
                     'detected','rejected_by_extension','rejected_by_size','downloaded',
                     'quarantined','ready_for_scan','quarantined_unverified',
-                    'ready_for_caronte','rejected_by_scanner','staged_local_drive',
+                    'ready_for_caronte','rejected_by_scanner','rejected_malware',
+                    'scan_failed','staged_local_drive',
                     'staging_failed','error')),
                 relative_path TEXT, duplicate_of_id INTEGER REFERENCES attachments(id),
                 reason TEXT NOT NULL, scanner_engine TEXT, scan_result TEXT,
@@ -203,6 +220,20 @@ class ReadonlyStateStore:
         message_columns = {row[1] for row in db.execute("PRAGMA table_info(messages)")}
         if "account_alias" not in message_columns:
             db.execute("ALTER TABLE messages ADD COLUMN account_alias TEXT NOT NULL DEFAULT 'default'")
+
+    @staticmethod
+    def _ensure_attachment_identity_columns(db: sqlite3.Connection) -> None:
+        columns = {row[1] for row in db.execute("PRAGMA table_info(attachments)")}
+        if "account_alias" not in columns:
+            db.execute("ALTER TABLE attachments ADD COLUMN account_alias TEXT NOT NULL DEFAULT 'default'")
+        if "attachment_id" not in columns:
+            db.execute("ALTER TABLE attachments ADD COLUMN attachment_id TEXT")
+        if "source_email" not in columns:
+            db.execute("ALTER TABLE attachments ADD COLUMN source_email TEXT")
+        if "manifest_path" not in columns:
+            db.execute("ALTER TABLE attachments ADD COLUMN manifest_path TEXT")
+        db.execute("""CREATE UNIQUE INDEX IF NOT EXISTS idx_attachments_attachment_id
+            ON attachments(attachment_id) WHERE attachment_id IS NOT NULL""")
 
     @contextmanager
     def _connection(self):

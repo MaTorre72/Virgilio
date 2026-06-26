@@ -3,15 +3,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
+import hashlib
+import json
 import os
 from pathlib import Path
 import re
 from typing import Callable, Mapping, Sequence
 
+from .files import sanitize_filename
 from .imap_readonly import ImapReadonlyConfig, ImapReadonlyMailbox
 from .local_paths import LocalDataPaths
+from .policy import AttachmentPolicy, PolicyDecision
 from .ports import MessageReference
 from .readonly_state import ReadonlyStateStore
+from .scanner import LocalScanner, ScanVerdict, UnconfiguredScanner
 
 
 class MultiAccountConfigError(ValueError):
@@ -93,6 +99,27 @@ class MultiAccountScanResult:
     error: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class MultiAccountAttachmentResult:
+    account_alias: str
+    source_email: str
+    message_uid: str
+    message_id: str
+    subject: str
+    attachment_id: str
+    original_filename: str | None
+    sanitized_filename: str | None
+    sha256: str
+    size_bytes: int
+    mime_type: str
+    scan_engine: str | None
+    scan_result: str | None
+    quarantine_status: str
+    saved: bool
+    manifest_path: str | None = None
+    error: str | None = None
+
+
 def load_multi_account_config(path: str | Path) -> tuple[LocalImapAccount, ...]:
     """Load a small, repository-free YAML subset for local account config.
 
@@ -164,6 +191,221 @@ class MultiAccountReadonlyScanner:
                     True, "error", 0, str(exc),
                 ))
         return tuple(results)
+
+
+class MultiAccountImapProcessor:
+    """Downloads allowed attachments into per-account local quarantine only."""
+
+    def __init__(self, accounts: Sequence[LocalImapAccount], *,
+                 paths: LocalDataPaths | None = None,
+                 environ: Mapping[str, str] | None = None,
+                 mailbox_factory: Callable[[ImapReadonlyConfig, Path], object] | None = None,
+                 policy: AttachmentPolicy | None = None,
+                 scanner: LocalScanner | None = None,
+                 max_attachment_bytes: int = 25 * 1024 * 1024) -> None:
+        if max_attachment_bytes <= 0:
+            raise ValueError("max_attachment_bytes must be positive")
+        self.accounts = tuple(accounts)
+        self.paths = paths or LocalDataPaths()
+        self.environ = os.environ if environ is None else environ
+        self.mailbox_factory = mailbox_factory or (
+            lambda config, root: ImapReadonlyMailbox(config, root)
+        )
+        self.policy = policy or AttachmentPolicy()
+        self.scanner = scanner or UnconfiguredScanner()
+        self.max_attachment_bytes = max_attachment_bytes
+
+    def process(self, *, dry_run: bool) -> tuple[MultiAccountAttachmentResult, ...]:
+        if not dry_run:
+            self.paths.root.mkdir(parents=True, exist_ok=True)
+            store = ReadonlyStateStore(self.paths.state_db)
+            store.initialize()
+        else:
+            store = None
+        results: list[MultiAccountAttachmentResult] = []
+        for account in self.accounts:
+            if not account.enabled:
+                continue
+            try:
+                imap_config = account.to_imap_config(self.environ)
+                account_root = self.paths.root / "accounts" / account.account_alias
+                mailbox = self.mailbox_factory(imap_config, account_root / "quarantine")
+                messages = tuple(mailbox.list_pending())
+                run_id = store.start_run(account_alias=account.account_alias) if store else None
+                attachments_seen = 0
+                try:
+                    for message in messages:
+                        message_row_id = (store.add_message(run_id, message,
+                                          account_alias=account.account_alias)
+                                          if store and run_id is not None else None)
+                        for attachment in mailbox.detect_attachments(message):
+                            attachments_seen += 1
+                            results.append(self._handle_attachment(
+                                account, account_root, store, message_row_id,
+                                message, attachment, dry_run=dry_run,
+                            ))
+                    if store and run_id is not None:
+                        store.complete_run(run_id, messages_seen=len(messages),
+                                           attachments_seen=attachments_seen)
+                except Exception:
+                    if store and run_id is not None:
+                        store.complete_run(run_id, messages_seen=len(messages),
+                                           attachments_seen=attachments_seen, status="error")
+                    raise
+            except Exception as exc:
+                results.append(MultiAccountAttachmentResult(
+                    account.account_alias, account.email, "", "", "", "", None, None,
+                    "", 0, "", None, None, "error", False, error=str(exc),
+                ))
+        return tuple(results)
+
+    def _handle_attachment(self, account: LocalImapAccount, account_root: Path,
+                           store: ReadonlyStateStore | None, message_row_id: int | None,
+                           message: MessageReference, attachment, *, dry_run: bool
+                           ) -> MultiAccountAttachmentResult:
+        payload = attachment.payload
+        digest = hashlib.sha256(payload).hexdigest()
+        sanitized = (sanitize_filename(attachment.original_filename)
+                     if attachment.original_filename else None)
+        attachment_id = _attachment_id(account.account_alias, message, attachment.ordinal)
+        status, reason = self._decision(attachment.original_filename, len(payload))
+        scan_engine = None
+        scan_result = None
+        saved = False
+        relative_path = None
+        manifest_relative = None
+        if dry_run:
+            return self._result(account, message, attachment, attachment_id, sanitized,
+                                digest, status, scan_engine, scan_result, False, None)
+        if store is None or message_row_id is None:
+            raise RuntimeError("state store is required outside dry-run")
+        existing = store.find_by_attachment_id(attachment_id)
+        if existing:
+            if str(existing["sha256"]) != digest:
+                return self._result(account, message, attachment, attachment_id, sanitized,
+                    digest, "error", None, None, False, None,
+                    error="attachment_id already exists with different sha256")
+            return self._result(account, message, attachment, attachment_id, sanitized,
+                digest, str(existing["status"]), None, None, False,
+                str(existing["manifest_path"]) if existing["manifest_path"] else None)
+        if status == "quarantined_unverified" and sanitized:
+            quarantine = account_root / "quarantine"
+            incoming = quarantine / "incoming" / sanitize_filename(message.message_uid)
+            ready = quarantine / "ready" / sanitize_filename(message.message_uid)
+            rejected = quarantine / "rejected" / sanitize_filename(message.message_uid)
+            manifests = account_root / "manifests"
+            incoming.mkdir(parents=True, exist_ok=True)
+            manifests.mkdir(parents=True, exist_ok=True)
+            target = incoming / f"{attachment.ordinal:03d}-{sanitized}"
+            temporary = target.with_suffix(target.suffix + ".attachment.tmp")
+            temporary.write_bytes(payload)
+            temporary.replace(target)
+            saved = True
+            scan_path = target
+            try:
+                scan = self.scanner.scan(scan_path)
+            except Exception as exc:
+                scan = None
+                scan_engine = type(self.scanner).__name__
+                scan_result = "failed"
+                status = "scan_failed"
+                reason = f"scanner failed: {exc}"
+            if scan and scan.verdict is ScanVerdict.CLEAN:
+                scan_engine = scan.engine
+                scan_result = scan.verdict.value
+                reason = scan.detail
+                status = "ready_for_caronte"
+                ready.mkdir(parents=True, exist_ok=True)
+                destination = ready / target.name
+                scan_path.replace(destination)
+                scan_path = destination
+            elif scan and scan.verdict is ScanVerdict.INFECTED:
+                scan_engine = scan.engine
+                scan_result = scan.verdict.value
+                reason = scan.detail
+                status = "rejected_malware"
+                rejected.mkdir(parents=True, exist_ok=True)
+                destination = rejected / target.name
+                scan_path.replace(destination)
+                scan_path = destination
+            elif scan and scan.verdict is ScanVerdict.UNVERIFIED:
+                scan_engine = scan.engine
+                scan_result = scan.verdict.value
+                reason = scan.detail
+                status = "quarantined_unverified"
+            relative_path = scan_path.relative_to(self.paths.root).as_posix()
+            manifest_path = manifests / f"{attachment_id}.manifest.json"
+            manifest = self._manifest(account, message, attachment, attachment_id,
+                sanitized, digest, status, scan_engine, scan_result)
+            manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2),
+                                     encoding="utf-8")
+            manifest_relative = manifest_path.relative_to(self.paths.root).as_posix()
+        store.add_attachment(message_row_id, ordinal=attachment.ordinal,
+            original_filename=attachment.original_filename, sanitized_filename=sanitized,
+            declared_mime_type=attachment.declared_mime_type, size_bytes=len(payload),
+            sha256=digest, status=status, relative_path=relative_path,
+            duplicate_of_id=None, reason=reason, scanner_engine=scan_engine,
+            scan_result=scan_result, account_alias=account.account_alias,
+            attachment_id=attachment_id, source_email=account.email,
+            manifest_path=manifest_relative)
+        return self._result(account, message, attachment, attachment_id, sanitized,
+                            digest, status, scan_engine, scan_result, saved,
+                            manifest_relative)
+
+    def _decision(self, filename: str | None, size_bytes: int) -> tuple[str, str]:
+        if size_bytes > self.max_attachment_bytes:
+            return "rejected_by_size", "attachment exceeds configured size limit"
+        if not filename:
+            return "rejected_by_extension", "attachment has no filename"
+        result = self.policy.evaluate_filename(filename)
+        if result.decision is not PolicyDecision.ALLOW:
+            return "rejected_by_extension", result.reason
+        return "quarantined_unverified", "extension allowed; scanner evidence required"
+
+    @staticmethod
+    def _manifest(account: LocalImapAccount, message: MessageReference, attachment,
+                  attachment_id: str, sanitized: str | None, digest: str,
+                  status: str, scan_engine: str | None, scan_result: str | None
+                  ) -> dict[str, object]:
+        return {
+            "schema_version": "1.0",
+            "connector_type": "local_imap",
+            "account_alias": account.account_alias,
+            "source_email": account.email,
+            "source_message_uid": message.message_uid,
+            "source_message_id": message.message_id,
+            "subject": message.subject,
+            "attachment_id": attachment_id,
+            "original_filename": attachment.original_filename,
+            "sanitized_filename": sanitized,
+            "sha256": digest,
+            "size_bytes": len(attachment.payload),
+            "mime_type": attachment.declared_mime_type,
+            "scan_engine": scan_engine,
+            "scan_result": scan_result,
+            "quarantine_status": status,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    @staticmethod
+    def _result(account: LocalImapAccount, message: MessageReference, attachment,
+                attachment_id: str, sanitized: str | None, digest: str, status: str,
+                scan_engine: str | None, scan_result: str | None, saved: bool,
+                manifest_path: str | None, error: str | None = None
+                ) -> MultiAccountAttachmentResult:
+        return MultiAccountAttachmentResult(
+            account.account_alias, account.email, message.message_uid,
+            message.message_id, message.subject, attachment_id,
+            attachment.original_filename, sanitized, digest, len(attachment.payload),
+            attachment.declared_mime_type, scan_engine, scan_result, status, saved,
+            manifest_path, error,
+        )
+
+
+def _attachment_id(account_alias: str, message: MessageReference, ordinal: int) -> str:
+    uidvalidity = sanitize_filename(message.uidvalidity or "unknown")
+    uid = sanitize_filename(message.message_uid)
+    return f"{account_alias}-{uidvalidity}-{uid}-{ordinal}"
 
 
 def _account_from_mapping(raw: Mapping[str, object]) -> LocalImapAccount:

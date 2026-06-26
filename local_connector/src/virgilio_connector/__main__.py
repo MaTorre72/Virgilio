@@ -25,9 +25,11 @@ from .drive_staging_intake_test import (
 from .local_paths import LocalDataPaths
 from .multi_account import (
     MultiAccountConfigError,
+    MultiAccountImapProcessor,
     MultiAccountReadonlyScanner,
     load_multi_account_config,
 )
+from .scanner import select_scanner
 
 
 def _load_env_file(path: Path) -> None:
@@ -56,6 +58,9 @@ def main() -> int:
     scanner = commands.add_parser("scan-imap-accounts")
     scanner.add_argument("--config", type=Path, required=True)
     scanner.add_argument("--dry-run", action="store_true")
+    processor = commands.add_parser("process-imap-accounts")
+    processor.add_argument("--config", type=Path, required=True)
+    processor.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -124,6 +129,20 @@ def main() -> int:
         print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
                          separators=(",", ":")))
         return 0 if all(item.status in {"ok", "disabled"} for item in results) else 1
+    if args.command == "process-imap-accounts":
+        try:
+            accounts = load_multi_account_config(args.config)
+            results = MultiAccountImapProcessor(
+                accounts,
+                paths=LocalDataPaths(Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))),
+                scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+                max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
+            ).process(dry_run=args.dry_run)
+        except (MultiAccountConfigError, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0 if all(item.quarantine_status != "error" for item in results) else 1
     return 2
 
 

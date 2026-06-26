@@ -145,6 +145,22 @@ non scrive Bucoliche. Senza `--dry-run` registra in SQLite i messaggi rilevati
 separando lo stato per `account_alias`; gli allegati restano a zero in questa
 micro-fase.
 
+Per processare gli allegati ammessi in quarantena locale per account:
+
+```powershell
+python -m virgilio_connector process-imap-accounts `
+  --config accounts.local.yaml `
+  --dry-run
+python -m virgilio_connector process-imap-accounts `
+  --config accounts.local.yaml
+```
+
+Il dry-run non scrive file o SQLite. L'esecuzione reale usa `BODY.PEEK[]`, salva
+solo allegati ammessi sotto `.local_data/accounts/<account_alias>/quarantine/`,
+calcola SHA-256, esegue lo scanner locale configurato e crea un manifest JSON per
+allegato. Non fa staging Drive Desktop, non chiama Apps Script, non scrive
+Bucoliche, non invia notifiche e non esegue ack IMAP.
+
 ### Scanner locale opzionale
 
 `VIRGILIO_SCANNER=auto` usa Microsoft Defender quando `MpCmdRun.exe` e'
