@@ -125,6 +125,26 @@ La struttura generata e' `.local_data/quarantine/{incoming,rejected,ready}` con
 `.local_data/logs` e `.local_data/state.db`. In questa fase vengono scritti solo
 gli allegati ammessi dentro `incoming`.
 
+## Scan multi-account read-only
+
+La linea v1.1 introduce una configurazione locale multi-account. Copiare
+`accounts.example.yaml` fuori dal repository o in un percorso locale ignorato e
+compilare solo nomi di variabili d'ambiente, mai password in chiaro nel file.
+
+Esempio:
+
+```powershell
+python -m virgilio_connector scan-imap-accounts `
+  --config accounts.local.yaml `
+  --dry-run
+```
+
+Il comando interroga solo gli account abilitati, usa la cartella `input_folder`,
+non scarica allegati, non fa ack, non sposta messaggi, non chiama Apps Script e
+non scrive Bucoliche. Senza `--dry-run` registra in SQLite i messaggi rilevati
+separando lo stato per `account_alias`; gli allegati restano a zero in questa
+micro-fase.
+
 ### Scanner locale opzionale
 
 `VIRGILIO_SCANNER=auto` usa Microsoft Defender quando `MpCmdRun.exe` e'

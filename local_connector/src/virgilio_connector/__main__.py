@@ -22,6 +22,12 @@ from .drive_staging_intake_test import (
     DriveStagingIntakeTestClient,
     DriveStagingIntakeTestError,
 )
+from .local_paths import LocalDataPaths
+from .multi_account import (
+    MultiAccountConfigError,
+    MultiAccountReadonlyScanner,
+    load_multi_account_config,
+)
 
 
 def _load_env_file(path: Path) -> None:
@@ -47,6 +53,9 @@ def main() -> int:
     verifier.add_argument("--manifest", type=Path, required=True)
     intake = commands.add_parser("intake-drive-staging-test")
     intake.add_argument("--manifest", type=Path, required=True)
+    scanner = commands.add_parser("scan-imap-accounts")
+    scanner.add_argument("--config", type=Path, required=True)
+    scanner.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -103,6 +112,18 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.ok else 1
+    if args.command == "scan-imap-accounts":
+        try:
+            accounts = load_multi_account_config(args.config)
+            results = MultiAccountReadonlyScanner(
+                accounts,
+                paths=LocalDataPaths(Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))),
+            ).scan(dry_run=args.dry_run)
+        except MultiAccountConfigError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0 if all(item.status in {"ok", "disabled"} for item in results) else 1
     return 2
 
 

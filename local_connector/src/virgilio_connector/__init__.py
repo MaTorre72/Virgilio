@@ -86,6 +86,13 @@ from .drive_staging_intake_test import (
     DriveStagingIntakeTestResponse,
     DriveStagingIntakeTestUrlNotConfigured,
 )
+from .multi_account import (
+    LocalImapAccount,
+    MultiAccountConfigError,
+    MultiAccountReadonlyScanner,
+    MultiAccountScanResult,
+    load_multi_account_config,
+)
 
 __all__ = [
     "AckDecision",
@@ -120,6 +127,11 @@ __all__ = [
     "DriveStagingIntakeTestError",
     "DriveStagingIntakeTestResponse",
     "DriveStagingIntakeTestUrlNotConfigured",
+    "LocalImapAccount",
+    "MultiAccountConfigError",
+    "MultiAccountReadonlyScanner",
+    "MultiAccountScanResult",
+    "load_multi_account_config",
     "LocalScanResult",
     "LocalScanner",
     "MessageStatus",

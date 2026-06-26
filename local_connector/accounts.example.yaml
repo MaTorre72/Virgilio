@@ -1,0 +1,13 @@
+accounts:
+  - account_alias: marco_sigmapiu
+    email: marco@example.invalid
+    provider_hint: gmail_workspace
+    imap_host: imap.gmail.com
+    imap_port: 993
+    username_env: VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME
+    password_env: VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD
+    input_folder: Virgilio/da-traghettare
+    done_folder: Virgilio/traghettate
+    error_folder: Virgilio/errore
+    enabled: true
+    max_messages: 25

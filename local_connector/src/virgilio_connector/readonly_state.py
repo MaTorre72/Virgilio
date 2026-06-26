@@ -30,14 +30,16 @@ class ReadonlyStateStore:
                     id INTEGER PRIMARY KEY, started_at TEXT NOT NULL,
                     completed_at TEXT, dry_run INTEGER NOT NULL,
                     status TEXT NOT NULL, messages_seen INTEGER NOT NULL DEFAULT 0,
-                    attachments_seen INTEGER NOT NULL DEFAULT 0
+                    attachments_seen INTEGER NOT NULL DEFAULT 0,
+                    account_alias TEXT NOT NULL DEFAULT 'default'
                 );
                 CREATE TABLE IF NOT EXISTS messages (
                     id INTEGER PRIMARY KEY, run_id INTEGER NOT NULL REFERENCES runs(id),
+                    account_alias TEXT NOT NULL DEFAULT 'default',
                     mailbox TEXT NOT NULL, uidvalidity TEXT, message_uid TEXT NOT NULL,
                     message_id TEXT, subject TEXT NOT NULL, sender TEXT NOT NULL,
                     message_date TEXT NOT NULL,
-                    UNIQUE(run_id, mailbox, uidvalidity, message_uid)
+                    UNIQUE(run_id, account_alias, mailbox, uidvalidity, message_uid)
                 );
                 CREATE TABLE IF NOT EXISTS attachments (
                     id INTEGER PRIMARY KEY, message_id INTEGER NOT NULL REFERENCES messages(id),
@@ -62,18 +64,19 @@ class ReadonlyStateStore:
             columns = {row[1] for row in db.execute("PRAGMA table_info(attachments)")}
             if "staged_filename" not in columns:
                 self._migrate_attachments_v3(db)
+            self._ensure_account_alias_columns(db)
 
-    def start_run(self) -> int:
+    def start_run(self, account_alias: str = "default") -> int:
         with self._connection() as db:
-            cursor = db.execute("INSERT INTO runs(started_at,dry_run,status) VALUES(?,0,'running')",
-                                (_now(),))
+            cursor = db.execute("""INSERT INTO runs(started_at,dry_run,status,account_alias)
+                VALUES(?,0,'running',?)""", (_now(), account_alias))
             return int(cursor.lastrowid)
 
-    def add_message(self, run_id: int, message) -> int:
+    def add_message(self, run_id: int, message, account_alias: str = "default") -> int:
         with self._connection() as db:
             cursor = db.execute("""INSERT INTO messages(
-                run_id,mailbox,uidvalidity,message_uid,message_id,subject,sender,message_date
-                ) VALUES(?,?,?,?,?,?,?,?)""", (run_id, message.mailbox, message.uidvalidity,
+                run_id,account_alias,mailbox,uidvalidity,message_uid,message_id,subject,sender,message_date
+                ) VALUES(?,?,?,?,?,?,?,?,?)""", (run_id, account_alias, message.mailbox, message.uidvalidity,
                 message.message_uid, message.message_id or None, message.subject,
                 message.sender, message.date))
             return int(cursor.lastrowid)
@@ -191,6 +194,15 @@ class ReadonlyStateStore:
             FROM attachments_v2;
             DROP TABLE attachments_v2;
         """)
+
+    @staticmethod
+    def _ensure_account_alias_columns(db: sqlite3.Connection) -> None:
+        run_columns = {row[1] for row in db.execute("PRAGMA table_info(runs)")}
+        if "account_alias" not in run_columns:
+            db.execute("ALTER TABLE runs ADD COLUMN account_alias TEXT NOT NULL DEFAULT 'default'")
+        message_columns = {row[1] for row in db.execute("PRAGMA table_info(messages)")}
+        if "account_alias" not in message_columns:
+            db.execute("ALTER TABLE messages ADD COLUMN account_alias TEXT NOT NULL DEFAULT 'default'")
 
     @contextmanager
     def _connection(self):
