@@ -12,7 +12,7 @@ import sqlite3
 
 from .files import sanitize_filename, sha256_file
 from .multi_account import LocalStorageConfig
-from .readonly_state import ReadonlyStateStore
+from .readonly_state import ReadonlyStateStore, ensure_state_db
 from .traceability import audit_entry, load_machine_id
 
 
@@ -43,6 +43,7 @@ class LocalFilesystemStorageAdapter:
         self.config = config
 
     def stage_ready(self, *, dry_run: bool) -> tuple[StorageStageResult, ...]:
+        ensure_state_db(self.local_data_root)
         staging_root = self._validate_configuration()
         rows = self._load_candidate_rows()
         store = ReadonlyStateStore(self.state_db)

@@ -12,7 +12,7 @@ from typing import Callable, Mapping, Sequence
 from .imap_readonly import ImapCompletionMailbox
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountConfigError
-from .readonly_state import ReadonlyStateStore
+from .readonly_state import ReadonlyStateStore, ensure_state_db
 from .traceability import load_machine_id
 
 
@@ -51,6 +51,7 @@ class LocalCompletionRunner:
         self.mailbox_factory = mailbox_factory or self._default_mailbox
 
     def complete(self, *, dry_run: bool) -> tuple[CompletionResult, ...]:
+        ensure_state_db(self.paths.root)
         candidates = self._load_candidates()
         store = ReadonlyStateStore(self.paths.state_db)
         if not dry_run:

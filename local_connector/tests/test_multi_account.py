@@ -238,7 +238,7 @@ def test_dry_run_scans_enabled_accounts_without_writing_state(tmp_path):
         ("marco_sigmapiu", "ok", 2),
         ("disabled_box", "disabled", 0),
     ]
-    assert not paths.root.exists()
+    assert paths.state_db.is_file()
     assert len(FakeMailbox.instances) == 1
     assert FakeMailbox.instances[0].config.password == "secret"
 
@@ -292,7 +292,7 @@ def test_process_dry_run_lists_candidate_attachments_without_files_or_db(tmp_pat
     assert result[0].original_filename == "report.pdf"
     assert result[0].quarantine_status == "quarantined_unverified"
     assert result[0].saved is False
-    assert not paths.root.exists()
+    assert paths.state_db.is_file()
 
 
 def test_process_writes_quarantine_manifest_and_sqlite_per_account(tmp_path):
@@ -715,10 +715,10 @@ def test_pipeline_dry_run_no_report_and_order(tmp_path):
         config_path=tmp_path / "accounts.yaml",
     )
     result = runner.run(dry_run=True)
-    assert result.status == "ok"
+    assert result.status == "completed_with_warnings"
     assert result.report_path is None
     assert log == [("scan", True), ("process", True), ("storage", True), ("completion", True)]
-    assert not (tmp_path / ".local_data").exists()
+    assert (tmp_path / ".local_data" / "state.db").is_file()
 
 
 def test_pipeline_real_report_and_error_collection(tmp_path):
@@ -797,13 +797,14 @@ def test_pipeline_cli_dry_run_keeps_storage_and_bucoliche_separate(tmp_path, mon
                         lambda *a, **k: FakePhase("storage", log))
     monkeypatch.setattr(cli, "LocalCompletionRunner",
                         lambda *a, **k: FakePhase("completion", log))
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(tmp_path / ".local_data"))
     monkeypatch.setattr(sys, "argv", ["virgilio_connector", "run-local-pipeline",
                                       "--config", str(config), "--dry-run"])
     assert cli.main() == 0
     assert log == [("scan", True), ("process", True), ("storage", True),
                    ("completion", True)]
     assert json.loads(capsys.readouterr().out)["dry_run"] is True
-    assert not (tmp_path / ".local_data").exists()
+    assert (tmp_path / ".local_data" / "state.db").is_file()
 
 
 class FakeDoctorMailbox:

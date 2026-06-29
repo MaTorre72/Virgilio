@@ -16,6 +16,7 @@ from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, LocalStorageConfig
 from .traceability import load_rules
 from .traceability import central_event_rows
+from .readonly_state import ensure_state_db
 
 
 @dataclass(frozen=True, slots=True)
@@ -261,6 +262,8 @@ class PilotCheck:
 
     def run(self) -> ReadinessResult:
         checks, errors, warnings = [], [], []
+        _, state_warnings = ensure_state_db(self.paths.root)
+        warnings.extend(state_warnings)
         enabled = [account for account in self.accounts if account.enabled]
         checks.append(_check("enabled_accounts", bool(enabled)))
         if not enabled: errors.append("no enabled account configured")

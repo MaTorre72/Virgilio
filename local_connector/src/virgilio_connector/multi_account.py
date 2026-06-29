@@ -16,7 +16,7 @@ from .imap_readonly import ImapReadonlyConfig, ImapReadonlyMailbox
 from .local_paths import LocalDataPaths
 from .policy import AttachmentPolicy, PolicyDecision
 from .ports import MessageReference
-from .readonly_state import ReadonlyStateStore
+from .readonly_state import ReadonlyStateStore, ensure_state_db
 from .scanner import LocalScanner, ScanVerdict, UnconfiguredScanner
 from .traceability import RuleSet, audit_entry, global_fingerprint, load_machine_id
 
@@ -203,6 +203,7 @@ class MultiAccountReadonlyScanner:
         )
 
     def scan(self, *, dry_run: bool) -> tuple[MultiAccountScanResult, ...]:
+        ensure_state_db(self.paths.root)
         if not dry_run:
             self.paths.root.mkdir(parents=True, exist_ok=True)
             store = ReadonlyStateStore(self.paths.state_db)
@@ -270,6 +271,7 @@ class MultiAccountImapProcessor:
         self.max_attachment_bytes = max_attachment_bytes
 
     def process(self, *, dry_run: bool) -> tuple[MultiAccountAttachmentResult, ...]:
+        ensure_state_db(self.paths.root)
         if not dry_run:
             self.paths.root.mkdir(parents=True, exist_ok=True)
             store = ReadonlyStateStore(self.paths.state_db)

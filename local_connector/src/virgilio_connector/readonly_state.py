@@ -45,6 +45,7 @@ class ReadonlyStateStore:
                     ack_attempted_at TEXT, ack_completed_at TEXT,
                     ack_strategy TEXT, ack_result TEXT,
                     completed_at TEXT, completion_report_path TEXT,
+                    source_email TEXT, source_message_id TEXT, fingerprint TEXT,
                     UNIQUE(run_id, account_alias, mailbox, uidvalidity, message_uid)
                 );
                 CREATE TABLE IF NOT EXISTS attachments (
@@ -67,6 +68,8 @@ class ReadonlyStateStore:
                     staging_manifest_path TEXT, manifest_path TEXT,
                     storage_adapter TEXT, staged_path TEXT,
                     fingerprint TEXT,
+                    source_message_uid TEXT, source_message_id TEXT,
+                    mime_type TEXT, scan_engine TEXT, staged_manifest_path TEXT,
                     staged_at TEXT, created_at TEXT NOT NULL,
                     UNIQUE(message_id, ordinal)
                 );
@@ -84,16 +87,53 @@ class ReadonlyStateStore:
                     PRIMARY KEY(event_id,target_adapter)
                 );
             """)
-            columns = {row[1] for row in db.execute("PRAGMA table_info(attachments)")}
-            if "scanner_engine" not in columns:
-                self._migrate_attachments_v2(db)
-            columns = {row[1] for row in db.execute("PRAGMA table_info(attachments)")}
-            if "staged_filename" not in columns:
-                self._migrate_attachments_v3(db)
-            self._ensure_account_alias_columns(db)
-            self._ensure_attachment_identity_columns(db)
-            self._ensure_attachment_storage_states(db)
-            self._ensure_attachment_identity_columns(db)
+            self._ensure_additive_schema(db)
+
+    @staticmethod
+    def _ensure_additive_schema(db: sqlite3.Connection) -> None:
+        definitions = {
+            "runs": {
+                "account_alias": "TEXT NOT NULL DEFAULT 'default'",
+            },
+            "messages": {
+                "account_alias": "TEXT NOT NULL DEFAULT 'default'", "source_email": "TEXT",
+                "message_uid": "TEXT", "source_message_id": "TEXT",
+                "run_id": "INTEGER", "mailbox": "TEXT", "uidvalidity": "TEXT",
+                "message_id": "TEXT", "subject": "TEXT", "sender": "TEXT", "message_date": "TEXT",
+                "message_state": "TEXT NOT NULL DEFAULT 'open'", "ack_attempted_at": "TEXT",
+                "ack_completed_at": "TEXT", "ack_strategy": "TEXT", "ack_result": "TEXT",
+                "completed_at": "TEXT", "completion_report_path": "TEXT", "fingerprint": "TEXT",
+            },
+            "attachments": {
+                "account_alias": "TEXT NOT NULL DEFAULT 'default'", "attachment_id": "TEXT",
+                "source_email": "TEXT", "source_message_uid": "TEXT", "source_message_id": "TEXT",
+                "original_filename": "TEXT", "sanitized_filename": "TEXT", "sha256": "TEXT",
+                "size_bytes": "INTEGER", "mime_type": "TEXT", "scan_engine": "TEXT",
+                "scan_result": "TEXT", "status": "TEXT", "manifest_path": "TEXT",
+                "staged_path": "TEXT", "staged_manifest_path": "TEXT", "staging_manifest_path": "TEXT",
+                "staged_at": "TEXT", "storage_adapter": "TEXT", "fingerprint": "TEXT",
+                "staged_filename": "TEXT", "scanner_engine": "TEXT",
+                "message_id": "INTEGER", "ordinal": "INTEGER", "declared_mime_type": "TEXT",
+                "relative_path": "TEXT", "duplicate_of_id": "INTEGER", "reason": "TEXT",
+                "scanned_at": "TEXT", "created_at": "TEXT",
+            },
+        }
+        for table, columns in definitions.items():
+            existing = {row[1] for row in db.execute(f"PRAGMA table_info({table})")}
+            for name, ddl in columns.items():
+                if name not in existing:
+                    db.execute(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")
+        db.execute("""CREATE INDEX IF NOT EXISTS idx_attachments_fingerprint
+            ON attachments(fingerprint) WHERE fingerprint IS NOT NULL""")
+        try:
+            db.execute("""CREATE UNIQUE INDEX IF NOT EXISTS idx_attachments_attachment_id
+                ON attachments(attachment_id) WHERE attachment_id IS NOT NULL""")
+        except sqlite3.IntegrityError:
+            db.execute("""CREATE INDEX IF NOT EXISTS idx_attachments_attachment_id_legacy
+                ON attachments(attachment_id)""")
+        db.execute("""UPDATE attachments SET status='quarantined_unverified',
+            reason='migrated: no scanner evidence available'
+            WHERE status='ready_for_scan'""")
 
     def start_run(self, account_alias: str = "default") -> int:
         with self._connection() as db:
@@ -382,3 +422,18 @@ class ReadonlyStateStore:
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def ensure_state_db(local_data_dir: str | Path) -> tuple[Path, tuple[str, ...]]:
+    """Create or additively migrate the local state database, preserving all rows."""
+    root = Path(local_data_dir)
+    path = root / "state.db"
+    store = ReadonlyStateStore(path)
+    store.initialize()
+    warnings: list[str] = []
+    with sqlite3.connect(path) as db:
+        incomplete = db.execute("""SELECT COUNT(*) FROM attachments
+            WHERE attachment_id IS NULL OR sha256 IS NULL""").fetchone()[0]
+    if incomplete:
+        warnings.append(f"legacy_incomplete: {incomplete} attachment record(s) skipped")
+    return path, tuple(warnings)

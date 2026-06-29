@@ -13,6 +13,7 @@ from .completion import LocalCompletionRunner
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountImapProcessor, MultiAccountReadonlyScanner
 from .storage_adapter import LocalFilesystemStorageAdapter
+from .readonly_state import ensure_state_db
 
 
 @dataclass(frozen=True, slots=True)
@@ -21,6 +22,7 @@ class PipelineResult:
     dry_run: bool
     status: str
     errors: tuple[str, ...]
+    warnings: tuple[str, ...] = ()
 
 
 class LocalPipelineRunner:
@@ -42,6 +44,8 @@ class LocalPipelineRunner:
         started = perf_counter()
         phase_times: dict[str, float] = {}
         errors: list[str] = []
+        _, initial_warnings = ensure_state_db(self.paths.root)
+        warnings: list[str] = list(initial_warnings)
         scan = self._phase("scan", phase_times, errors, lambda: (
             self.scanner_factory().scan(dry_run=dry_run) if self.scanner_factory else ()
         ))
@@ -51,6 +55,10 @@ class LocalPipelineRunner:
                               lambda: self.storage_factory().stage_ready(dry_run=dry_run))
         completion = self._phase("completion", phase_times, errors,
                                  lambda: self.completion_factory().complete(dry_run=dry_run))
+        if not storage:
+            warnings.append("storage: skipped_no_ready_attachments")
+        if not completion:
+            warnings.append("completion: skipped_no_staged_messages")
         report = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "config": str(self.config_path) if self.config_path else None,
@@ -61,6 +69,7 @@ class LocalPipelineRunner:
             "messages_completed": sum(1 for item in completion if getattr(item, "status", "") in {"completed", "already_completed", "already_acked"}),
             "messages_skipped": sum(1 for item in completion if getattr(item, "status", "") == "completion_skipped"),
             "errors": errors,
+            "warnings": warnings,
             "duration_seconds": round(perf_counter() - started, 3),
             "phase_durations": phase_times,
             "phases": {
@@ -71,8 +80,9 @@ class LocalPipelineRunner:
             },
         }
         report_path = None if dry_run else self._write_report(report)
-        status = "ok" if not errors else "completed_with_errors"
-        return PipelineResult(report_path, dry_run, status, tuple(errors))
+        status = ("completed_with_errors" if errors else
+                  "completed_with_warnings" if warnings else "completed")
+        return PipelineResult(report_path, dry_run, status, tuple(errors), tuple(warnings))
 
     @staticmethod
     def _phase(name: str, timings: dict[str, float], errors: list[str], call):

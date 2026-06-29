@@ -11,7 +11,7 @@ import sqlite3
 from typing import Mapping, Protocol, Sequence
 from urllib.parse import quote
 
-from .readonly_state import ReadonlyStateStore
+from .readonly_state import ReadonlyStateStore, ensure_state_db
 from .traceability import central_event_rows
 
 
@@ -183,7 +183,7 @@ class BucolicheAppendOnlyAdapter:
 
     def export(self, *, dry_run: bool) -> BucolicheExportResult:
         self.config.validate()
-        if not self.state_db.is_file(): raise BucolicheError("state database not found")
+        ensure_state_db(self.state_db.parent)
         events = [_event_row(row) for row in central_event_rows(self.state_db)]
         exported = self._successful_event_ids(self.TARGET)
         pending = [row for row in events if row["event_id"] not in exported]

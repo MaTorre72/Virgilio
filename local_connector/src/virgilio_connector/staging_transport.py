@@ -133,8 +133,10 @@ class LocalDriveStagingTransport:
                 ORDER BY id DESC LIMIT 1""").fetchone()
             if run is None:
                 return ()
-            return tuple(db.execute("""SELECT a.*,m.message_id AS source_message_id,
-                m.message_uid AS source_message_uid,m.uidvalidity
+            return tuple(db.execute("""SELECT a.*,
+                COALESCE(a.source_message_id,m.message_id) AS resolved_source_message_id,
+                COALESCE(a.source_message_uid,m.message_uid) AS resolved_source_message_uid,
+                m.uidvalidity
                 FROM attachments a JOIN messages m ON m.id=a.message_id
                 WHERE m.run_id=? AND a.status='ready_for_caronte'
                   AND a.relative_path IS NOT NULL ORDER BY a.id""",
@@ -188,8 +190,8 @@ class LocalDriveStagingTransport:
             "scan_engine": row["scanner_engine"],
             "scan_result": row["scan_result"],
             "quarantine_status": "ready_for_caronte",
-            "source_message_id": row["source_message_id"],
-            "source_message_uid": row["source_message_uid"],
+            "source_message_id": row["resolved_source_message_id"],
+            "source_message_uid": row["resolved_source_message_uid"],
             "account_alias": self.config.account_alias,
             "staged_at": datetime.now(timezone.utc).isoformat(),
             "dry_run": False,
@@ -213,7 +215,7 @@ def _attachment_id(row: sqlite3.Row) -> str:
     raw_uidvalidity = str(row["uidvalidity"] or "").strip()
     uidvalidity = "unknown" if not raw_uidvalidity or raw_uidvalidity.lower() == "none" else raw_uidvalidity
     uidvalidity = uidvalidity.replace("/", "_").replace("\\", "_")
-    uid = str(row["source_message_uid"]).replace("/", "_").replace("\\", "_")
+    uid = str(row["resolved_source_message_uid"]).replace("/", "_").replace("\\", "_")
     return f"att-{uidvalidity}-{uid}-{int(row['ordinal'])}-{str(row['sha256'])[:12]}"
 
 

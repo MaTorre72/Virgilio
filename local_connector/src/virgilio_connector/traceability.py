@@ -149,6 +149,8 @@ class LocalConflictChecker:
     def __init__(self, state_db: Path): self.state_db = state_db
 
     def check(self) -> dict:
+        from .readonly_state import ensure_state_db
+        ensure_state_db(self.state_db.parent)
         conflicts, duplicates = [], []
         with sqlite3.connect(self.state_db) as db:
             db.row_factory = sqlite3.Row
@@ -193,6 +195,8 @@ def export_central_events(state_db: Path, local_root: Path, format_name: str) ->
 
 def central_event_rows(state_db: Path) -> list[dict]:
     """Build export rows in memory without modifying SQLite or local files."""
+    from .readonly_state import ensure_state_db
+    ensure_state_db(state_db.parent)
     with sqlite3.connect(state_db) as db:
         db.row_factory = sqlite3.Row
         rows = [dict(row) for row in db.execute("""SELECT e.id,e.created_at,e.machine_id,e.account_alias,

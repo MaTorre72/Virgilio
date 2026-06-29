@@ -239,7 +239,7 @@ def main() -> int:
         except (MultiAccountConfigError, ValueError) as exc:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
-        return 0 if result.status == "ok" else 1
+        return 0 if result.status in {"completed", "completed_with_warnings"} else 1
     if args.command == "doctor":
         local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
         try:
