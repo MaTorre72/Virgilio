@@ -64,3 +64,21 @@ I test del connettore non devono usare credenziali reali, Gmail reale, Drive rea
 **L'AI propone. Il tecnico valida. Il sistema registra.**
 
 Ogni automazione critica deve restare verificabile, reversibile e tracciata.
+
+## Sviluppo autonomo con Codex
+
+Il ciclo autonomo è governato da:
+
+- `AGENTS.md`: regole permanenti e limiti operativi;
+- `docs/DEV_BACKLOG.md`: ordine dei task e stato di avanzamento;
+- `docs/DEFINITION_OF_DONE.md`: gate obbligatori;
+- `docs/AUTONOMOUS_DEVELOPMENT.md`: protocollo di scelta, esecuzione e stop;
+- `.github/codex/prompts/advance.md`: prompt per avanzare un task;
+- `scripts/dev/smoke_local_connector.ps1`: suite, CLI e controllo segreti;
+- `.github/workflows/local-connector-ci.yml`: verifica senza servizi reali.
+
+Per il prossimo task autonomo usare il prompt `advance.md`, oppure chiedere “vai avanti”.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
+```

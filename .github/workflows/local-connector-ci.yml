@@ -1,0 +1,28 @@
+name: local-connector-ci
+
+on:
+  push:
+    branches: [codex/v1.1-development]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: local_connector/pyproject.toml
+      - name: Install
+        shell: pwsh
+        run: python -m pip install -e './local_connector[dev]'
+      - name: Smoke
+        shell: pwsh
+        run: ./scripts/dev/smoke_local_connector.ps1
+

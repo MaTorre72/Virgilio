@@ -45,3 +45,4 @@ _old/
 *.pdf
 *.docx
 *.ipynb
+_staging/
