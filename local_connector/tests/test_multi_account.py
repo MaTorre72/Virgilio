@@ -312,8 +312,12 @@ def test_process_writes_quarantine_manifest_and_sqlite_per_account(tmp_path):
     assert manifest["sha256"] == result[0].sha256
     assert manifest["scan_engine"] == "fake"
     assert manifest["scan_result"] == "clean"
+    assert manifest["fingerprint"] == result[0].fingerprint
+    assert manifest["audit_trail"][-1]["action"] == "manifest_created"
+    assert all(item["machine_id"] for item in manifest["audit_trail"])
     assert len(list((paths.root / "accounts" / "marco_sigmapiu" / "quarantine" / "ready").rglob("*.pdf"))) == 2
     with sqlite3.connect(paths.state_db) as db:
+        assert db.execute("SELECT fingerprint FROM attachments").fetchone()[0] == result[0].fingerprint
         rows = db.execute("""SELECT a.account_alias,a.attachment_id,a.source_email,
             a.status,a.manifest_path,m.message_uid,m.message_id,m.subject
             FROM attachments a JOIN messages m ON m.id=a.message_id

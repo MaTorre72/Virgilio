@@ -13,6 +13,7 @@ from .imap_readonly import ImapCompletionMailbox
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountConfigError
 from .readonly_state import ReadonlyStateStore
+from .traceability import load_machine_id
 
 
 BLOCKING_ATTACHMENT_STATES = {
@@ -73,6 +74,14 @@ class LocalCompletionRunner:
                         attempted=False,
                         completed=result.status in {"completed", "already_completed", "already_acked"},
                     )
+                    action = ("message_completed" if result.status in
+                              {"completed", "already_completed", "already_acked"}
+                              else "failed" if result.status == "ack_failed" else "skipped")
+                    store.add_audit_event(machine_id=load_machine_id(self.paths.root),
+                        account_alias=result.account_alias, entity_type="message",
+                        entity_id=result.message_id or result.message_uid,
+                        fingerprint=None, action=action, status=result.status,
+                        details={"reason": result.reason or ""})
         return tuple(CompletionResult(**{**asdict(item), "report_path": report_path or item.report_path})
                      for item in results)
 

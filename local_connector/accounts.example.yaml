@@ -21,3 +21,15 @@ storage:
   copy_manifest: true
   overwrite: false
   create_staging_dir: false
+
+rules:
+  default_action: include
+  include:
+    - name: pdf_invoices
+      subject_contains: ["fattura", "invoice", "acconto"]
+      filename_extensions: [".pdf", ".p7m"]
+  exclude:
+    - name: newsletters
+      from_contains: ["newsletter", "noreply"]
+    - name: small_signatures
+      max_attachment_size_bytes: 10239

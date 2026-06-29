@@ -18,6 +18,7 @@ from .policy import AttachmentPolicy, PolicyDecision
 from .ports import MessageReference
 from .readonly_state import ReadonlyStateStore
 from .scanner import LocalScanner, ScanVerdict, UnconfiguredScanner
+from .traceability import RuleSet, audit_entry, global_fingerprint, load_machine_id
 
 
 class MultiAccountConfigError(ValueError):
@@ -142,6 +143,10 @@ class MultiAccountAttachmentResult:
     saved: bool
     manifest_path: str | None = None
     error: str | None = None
+    fingerprint: str | None = None
+    included: bool = True
+    rule_name: str | None = None
+    reason: str | None = None
 
 
 def load_multi_account_config(path: str | Path) -> tuple[LocalImapAccount, ...]:
@@ -220,6 +225,10 @@ class MultiAccountReadonlyScanner:
                     run_id = store.start_run(account_alias=account.account_alias)
                     for message in messages:
                         store.add_message(run_id, message, account_alias=account.account_alias)
+                        store.add_audit_event(machine_id=load_machine_id(self.paths.root),
+                            account_alias=account.account_alias, entity_type="message",
+                            entity_id=message.message_id or message.message_uid,
+                            fingerprint=None, action="message_scanned", status="detected")
                     store.complete_run(run_id, messages_seen=len(messages), attachments_seen=0)
                 results.append(MultiAccountScanResult(
                     account.account_alias, account.email, account.provider_hint,
@@ -245,6 +254,7 @@ class MultiAccountImapProcessor:
                  mailbox_factory: Callable[[ImapReadonlyConfig, Path], object] | None = None,
                  policy: AttachmentPolicy | None = None,
                  scanner: LocalScanner | None = None,
+                 rules: RuleSet | None = None,
                  max_attachment_bytes: int = 25 * 1024 * 1024) -> None:
         if max_attachment_bytes <= 0:
             raise ValueError("max_attachment_bytes must be positive")
@@ -256,6 +266,7 @@ class MultiAccountImapProcessor:
         )
         self.policy = policy or AttachmentPolicy()
         self.scanner = scanner or UnconfiguredScanner()
+        self.rules = rules or RuleSet()
         self.max_attachment_bytes = max_attachment_bytes
 
     def process(self, *, dry_run: bool) -> tuple[MultiAccountAttachmentResult, ...]:
@@ -311,7 +322,14 @@ class MultiAccountImapProcessor:
         sanitized = (sanitize_filename(attachment.original_filename)
                      if attachment.original_filename else None)
         attachment_id = _attachment_id(account.account_alias, message, attachment.ordinal)
+        fingerprint = global_fingerprint(account.account_alias, message.message_id,
+                                         message.message_uid, attachment_id, digest)
+        included, rule_name, rule_reason = self.rules.decide(
+            subject=message.subject, sender=message.sender,
+            filename=attachment.original_filename, size_bytes=len(payload))
         status, reason = self._decision(attachment.original_filename, len(payload))
+        if not included:
+            status, reason = "rejected_by_extension", rule_reason
         scan_engine = None
         scan_result = None
         saved = False
@@ -319,7 +337,9 @@ class MultiAccountImapProcessor:
         manifest_relative = None
         if dry_run:
             return self._result(account, message, attachment, attachment_id, sanitized,
-                                digest, status, scan_engine, scan_result, False, None)
+                                digest, status, scan_engine, scan_result, False, None,
+                                fingerprint=fingerprint, included=included,
+                                rule_name=rule_name, reason=reason)
         if store is None or message_row_id is None:
             raise RuntimeError("state store is required outside dry-run")
         existing = store.find_by_attachment_id(attachment_id)
@@ -327,10 +347,13 @@ class MultiAccountImapProcessor:
             if str(existing["sha256"]) != digest:
                 return self._result(account, message, attachment, attachment_id, sanitized,
                     digest, "error", None, None, False, None,
-                    error="attachment_id already exists with different sha256")
+                    error="attachment_id already exists with different sha256",
+                    fingerprint=fingerprint)
             return self._result(account, message, attachment, attachment_id, sanitized,
                 digest, str(existing["status"]), None, None, False,
-                str(existing["manifest_path"]) if existing["manifest_path"] else None)
+                str(existing["manifest_path"]) if existing["manifest_path"] else None,
+                fingerprint=fingerprint, rule_name=rule_name,
+                reason="duplicate_seen")
         if status == "quarantined_unverified" and sanitized:
             quarantine = account_root / "quarantine"
             incoming = quarantine / "incoming" / sanitize_filename(message.message_uid)
@@ -379,11 +402,12 @@ class MultiAccountImapProcessor:
             relative_path = scan_path.relative_to(self.paths.root).as_posix()
             manifest_path = manifests / f"{attachment_id}.manifest.json"
             manifest = self._manifest(account, message, attachment, attachment_id,
-                sanitized, digest, status, scan_engine, scan_result)
+                sanitized, digest, status, scan_engine, scan_result,
+                fingerprint, load_machine_id(self.paths.root))
             manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2),
                                      encoding="utf-8")
             manifest_relative = manifest_path.relative_to(self.paths.root).as_posix()
-        store.add_attachment(message_row_id, ordinal=attachment.ordinal,
+        attachment_row_id = store.add_attachment(message_row_id, ordinal=attachment.ordinal,
             original_filename=attachment.original_filename, sanitized_filename=sanitized,
             declared_mime_type=attachment.declared_mime_type, size_bytes=len(payload),
             sha256=digest, status=status, relative_path=relative_path,
@@ -391,9 +415,17 @@ class MultiAccountImapProcessor:
             scan_result=scan_result, account_alias=account.account_alias,
             attachment_id=attachment_id, source_email=account.email,
             manifest_path=manifest_relative)
+        store.set_fingerprint(attachment_row_id, fingerprint)
+        machine_id = load_machine_id(self.paths.root)
+        action = "skipped" if not included else "attachment_quarantined"
+        store.add_audit_event(machine_id=machine_id, account_alias=account.account_alias,
+            entity_type="attachment", entity_id=attachment_id, fingerprint=fingerprint,
+            action=action, status=status,
+            details={"rule_name": rule_name, "reason": reason})
         return self._result(account, message, attachment, attachment_id, sanitized,
                             digest, status, scan_engine, scan_result, saved,
-                            manifest_relative)
+                            manifest_relative, fingerprint=fingerprint, included=included,
+                            rule_name=rule_name, reason=reason)
 
     def _decision(self, filename: str | None, size_bytes: int) -> tuple[str, str]:
         if size_bytes > self.max_attachment_bytes:
@@ -409,6 +441,7 @@ class MultiAccountImapProcessor:
     def _manifest(account: LocalImapAccount, message: MessageReference, attachment,
                   attachment_id: str, sanitized: str | None, digest: str,
                   status: str, scan_engine: str | None, scan_result: str | None
+                  , fingerprint: str, machine_id: str
                   ) -> dict[str, object]:
         return {
             "schema_version": "1.0",
@@ -428,6 +461,15 @@ class MultiAccountImapProcessor:
             "scan_result": scan_result,
             "quarantine_status": status,
             "created_at": datetime.now(timezone.utc).isoformat(),
+            "fingerprint": fingerprint,
+            "audit_trail": [
+                audit_entry(machine_id, "attachment_quarantined", status,
+                            account.account_alias, "attachment", attachment_id),
+                audit_entry(machine_id, "attachment_scanned", scan_result or "unverified",
+                            account.account_alias, "attachment", attachment_id),
+                audit_entry(machine_id, "manifest_created", "created",
+                            account.account_alias, "attachment", attachment_id),
+            ],
         }
 
     @staticmethod
@@ -435,13 +477,15 @@ class MultiAccountImapProcessor:
                 attachment_id: str, sanitized: str | None, digest: str, status: str,
                 scan_engine: str | None, scan_result: str | None, saved: bool,
                 manifest_path: str | None, error: str | None = None
+                , fingerprint: str | None = None, included: bool = True,
+                rule_name: str | None = None, reason: str | None = None
                 ) -> MultiAccountAttachmentResult:
         return MultiAccountAttachmentResult(
             account.account_alias, account.email, message.message_uid,
             message.message_id, message.subject, attachment_id,
             attachment.original_filename, sanitized, digest, len(attachment.payload),
             attachment.declared_mime_type, scan_engine, scan_result, status, saved,
-            manifest_path, error,
+            manifest_path, error, fingerprint, included, rule_name, reason,
         )
 
 

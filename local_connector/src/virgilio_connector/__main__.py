@@ -7,6 +7,7 @@ from dataclasses import asdict
 import json
 import os
 from pathlib import Path
+import sqlite3
 
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
 from .completion import CompletionError, LocalCompletionRunner
@@ -36,6 +37,7 @@ from .multi_account import (
 from .pipeline import LocalPipelineRunner
 from .scanner import select_scanner
 from .storage_adapter import LocalFilesystemStorageAdapter, StorageAdapterError
+from .traceability import LocalConflictChecker, export_central_events, load_rules
 
 
 def _load_env_file(path: Path) -> None:
@@ -78,6 +80,11 @@ def main() -> int:
     pipeline.add_argument("--dry-run", action="store_true")
     doctor = commands.add_parser("doctor")
     doctor.add_argument("--config", type=Path, required=True)
+    conflicts = commands.add_parser("check-local-conflicts")
+    conflicts.add_argument("--config", type=Path, required=True)
+    exporter = commands.add_parser("export-central-events")
+    exporter.add_argument("--config", type=Path, required=True)
+    exporter.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -153,6 +160,7 @@ def main() -> int:
                 accounts,
                 paths=LocalDataPaths(Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))),
                 scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+                rules=load_rules(args.config),
                 max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
             ).process(dry_run=args.dry_run)
         except (MultiAccountConfigError, ValueError) as exc:
@@ -202,6 +210,7 @@ def main() -> int:
                 processor_factory=lambda: MultiAccountImapProcessor(
                     accounts, paths=paths,
                     scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+                    rules=load_rules(args.config),
                     max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
                 ),
                 storage_factory=lambda: LocalFilesystemStorageAdapter(
@@ -228,6 +237,24 @@ def main() -> int:
             }, ensure_ascii=False, separators=(",", ":")) + "\n")
         print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "check-local-conflicts":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            load_multi_account_config(args.config)
+            result = LocalConflictChecker(local_root / "state.db").check()
+        except (MultiAccountConfigError, FileNotFoundError, sqlite3.Error) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+        return 1 if result["status"] == "CONFLICTS" else 0
+    if args.command == "export-central-events":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            load_multi_account_config(args.config)
+            target = export_central_events(local_root / "state.db", local_root, args.format)
+        except (MultiAccountConfigError, FileNotFoundError, sqlite3.Error, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps({"path": target.relative_to(local_root).as_posix()}, separators=(",", ":")))
+        return 0
     return 2
 
 

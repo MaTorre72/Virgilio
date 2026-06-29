@@ -423,3 +423,22 @@ pytest
 Eseguire il probe LC3 su una casella di test, verificare la mappatura della cartella
 del provider e consolidare retry e recupero dopo interruzione. L'ack reale resta
 escluso fino a una decisione esplicita sulla strategia cartelle/label.
+### Tracciabilità locale e regole (v1.1)
+
+La sezione opzionale `rules` di `accounts.local.yaml` applica filtri semplici prima
+del salvataggio: `subject_contains`, `from_contains`, `filename_contains`,
+`filename_extensions`, dimensione minima/massima e `require_attachment`.
+Senza `rules` il comportamento precedente resta invariato (`default_action: include`).
+
+Ogni nuovo manifest include `fingerprint` deterministico e `audit_trail`. L'identità
+della postazione è generata una sola volta in `.local_data/machine_id`; SQLite registra
+gli eventi append-only in `audit_events`.
+
+```powershell
+python -m virgilio_connector check-local-conflicts --config accounts.local.yaml
+python -m virgilio_connector export-central-events --config accounts.local.yaml --format jsonl
+python -m virgilio_connector export-central-events --config accounts.local.yaml --format csv
+```
+
+Gli export sono scritti in `.local_data/exports/` e preparano il futuro adapter
+Bucoliche append-only. Nessuna API Google, Docling, LiteLLM o classificazione AI è attiva.

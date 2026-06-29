@@ -13,6 +13,7 @@ import sqlite3
 from .files import sanitize_filename, sha256_file
 from .multi_account import LocalStorageConfig
 from .readonly_state import ReadonlyStateStore
+from .traceability import audit_entry, load_machine_id
 
 
 class StorageAdapterError(RuntimeError):
@@ -59,6 +60,11 @@ class LocalFilesystemStorageAdapter:
                     staged_path=result.staged_path,
                     staged_manifest_path=result.staged_manifest_path,
                     staged_filename=Path(result.staged_path).name)
+                store.add_audit_event(machine_id=load_machine_id(self.local_data_root),
+                    account_alias=str(row["account_alias"]), entity_type="attachment",
+                    entity_id=str(row["attachment_id"]), fingerprint=row["fingerprint"],
+                    action="attachment_staged", status=result.status,
+                    details={"staged_filename": Path(result.staged_path).name})
             elif result.status == "staging_conflict":
                 store.update_storage(int(row["id"]), status="staging_conflict",
                     reason=result.message, storage_adapter=self.config.adapter,
@@ -151,6 +157,10 @@ class LocalFilesystemStorageAdapter:
                 "staged_at": datetime.now(timezone.utc).isoformat(),
                 "note": "File staged by local filesystem adapter; no IMAP ack performed.",
             })
+            staged_manifest.setdefault("audit_trail", []).append(audit_entry(
+                load_machine_id(self.local_data_root), "attachment_staged", "staged_storage",
+                account_alias, "attachment", attachment_id,
+                {"staged_filename": staged_name}))
             forbidden = {"password", "token", "file_bytes", "base64", "content", "raw"}
             if forbidden & set(staged_manifest):
                 raise StorageAdapterError("manifest contains forbidden fields")

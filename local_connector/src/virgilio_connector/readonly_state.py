@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+import json
 import sqlite3
 
 
@@ -65,8 +66,16 @@ class ReadonlyStateStore:
                     scan_result TEXT, scanned_at TEXT, staged_filename TEXT,
                     staging_manifest_path TEXT, manifest_path TEXT,
                     storage_adapter TEXT, staged_path TEXT,
+                    fingerprint TEXT,
                     staged_at TEXT, created_at TEXT NOT NULL,
                     UNIQUE(message_id, ordinal)
+                );
+                CREATE TABLE IF NOT EXISTS audit_events (
+                    id INTEGER PRIMARY KEY, created_at TEXT NOT NULL,
+                    machine_id TEXT NOT NULL, account_alias TEXT NOT NULL,
+                    entity_type TEXT NOT NULL, entity_id TEXT NOT NULL,
+                    fingerprint TEXT, action TEXT NOT NULL, status TEXT NOT NULL,
+                    details_json TEXT NOT NULL
                 );
             """)
             columns = {row[1] for row in db.execute("PRAGMA table_info(attachments)")}
@@ -78,6 +87,7 @@ class ReadonlyStateStore:
             self._ensure_account_alias_columns(db)
             self._ensure_attachment_identity_columns(db)
             self._ensure_attachment_storage_states(db)
+            self._ensure_attachment_identity_columns(db)
 
     def start_run(self, account_alias: str = "default") -> int:
         with self._connection() as db:
@@ -114,6 +124,21 @@ class ReadonlyStateStore:
                 sanitized_filename, declared_mime_type, size_bytes, sha256, status,
                 relative_path, duplicate_of_id, reason, scanner_engine, scan_result,
                 _now() if scanner_engine else None, manifest_path, _now()))
+            return int(cursor.lastrowid)
+
+    def set_fingerprint(self, attachment_row_id: int, fingerprint: str) -> None:
+        with self._connection() as db:
+            db.execute("UPDATE attachments SET fingerprint=? WHERE id=?", (fingerprint, attachment_row_id))
+
+    def add_audit_event(self, *, machine_id: str, account_alias: str,
+                        entity_type: str, entity_id: str, fingerprint: str | None,
+                        action: str, status: str, details: dict | None = None) -> int:
+        with self._connection() as db:
+            cursor = db.execute("""INSERT INTO audit_events(created_at,machine_id,
+                account_alias,entity_type,entity_id,fingerprint,action,status,details_json)
+                VALUES(?,?,?,?,?,?,?,?,?)""", (_now(), machine_id, account_alias,
+                entity_type, entity_id, fingerprint, action, status,
+                json.dumps(details or {}, ensure_ascii=False, separators=(",", ":"))))
             return int(cursor.lastrowid)
 
     def find_by_attachment_id(self, attachment_id: str):
@@ -285,6 +310,10 @@ class ReadonlyStateStore:
             db.execute("ALTER TABLE attachments ADD COLUMN storage_adapter TEXT")
         if "staged_path" not in columns:
             db.execute("ALTER TABLE attachments ADD COLUMN staged_path TEXT")
+        if "fingerprint" not in columns:
+            db.execute("ALTER TABLE attachments ADD COLUMN fingerprint TEXT")
+        db.execute("""CREATE INDEX IF NOT EXISTS idx_attachments_fingerprint
+            ON attachments(fingerprint) WHERE fingerprint IS NOT NULL""")
         db.execute("""CREATE UNIQUE INDEX IF NOT EXISTS idx_attachments_attachment_id
             ON attachments(attachment_id) WHERE attachment_id IS NOT NULL""")
 
