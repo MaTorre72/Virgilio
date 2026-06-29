@@ -737,6 +737,11 @@ def test_pipeline_real_report_and_error_collection(tmp_path):
     assert log == [("scan", False), ("process", False), ("storage", False), ("completion", False)]
     report = json.loads((tmp_path / ".local_data" / result.report_path).read_text(encoding="utf-8"))
     assert report["errors"]
+    assert report["human_summary"][0] == "Esito pipeline: completed_with_errors (run reale)"
+    assert any(line.startswith("Errore: process: RuntimeError: phase boom")
+               for line in report["human_summary"])
+    assert report["human_summary"][-1] == (
+        "Azione consigliata: correggere gli errori e ripetere il dry-run.")
     text = json.dumps(report).lower()
     for forbidden in ("password", "token", "base64", "file_bytes"):
         assert forbidden not in text

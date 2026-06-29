@@ -59,6 +59,8 @@ class LocalPipelineRunner:
             warnings.append("storage: skipped_no_ready_attachments")
         if not completion:
             warnings.append("completion: skipped_no_staged_messages")
+        status = ("completed_with_errors" if errors else
+                  "completed_with_warnings" if warnings else "completed")
         report = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "config": str(self.config_path) if self.config_path else None,
@@ -79,9 +81,8 @@ class LocalPipelineRunner:
                 "completion": [asdict(item) for item in completion],
             },
         }
+        report["human_summary"] = self._human_summary(report, status=status, dry_run=dry_run)
         report_path = None if dry_run else self._write_report(report)
-        status = ("completed_with_errors" if errors else
-                  "completed_with_warnings" if warnings else "completed")
         return PipelineResult(report_path, dry_run, status, tuple(errors), tuple(warnings))
 
     @staticmethod
@@ -102,3 +103,26 @@ class LocalPipelineRunner:
         path = reports / name
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return path.relative_to(self.paths.root).as_posix()
+
+    @staticmethod
+    def _human_summary(report: dict[str, object], *, status: str, dry_run: bool) -> list[str]:
+        accounts = report["accounts"] or ["nessun account abilitato"]
+        lines = [
+            f"Esito pipeline: {status} ({'dry-run' if dry_run else 'run reale'})",
+            f"Account abilitate: {', '.join(accounts)}",
+            ("Messaggi trovati: {messages_found}; allegati processati: {attachments_processed}; "
+             "allegati staged: {attachments_staged}; messaggi completati: {messages_completed}; "
+             "messaggi saltati: {messages_skipped}").format(**report),
+            f"Durata totale: {report['duration_seconds']}s",
+        ]
+        for warning in report["warnings"]:
+            lines.append(f"Warning: {warning}")
+        for error in report["errors"]:
+            lines.append(f"Errore: {error}")
+        if report["errors"]:
+            lines.append("Azione consigliata: correggere gli errori e ripetere il dry-run.")
+        elif report["warnings"]:
+            lines.append("Azione consigliata: verificare i warning prima del run successivo.")
+        else:
+            lines.append("Azione consigliata: report pulito, pronto per il passo successivo.")
+        return lines

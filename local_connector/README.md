@@ -231,7 +231,9 @@ python -m virgilio_connector run-local-pipeline --config accounts.local.yaml
 
 La pipeline esegue scan, process, storage e completamento riusando i blocchi
 esistenti. Con `ack_enabled: false` arriva allo staging/report ma non chiude le
-mail. Il report unico viene scritto in `.local_data/reports/pipeline_report_*.json`.
+mail. Il report unico viene scritto in `.local_data/reports/pipeline_report_*.json`
+e include `human_summary`, una sintesi testuale leggibile con esito, contatori,
+warning/errori e prossima azione consigliata.
 Non chiama Apps Script, Bucoliche o notifiche.
 
 ### Doctor locale
