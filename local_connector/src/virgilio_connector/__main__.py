@@ -10,6 +10,7 @@ from pathlib import Path
 import sqlite3
 
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
+from .bucoliche import BucolicheAppendOnlyAdapter, BucolicheError, load_bucoliche_config
 from .completion import CompletionError, LocalCompletionRunner
 from .staging_transport import (
     LocalDriveStagingConfig,
@@ -85,6 +86,9 @@ def main() -> int:
     exporter = commands.add_parser("export-central-events")
     exporter.add_argument("--config", type=Path, required=True)
     exporter.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
+    bucoliche = commands.add_parser("export-to-bucoliche")
+    bucoliche.add_argument("--config", type=Path, required=True)
+    bucoliche.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -255,6 +259,16 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps({"path": target.relative_to(local_root).as_posix()}, separators=(",", ":")))
         return 0
+    if args.command == "export-to-bucoliche":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            load_multi_account_config(args.config)
+            result = BucolicheAppendOnlyAdapter(state_db=local_root / "state.db",
+                config=load_bucoliche_config(args.config)).export(dry_run=args.dry_run)
+        except (MultiAccountConfigError, BucolicheError, sqlite3.Error) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 1 if result.status == "completed_with_errors" else 0
     return 2
 
 

@@ -77,6 +77,12 @@ class ReadonlyStateStore:
                     fingerprint TEXT, action TEXT NOT NULL, status TEXT NOT NULL,
                     details_json TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS local_export_status (
+                    event_id TEXT NOT NULL, target_adapter TEXT NOT NULL,
+                    exported_at TEXT, export_result TEXT NOT NULL,
+                    remote_row_id TEXT, error_type TEXT,
+                    PRIMARY KEY(event_id,target_adapter)
+                );
             """)
             columns = {row[1] for row in db.execute("PRAGMA table_info(attachments)")}
             if "scanner_engine" not in columns:

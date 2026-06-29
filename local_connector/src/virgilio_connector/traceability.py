@@ -177,6 +177,22 @@ class LocalConflictChecker:
 
 
 def export_central_events(state_db: Path, local_root: Path, format_name: str) -> Path:
+    rows = central_event_rows(state_db)
+
+    out = local_root / "exports"; out.mkdir(parents=True, exist_ok=True)
+    target = out / f"central_events_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.{format_name}"
+    if format_name == "jsonl":
+        target.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    elif format_name == "csv":
+        with target.open("w", encoding="utf-8", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=list(rows[0]) if rows else ["event_id"]); writer.writeheader(); writer.writerows(rows)
+    else:
+        raise ValueError("format must be jsonl or csv")
+    return target
+
+
+def central_event_rows(state_db: Path) -> list[dict]:
+    """Build export rows in memory without modifying SQLite or local files."""
     with sqlite3.connect(state_db) as db:
         db.row_factory = sqlite3.Row
         rows = [dict(row) for row in db.execute("""SELECT e.id,e.created_at,e.machine_id,e.account_alias,
@@ -190,16 +206,7 @@ def export_central_events(state_db: Path, local_root: Path, format_name: str) ->
         row["global_state_suggestion"] = _global_state(row["event_type"], row["local_state"])
         row["conflict_type"] = row["event_type"] if str(row["event_type"]).startswith("conflict_") else ""
         row["notes"] = row.pop("details_json") or ""
-    out = local_root / "exports"; out.mkdir(parents=True, exist_ok=True)
-    target = out / f"central_events_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.{format_name}"
-    if format_name == "jsonl":
-        target.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
-    elif format_name == "csv":
-        with target.open("w", encoding="utf-8", newline="") as stream:
-            writer = csv.DictWriter(stream, fieldnames=list(rows[0]) if rows else ["event_id"]); writer.writeheader(); writer.writerows(rows)
-    else:
-        raise ValueError("format must be jsonl or csv")
-    return target
+    return rows
 
 
 def _global_state(action, state):

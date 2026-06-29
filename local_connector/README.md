@@ -442,3 +442,20 @@ python -m virgilio_connector export-central-events --config accounts.local.yaml 
 
 Gli export sono scritti in `.local_data/exports/` e preparano il futuro adapter
 Bucoliche append-only. Nessuna API Google, Docling, LiteLLM o classificazione AI è attiva.
+
+### Bucoliche append-only
+
+La sezione `bucoliche` di `accounts.local.yaml` è disabilitata per default. Impostare
+localmente `VIRGILIO_BUCOLICHE_SPREADSHEET_ID` e
+`VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON`; non committare mai questi valori.
+
+```powershell
+python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml --dry-run
+python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml
+```
+
+Il dry-run non chiama Google e mostra conteggio e prime cinque righe. Il run reale
+richiede `bucoliche.enabled: true` e aggiunge soltanto nuove righe a
+`Bucoliche_Eventi`; i conflitti sono aggiunti anche a `Bucoliche_Conflitti`.
+Gli `event_id` riusciti sono registrati in SQLite per evitare nuovi append.
+SQLite resta il diario operativo primario; Bucoliche è una vista centrale condivisa.

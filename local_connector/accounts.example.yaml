@@ -33,3 +33,15 @@ rules:
       from_contains: ["newsletter", "noreply"]
     - name: small_signatures
       max_attachment_size_bytes: 10239
+
+bucoliche:
+  enabled: false
+  adapter: google_sheets_append_only
+  spreadsheet_id_env: VIRGILIO_BUCOLICHE_SPREADSHEET_ID
+  events_sheet: Bucoliche_Eventi
+  state_sheet: Bucoliche_Stato
+  conflicts_sheet: Bucoliche_Conflitti
+  credentials_mode: service_account_json_env
+  service_account_json_env: VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON
+  append_only: true
+  dry_run_default: true

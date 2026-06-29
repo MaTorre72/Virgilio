@@ -34,7 +34,7 @@ class NoNetworkImplementationTests(unittest.TestCase):
                         violations.append(f"{path.name}: {name}")
                     if name.startswith("urllib") and path.name in {
                         "caronte_http.py", "drive_staging_verify.py",
-                        "drive_staging_intake_test.py",
+                        "drive_staging_intake_test.py", "bucoliche.py",
                     }:
                         continue
                     if any(name == item or name.startswith(f"{item}.") for item in FORBIDDEN_IMPORTS):

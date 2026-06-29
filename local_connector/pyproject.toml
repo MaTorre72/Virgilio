@@ -12,7 +12,7 @@ license = { text = "Proprietary" }
 authors = [
   { name = "Virgilio project contributors" }
 ]
-dependencies = []
+dependencies = ["google-auth>=2.30,<3", "requests>=2.31,<3"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9"]
