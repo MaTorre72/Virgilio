@@ -753,6 +753,59 @@ def test_run_local_pipeline_cli_invalid_config(tmp_path, monkeypatch):
     assert exc.value.code == 2
 
 
+def write_storage_and_bucoliche_config(tmp_path, storage_adapter="local_filesystem"):
+    staging = tmp_path / "staging"; staging.mkdir(parents=True)
+    path = write_config(tmp_path)
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write(f"""
+storage:
+  adapter: {storage_adapter}
+  staging_dir: "{staging}"
+  use_account_subfolders: true
+  copy_manifest: true
+  overwrite: false
+  create_staging_dir: false
+bucoliche:
+  enabled: true
+  adapter: google_sheets_append_only
+  credentials_mode: user_oauth_local
+""")
+    return path
+
+
+def test_storage_loader_does_not_read_bucoliche_adapter(tmp_path):
+    config = write_storage_and_bucoliche_config(tmp_path)
+    storage = load_storage_config(config)
+    assert storage.adapter == "local_filesystem"
+
+
+def test_storage_loader_rejects_bucoliche_adapter_in_storage_section(tmp_path):
+    config = write_storage_and_bucoliche_config(tmp_path, "google_sheets_append_only")
+    with pytest.raises(MultiAccountConfigError, match="unsupported storage adapter"):
+        load_storage_config(config)
+
+
+def test_pipeline_cli_dry_run_keeps_storage_and_bucoliche_separate(tmp_path, monkeypatch, capsys):
+    config = write_storage_and_bucoliche_config(tmp_path)
+    log = []
+    import virgilio_connector.__main__ as cli
+    monkeypatch.setattr(cli, "MultiAccountReadonlyScanner",
+                        lambda *a, **k: FakePhase("scan", log))
+    monkeypatch.setattr(cli, "MultiAccountImapProcessor",
+                        lambda *a, **k: FakePhase("process", log))
+    monkeypatch.setattr(cli, "LocalFilesystemStorageAdapter",
+                        lambda *a, **k: FakePhase("storage", log))
+    monkeypatch.setattr(cli, "LocalCompletionRunner",
+                        lambda *a, **k: FakePhase("completion", log))
+    monkeypatch.setattr(sys, "argv", ["virgilio_connector", "run-local-pipeline",
+                                      "--config", str(config), "--dry-run"])
+    assert cli.main() == 0
+    assert log == [("scan", True), ("process", True), ("storage", True),
+                   ("completion", True)]
+    assert json.loads(capsys.readouterr().out)["dry_run"] is True
+    assert not (tmp_path / ".local_data").exists()
+
+
 class FakeDoctorMailbox:
     instances = []
 

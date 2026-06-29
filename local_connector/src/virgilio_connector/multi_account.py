@@ -533,22 +533,31 @@ def _parse_config_yaml(path: Path) -> tuple[list[dict[str, object]], dict[str, o
         line = raw_line.split("#", 1)[0].rstrip()
         if not line.strip():
             continue
-        if line.strip() == "accounts:":
+        stripped = line.strip()
+        is_top_level_section = not line[:1].isspace() and stripped.endswith(":")
+        if is_top_level_section and stripped == "accounts:":
             if current is not None:
                 accounts.append(current)
                 current = None
             section = "accounts"
             continue
-        if line.strip() == "storage:":
+        if is_top_level_section and stripped == "storage:":
             if current is not None:
                 accounts.append(current)
                 current = None
             section = "storage"
             storage = {}
             continue
+        if is_top_level_section:
+            if current is not None:
+                accounts.append(current)
+                current = None
+            section = "ignored"
+            continue
         if section is None:
             raise MultiAccountConfigError(f"unsupported content before a section at line {line_number}")
-        stripped = line.strip()
+        if section == "ignored":
+            continue
         if section == "accounts" and stripped.startswith("- "):
             if current is not None:
                 accounts.append(current)
