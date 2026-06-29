@@ -7,7 +7,7 @@ import pytest
 
 from virgilio_connector.bucoliche import (
     BucolicheAppendOnlyAdapter, BucolicheConfig, BucolicheError,
-    CONFLICT_COLUMNS, EVENT_COLUMNS, load_bucoliche_config,
+    CONFLICT_COLUMNS, EVENT_COLUMNS, GoogleOAuthLogin, load_bucoliche_config,
 )
 from virgilio_connector.readonly_state import ReadonlyStateStore
 
@@ -130,3 +130,56 @@ bucoliche:
     from virgilio_connector.__main__ import main
     assert main() == 0
     assert json.loads(capsys.readouterr().out)["events_pending"] == 1
+
+
+class FakeOAuthCredentials:
+    def __init__(self, *, valid=True, expired=False, refresh_token="refresh-secret"):
+        self.valid, self.expired, self.refresh_token = valid, expired, refresh_token
+    def refresh(self, request): self.valid, self.expired = True, False
+    def to_json(self): return '{"access_token":"token-secret"}'
+
+
+class FakeOAuthFlow:
+    def __init__(self, credentials): self.credentials = credentials; self.calls = []
+    def run_local_server(self, port):
+        self.calls.append(port)
+        return self.credentials
+
+
+def oauth_config():
+    return BucolicheConfig(credentials_mode="user_oauth_local")
+
+
+def test_user_oauth_config_is_valid():
+    oauth_config().validate()
+
+
+def test_google_oauth_login_creates_token_without_printing_it(tmp_path):
+    secret = tmp_path / "client.json"; secret.write_text('{"installed":{}}', encoding="utf-8")
+    token = tmp_path / "token.json"; flow = FakeOAuthFlow(FakeOAuthCredentials())
+    result = GoogleOAuthLogin(oauth_config(), environ={
+        "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH": str(secret),
+        "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH": str(token)},
+        flow_factory=lambda *_: flow).run()
+    assert result.status == "token_created" and token.is_file()
+    assert flow.calls == [0]
+    assert "token-secret" not in result.to_json()
+
+
+def test_google_oauth_login_refreshes_existing_token(tmp_path):
+    secret = tmp_path / "client.json"; secret.write_text('{}', encoding="utf-8")
+    token = tmp_path / "token.json"; token.write_text('{}', encoding="utf-8")
+    credentials = FakeOAuthCredentials(valid=False, expired=True)
+    result = GoogleOAuthLogin(oauth_config(), environ={
+        "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH": str(secret),
+        "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH": str(token)},
+        credentials_loader=lambda *_: credentials, request_factory=lambda: object()).run()
+    assert result.status == "token_refreshed" and credentials.valid
+
+
+def test_google_oauth_login_missing_secret_is_blocked_and_safe(tmp_path):
+    result = GoogleOAuthLogin(oauth_config(), environ={
+        "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH": str(tmp_path / "missing.json"),
+        "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH": str(tmp_path / "token.json")}).run()
+    assert result.status == "blocked"
+    assert not any(word in result.to_json() for word in ("access_token", "refresh_token", "client_secret"))

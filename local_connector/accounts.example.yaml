@@ -41,7 +41,11 @@ bucoliche:
   events_sheet: Bucoliche_Eventi
   state_sheet: Bucoliche_Stato
   conflicts_sheet: Bucoliche_Conflitti
-  credentials_mode: service_account_json_env
+  # Pilota locale consigliato quando le chiavi service account sono bloccate.
+  credentials_mode: user_oauth_local
+  # Alternativa ammessa: credentials_mode: service_account_json_env
   service_account_json_env: VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON
+  oauth_client_secrets_path_env: VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH
+  oauth_token_path_env: VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH
   append_only: true
   dry_run_default: true

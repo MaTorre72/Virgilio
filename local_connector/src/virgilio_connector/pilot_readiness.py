@@ -10,7 +10,8 @@ import sqlite3
 from typing import Callable, Mapping
 
 from .bucoliche import (BucolicheConfig, BucolicheError, CONFLICT_COLUMNS,
-                        EVENT_COLUMNS, STATE_COLUMNS, GoogleSheetsAppendClient)
+                        EVENT_COLUMNS, STATE_COLUMNS, GoogleSheetsAppendClient,
+                        build_google_sheets_client)
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, LocalStorageConfig
 from .traceability import load_rules
@@ -35,7 +36,7 @@ class BucolicheDoctor:
                  client_factory: Callable[[str, str], object] | None = None) -> None:
         self.config, self.config_has_section = config, config_has_section
         self.environ = os.environ if environ is None else environ
-        self.client_factory = client_factory or GoogleSheetsAppendClient
+        self.client_factory = client_factory
 
     def run(self) -> ReadinessResult:
         checks, errors, warnings = [], [], []
@@ -48,22 +49,14 @@ class BucolicheDoctor:
             warnings.append("Bucoliche adapter disabled; real export remains blocked")
         checks.append({"name": "enabled", "status": str(self.config.enabled).upper()})
         spreadsheet_id = self.environ.get(self.config.spreadsheet_id_env, "").strip()
-        credentials_json = self.environ.get(self.config.service_account_json_env, "")
         if not spreadsheet_id: errors.append(f"missing env: {self.config.spreadsheet_id_env}")
-        if not credentials_json: errors.append(f"missing env: {self.config.service_account_json_env}")
-        checks.extend((_check("spreadsheet_env", bool(spreadsheet_id)),
-                       _check("service_account_env", bool(credentials_json))))
-        if credentials_json:
-            try:
-                parsed = json.loads(credentials_json)
-                if not isinstance(parsed, dict): raise ValueError
-                checks.append(_check("service_account_json", True))
-            except (ValueError, TypeError, json.JSONDecodeError):
-                errors.append("service account JSON is invalid")
-                checks.append(_check("service_account_json", False))
+        checks.append(_check("spreadsheet_env", bool(spreadsheet_id)))
+        credential_value = self._check_credentials(checks, errors)
         if not errors:
             try:
-                client = self.client_factory(spreadsheet_id, credentials_json)
+                client = (self.client_factory(spreadsheet_id, credential_value)
+                          if self.client_factory else
+                          build_google_sheets_client(self.config, self.environ))
                 sheets = client.inspect_sheets()
                 checks.append(_check("spreadsheet_read", True))
                 self._check_sheets(sheets, checks, errors, warnings)
@@ -72,6 +65,34 @@ class BucolicheDoctor:
                 checks.append(_check("spreadsheet_read", False))
         warnings.append("append capability not verified in read-only doctor")
         return _result(checks, errors, warnings)
+
+    def _check_credentials(self, checks, errors):
+        if self.config.credentials_mode == "service_account_json_env":
+            value = self.environ.get(self.config.service_account_json_env, "")
+            if not value: errors.append(f"missing env: {self.config.service_account_json_env}")
+            checks.append(_check("service_account_env", bool(value)))
+            if value:
+                try:
+                    if not isinstance(json.loads(value), dict): raise ValueError
+                    checks.append(_check("service_account_json", True))
+                except (ValueError, TypeError, json.JSONDecodeError):
+                    errors.append("service account JSON is invalid")
+                    checks.append(_check("service_account_json", False))
+            return value
+        client_value = self.environ.get(self.config.oauth_client_secrets_path_env, "").strip()
+        token_value = self.environ.get(self.config.oauth_token_path_env, "").strip()
+        client_path, token_path = Path(client_value), Path(token_value)
+        if not client_value: errors.append(f"missing env: {self.config.oauth_client_secrets_path_env}")
+        elif not client_path.is_file(): errors.append("OAuth client secret file missing")
+        else:
+            try:
+                if not isinstance(json.loads(client_path.read_text(encoding="utf-8")), dict): raise ValueError
+            except (OSError, ValueError, json.JSONDecodeError): errors.append("OAuth client secret JSON invalid")
+        if not token_value: errors.append(f"missing env: {self.config.oauth_token_path_env}")
+        elif not token_path.is_file(): errors.append("OAuth token missing; run google-oauth-login")
+        checks.extend((_check("oauth_client_secret", bool(client_value) and client_path.is_file()),
+                       _check("oauth_token", bool(token_value) and token_path.is_file())))
+        return token_value
 
     def _check_sheets(self, sheets, checks, errors, warnings):
         required = ((self.config.events_sheet, EVENT_COLUMNS),
@@ -115,21 +136,29 @@ class BucolicheSheetSetup:
                  client_factory: Callable[[str, str], object] | None = None) -> None:
         self.config = config
         self.environ = os.environ if environ is None else environ
-        self.client_factory = client_factory or GoogleSheetsAppendClient
+        self.client_factory = client_factory
 
     def run(self, *, dry_run: bool) -> SheetSetupResult:
         errors, warnings = [], []
         spreadsheet_id = self.environ.get(self.config.spreadsheet_id_env, "").strip()
-        credentials_json = self.environ.get(self.config.service_account_json_env, "")
         try: self.config.validate()
         except BucolicheError as exc: errors.append(str(exc))
         if not spreadsheet_id: errors.append(f"missing env: {self.config.spreadsheet_id_env}")
-        if not credentials_json: errors.append(f"missing env: {self.config.service_account_json_env}")
-        if credentials_json:
-            try:
-                if not isinstance(json.loads(credentials_json), dict): raise ValueError
-            except (ValueError, TypeError, json.JSONDecodeError):
-                errors.append("service account JSON is invalid")
+        credential_value = ""
+        if self.config.credentials_mode == "service_account_json_env":
+            credential_value = self.environ.get(self.config.service_account_json_env, "")
+            if not credential_value: errors.append(f"missing env: {self.config.service_account_json_env}")
+            else:
+                try:
+                    if not isinstance(json.loads(credential_value), dict): raise ValueError
+                except (ValueError, TypeError, json.JSONDecodeError):
+                    errors.append("service account JSON is invalid")
+        else:
+            client_value = self.environ.get(self.config.oauth_client_secrets_path_env, "").strip()
+            credential_value = self.environ.get(self.config.oauth_token_path_env, "").strip()
+            if not client_value or not Path(client_value).is_file(): errors.append("OAuth client secret file missing")
+            if not credential_value or not Path(credential_value).is_file():
+                errors.append("OAuth token missing; run google-oauth-login")
         definitions = ((self.config.events_sheet, EVENT_COLUMNS),
                        (self.config.conflicts_sheet, CONFLICT_COLUMNS),
                        (self.config.state_sheet, STATE_COLUMNS))
@@ -142,7 +171,8 @@ class BucolicheSheetSetup:
             errors.append("Bucoliche adapter disabled; enable only for the test Sheet")
         if errors:
             return SheetSetupResult("BLOCKED", False, (), tuple(errors), tuple(warnings))
-        client = self.client_factory(spreadsheet_id, credentials_json)
+        client = (self.client_factory(spreadsheet_id, credential_value)
+                  if self.client_factory else build_google_sheets_client(self.config, self.environ))
         try: existing = client.inspect_sheets()
         except Exception as exc:
             return SheetSetupResult("BLOCKED", False, (),
@@ -199,10 +229,17 @@ class PilotPreview:
                              for a in self.accounts if a.enabled],
                 "storage_dir": str(self.storage.staging_dir or ""),
                 "bucoliche_enabled": self.bucoliche.enabled,
+                "credentials_mode": self.bucoliche.credentials_mode,
+                "oauth_token_present": self._oauth_token_present(),
                 "sheet_target": masked, "events_exportable": len(events),
                 "local_conflicts": len(conflicts), "pilot_check": self.pilot_status,
                 "doctor_bucoliche": "RUN_SEPARATELY_READ_ONLY", "warnings": warnings,
                 "next_commands": self.NEXT_COMMANDS}
+
+    def _oauth_token_present(self):
+        if self.bucoliche.credentials_mode != "user_oauth_local": return None
+        value = self.environ.get(self.bucoliche.oauth_token_path_env, "").strip()
+        return bool(value and Path(value).is_file())
 
 
 class PilotCheck:
@@ -251,8 +288,16 @@ class PilotCheck:
                 self.bucoliche.validate()
                 if not self.environ.get(self.bucoliche.spreadsheet_id_env):
                     raise BucolicheError("spreadsheet env missing")
-                if not self.environ.get(self.bucoliche.service_account_json_env):
-                    raise BucolicheError("service account env missing")
+                if self.bucoliche.credentials_mode == "service_account_json_env":
+                    if not self.environ.get(self.bucoliche.service_account_json_env):
+                        raise BucolicheError("service account env missing")
+                else:
+                    client = self.environ.get(self.bucoliche.oauth_client_secrets_path_env, "")
+                    token = self.environ.get(self.bucoliche.oauth_token_path_env, "")
+                    if not client or not Path(client).is_file():
+                        raise BucolicheError("OAuth client secret missing")
+                    if not token or not Path(token).is_file():
+                        raise BucolicheError("OAuth token missing")
                 checks.append(_check("bucoliche", True))
             except BucolicheError: errors.append("Bucoliche configuration invalid"); checks.append(_check("bucoliche", False))
         if db_ok and not self._has_events():

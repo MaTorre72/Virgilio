@@ -10,7 +10,8 @@ from pathlib import Path
 import sqlite3
 
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
-from .bucoliche import BucolicheAppendOnlyAdapter, BucolicheError, load_bucoliche_config
+from .bucoliche import (BucolicheAppendOnlyAdapter, BucolicheError,
+                        GoogleOAuthLogin, load_bucoliche_config)
 from .completion import CompletionError, LocalCompletionRunner
 from .staging_transport import (
     LocalDriveStagingConfig,
@@ -100,6 +101,8 @@ def main() -> int:
     sheet_setup.add_argument("--dry-run", action="store_true")
     pilot_preview = commands.add_parser("pilot-preview")
     pilot_preview.add_argument("--config", type=Path, required=True)
+    oauth_login = commands.add_parser("google-oauth-login")
+    oauth_login.add_argument("--config", type=Path, required=True)
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -329,6 +332,13 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
         return 0 if result["pilot_check"] in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "google-oauth-login":
+        try:
+            result = GoogleOAuthLogin(load_bucoliche_config(args.config)).run()
+        except (BucolicheError, OSError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(result.to_json())
+        return 0 if result.status in {"token_created", "token_refreshed"} else 1
     return 2
 
 

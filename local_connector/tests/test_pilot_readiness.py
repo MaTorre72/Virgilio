@@ -131,7 +131,7 @@ def test_cli_commands_exist_and_missing_config_blocked(tmp_path, monkeypatch, ca
 
 def test_new_cli_commands_are_registered(tmp_path, monkeypatch):
     from virgilio_connector.__main__ import main
-    for command in ("setup-bucoliche-test-sheet", "pilot-preview"):
+    for command in ("setup-bucoliche-test-sheet", "pilot-preview", "google-oauth-login"):
         monkeypatch.setattr(sys, "argv", ["virgilio_connector", command,
                                           "--config", str(tmp_path / "missing.yaml")])
         with pytest.raises(SystemExit) as exc:
@@ -194,3 +194,57 @@ def test_pilot_preview_is_local_masks_target_and_warns_ack(tmp_path):
     assert len(preview["next_commands"]) == 5
     assert preview["warnings"] == ["test_box: ack_enabled=true"]
     assert "1234567890SECRET" not in text and "private_key" not in text
+
+
+def test_oauth_doctor_missing_token_blocks_with_login_hint(tmp_path):
+    secret = tmp_path / "client.json"; secret.write_text('{}', encoding="utf-8")
+    config = BucolicheConfig(enabled=True, credentials_mode="user_oauth_local")
+    result = BucolicheDoctor(config, config_has_section=True, environ={
+        "VIRGILIO_BUCOLICHE_SPREADSHEET_ID": "sheet-test",
+        "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH": str(secret),
+        "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH": str(tmp_path / "missing-token.json")}).run()
+    assert result.status == "BLOCKED"
+    assert any("google-oauth-login" in error for error in result.errors)
+
+
+def test_oauth_doctor_with_token_uses_read_only_fake(tmp_path):
+    secret = tmp_path / "client.json"; secret.write_text('{}', encoding="utf-8")
+    token = tmp_path / "token.json"; token.write_text('{}', encoding="utf-8")
+    fake = FakeReadClient(sheets())
+    config = BucolicheConfig(enabled=True, credentials_mode="user_oauth_local")
+    result = BucolicheDoctor(config, config_has_section=True, environ={
+        "VIRGILIO_BUCOLICHE_SPREADSHEET_ID": "sheet-test",
+        "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH": str(secret),
+        "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH": str(token)},
+        client_factory=lambda *_: fake).run()
+    assert result.status == "READY_WITH_WARNINGS"
+    assert fake.calls == ["inspect_sheets"]
+
+
+def test_oauth_sheet_setup_uses_existing_token_and_fake(tmp_path):
+    secret = tmp_path / "client.json"; secret.write_text('{}', encoding="utf-8")
+    token = tmp_path / "token.json"; token.write_text('{}', encoding="utf-8")
+    fake = FakeReadClient(sheets())
+    config = BucolicheConfig(enabled=True, credentials_mode="user_oauth_local")
+    result = BucolicheSheetSetup(config, environ={
+        "VIRGILIO_BUCOLICHE_SPREADSHEET_ID": "sheet-test",
+        "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH": str(secret),
+        "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH": str(token)},
+        client_factory=lambda *_: fake).run(dry_run=False)
+    assert result.status == "READY"
+    assert fake.calls[0] == "inspect_sheets"
+    assert fake.calls[1][:2] == ("write_header", "Bucoliche_Stato")
+
+
+def test_pilot_check_accepts_oauth_local_files(tmp_path):
+    runner = pilot_fixture(tmp_path)
+    secret = tmp_path / "client.json"; secret.write_text('{}', encoding="utf-8")
+    token = tmp_path / "token.json"; token.write_text('{}', encoding="utf-8")
+    runner = PilotCheck(runner.accounts, storage=runner.storage,
+        bucoliche=BucolicheConfig(enabled=True, credentials_mode="user_oauth_local"),
+        config_path=runner.config_path, paths=runner.paths, environ={
+            "TEST_USER": "user", "TEST_PASS": "secret",
+            "VIRGILIO_BUCOLICHE_SPREADSHEET_ID": "sheet-test",
+            "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH": str(secret),
+            "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH": str(token)})
+    assert runner.run().status == "READY_WITH_WARNINGS"

@@ -47,13 +47,15 @@ class BucolicheConfig:
     conflicts_sheet: str = "Bucoliche_Conflitti"
     credentials_mode: str = "service_account_json_env"
     service_account_json_env: str = "VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON"
+    oauth_client_secrets_path_env: str = "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH"
+    oauth_token_path_env: str = "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH"
     append_only: bool = True
     dry_run_default: bool = True
 
     def validate(self) -> None:
         if self.adapter != "google_sheets_append_only":
             raise BucolicheError("unsupported Bucoliche adapter")
-        if self.credentials_mode != "service_account_json_env":
+        if self.credentials_mode not in {"service_account_json_env", "user_oauth_local"}:
             raise BucolicheError("unsupported Bucoliche credentials_mode")
         if not self.append_only:
             raise BucolicheError("Bucoliche adapter must remain append-only")
@@ -87,15 +89,20 @@ class SheetsAppendClient(Protocol):
                     rows: Sequence[Mapping[str, object]]) -> None: ...
 
 
+SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
+
+
 class GoogleSheetsAppendClient:
     """Small REST client; credentials are read only from environment variables."""
-    def __init__(self, spreadsheet_id: str, service_account_json: str) -> None:
+    def __init__(self, spreadsheet_id: str, service_account_json: str | None = None,
+                 *, credentials=None) -> None:
         try:
-            from google.oauth2 import service_account
             from google.auth.transport.requests import AuthorizedSession
-            info = json.loads(service_account_json)
-            credentials = service_account.Credentials.from_service_account_info(
-                info, scopes=("https://www.googleapis.com/auth/spreadsheets",))
+            if credentials is None:
+                from google.oauth2 import service_account
+                info = json.loads(service_account_json or "")
+                credentials = service_account.Credentials.from_service_account_info(
+                    info, scopes=(SHEETS_SCOPE,))
             self._session = AuthorizedSession(credentials)
         except (ImportError, ValueError, KeyError, TypeError) as exc:
             raise BucolicheError(f"Google credentials unavailable or invalid: {type(exc).__name__}") from None
@@ -215,11 +222,7 @@ class BucolicheAppendOnlyAdapter:
             len(conflicts), (), tuple(errors))
 
     def _client_from_env(self) -> SheetsAppendClient:
-        spreadsheet_id = self.environ.get(self.config.spreadsheet_id_env, "").strip()
-        credentials = self.environ.get(self.config.service_account_json_env, "")
-        if not spreadsheet_id: raise BucolicheError(f"missing env: {self.config.spreadsheet_id_env}")
-        if not credentials: raise BucolicheError(f"missing env: {self.config.service_account_json_env}")
-        return GoogleSheetsAppendClient(spreadsheet_id, credentials)
+        return build_google_sheets_client(self.config, self.environ)
 
     def _successful_event_ids(self, target: str) -> set[str]:
         with sqlite3.connect(self.state_db) as db:
@@ -248,3 +251,111 @@ def _event_row(row: Mapping[str, object]) -> dict:
 def _conflict_row(row: Mapping[str, object]) -> dict:
     values = dict(row); values["detected_at"] = row.get("created_at", "")
     return {column: values.get(column, "") for column in CONFLICT_COLUMNS}
+
+
+def build_google_sheets_client(config: BucolicheConfig,
+                               environ: Mapping[str, str]) -> GoogleSheetsAppendClient:
+    spreadsheet_id = environ.get(config.spreadsheet_id_env, "").strip()
+    if not spreadsheet_id:
+        raise BucolicheError(f"missing env: {config.spreadsheet_id_env}")
+    if config.credentials_mode == "service_account_json_env":
+        payload = environ.get(config.service_account_json_env, "")
+        if not payload: raise BucolicheError(f"missing env: {config.service_account_json_env}")
+        return GoogleSheetsAppendClient(spreadsheet_id, payload)
+    client_path = _configured_path(environ, config.oauth_client_secrets_path_env)
+    token_path = _configured_path(environ, config.oauth_token_path_env)
+    if not client_path.is_file(): raise BucolicheError("OAuth client secret file missing")
+    if not token_path.is_file():
+        raise BucolicheError("OAuth token missing; run google-oauth-login")
+    try:
+        from google.oauth2.credentials import Credentials
+        from google.auth.transport.requests import Request
+        credentials = Credentials.from_authorized_user_file(str(token_path), (SHEETS_SCOPE,))
+        if credentials.expired and credentials.refresh_token:
+            credentials.refresh(Request())
+            _write_private_json(token_path, credentials.to_json())
+        if not credentials.valid:
+            raise BucolicheError("OAuth token invalid; run google-oauth-login")
+        return GoogleSheetsAppendClient(spreadsheet_id, credentials=credentials)
+    except ImportError:
+        raise BucolicheError("Google OAuth dependencies unavailable") from None
+    except (ValueError, json.JSONDecodeError):
+        raise BucolicheError("OAuth token invalid; run google-oauth-login") from None
+
+
+@dataclass(frozen=True, slots=True)
+class GoogleOAuthLoginResult:
+    status: str
+    errors: tuple[str, ...] = ()
+
+    def to_json(self) -> str:
+        return json.dumps({"status": self.status, "errors": self.errors},
+                          ensure_ascii=False, separators=(",", ":"))
+
+
+class GoogleOAuthLogin:
+    def __init__(self, config: BucolicheConfig, *, environ: Mapping[str, str] | None = None,
+                 flow_factory=None, credentials_loader=None, request_factory=None) -> None:
+        self.config = config
+        self.environ = os.environ if environ is None else environ
+        self.flow_factory = flow_factory
+        self.credentials_loader = credentials_loader
+        self.request_factory = request_factory
+
+    def run(self) -> GoogleOAuthLoginResult:
+        if self.config.credentials_mode != "user_oauth_local":
+            return GoogleOAuthLoginResult("blocked", ("credentials_mode must be user_oauth_local",))
+        try:
+            client_path = _configured_path(self.environ, self.config.oauth_client_secrets_path_env)
+            token_path = _configured_path(self.environ, self.config.oauth_token_path_env)
+        except BucolicheError as exc:
+            return GoogleOAuthLoginResult("blocked", (str(exc),))
+        if not client_path.is_file():
+            return GoogleOAuthLoginResult("blocked", ("OAuth client secret file missing",))
+        try:
+            parsed = json.loads(client_path.read_text(encoding="utf-8"))
+            if not isinstance(parsed, dict): raise ValueError
+        except (OSError, ValueError, json.JSONDecodeError):
+            return GoogleOAuthLoginResult("blocked", ("OAuth client secret JSON invalid",))
+        try:
+            if token_path.is_file():
+                credentials = self._load_credentials(token_path)
+                if credentials.expired and credentials.refresh_token:
+                    credentials.refresh(self._request())
+                if credentials.valid:
+                    _write_private_json(token_path, credentials.to_json())
+                    return GoogleOAuthLoginResult("token_refreshed")
+            flow = self._flow(client_path)
+            credentials = flow.run_local_server(port=0)
+            _write_private_json(token_path, credentials.to_json())
+            return GoogleOAuthLoginResult("token_created")
+        except Exception as exc:
+            return GoogleOAuthLoginResult("error", (f"OAuth login failed: {type(exc).__name__}",))
+
+    def _flow(self, path):
+        if self.flow_factory: return self.flow_factory(path, (SHEETS_SCOPE,))
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        return InstalledAppFlow.from_client_secrets_file(str(path), scopes=(SHEETS_SCOPE,))
+
+    def _load_credentials(self, path):
+        if self.credentials_loader: return self.credentials_loader(path, (SHEETS_SCOPE,))
+        from google.oauth2.credentials import Credentials
+        return Credentials.from_authorized_user_file(str(path), (SHEETS_SCOPE,))
+
+    def _request(self):
+        if self.request_factory: return self.request_factory()
+        from google.auth.transport.requests import Request
+        return Request()
+
+
+def _configured_path(environ: Mapping[str, str], name: str) -> Path:
+    value = environ.get(name, "").strip()
+    if not value: raise BucolicheError(f"missing env: {name}")
+    return Path(value)
+
+
+def _write_private_json(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(content, encoding="utf-8")
+    temporary.replace(path)

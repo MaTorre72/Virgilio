@@ -486,3 +486,32 @@ python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml
 Verifica infine `Bucoliche_Eventi` popolato, `Bucoliche_Conflitti` vuoto o coerente
 e nessuna mail modificata. Il setup non cancella dati e non sovrascrive header
 incoerenti; `doctor-bucoliche` e `pilot-preview` non scrivono su Google.
+
+### Autenticazione Google senza service account key
+
+Se l'organizzazione applica `iam.disableServiceAccountKeyCreation`, usare
+`credentials_mode: user_oauth_local`. La modalità `service_account_json_env` resta
+disponibile negli ambienti che consentono le chiavi.
+
+1. In Google Cloud creare un OAuth Client ID di tipo **Desktop app**.
+2. Scaricare il client secret in
+   `.local_data/google_oauth_client_secret.json` (mai in Git).
+3. Configurare nel `.env`:
+
+```env
+VIRGILIO_BUCOLICHE_SPREADSHEET_ID=ID_DEL_SOLO_SHEET_DI_TEST
+VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH=.local_data/google_oauth_client_secret.json
+VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH=.local_data/google_token.json
+```
+
+4. Eseguire il login esplicito; si aprirà il browser e il token resterà locale:
+
+```powershell
+python -m virgilio_connector google-oauth-login --config accounts.local.yaml
+python -m virgilio_connector doctor-bucoliche --config accounts.local.yaml
+python -m virgilio_connector setup-bucoliche-test-sheet --config accounts.local.yaml --dry-run
+python -m virgilio_connector setup-bucoliche-test-sheet --config accounts.local.yaml
+```
+
+Non committare client secret o token. Usare soltanto lo Sheet di test e mantenere
+`ack_enabled: false` nel primo pilota. Lo scope richiesto è solo Google Sheets.
