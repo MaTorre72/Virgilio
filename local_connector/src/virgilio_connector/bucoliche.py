@@ -23,8 +23,14 @@ EVENT_COLUMNS = (
     "result", "conflict_type", "notes",
 )
 CONFLICT_COLUMNS = (
-    "detected_at", "fingerprint", "conflict_type", "machine_id", "account_alias",
-    "source_message_id", "attachment_id", "sha256", "staged_filename", "notes",
+    "event_id", "detected_at", "exported_at", "machine_id", "account_alias",
+    "fingerprint", "conflict_type", "source_message_id", "attachment_id", "sha256",
+    "staged_filename", "notes",
+)
+STATE_COLUMNS = (
+    "fingerprint", "last_event_at", "machine_id", "account_alias", "source_email",
+    "attachment_id", "sha256", "current_global_state", "last_result",
+    "conflict_type", "staged_filename", "notes",
 )
 
 
@@ -125,6 +131,23 @@ class GoogleSheetsAppendClient:
             values = header.json().get("values", [])
             result[title] = tuple(str(value) for value in (values[0] if values else ()))
         return result
+
+    def create_sheet(self, sheet_name: str) -> None:
+        base = (f"https://sheets.googleapis.com/v4/spreadsheets/"
+                f"{quote(self.spreadsheet_id, safe='')}:batchUpdate")
+        response = self._session.post(base, json={"requests": [{"addSheet": {
+            "properties": {"title": sheet_name}}}]}, timeout=20)
+        if response.status_code >= 400:
+            raise BucolicheError(f"Google Sheets create tab failed: HTTP {response.status_code}")
+
+    def write_header(self, sheet_name: str, columns: Sequence[str]) -> None:
+        base = (f"https://sheets.googleapis.com/v4/spreadsheets/"
+                f"{quote(self.spreadsheet_id, safe='')}/values/"
+                f"{quote(sheet_name, safe='')}!1:1")
+        response = self._session.put(base, params={"valueInputOption": "RAW"},
+            json={"values": [list(columns)]}, timeout=20)
+        if response.status_code >= 400:
+            raise BucolicheError(f"Google Sheets header write failed: HTTP {response.status_code}")
 
 
 @dataclass(frozen=True, slots=True)

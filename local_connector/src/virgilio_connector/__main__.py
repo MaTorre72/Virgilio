@@ -36,7 +36,8 @@ from .multi_account import (
     load_multi_account_config,
 )
 from .pipeline import LocalPipelineRunner
-from .pilot_readiness import BucolicheDoctor, PilotCheck, has_bucoliche_section
+from .pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup, PilotCheck,
+                              PilotPreview, has_bucoliche_section)
 from .scanner import select_scanner
 from .storage_adapter import LocalFilesystemStorageAdapter, StorageAdapterError
 from .traceability import LocalConflictChecker, export_central_events, load_rules
@@ -94,6 +95,11 @@ def main() -> int:
     doctor_bucoliche.add_argument("--config", type=Path, required=True)
     pilot_check = commands.add_parser("pilot-check")
     pilot_check.add_argument("--config", type=Path, required=True)
+    sheet_setup = commands.add_parser("setup-bucoliche-test-sheet")
+    sheet_setup.add_argument("--config", type=Path, required=True)
+    sheet_setup.add_argument("--dry-run", action="store_true")
+    pilot_preview = commands.add_parser("pilot-preview")
+    pilot_preview.add_argument("--config", type=Path, required=True)
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -300,6 +306,29 @@ def main() -> int:
             return 2
         print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "setup-bucoliche-test-sheet":
+        try:
+            result = BucolicheSheetSetup(load_bucoliche_config(args.config)).run(
+                dry_run=args.dry_run)
+        except (BucolicheError, OSError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(result.to_json())
+        return 0 if result.status in {"DRY_RUN", "READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "pilot-preview":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            accounts = load_multi_account_config(args.config)
+            storage_config = load_storage_config(args.config)
+            bucoliche_config = load_bucoliche_config(args.config)
+            paths = LocalDataPaths(local_root)
+            pilot = PilotCheck(accounts, storage=storage_config,
+                bucoliche=bucoliche_config, config_path=args.config, paths=paths).run()
+            result = PilotPreview(accounts, storage=storage_config,
+                bucoliche=bucoliche_config, paths=paths, pilot_status=pilot.status).run()
+        except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+        return 0 if result["pilot_check"] in {"READY", "READY_WITH_WARNINGS"} else 1
     return 2
 
 

@@ -10,10 +10,11 @@ import sqlite3
 from typing import Callable, Mapping
 
 from .bucoliche import (BucolicheConfig, BucolicheError, CONFLICT_COLUMNS,
-                        EVENT_COLUMNS, GoogleSheetsAppendClient)
+                        EVENT_COLUMNS, STATE_COLUMNS, GoogleSheetsAppendClient)
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, LocalStorageConfig
 from .traceability import load_rules
+from .traceability import central_event_rows
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,16 +78,131 @@ class BucolicheDoctor:
                     (self.config.conflicts_sheet, CONFLICT_COLUMNS))
         for name, expected in required:
             if name not in sheets:
-                errors.append(f"required sheet missing: {name}")
+                warnings.append(f"sheet missing: {name}; run setup-bucoliche-test-sheet")
                 checks.append(_check(f"sheet:{name}", False)); continue
             checks.append(_check(f"sheet:{name}", True))
-            header = tuple(sheets[name])
-            if not header:
-                warnings.append(f"header absent: {name}")
-            elif header[:len(expected)] != tuple(expected):
-                errors.append(f"header mismatch: {name}")
+            self._check_header(name, tuple(sheets[name]), expected, errors, warnings)
         if self.config.state_sheet not in sheets:
             warnings.append(f"optional sheet missing: {self.config.state_sheet}")
+        else:
+            self._check_header(self.config.state_sheet, tuple(sheets[self.config.state_sheet]),
+                               STATE_COLUMNS, errors, warnings)
+
+    @staticmethod
+    def _check_header(name, header, expected, errors, warnings):
+        if not header:
+            warnings.append(f"header absent: {name}")
+        elif header[:len(expected)] != tuple(expected):
+            errors.append(f"header mismatch: {name}")
+        elif len(header) > len(expected):
+            warnings.append(f"extra header columns: {name}")
+
+
+@dataclass(frozen=True, slots=True)
+class SheetSetupResult:
+    status: str
+    dry_run: bool
+    actions: tuple[dict[str, str], ...]
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    def to_json(self):
+        return json.dumps(asdict(self), ensure_ascii=False, separators=(",", ":"))
+
+
+class BucolicheSheetSetup:
+    def __init__(self, config: BucolicheConfig, *, environ: Mapping[str, str] | None = None,
+                 client_factory: Callable[[str, str], object] | None = None) -> None:
+        self.config = config
+        self.environ = os.environ if environ is None else environ
+        self.client_factory = client_factory or GoogleSheetsAppendClient
+
+    def run(self, *, dry_run: bool) -> SheetSetupResult:
+        errors, warnings = [], []
+        spreadsheet_id = self.environ.get(self.config.spreadsheet_id_env, "").strip()
+        credentials_json = self.environ.get(self.config.service_account_json_env, "")
+        try: self.config.validate()
+        except BucolicheError as exc: errors.append(str(exc))
+        if not spreadsheet_id: errors.append(f"missing env: {self.config.spreadsheet_id_env}")
+        if not credentials_json: errors.append(f"missing env: {self.config.service_account_json_env}")
+        if credentials_json:
+            try:
+                if not isinstance(json.loads(credentials_json), dict): raise ValueError
+            except (ValueError, TypeError, json.JSONDecodeError):
+                errors.append("service account JSON is invalid")
+        definitions = ((self.config.events_sheet, EVENT_COLUMNS),
+                       (self.config.conflicts_sheet, CONFLICT_COLUMNS),
+                       (self.config.state_sheet, STATE_COLUMNS))
+        if dry_run:
+            actions = tuple({"sheet": name, "action": "would_verify_or_create",
+                             "header": ",".join(columns)} for name, columns in definitions)
+            return SheetSetupResult("BLOCKED" if errors else "DRY_RUN", True,
+                                    actions, tuple(errors), tuple(warnings))
+        if not self.config.enabled:
+            errors.append("Bucoliche adapter disabled; enable only for the test Sheet")
+        if errors:
+            return SheetSetupResult("BLOCKED", False, (), tuple(errors), tuple(warnings))
+        client = self.client_factory(spreadsheet_id, credentials_json)
+        try: existing = client.inspect_sheets()
+        except Exception as exc:
+            return SheetSetupResult("BLOCKED", False, (),
+                                    (f"spreadsheet read failed: {type(exc).__name__}",), ())
+        mismatches = [name for name, columns in definitions
+                      if name in existing and existing[name]
+                      and tuple(existing[name])[:len(columns)] != tuple(columns)]
+        if mismatches:
+            actions = tuple({"sheet": name, "action": "blocked_header_mismatch"}
+                            for name in mismatches)
+            errors = tuple(f"header_mismatch: {name}" for name in mismatches)
+            return SheetSetupResult("BLOCKED", False, actions, errors, ())
+        actions = []
+        for name, columns in definitions:
+            header = tuple(existing.get(name, ()))
+            if name not in existing:
+                client.create_sheet(name)
+                client.write_header(name, columns)
+                actions.append({"sheet": name, "action": "created_with_header"})
+            elif not header:
+                client.write_header(name, columns)
+                actions.append({"sheet": name, "action": "header_written"})
+            else:
+                if len(header) > len(columns): warnings.append(f"extra header columns: {name}")
+                actions.append({"sheet": name, "action": "unchanged"})
+        return SheetSetupResult("BLOCKED" if errors else "READY_WITH_WARNINGS" if warnings else "READY",
+                                False, tuple(actions), tuple(errors), tuple(warnings))
+
+
+class PilotPreview:
+    NEXT_COMMANDS = (
+        "python -m virgilio_connector setup-bucoliche-test-sheet --config accounts.local.yaml --dry-run",
+        "python -m virgilio_connector doctor-bucoliche --config accounts.local.yaml",
+        "python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run",
+        "python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml --dry-run",
+        "python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml",
+    )
+
+    def __init__(self, accounts, *, storage, bucoliche, paths, pilot_status,
+                 environ: Mapping[str, str] | None = None):
+        self.accounts, self.storage, self.bucoliche = accounts, storage, bucoliche
+        self.paths, self.pilot_status = paths, pilot_status
+        self.environ = os.environ if environ is None else environ
+
+    def run(self) -> dict:
+        events = central_event_rows(self.paths.state_db) if self.paths.state_db.is_file() else []
+        conflicts = [row for row in events if row.get("conflict_type") or
+                     row.get("global_state_suggestion") == "conflict"]
+        target = self.environ.get(self.bucoliche.spreadsheet_id_env, "")
+        masked = "" if not target else f"{target[:4]}...{target[-4:]}"
+        warnings = [f"{a.account_alias}: ack_enabled=true" for a in self.accounts
+                    if a.enabled and a.ack_enabled]
+        return {"accounts": [{"account_alias": a.account_alias, "ack_enabled": a.ack_enabled}
+                             for a in self.accounts if a.enabled],
+                "storage_dir": str(self.storage.staging_dir or ""),
+                "bucoliche_enabled": self.bucoliche.enabled,
+                "sheet_target": masked, "events_exportable": len(events),
+                "local_conflicts": len(conflicts), "pilot_check": self.pilot_status,
+                "doctor_bucoliche": "RUN_SEPARATELY_READ_ONLY", "warnings": warnings,
+                "next_commands": self.NEXT_COMMANDS}
 
 
 class PilotCheck:

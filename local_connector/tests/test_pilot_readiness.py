@@ -1,11 +1,13 @@
 import json
 from pathlib import Path
 import sys
+import pytest
 
 from virgilio_connector.bucoliche import BucolicheConfig, CONFLICT_COLUMNS, EVENT_COLUMNS
 from virgilio_connector.local_paths import LocalDataPaths
 from virgilio_connector.multi_account import LocalImapAccount, LocalStorageConfig
-from virgilio_connector.pilot_readiness import BucolicheDoctor, PilotCheck
+from virgilio_connector.pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup,
+                                                PilotCheck, PilotPreview)
 from virgilio_connector.readonly_state import ReadonlyStateStore
 
 
@@ -18,6 +20,8 @@ class FakeReadClient:
         return self.sheets
     def append_rows(self, *args):
         raise AssertionError("doctor must never append")
+    def create_sheet(self, name): self.calls.append(("create_sheet", name))
+    def write_header(self, name, columns): self.calls.append(("write_header", name, tuple(columns)))
 
 
 def sheets():
@@ -60,7 +64,9 @@ def test_doctor_unreachable_and_missing_sheet_blocked():
            "VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON": "{}"}
     unreachable, _ = doctor(env, client=FakeReadClient(fail=True))
     absent, _ = doctor(env, client=FakeReadClient({"Bucoliche_Eventi": EVENT_COLUMNS}))
-    assert unreachable.status == absent.status == "BLOCKED"
+    assert unreachable.status == "BLOCKED"
+    assert absent.status == "READY_WITH_WARNINGS"
+    assert any("setup-bucoliche-test-sheet" in item for item in absent.warnings)
 
 
 def test_doctor_output_has_no_secrets():
@@ -69,6 +75,16 @@ def test_doctor_output_has_no_secrets():
                         '{"private_key":"TOP_SECRET","token":"NOPE"}'})
     text = result.to_json()
     assert "TOP_SECRET" not in text and "NOPE" not in text and "private_key" not in text
+
+
+def test_doctor_header_absent_warns_and_mismatch_blocks():
+    env = setup_env()
+    absent, _ = doctor(env, client=FakeReadClient({
+        "Bucoliche_Eventi": (), "Bucoliche_Conflitti": CONFLICT_COLUMNS}))
+    mismatch, _ = doctor(env, client=FakeReadClient({
+        "Bucoliche_Eventi": ("wrong",), "Bucoliche_Conflitti": CONFLICT_COLUMNS}))
+    assert absent.status == "READY_WITH_WARNINGS"
+    assert mismatch.status == "BLOCKED"
 
 
 def account(ack=False):
@@ -111,3 +127,70 @@ def test_cli_commands_exist_and_missing_config_blocked(tmp_path, monkeypatch, ca
                                           "--config", str(tmp_path / "missing.yaml")])
         assert main() == 2
         assert json.loads(capsys.readouterr().out)["status"] == "BLOCKED"
+
+
+def test_new_cli_commands_are_registered(tmp_path, monkeypatch):
+    from virgilio_connector.__main__ import main
+    for command in ("setup-bucoliche-test-sheet", "pilot-preview"):
+        monkeypatch.setattr(sys, "argv", ["virgilio_connector", command,
+                                          "--config", str(tmp_path / "missing.yaml")])
+        with pytest.raises(SystemExit) as exc:
+            main()
+        assert exc.value.code == 2
+
+
+def setup(environ, fake, *, dry_run=False, enabled=True):
+    return BucolicheSheetSetup(BucolicheConfig(enabled=enabled), environ=environ,
+        client_factory=lambda *_: fake).run(dry_run=dry_run)
+
+
+def setup_env():
+    return {"VIRGILIO_BUCOLICHE_SPREADSHEET_ID": "sheet-test",
+            "VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON": "{}"}
+
+
+def test_sheet_setup_dry_run_never_calls_google():
+    fake = FakeReadClient()
+    result = setup(setup_env(), fake, dry_run=True)
+    assert result.status == "DRY_RUN" and len(result.actions) == 3
+    assert fake.calls == []
+
+
+def test_sheet_setup_creates_missing_and_writes_only_headers():
+    fake = FakeReadClient({})
+    result = setup(setup_env(), fake)
+    assert result.status == "READY"
+    assert [call[0] for call in fake.calls[1:]] == [
+        "create_sheet", "write_header", "create_sheet", "write_header",
+        "create_sheet", "write_header"]
+
+
+def test_sheet_setup_empty_header_only_and_coherent_unchanged():
+    fake = FakeReadClient({"Bucoliche_Eventi": (),
+        "Bucoliche_Conflitti": CONFLICT_COLUMNS, "Bucoliche_Stato": ()})
+    result = setup(setup_env(), fake)
+    assert result.status == "READY"
+    assert ("write_header", "Bucoliche_Eventi", EVENT_COLUMNS) in fake.calls
+    assert not any(call[:2] == ("write_header", "Bucoliche_Conflitti") for call in fake.calls)
+
+
+def test_sheet_setup_mismatch_blocks_without_any_write():
+    fake = FakeReadClient({"Bucoliche_Eventi": ("wrong",),
+        "Bucoliche_Conflitti": CONFLICT_COLUMNS})
+    result = setup(setup_env(), fake)
+    assert result.status == "BLOCKED"
+    assert fake.calls == ["inspect_sheets"]
+
+
+def test_pilot_preview_is_local_masks_target_and_warns_ack(tmp_path):
+    runner = pilot_fixture(tmp_path, ack=True)
+    pilot = runner.run()
+    preview = PilotPreview(runner.accounts, storage=runner.storage,
+        bucoliche=BucolicheConfig(enabled=True), paths=runner.paths,
+        pilot_status=pilot.status,
+        environ={"VIRGILIO_BUCOLICHE_SPREADSHEET_ID": "1234567890SECRET"}).run()
+    text = json.dumps(preview)
+    assert preview["sheet_target"] == "1234...CRET"
+    assert len(preview["next_commands"]) == 5
+    assert preview["warnings"] == ["test_box: ack_enabled=true"]
+    assert "1234567890SECRET" not in text and "private_key" not in text
