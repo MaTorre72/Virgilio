@@ -107,6 +107,25 @@ class GoogleSheetsAppendClient:
         if response.status_code >= 400:
             raise BucolicheError(f"Google Sheets append failed: HTTP {response.status_code}")
 
+    def inspect_sheets(self) -> dict[str, tuple[str, ...]]:
+        """Read spreadsheet metadata and first rows only; never writes."""
+        base = (f"https://sheets.googleapis.com/v4/spreadsheets/"
+                f"{quote(self.spreadsheet_id, safe='')}")
+        response = self._session.get(base, params={"fields": "sheets.properties.title"}, timeout=20)
+        if response.status_code >= 400:
+            raise BucolicheError(f"Google Sheets read failed: HTTP {response.status_code}")
+        result: dict[str, tuple[str, ...]] = {}
+        for item in response.json().get("sheets", []):
+            title = str(item.get("properties", {}).get("title", ""))
+            if not title: continue
+            header = self._session.get(f"{base}/values/{quote(title, safe='')}!1:1",
+                                       timeout=20)
+            if header.status_code >= 400:
+                raise BucolicheError(f"Google Sheets header read failed: HTTP {header.status_code}")
+            values = header.json().get("values", [])
+            result[title] = tuple(str(value) for value in (values[0] if values else ()))
+        return result
+
 
 @dataclass(frozen=True, slots=True)
 class BucolicheExportResult:

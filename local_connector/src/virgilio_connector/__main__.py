@@ -36,6 +36,7 @@ from .multi_account import (
     load_multi_account_config,
 )
 from .pipeline import LocalPipelineRunner
+from .pilot_readiness import BucolicheDoctor, PilotCheck, has_bucoliche_section
 from .scanner import select_scanner
 from .storage_adapter import LocalFilesystemStorageAdapter, StorageAdapterError
 from .traceability import LocalConflictChecker, export_central_events, load_rules
@@ -89,6 +90,10 @@ def main() -> int:
     bucoliche = commands.add_parser("export-to-bucoliche")
     bucoliche.add_argument("--config", type=Path, required=True)
     bucoliche.add_argument("--dry-run", action="store_true")
+    doctor_bucoliche = commands.add_parser("doctor-bucoliche")
+    doctor_bucoliche.add_argument("--config", type=Path, required=True)
+    pilot_check = commands.add_parser("pilot-check")
+    pilot_check.add_argument("--config", type=Path, required=True)
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -269,6 +274,32 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 1 if result.status == "completed_with_errors" else 0
+    if args.command == "doctor-bucoliche":
+        try:
+            config = load_bucoliche_config(args.config)
+            result = BucolicheDoctor(config,
+                config_has_section=has_bucoliche_section(args.config)).run()
+        except (BucolicheError, OSError) as exc:
+            result = {"status": "BLOCKED", "checks": [], "errors": [str(exc)],
+                      "warnings": [], "suggested_next_commands": []}
+            print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        print(result.to_json())
+        return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "pilot-check":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            result = PilotCheck(load_multi_account_config(args.config),
+                storage=load_storage_config(args.config),
+                bucoliche=load_bucoliche_config(args.config), config_path=args.config,
+                paths=LocalDataPaths(local_root)).run()
+        except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
+            payload = {"status": "BLOCKED", "checks": [], "errors": [str(exc)],
+                       "warnings": [], "suggested_next_commands": []}
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        print(result.to_json())
+        return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     return 2
 
 

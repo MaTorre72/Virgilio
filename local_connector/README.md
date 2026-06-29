@@ -459,3 +459,37 @@ richiede `bucoliche.enabled: true` e aggiunge soltanto nuove righe a
 `Bucoliche_Eventi`; i conflitti sono aggiunti anche a `Bucoliche_Conflitti`.
 Gli `event_id` riusciti sono registrati in SQLite per evitare nuovi append.
 SQLite resta il diario operativo primario; Bucoliche è una vista centrale condivisa.
+
+### Primo pilota controllato
+
+Prerequisiti: configurazione locale valida, scanner verificato, storage di test
+scrivibile e credenziali IMAP solo in `.env`. Creare un Google Sheet di test con
+le tab `Bucoliche_Eventi` e `Bucoliche_Conflitti`, usando gli header documentati;
+`Bucoliche_Stato` è opzionale. Condividere il foglio con l'indirizzo del service
+account in sola misura necessaria al pilota.
+
+Usare esclusivamente email e allegati non critici. Mantenere `ack_enabled: false`
+nel primo test e usare un Bucoliche di test, mai quello definitivo.
+
+```powershell
+# 1. Verifica generale locale, senza pipeline o scritture remote
+python -m virgilio_connector pilot-check --config accounts.local.yaml
+# 2. Verifica Bucoliche read-only
+python -m virgilio_connector doctor-bucoliche --config accounts.local.yaml
+# 3. Scan IMAP read-only
+python -m virgilio_connector scan-imap-accounts --config accounts.local.yaml --dry-run
+# 4. Pipeline simulata
+python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run
+# 5. Pipeline reale locale, ancora senza ack se disabilitato
+python -m virgilio_connector run-local-pipeline --config accounts.local.yaml
+# 6. Conflitti locali
+python -m virgilio_connector check-local-conflicts --config accounts.local.yaml
+# 7. Preview export senza Google
+python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml --dry-run
+# 8. Primo append sul solo Sheet di test
+python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml
+# 9. Verifica finale
+python -m virgilio_connector pilot-check --config accounts.local.yaml
+```
+
+`doctor-bucoliche` esegue soltanto GET: verifica accesso, tab e header, senza append.
