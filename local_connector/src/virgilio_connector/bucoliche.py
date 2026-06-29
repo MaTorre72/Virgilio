@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+from contextlib import closing
 from typing import Mapping, Protocol, Sequence
 from urllib.parse import quote
 
@@ -87,6 +88,8 @@ def _scalar(value: str):
 class SheetsAppendClient(Protocol):
     def append_rows(self, sheet_name: str, columns: Sequence[str],
                     rows: Sequence[Mapping[str, object]]) -> None: ...
+    def replace_rows(self, sheet_name: str, columns: Sequence[str],
+                     rows: Sequence[Mapping[str, object]]) -> None: ...
 
 
 SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
@@ -119,6 +122,21 @@ class GoogleSheetsAppendClient:
                 for row in rows]}, timeout=20)
         if response.status_code >= 400:
             raise BucolicheError(f"Google Sheets append failed: HTTP {response.status_code}")
+
+    def replace_rows(self, sheet_name: str, columns: Sequence[str],
+                     rows: Sequence[Mapping[str, object]]) -> None:
+        base = (f"https://sheets.googleapis.com/v4/spreadsheets/"
+                f"{quote(self.spreadsheet_id, safe='')}/values/"
+                f"{quote(sheet_name, safe='')}")
+        clear = self._session.post(f"{base}!A:Z:clear", timeout=20)
+        if clear.status_code >= 400:
+            raise BucolicheError(f"Google Sheets clear failed: HTTP {clear.status_code}")
+        values = [list(columns)] + [[row.get(column, "") if row.get(column) is not None else ""
+                                     for column in columns] for row in rows]
+        write = self._session.put(f"{base}!A1", params={"valueInputOption": "RAW"},
+                                  json={"values": values}, timeout=20)
+        if write.status_code >= 400:
+            raise BucolicheError(f"Google Sheets replace failed: HTTP {write.status_code}")
 
     def inspect_sheets(self) -> dict[str, tuple[str, ...]]:
         """Read spreadsheet metadata and first rows only; never writes."""
@@ -185,6 +203,7 @@ class BucolicheAppendOnlyAdapter:
         self.config.validate()
         ensure_state_db(self.state_db.parent)
         events = [_event_row(row) for row in central_event_rows(self.state_db)]
+        state_rows = _state_rows(events)
         exported = self._successful_event_ids(self.TARGET)
         pending = [row for row in events if row["event_id"] not in exported]
         all_conflicts = [row for row in events if row["conflict_type"] or
@@ -217,6 +236,10 @@ class BucolicheAppendOnlyAdapter:
                 self._record(row["event_id"], self.CONFLICT_TARGET,
                              "export_failed", error_type)
                 errors.append(f"conflict {row['event_id']}: {error_type}")
+        try:
+            client.replace_rows(self.config.state_sheet, STATE_COLUMNS, state_rows)
+        except Exception as exc:
+            errors.append(f"state {self.config.state_sheet}: {type(exc).__name__}")
         return BucolicheExportResult("completed_with_errors" if errors else "completed",
             False, len(events), len(pending), done, len(events) - len(pending),
             len(conflicts), (), tuple(errors))
@@ -225,7 +248,7 @@ class BucolicheAppendOnlyAdapter:
         return build_google_sheets_client(self.config, self.environ)
 
     def _successful_event_ids(self, target: str) -> set[str]:
-        with sqlite3.connect(self.state_db) as db:
+        with closing(sqlite3.connect(self.state_db)) as db:
             exists = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='local_export_status'").fetchone()
             if not exists: return set()
             return {row[0] for row in db.execute("""SELECT event_id FROM local_export_status
@@ -235,11 +258,12 @@ class BucolicheAppendOnlyAdapter:
                 error_type: str | None = None) -> None:
         ReadonlyStateStore(self.state_db).initialize()
         now = datetime.now(timezone.utc).isoformat() if result == "exported" else None
-        with sqlite3.connect(self.state_db) as db:
+        with closing(sqlite3.connect(self.state_db)) as db:
             db.execute("""INSERT INTO local_export_status(event_id,target_adapter,exported_at,
                 export_result,error_type) VALUES(?,?,?,?,?) ON CONFLICT(event_id,target_adapter)
                 DO UPDATE SET exported_at=excluded.exported_at,export_result=excluded.export_result,
                 error_type=excluded.error_type""", (event_id, target, now, result, error_type))
+            db.commit()
 
 
 def _event_row(row: Mapping[str, object]) -> dict:
@@ -251,6 +275,40 @@ def _event_row(row: Mapping[str, object]) -> dict:
 def _conflict_row(row: Mapping[str, object]) -> dict:
     values = dict(row); values["detected_at"] = row.get("created_at", "")
     return {column: values.get(column, "") for column in CONFLICT_COLUMNS}
+
+
+def _state_rows(events: Sequence[Mapping[str, object]]) -> tuple[dict[str, object], ...]:
+    by_fingerprint: dict[str, Mapping[str, object]] = {}
+    for row in events:
+        fingerprint = str(row.get("fingerprint", "")).strip()
+        if not fingerprint:
+            continue
+        previous = by_fingerprint.get(fingerprint)
+        current_key = (str(row.get("created_at", "")), str(row.get("event_id", "")))
+        previous_key = ("", "") if previous is None else (
+            str(previous.get("created_at", "")),
+            str(previous.get("event_id", "")),
+        )
+        if previous is None or current_key >= previous_key:
+            by_fingerprint[fingerprint] = row
+    rows = []
+    for fingerprint in sorted(by_fingerprint):
+        current = by_fingerprint[fingerprint]
+        rows.append({
+            "fingerprint": fingerprint,
+            "last_event_at": current.get("created_at", ""),
+            "machine_id": current.get("machine_id", ""),
+            "account_alias": current.get("account_alias", ""),
+            "source_email": current.get("source_email", ""),
+            "attachment_id": current.get("attachment_id", ""),
+            "sha256": current.get("sha256", ""),
+            "current_global_state": current.get("global_state_suggestion", ""),
+            "last_result": current.get("result", ""),
+            "conflict_type": current.get("conflict_type", ""),
+            "staged_filename": current.get("staged_filename", ""),
+            "notes": current.get("notes", ""),
+        })
+    return tuple(rows)
 
 
 def build_google_sheets_client(config: BucolicheConfig,

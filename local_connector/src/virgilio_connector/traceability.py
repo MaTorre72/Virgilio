@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import sqlite3
+from contextlib import closing
 import uuid
 
 
@@ -152,7 +153,7 @@ class LocalConflictChecker:
         from .readonly_state import ensure_state_db
         ensure_state_db(self.state_db.parent)
         conflicts, duplicates = [], []
-        with sqlite3.connect(self.state_db) as db:
+        with closing(sqlite3.connect(self.state_db)) as db:
             db.row_factory = sqlite3.Row
             rows = db.execute("SELECT * FROM attachments ORDER BY id").fetchall()
         def grouped(key):
@@ -197,7 +198,7 @@ def central_event_rows(state_db: Path) -> list[dict]:
     """Build export rows in memory without modifying SQLite or local files."""
     from .readonly_state import ensure_state_db
     ensure_state_db(state_db.parent)
-    with sqlite3.connect(state_db) as db:
+    with closing(sqlite3.connect(state_db)) as db:
         db.row_factory = sqlite3.Row
         rows = [dict(row) for row in db.execute("""SELECT e.id,e.created_at,e.machine_id,e.account_alias,
             e.entity_id AS attachment_id,e.fingerprint,e.action AS event_type,e.status AS result,
