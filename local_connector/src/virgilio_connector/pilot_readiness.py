@@ -10,10 +10,12 @@ import sqlite3
 from typing import Callable, Mapping
 
 from .bucoliche import (BucolicheConfig, BucolicheError, CONFLICT_COLUMNS,
-                        EVENT_COLUMNS, STATE_COLUMNS, GoogleSheetsAppendClient,
+                        EVENT_COLUMNS, STATE_COLUMNS, BucolicheAppendOnlyAdapter,
+                        GoogleSheetsAppendClient,
                         build_google_sheets_client)
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, LocalStorageConfig
+from .pipeline import LocalPipelineRunner
 from .traceability import load_rules
 from .traceability import central_event_rows
 from .readonly_state import ensure_state_db
@@ -324,6 +326,79 @@ class PilotCheck:
 
 def has_bucoliche_section(path: Path) -> bool:
     return any(line.strip() == "bucoliche:" for line in path.read_text(encoding="utf-8").splitlines())
+
+
+@dataclass(frozen=True, slots=True)
+class PilotSafeResult:
+    status: str
+    dry_run: bool
+    stopped_at: str | None
+    pilot_check: str
+    pipeline_status: str | None
+    export_status: str | None
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+    suggested_next_commands: tuple[str, ...]
+
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), ensure_ascii=False, separators=(",", ":"))
+
+
+class PilotSafeRunner:
+    def __init__(self, *, pilot_check_runner: PilotCheck,
+                 pipeline_factory: Callable[[], LocalPipelineRunner],
+                 export_factory: Callable[[], BucolicheAppendOnlyAdapter]) -> None:
+        self.pilot_check_runner = pilot_check_runner
+        self.pipeline_factory = pipeline_factory
+        self.export_factory = export_factory
+
+    def run(self) -> PilotSafeResult:
+        pilot = self.pilot_check_runner.run()
+        warnings = list(pilot.warnings)
+        if pilot.status == "BLOCKED":
+            return PilotSafeResult(
+                status="BLOCKED",
+                dry_run=True,
+                stopped_at="pilot_check",
+                pilot_check=pilot.status,
+                pipeline_status=None,
+                export_status=None,
+                errors=pilot.errors,
+                warnings=tuple(warnings),
+                suggested_next_commands=pilot.suggested_next_commands,
+            )
+
+        pipeline = self.pipeline_factory().run(dry_run=True)
+        warnings.extend(pipeline.warnings)
+        if pipeline.errors:
+            return PilotSafeResult(
+                status="BLOCKED",
+                dry_run=True,
+                stopped_at="pipeline",
+                pilot_check=pilot.status,
+                pipeline_status=pipeline.status,
+                export_status=None,
+                errors=tuple(pipeline.errors),
+                warnings=tuple(warnings),
+                suggested_next_commands=("python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run",),
+            )
+
+        export = self.export_factory().export(dry_run=True)
+        warnings.extend(export.errors)
+        return PilotSafeResult(
+            status="READY_WITH_WARNINGS" if warnings else "READY",
+            dry_run=True,
+            stopped_at=None,
+            pilot_check=pilot.status,
+            pipeline_status=pipeline.status,
+            export_status=export.status,
+            errors=(),
+            warnings=tuple(warnings),
+            suggested_next_commands=(
+                "python -m virgilio_connector run-local-pipeline --config accounts.local.yaml",
+                "python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml",
+            ),
+        )
 
 
 def _check(name: str, ok: bool) -> dict[str, str]:

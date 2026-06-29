@@ -475,6 +475,7 @@ python -m virgilio_connector setup-bucoliche-test-sheet --config accounts.local.
 # Verifica read-only e riepiloga il pilota
 python -m virgilio_connector doctor-bucoliche --config accounts.local.yaml
 python -m virgilio_connector pilot-preview --config accounts.local.yaml
+python -m virgilio_connector pilot-run-safe --config accounts.local.yaml
 # Simula e poi avvia la pipeline locale
 python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run
 python -m virgilio_connector run-local-pipeline --config accounts.local.yaml
@@ -487,7 +488,9 @@ python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml
 
 Verifica infine `Bucoliche_Eventi` popolato, `Bucoliche_Conflitti` vuoto o coerente
 e nessuna mail modificata. Il setup non cancella dati e non sovrascrive header
-incoerenti; `doctor-bucoliche` e `pilot-preview` non scrivono su Google.
+incoerenti; `doctor-bucoliche`, `pilot-preview` e `pilot-run-safe` non scrivono su Google.
+`pilot-run-safe` esegue in sequenza `pilot-check`, `run-local-pipeline --dry-run`
+ed `export-to-bucoliche --dry-run`, fermandosi al primo gate bloccante.
 
 ### Autenticazione Google senza service account key
 

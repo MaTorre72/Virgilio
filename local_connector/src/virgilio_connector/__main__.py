@@ -38,7 +38,8 @@ from .multi_account import (
 )
 from .pipeline import LocalPipelineRunner
 from .pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup, PilotCheck,
-                              PilotPreview, has_bucoliche_section)
+                              PilotPreview, PilotSafeRunner,
+                              has_bucoliche_section)
 from .scanner import select_scanner
 from .storage_adapter import LocalFilesystemStorageAdapter, StorageAdapterError
 from .traceability import LocalConflictChecker, export_central_events, load_rules
@@ -96,6 +97,8 @@ def main() -> int:
     doctor_bucoliche.add_argument("--config", type=Path, required=True)
     pilot_check = commands.add_parser("pilot-check")
     pilot_check.add_argument("--config", type=Path, required=True)
+    pilot_safe = commands.add_parser("pilot-run-safe")
+    pilot_safe.add_argument("--config", type=Path, required=True)
     sheet_setup = commands.add_parser("setup-bucoliche-test-sheet")
     sheet_setup.add_argument("--config", type=Path, required=True)
     sheet_setup.add_argument("--dry-run", action="store_true")
@@ -305,6 +308,47 @@ def main() -> int:
         except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
             payload = {"status": "BLOCKED", "checks": [], "errors": [str(exc)],
                        "warnings": [], "suggested_next_commands": []}
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        print(result.to_json())
+        return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "pilot-run-safe":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            accounts = load_multi_account_config(args.config)
+            storage_config = load_storage_config(args.config)
+            bucoliche_config = load_bucoliche_config(args.config)
+            paths = LocalDataPaths(local_root)
+            runner = PilotSafeRunner(
+                pilot_check_runner=PilotCheck(
+                    accounts,
+                    storage=storage_config,
+                    bucoliche=bucoliche_config,
+                    config_path=args.config,
+                    paths=paths,
+                ),
+                pipeline_factory=lambda: LocalPipelineRunner(
+                    accounts, paths=paths, config_path=args.config,
+                    scanner_factory=lambda: MultiAccountReadonlyScanner(accounts, paths=paths),
+                    processor_factory=lambda: MultiAccountImapProcessor(
+                        accounts, paths=paths,
+                        scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+                        rules=load_rules(args.config),
+                        max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
+                    ),
+                    storage_factory=lambda: LocalFilesystemStorageAdapter(
+                        state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
+                    ),
+                    completion_factory=lambda: LocalCompletionRunner(accounts, paths=paths),
+                ),
+                export_factory=lambda: BucolicheAppendOnlyAdapter(
+                    state_db=paths.state_db,
+                    config=bucoliche_config,
+                ),
+            )
+            result = runner.run()
+        except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
+            payload = {"status": "BLOCKED", "errors": [str(exc)], "warnings": []}
             print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
             return 2
         print(result.to_json())

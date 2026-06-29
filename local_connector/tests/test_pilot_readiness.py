@@ -7,7 +7,7 @@ from virgilio_connector.bucoliche import BucolicheConfig, CONFLICT_COLUMNS, EVEN
 from virgilio_connector.local_paths import LocalDataPaths
 from virgilio_connector.multi_account import LocalImapAccount, LocalStorageConfig
 from virgilio_connector.pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup,
-                                                PilotCheck, PilotPreview)
+                                                PilotCheck, PilotPreview, PilotSafeRunner)
 from virgilio_connector.readonly_state import ReadonlyStateStore
 
 
@@ -22,6 +22,37 @@ class FakeReadClient:
         raise AssertionError("doctor must never append")
     def create_sheet(self, name): self.calls.append(("create_sheet", name))
     def write_header(self, name, columns): self.calls.append(("write_header", name, tuple(columns)))
+
+
+class FakePipelineResult:
+    def __init__(self, status="completed", errors=(), warnings=()):
+        self.status = status
+        self.errors = tuple(errors)
+        self.warnings = tuple(warnings)
+
+
+class FakePipelineRunner:
+    def __init__(self, result, log):
+        self.result = result
+        self.log = log
+
+    def run(self, *, dry_run):
+        self.log.append(("pipeline", dry_run))
+        return self.result
+
+
+class FakeExportRunner:
+    def __init__(self, log, status="dry_run", errors=()):
+        self.log = log
+        self.status = status
+        self.errors = tuple(errors)
+
+    def export(self, *, dry_run):
+        self.log.append(("export", dry_run))
+        return type("ExportResult", (), {
+            "status": self.status,
+            "errors": self.errors,
+        })()
 
 
 def sheets():
@@ -120,9 +151,58 @@ def test_pilot_check_storage_missing_blocked_and_ack_warns(tmp_path):
     assert any("ack_enabled=true" in item for item in warned.warnings)
 
 
+def test_pilot_run_safe_stops_on_gate_without_pipeline_or_export(tmp_path):
+    log = []
+    runner = PilotSafeRunner(
+        pilot_check_runner=pilot_fixture(tmp_path / "missing", storage=False),
+        pipeline_factory=lambda: FakePipelineRunner(FakePipelineResult(), log),
+        export_factory=lambda: FakeExportRunner(log),
+    )
+    result = runner.run()
+    assert result.status == "BLOCKED"
+    assert result.stopped_at == "pilot_check"
+    assert log == []
+
+
+def test_pilot_run_safe_runs_dry_sequence_until_export(tmp_path):
+    log = []
+    runner = PilotSafeRunner(
+        pilot_check_runner=pilot_fixture(tmp_path),
+        pipeline_factory=lambda: FakePipelineRunner(
+            FakePipelineResult(status="completed_with_warnings",
+                               warnings=("storage: skipped_no_ready_attachments",)),
+            log,
+        ),
+        export_factory=lambda: FakeExportRunner(log),
+    )
+    result = runner.run()
+    assert result.status == "READY_WITH_WARNINGS"
+    assert result.pipeline_status == "completed_with_warnings"
+    assert result.export_status == "dry_run"
+    assert log == [("pipeline", True), ("export", True)]
+
+
+def test_pilot_run_safe_stops_before_export_on_pipeline_error(tmp_path):
+    log = []
+    runner = PilotSafeRunner(
+        pilot_check_runner=pilot_fixture(tmp_path),
+        pipeline_factory=lambda: FakePipelineRunner(
+            FakePipelineResult(status="completed_with_errors",
+                               errors=("process: RuntimeError: boom",)),
+            log,
+        ),
+        export_factory=lambda: FakeExportRunner(log),
+    )
+    result = runner.run()
+    assert result.status == "BLOCKED"
+    assert result.stopped_at == "pipeline"
+    assert result.errors == ("process: RuntimeError: boom",)
+    assert log == [("pipeline", True)]
+
+
 def test_cli_commands_exist_and_missing_config_blocked(tmp_path, monkeypatch, capsys):
     from virgilio_connector.__main__ import main
-    for command in ("doctor-bucoliche", "pilot-check"):
+    for command in ("doctor-bucoliche", "pilot-check", "pilot-run-safe"):
         monkeypatch.setattr(sys, "argv", ["virgilio_connector", command,
                                           "--config", str(tmp_path / "missing.yaml")])
         assert main() == 2
