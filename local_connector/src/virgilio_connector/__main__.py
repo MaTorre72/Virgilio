@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import sys
 
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
 from .bucoliche import (BucolicheAppendOnlyAdapter, BucolicheError,
@@ -56,9 +57,21 @@ def _load_env_file(path: Path) -> None:
         os.environ.setdefault(name.strip(), value.strip().strip('"').strip("'"))
 
 
+def _prog_name() -> str:
+    return "virgilio" if Path(sys.argv[0]).stem.lower() == "virgilio" else "python -m virgilio_connector"
+
+
+def _load_pilot_components(config_path: Path):
+    local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+    accounts = load_multi_account_config(config_path)
+    storage_config = load_storage_config(config_path)
+    bucoliche_config = load_bucoliche_config(config_path)
+    return accounts, storage_config, bucoliche_config, LocalDataPaths(local_root)
+
+
 def main() -> int:
     _load_env_file(Path(".env"))
-    parser = argparse.ArgumentParser(prog="python -m virgilio_connector")
+    parser = argparse.ArgumentParser(prog=_prog_name())
     commands = parser.add_subparsers(dest="command", required=True)
     sender = commands.add_parser("send-caronte-dry-run")
     sender.add_argument("--command-file", type=Path, required=True)
@@ -99,6 +112,8 @@ def main() -> int:
     pilot_check.add_argument("--config", type=Path, required=True)
     pilot_safe = commands.add_parser("pilot-run-safe")
     pilot_safe.add_argument("--config", type=Path, required=True)
+    pilot = commands.add_parser("pilot")
+    pilot.add_argument("--config", type=Path, required=True)
     sheet_setup = commands.add_parser("setup-bucoliche-test-sheet")
     sheet_setup.add_argument("--config", type=Path, required=True)
     sheet_setup.add_argument("--dry-run", action="store_true")
@@ -313,12 +328,8 @@ def main() -> int:
         print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "pilot-run-safe":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
         try:
-            accounts = load_multi_account_config(args.config)
-            storage_config = load_storage_config(args.config)
-            bucoliche_config = load_bucoliche_config(args.config)
-            paths = LocalDataPaths(local_root)
+            accounts, storage_config, bucoliche_config, paths = _load_pilot_components(args.config)
             runner = PilotSafeRunner(
                 pilot_check_runner=PilotCheck(
                     accounts,
@@ -353,6 +364,56 @@ def main() -> int:
             return 2
         print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "pilot":
+        try:
+            accounts, storage_config, bucoliche_config, paths = _load_pilot_components(args.config)
+            pilot_check_runner = PilotCheck(
+                accounts,
+                storage=storage_config,
+                bucoliche=bucoliche_config,
+                config_path=args.config,
+                paths=paths,
+            )
+            preview = PilotPreview(
+                accounts,
+                storage=storage_config,
+                bucoliche=bucoliche_config,
+                paths=paths,
+                pilot_status=pilot_check_runner.run().status,
+            ).run()
+            pilot_result = PilotSafeRunner(
+                pilot_check_runner=pilot_check_runner,
+                pipeline_factory=lambda: LocalPipelineRunner(
+                    accounts, paths=paths, config_path=args.config,
+                    scanner_factory=lambda: MultiAccountReadonlyScanner(accounts, paths=paths),
+                    processor_factory=lambda: MultiAccountImapProcessor(
+                        accounts, paths=paths,
+                        scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+                        rules=load_rules(args.config),
+                        max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
+                    ),
+                    storage_factory=lambda: LocalFilesystemStorageAdapter(
+                        state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
+                    ),
+                    completion_factory=lambda: LocalCompletionRunner(accounts, paths=paths),
+                ),
+                export_factory=lambda: BucolicheAppendOnlyAdapter(
+                    state_db=paths.state_db,
+                    config=bucoliche_config,
+                ),
+            ).run()
+        except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
+            payload = {"status": "BLOCKED", "errors": [str(exc)], "warnings": []}
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        payload = {
+            "status": pilot_result.status,
+            "dry_run": True,
+            "preview": preview,
+            "pilot_run_safe": asdict(pilot_result),
+        }
+        print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        return 0 if pilot_result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "setup-bucoliche-test-sheet":
         try:
             result = BucolicheSheetSetup(load_bucoliche_config(args.config)).run(

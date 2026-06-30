@@ -10,6 +10,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "pytest failed" }
     & $Python -m virgilio_connector --help | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "CLI help failed" }
+    & $Python -m virgilio_connector pilot --help | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Pilot help failed" }
 
     $tracked = @(git ls-files)
     $forbidden = $tracked | Where-Object {
@@ -27,4 +29,3 @@ try {
     Write-Host "smoke_local_connector: OK"
 }
 finally { Pop-Location }
-

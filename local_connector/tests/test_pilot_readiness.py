@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 import json
 from pathlib import Path
 import sys
+import tomllib
 import pytest
 
 from virgilio_connector.bucoliche import BucolicheConfig, CONFLICT_COLUMNS, EVENT_COLUMNS
@@ -202,7 +204,7 @@ def test_pilot_run_safe_stops_before_export_on_pipeline_error(tmp_path):
 
 def test_cli_commands_exist_and_missing_config_blocked(tmp_path, monkeypatch, capsys):
     from virgilio_connector.__main__ import main
-    for command in ("doctor-bucoliche", "pilot-check", "pilot-run-safe"):
+    for command in ("doctor-bucoliche", "pilot-check", "pilot-run-safe", "pilot"):
         monkeypatch.setattr(sys, "argv", ["virgilio_connector", command,
                                           "--config", str(tmp_path / "missing.yaml")])
         assert main() == 2
@@ -217,6 +219,62 @@ def test_new_cli_commands_are_registered(tmp_path, monkeypatch):
         with pytest.raises(SystemExit) as exc:
             main()
         assert exc.value.code == 2
+
+
+def test_pilot_cli_returns_preview_and_safe_result(tmp_path, monkeypatch, capsys):
+    import virgilio_connector.__main__ as cli
+
+    @dataclass
+    class FakePilotResult:
+        status: str
+        dry_run: bool = True
+        stopped_at: str | None = None
+        pilot_check: str = "READY_WITH_WARNINGS"
+        pipeline_status: str | None = "completed_with_warnings"
+        export_status: str | None = "dry_run"
+        errors: tuple[str, ...] = ()
+        warnings: tuple[str, ...] = ("warn",)
+        suggested_next_commands: tuple[str, ...] = ("run-real",)
+
+    class FakePilotCheck:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def run(self):
+            return type("PilotCheckResult", (), {"status": "READY_WITH_WARNINGS"})()
+
+    class FakePilotPreview:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def run(self):
+            return {"pilot_check": "READY_WITH_WARNINGS", "next_commands": ["preview-step"]}
+
+    class FakePilotSafeRunner:
+        def __init__(self, **kwargs):
+            pass
+
+        def run(self):
+            return FakePilotResult("READY_WITH_WARNINGS")
+
+    monkeypatch.setattr(cli, "_load_pilot_components",
+                        lambda config: (("account",), "storage", "bucoliche", "paths"))
+    monkeypatch.setattr(cli, "PilotCheck", FakePilotCheck)
+    monkeypatch.setattr(cli, "PilotPreview", FakePilotPreview)
+    monkeypatch.setattr(cli, "PilotSafeRunner", FakePilotSafeRunner)
+    monkeypatch.setattr(sys, "argv", ["virgilio", "pilot", "--config", str(tmp_path / "accounts.yaml")])
+
+    assert cli.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "READY_WITH_WARNINGS"
+    assert payload["dry_run"] is True
+    assert payload["preview"]["next_commands"] == ["preview-step"]
+    assert payload["pilot_run_safe"]["export_status"] == "dry_run"
+
+
+def test_console_script_registers_virgilio_entrypoint():
+    data = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8"))
+    assert data["project"]["scripts"]["virgilio"] == "virgilio_connector.__main__:main"
 
 
 def setup(environ, fake, *, dry_run=False, enabled=True):

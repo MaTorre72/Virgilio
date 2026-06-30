@@ -471,6 +471,7 @@ SQLite resta il diario operativo primario; Bucoliche è una vista centrale condi
 3. Usare due email/allegati non critici e mantenere `ack_enabled: false`.
 
 ```powershell
+virgilio pilot --config accounts.local.yaml
 # Prepara soltanto tab e header; prima simula, poi applica
 python -m virgilio_connector setup-bucoliche-test-sheet --config accounts.local.yaml --dry-run
 python -m virgilio_connector setup-bucoliche-test-sheet --config accounts.local.yaml
@@ -493,6 +494,8 @@ e nessuna mail modificata. Il setup non cancella dati e non sovrascrive header
 incoerenti; `doctor-bucoliche`, `pilot-preview` e `pilot-run-safe` non scrivono su Google.
 `pilot-run-safe` esegue in sequenza `pilot-check`, `run-local-pipeline --dry-run`
 ed `export-to-bucoliche --dry-run`, fermandosi al primo gate bloccante.
+`virgilio pilot` restituisce in un solo comando il preview operativo e l'esito
+del dry-run, con exit code `0` solo se il pilota resta eseguibile.
 
 ### Autenticazione Google senza service account key
 

@@ -18,7 +18,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
-| TODO | P1 | Comando unico `virgilio pilot` | CLI | help, dry-run, exit code | Medio |
+| DONE | P1 | Comando unico `virgilio pilot` | CLI | help, dry-run, exit code | Medio |
 | TODO | P1 | Output umano oltre JSON | CLI/report | snapshot essenziale | Basso |
 | TODO | P1 | Configurazione guidata | config/CLI | nessun segreto; config valida | Medio |
 | TODO | P1 | Diagnostica errori comuni | doctor | fixture errori noti | Basso |
@@ -60,3 +60,4 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 - 2026-06-30 - Manifest e SQLite usano l'email operativa risolta da `username_env` quando disponibile, evitando l'export di `example.invalid` dai config placeholder.
 - 2026-06-30 - Export centrale e Bucoliche ora saltano i record legacy con `attachment_id=None` rilevati come `legacy_incomplete`, senza toccare gli eventi sintetici validi.
 - 2026-06-30 - Aggiunto test di regressione sul secondo export Bucoliche già marcato `exported`: nessun nuovo append su `Bucoliche_Eventi`, `Bucoliche_Stato` continua a rigenerarsi.
+- 2026-06-30 - Aggiunto il comando unico `virgilio pilot`: wrapper dry-run con preview integrato, exit code coerente ed entrypoint console dedicato.
