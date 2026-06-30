@@ -466,6 +466,20 @@ python -m virgilio_connector compare-parser-fixtures `
 Lo spike non usa rete, non apre documenti reali e non entra nella pipeline
 produttiva. Dettagli: [`../docs/PARSER_SPIKE_DOCLING_UNSTRUCTURED.md`](../docs/PARSER_SPIKE_DOCLING_UNSTRUCTURED.md).
 
+Per validare una prima estrazione locale senza AI su fixture sintetiche
+`PDF/DOCX/XLSX`, e' disponibile anche:
+
+```powershell
+python -m virgilio_connector extract-local-fixtures `
+  --catalog local_connector\tests\fixtures\parser_spike\catalog.json `
+  --source-root local_connector\tests\fixtures\parser_spike `
+  --human
+```
+
+Il parser `stdlib_local` usa solo ZIP/XML e parsing testuale locale best-effort;
+serve per misurare copertura minima di testo e intestazioni tabellari, non per
+entrare nella pipeline produttiva o sostituire Docling/Unstructured.
+
 ### Gateway LiteLLM mock-only
 
 Il gateway LiteLLM futuro è ora preparato solo come adapter locale budgetato,

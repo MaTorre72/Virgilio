@@ -41,7 +41,9 @@ from .multi_account import (
     load_storage_config,
     load_multi_account_config,
 )
-from .parser_spike import compare_parser_fixtures, parser_spike_human_summary
+from .parser_spike import (compare_parser_fixtures, extract_local_fixtures,
+                           extracted_fixtures_human_summary,
+                           parser_spike_human_summary)
 from .pipeline import LocalPipelineRunner
 from .pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup, PilotCheck,
                               PilotPreview, PilotSafeRunner,
@@ -163,6 +165,10 @@ def main() -> int:
     parser_spike.add_argument("--catalog", type=Path, required=True)
     parser_spike.add_argument("--snapshots-dir", type=Path, required=True)
     parser_spike.add_argument("--human", action="store_true")
+    extract_parser = commands.add_parser("extract-local-fixtures")
+    extract_parser.add_argument("--catalog", type=Path, required=True)
+    extract_parser.add_argument("--source-root", type=Path)
+    extract_parser.add_argument("--human", action="store_true")
     scanner = commands.add_parser("scan-imap-accounts")
     scanner.add_argument("--config", type=Path, required=True)
     scanner.add_argument("--dry-run", action="store_true")
@@ -307,6 +313,16 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         if args.human:
             _print_human(parser_spike_human_summary(report))
+        else:
+            print(json.dumps(report, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "extract-local-fixtures":
+        try:
+            report = extract_local_fixtures(args.catalog, args.source_root)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(extracted_fixtures_human_summary(report))
         else:
             print(json.dumps(report, ensure_ascii=False, separators=(",", ":")))
         return 0
