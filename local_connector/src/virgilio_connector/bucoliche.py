@@ -290,31 +290,60 @@ def _state_rows(events: Sequence[Mapping[str, object]]) -> tuple[dict[str, objec
             str(row.get("created_at", "")),
             str(row.get("event_id", "")),
         ))
-        current = max(grouped, key=lambda row: (
-            _state_priority(str(row.get("global_state_suggestion", ""))),
-            str(row.get("created_at", "")),
-            str(row.get("event_id", "")),
-        ))
+        current = _pick_state_row(grouped)
+        latest = grouped[-1]
         machine_ids = sorted({str(row.get("machine_id", "")).strip()
                               for row in grouped if str(row.get("machine_id", "")).strip()})
+        machine_states = _machine_states(grouped)
+        cross_machine_conflict = _has_cross_machine_conflict(machine_states)
+        state_source = latest if cross_machine_conflict else current
         rows.append({
             "fingerprint": fingerprint,
-            "last_event_at": current.get("created_at", ""),
-            "machine_id": ",".join(machine_ids) if len(machine_ids) > 1 else current.get("machine_id", ""),
-            "account_alias": current.get("account_alias", ""),
-            "source_email": current.get("source_email", ""),
-            "attachment_id": current.get("attachment_id", ""),
-            "sha256": current.get("sha256", ""),
-            "current_global_state": current.get("global_state_suggestion", ""),
-            "last_result": current.get("result", ""),
-            "conflict_type": current.get("conflict_type", ""),
-            "staged_filename": current.get("staged_filename", ""),
-            "notes": _state_notes(current, machine_ids),
+            "last_event_at": latest.get("created_at", ""),
+            "machine_id": ",".join(machine_ids) if len(machine_ids) > 1 else state_source.get("machine_id", ""),
+            "account_alias": state_source.get("account_alias", ""),
+            "source_email": state_source.get("source_email", ""),
+            "attachment_id": state_source.get("attachment_id", ""),
+            "sha256": state_source.get("sha256", ""),
+            "current_global_state": ("conflict" if cross_machine_conflict
+                                      else current.get("global_state_suggestion", "")),
+            "last_result": state_source.get("result", ""),
+            "conflict_type": ("conflict_cross_machine" if cross_machine_conflict
+                              else current.get("conflict_type", "")),
+            "staged_filename": state_source.get("staged_filename", ""),
+            "notes": _state_notes(state_source, machine_ids, machine_states, cross_machine_conflict),
         })
     return tuple(rows)
 
 
-def _state_notes(current: Mapping[str, object], machine_ids: Sequence[str]) -> str:
+def _pick_state_row(rows: Sequence[Mapping[str, object]]) -> Mapping[str, object]:
+    return max(rows, key=lambda row: (
+        _state_priority(str(row.get("global_state_suggestion", ""))),
+        str(row.get("created_at", "")),
+        str(row.get("event_id", "")),
+    ))
+
+
+def _machine_states(grouped: Sequence[Mapping[str, object]]) -> dict[str, str]:
+    by_machine: dict[str, list[Mapping[str, object]]] = {}
+    for row in grouped:
+        machine_id = str(row.get("machine_id", "")).strip()
+        if machine_id:
+            by_machine.setdefault(machine_id, []).append(row)
+    return {machine_id: str(_pick_state_row(rows).get("global_state_suggestion", ""))
+            for machine_id, rows in sorted(by_machine.items())}
+
+
+def _has_cross_machine_conflict(machine_states: Mapping[str, str]) -> bool:
+    terminal = {state for state in machine_states.values() if state in {
+        "completed", "failed", "duplicate_seen", "skipped", "conflict",
+    }}
+    return len(machine_states) > 1 and len(terminal) > 1
+
+
+def _state_notes(current: Mapping[str, object], machine_ids: Sequence[str],
+                 machine_states: Mapping[str, str] | None = None,
+                 cross_machine_conflict: bool = False) -> str:
     raw = str(current.get("notes", "") or "")
     if len(machine_ids) <= 1:
         return raw
@@ -326,6 +355,9 @@ def _state_notes(current: Mapping[str, object], machine_ids: Sequence[str]) -> s
         payload = {"latest_note": payload}
     payload["machine_ids"] = list(machine_ids)
     payload["cross_machine"] = True
+    if cross_machine_conflict:
+        payload["cross_machine_conflict"] = True
+        payload["machine_states"] = dict(machine_states or {})
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
 

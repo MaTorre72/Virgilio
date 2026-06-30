@@ -469,7 +469,9 @@ Ad ogni export viene inoltre rigenerato `Bucoliche_Stato` come snapshot derivata
 dagli eventi locali, senza riappendere gli eventi già esportati. Gli eventi sono
 ordinati in modo deterministico per timestamp, fingerprint e macchina, così il
 merge da più postazioni resta stabile anche se gli `audit_events.id` locali
-arrivano in ordine diverso.
+arrivano in ordine diverso. Se lo stesso fingerprint arriva da più macchine con
+esiti terminali incompatibili, lo snapshot marca `conflict_type=conflict_cross_machine`
+e aggiunge `machine_states` nelle note, senza tentare una risoluzione automatica.
 Gli `event_id` riusciti sono registrati in SQLite per evitare nuovi append.
 SQLite resta il diario operativo primario; Bucoliche è una vista centrale condivisa.
 
