@@ -466,7 +466,10 @@ Il dry-run non chiama Google e mostra conteggio e prime cinque righe. Il run rea
 richiede `bucoliche.enabled: true` e aggiunge soltanto nuove righe a
 `Bucoliche_Eventi`; i conflitti sono aggiunti anche a `Bucoliche_Conflitti`.
 Ad ogni export viene inoltre rigenerato `Bucoliche_Stato` come snapshot derivata
-dagli eventi locali, senza riappendere gli eventi già esportati.
+dagli eventi locali, senza riappendere gli eventi già esportati. Gli eventi sono
+ordinati in modo deterministico per timestamp, fingerprint e macchina, così il
+merge da più postazioni resta stabile anche se gli `audit_events.id` locali
+arrivano in ordine diverso.
 Gli `event_id` riusciti sono registrati in SQLite per evitare nuovi append.
 SQLite resta il diario operativo primario; Bucoliche è una vista centrale condivisa.
 

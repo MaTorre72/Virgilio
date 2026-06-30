@@ -4,7 +4,7 @@ import sqlite3
 
 from virgilio_connector.readonly_state import ReadonlyStateStore, ensure_state_db
 from virgilio_connector.traceability import (
-    LocalConflictChecker, audit_entry, export_central_events, global_fingerprint,
+    LocalConflictChecker, audit_entry, central_event_rows, export_central_events, global_fingerprint,
     load_machine_id, load_rules,
 )
 
@@ -103,6 +103,51 @@ def test_export_skips_legacy_attachment_without_attachment_id(tmp_path):
     target = export_central_events(db, root, "jsonl")
     assert warnings and warnings[0].startswith("legacy_incomplete")
     assert target.read_text(encoding="utf-8") == ""
+
+
+def test_central_event_rows_are_deterministic_across_reverse_insert_order(tmp_path):
+    def build_db(root: Path, machine_rows: list[tuple[str, str, str, str]]) -> Path:
+        db = root / "state.db"
+        ReadonlyStateStore(db).initialize()
+        with sqlite3.connect(db) as conn:
+            for machine_id, suffix, attachment_created_at, event_created_at in machine_rows:
+                conn.execute("""INSERT INTO runs(started_at,dry_run,status,account_alias)
+                    VALUES('now',0,'completed','box')""")
+                run_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+                conn.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
+                    message_id,subject,sender,message_date) VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (run_id, "box", "INBOX", "1", f"4{suffix}", f"<m-{suffix}@example.invalid>", "Subject",
+                     "sender@example.invalid", attachment_created_at))
+                message_row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+                conn.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
+                    ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
+                    status,reason,fingerprint,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (message_row_id, "box", f"att-{suffix}", "box@example.invalid", 1, f"a-{suffix}.pdf",
+                     f"a-{suffix}.pdf", "application/pdf", 1, "a" * 64, "ready_for_caronte",
+                     "test", "f" * 64, attachment_created_at))
+                conn.execute("""INSERT INTO audit_events(created_at,machine_id,account_alias,
+                    entity_type,entity_id,fingerprint,action,status,details_json)
+                    VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (event_created_at, machine_id, "box", "attachment", f"att-{suffix}", "f" * 64,
+                     "attachment_quarantined", "ready_for_caronte", json.dumps({"machine": machine_id})))
+            conn.commit()
+        return db
+
+    forward = build_db(tmp_path / "forward", [
+        ("machine-a", "1", "2026-06-30T00:00:01+00:00", "2026-06-30T00:00:11+00:00"),
+        ("machine-b", "2", "2026-06-30T00:00:02+00:00", "2026-06-30T00:00:12+00:00"),
+    ])
+    reverse = build_db(tmp_path / "reverse", [
+        ("machine-b", "2", "2026-06-30T00:00:02+00:00", "2026-06-30T00:00:12+00:00"),
+        ("machine-a", "1", "2026-06-30T00:00:01+00:00", "2026-06-30T00:00:11+00:00"),
+    ])
+
+    forward_rows = central_event_rows(forward)
+    reverse_rows = central_event_rows(reverse)
+
+    assert [row["machine_id"] for row in forward_rows] == ["machine-a", "machine-b"]
+    assert [row["machine_id"] for row in reverse_rows] == ["machine-a", "machine-b"]
+    assert [row["event_id"] for row in forward_rows] == [row["event_id"] for row in reverse_rows]
 
 
 def test_conflict_checker_empty_database_ok(tmp_path):

@@ -29,7 +29,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
 | DONE | P1 | Simulare due `machine_id` | test/audit | fixture isolate | Medio |
-| TODO | P1 | Merge eventi da due export | Bucoliche | ordine deterministico | Alto |
+| DONE | P1 | Merge eventi da due export | Bucoliche | ordine deterministico | Alto |
 | TODO | P1 | Stato consolidato cross-machine | Bucoliche_Stato | una riga/fingerprint | Alto |
 | TODO | P1 | Conflitti cross-machine | conflict detector | collisioni rilevate | Alto |
 | TODO | P2 | Policy manuale risoluzione conflitti | docs/state | nessuna risoluzione automatica | Medio |
@@ -65,3 +65,4 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 - 2026-06-30 - Aggiunto `virgilio init-config`: genera uno scheletro `accounts.local.yaml` valido e senza segreti nel file, con sezioni account/storage/Bucoliche/rules e note sulle env locali.
 - 2026-06-30 - `doctor` ora espone suggerimenti azionabili sugli errori ricorrenti e supporta `--human` per una diagnosi locale leggibile senza segreti.
 - 2026-06-30 - Coperti nei test due `machine_id` isolati: `load_machine_id` resta stabile per root locale e l'export Bucoliche preview conserva due eventi distinti sullo stesso fingerprint.
+- 2026-06-30 - L'export Bucoliche ora ordina gli eventi in modo deterministico per timestamp, fingerprint e macchina, così due export equivalenti da postazioni diverse producono lo stesso merge anche con `audit_events.id` invertiti.

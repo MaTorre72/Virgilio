@@ -222,6 +222,14 @@ def central_event_rows(state_db: Path) -> list[dict]:
         row["global_state_suggestion"] = _global_state(row["event_type"], row["local_state"])
         row["conflict_type"] = row["event_type"] if str(row["event_type"]).startswith("conflict_") else ""
         row["notes"] = row.pop("details_json") or ""
+    rows.sort(key=lambda row: (
+        str(row.get("created_at", "")),
+        str(row.get("fingerprint", "")),
+        str(row.get("machine_id", "")),
+        str(row.get("event_type", "")),
+        str(row.get("attachment_id", "")),
+        str(row.get("event_id", "")),
+    ))
     return rows
 
 
