@@ -32,7 +32,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 | DONE | P1 | Merge eventi da due export | Bucoliche | ordine deterministico | Alto |
 | DONE | P1 | Stato consolidato cross-machine | Bucoliche_Stato | una riga/fingerprint | Alto |
 | DONE | P1 | Conflitti cross-machine | conflict detector | collisioni rilevate | Alto |
-| TODO | P2 | Policy manuale risoluzione conflitti | docs/state | nessuna risoluzione automatica | Medio |
+| DONE | P2 | Policy manuale risoluzione conflitti | docs/state | nessuna risoluzione automatica | Medio |
 
 ## Milestone 4 — Parsing allegati
 
@@ -69,4 +69,5 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 - 2026-06-30 - `Bucoliche_Stato` ora consolida davvero il cross-machine: una sola riga per fingerprint, `machine_id` aggregati in modo deterministico e note marcate `cross_machine` quando lo stesso allegato arriva da più postazioni.
 - 2026-06-30 - `Bucoliche_Stato` segnala `conflict_cross_machine` quando lo stesso fingerprint arriva da più macchine con esiti terminali incompatibili, includendo `machine_states` nelle note senza risoluzione automatica.
 - 2026-06-30 - Aggiunto `litellm-gateway-dry-run`: adapter LiteLLM futuro mock-only con budget locale su token/costo, senza rete né dipendenze LiteLLM, pronto per la futura classificazione assistita.
+- 2026-06-30 - Documentata la policy manuale per `conflict_cross_machine`: triage su `state.db`, macchina autorevole unica, nessuna modifica manuale ai tab Bucoliche e nessuna risoluzione automatica.
 - 2026-06-30 - `local_connector/README.md` ora include la sezione "10 comandi essenziali" con il flusso locale minimo v1.1 allineato alla CLI corrente.

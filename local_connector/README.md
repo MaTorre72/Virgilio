@@ -493,6 +493,9 @@ e aggiunge `machine_states` nelle note, senza tentare una risoluzione automatica
 Gli `event_id` riusciti sono registrati in SQLite per evitare nuovi append.
 SQLite resta il diario operativo primario; Bucoliche è una vista centrale condivisa.
 
+La procedura manuale di triage e chiusura di questi casi e' descritta in
+[`docs/BUCOLICHE_CONFLICT_POLICY.md`](..\docs\BUCOLICHE_CONFLICT_POLICY.md).
+
 ## 10 comandi essenziali
 
 I comandi sotto coprono il flusso locale minimo della v1.1 e restano allineati

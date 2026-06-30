@@ -12,5 +12,7 @@ Copertura attuale:
 - regola di ack dopo conferma del Limbo Drive;
 - confinamento degli import di rete e adapter IMAP simulato;
 - garanzia read-only: `SELECT readonly=True`, `BODY.PEEK[]`, nessun comando mutante.
+- rilevazione di `conflict_cross_machine` senza risoluzione automatica; la procedura
+  operativa manuale e' documentata in `docs/BUCOLICHE_CONFLICT_POLICY.md`.
 
 La suite automatica non usa mailbox, credenziali, Drive, Bucoliche o allegati reali.
