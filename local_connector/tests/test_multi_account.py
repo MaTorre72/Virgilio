@@ -305,7 +305,7 @@ def test_process_writes_quarantine_manifest_and_sqlite_per_account(tmp_path):
     assert manifest["schema_version"] == "1.0"
     assert manifest["connector_type"] == "local_imap"
     assert manifest["account_alias"] == "marco_sigmapiu"
-    assert manifest["source_email"] == "marco@example.invalid"
+    assert manifest["source_email"] == "user@example.invalid"
     assert manifest["source_message_uid"] == "41"
     assert manifest["source_message_id"] == "<a@example.invalid>"
     assert manifest["attachment_id"] == result[0].attachment_id
@@ -323,10 +323,29 @@ def test_process_writes_quarantine_manifest_and_sqlite_per_account(tmp_path):
             FROM attachments a JOIN messages m ON m.id=a.message_id
             ORDER BY m.message_uid""").fetchall()
     assert rows[0][0] == "marco_sigmapiu"
-    assert rows[0][2] == "marco@example.invalid"
+    assert rows[0][2] == "user@example.invalid"
     assert rows[0][3] == "ready_for_caronte"
     assert rows[0][4] == result[0].manifest_path
     assert rows[0][5:] == ("41", "<a@example.invalid>", "Subject A")
+
+
+def test_process_falls_back_to_config_email_when_username_is_not_an_email(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    paths = LocalDataPaths(tmp_path / ".local_data")
+    result = MultiAccountImapProcessor(
+        accounts,
+        paths=paths,
+        environ={
+            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "imap-user",
+            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+        },
+        mailbox_factory=lambda config, root: FakeProcessMailbox(config, root),
+        scanner=FakeScanner(ScanVerdict.CLEAN),
+    ).process(dry_run=False)
+    exported = next(item for item in result if item.manifest_path)
+    manifest_path = paths.root / exported.manifest_path
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["source_email"] == "marco@example.invalid"
 
 
 def test_process_is_idempotent_for_same_attachment_id_and_sha(tmp_path):

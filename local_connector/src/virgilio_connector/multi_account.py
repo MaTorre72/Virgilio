@@ -92,6 +92,13 @@ class LocalImapAccount:
             max_messages=self.max_messages,
         )
 
+    def operational_email(self, environ: Mapping[str, str] | None = None) -> str:
+        env = os.environ if environ is None else environ
+        username = env.get(self.username_env, "").strip()
+        if "@" in username:
+            return username
+        return self.email
+
 
 @dataclass(frozen=True, slots=True)
 class LocalStorageConfig:
@@ -335,11 +342,13 @@ class MultiAccountImapProcessor:
         scan_engine = None
         scan_result = None
         saved = False
+        source_email = account.operational_email(self.environ)
         relative_path = None
         manifest_relative = None
         if dry_run:
             return self._result(account, message, attachment, attachment_id, sanitized,
                                 digest, status, scan_engine, scan_result, False, None,
+                                source_email=source_email,
                                 fingerprint=fingerprint, included=included,
                                 rule_name=rule_name, reason=reason)
         if store is None or message_row_id is None:
@@ -349,11 +358,13 @@ class MultiAccountImapProcessor:
             if str(existing["sha256"]) != digest:
                 return self._result(account, message, attachment, attachment_id, sanitized,
                     digest, "error", None, None, False, None,
+                    source_email=source_email,
                     error="attachment_id already exists with different sha256",
                     fingerprint=fingerprint)
             return self._result(account, message, attachment, attachment_id, sanitized,
                 digest, str(existing["status"]), None, None, False,
                 str(existing["manifest_path"]) if existing["manifest_path"] else None,
+                source_email=source_email,
                 fingerprint=fingerprint, rule_name=rule_name,
                 reason="duplicate_seen")
         if status == "quarantined_unverified" and sanitized:
@@ -404,7 +415,7 @@ class MultiAccountImapProcessor:
             relative_path = scan_path.relative_to(self.paths.root).as_posix()
             manifest_path = manifests / f"{attachment_id}.manifest.json"
             manifest = self._manifest(account, message, attachment, attachment_id,
-                sanitized, digest, status, scan_engine, scan_result,
+                sanitized, digest, status, scan_engine, scan_result, source_email,
                 fingerprint, load_machine_id(self.paths.root))
             manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2),
                                      encoding="utf-8")
@@ -415,7 +426,7 @@ class MultiAccountImapProcessor:
             sha256=digest, status=status, relative_path=relative_path,
             duplicate_of_id=None, reason=reason, scanner_engine=scan_engine,
             scan_result=scan_result, account_alias=account.account_alias,
-            attachment_id=attachment_id, source_email=account.email,
+            attachment_id=attachment_id, source_email=source_email,
             manifest_path=manifest_relative)
         store.set_fingerprint(attachment_row_id, fingerprint)
         machine_id = load_machine_id(self.paths.root)
@@ -426,7 +437,8 @@ class MultiAccountImapProcessor:
             details={"rule_name": rule_name, "reason": reason})
         return self._result(account, message, attachment, attachment_id, sanitized,
                             digest, status, scan_engine, scan_result, saved,
-                            manifest_relative, fingerprint=fingerprint, included=included,
+                            manifest_relative, source_email=source_email,
+                            fingerprint=fingerprint, included=included,
                             rule_name=rule_name, reason=reason)
 
     def _decision(self, filename: str | None, size_bytes: int) -> tuple[str, str]:
@@ -442,14 +454,14 @@ class MultiAccountImapProcessor:
     @staticmethod
     def _manifest(account: LocalImapAccount, message: MessageReference, attachment,
                   attachment_id: str, sanitized: str | None, digest: str,
-                  status: str, scan_engine: str | None, scan_result: str | None
-                  , fingerprint: str, machine_id: str
+                  status: str, scan_engine: str | None, scan_result: str | None,
+                  source_email: str, fingerprint: str, machine_id: str
                   ) -> dict[str, object]:
         return {
             "schema_version": "1.0",
             "connector_type": "local_imap",
             "account_alias": account.account_alias,
-            "source_email": account.email,
+            "source_email": source_email,
             "source_message_uid": message.message_uid,
             "source_message_id": message.message_id,
             "subject": message.subject,
@@ -478,12 +490,13 @@ class MultiAccountImapProcessor:
     def _result(account: LocalImapAccount, message: MessageReference, attachment,
                 attachment_id: str, sanitized: str | None, digest: str, status: str,
                 scan_engine: str | None, scan_result: str | None, saved: bool,
-                manifest_path: str | None, error: str | None = None
+                manifest_path: str | None, source_email: str | None = None,
+                error: str | None = None
                 , fingerprint: str | None = None, included: bool = True,
                 rule_name: str | None = None, reason: str | None = None
                 ) -> MultiAccountAttachmentResult:
         return MultiAccountAttachmentResult(
-            account.account_alias, account.email, message.message_uid,
+            account.account_alias, source_email or account.email, message.message_uid,
             message.message_id, message.subject, attachment_id,
             attachment.original_filename, sanitized, digest, len(attachment.payload),
             attachment.declared_mime_type, scan_engine, scan_result, status, saved,
