@@ -622,6 +622,21 @@ Ordine consigliato: `init-config`, `doctor`, `pilot`, poi dry-run completi prima
 di ogni esecuzione reale. I comandi Google/Bucoliche restano di test e il gateway
 LiteLLM resta solo mock locale.
 
+### GUI minima locale
+
+Per un operatore che preferisce un wrapper grafico locale senza duplicare la
+logica della CLI:
+
+```powershell
+virgilio gui
+virgilio gui --config accounts.local.yaml
+```
+
+La GUI `tkinter` esegue solo tre azioni sopra i comandi esistenti:
+`init-config`, `doctor` e `pilot`. Costruisce gli argomenti, richiama la CLI
+locale e mostra l'output nella stessa finestra; non aggiunge logica operativa,
+non usa rete propria e non modifica il comportamento dei comandi da terminale.
+
 ### Sequenza consigliata primo test reale
 
 1. Fare push della branch e creare un Google Sheet vuoto esclusivamente di test.

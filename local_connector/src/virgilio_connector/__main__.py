@@ -268,6 +268,8 @@ def main() -> int:
     init_config.add_argument("--enable-bucoliche", action="store_true")
     init_config.add_argument("--dry-run", action="store_true")
     init_config.add_argument("--force", action="store_true")
+    gui = commands.add_parser("gui")
+    gui.add_argument("--config", type=Path)
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -766,6 +768,9 @@ def main() -> int:
             ],
         }, ensure_ascii=False, separators=(",", ":")))
         return 0
+    if args.command == "gui":
+        from .gui import launch_gui
+        return launch_gui(config_path=args.config)
     return 2
 
 

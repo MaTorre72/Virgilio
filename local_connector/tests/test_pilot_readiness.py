@@ -232,6 +232,22 @@ def test_new_cli_commands_are_registered(tmp_path, monkeypatch):
     assert exc.value.code == 2
 
 
+def test_gui_command_calls_launcher(tmp_path, monkeypatch):
+    import virgilio_connector.__main__ as cli
+
+    seen = {}
+
+    def fake_launch_gui(*, config_path=None):
+        seen["config_path"] = config_path
+        return 0
+
+    monkeypatch.setattr(sys, "argv", ["virgilio", "gui", "--config", str(tmp_path / "accounts.yaml")])
+    monkeypatch.setattr("virgilio_connector.gui.launch_gui", fake_launch_gui)
+
+    assert cli.main() == 0
+    assert seen["config_path"] == tmp_path / "accounts.yaml"
+
+
 def test_pilot_cli_returns_preview_and_safe_result(tmp_path, monkeypatch, capsys):
     import virgilio_connector.__main__ as cli
 
