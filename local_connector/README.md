@@ -493,6 +493,26 @@ e aggiunge `machine_states` nelle note, senza tentare una risoluzione automatica
 Gli `event_id` riusciti sono registrati in SQLite per evitare nuovi append.
 SQLite resta il diario operativo primario; Bucoliche è una vista centrale condivisa.
 
+## 10 comandi essenziali
+
+I comandi sotto coprono il flusso locale minimo della v1.1 e restano allineati
+alla CLI attuale del repository.
+
+1. `virgilio init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging`
+2. `python -m virgilio_connector doctor --config accounts.local.yaml --human`
+3. `virgilio pilot --config accounts.local.yaml --human`
+4. `python -m virgilio_connector pilot-run-safe --config accounts.local.yaml --human`
+5. `python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human`
+6. `python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --human`
+7. `python -m virgilio_connector check-local-conflicts --config accounts.local.yaml`
+8. `python -m virgilio_connector export-central-events --config accounts.local.yaml --format jsonl`
+9. `python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml --dry-run`
+10. `python -m virgilio_connector litellm-gateway-dry-run --prompt-file .\prompt.txt --budget-tokens 1200 --max-cost-eur 0.05`
+
+Ordine consigliato: `init-config`, `doctor`, `pilot`, poi dry-run completi prima
+di ogni esecuzione reale. I comandi Google/Bucoliche restano di test e il gateway
+LiteLLM resta solo mock locale.
+
 ### Sequenza consigliata primo test reale
 
 1. Fare push della branch e creare un Google Sheet vuoto esclusivamente di test.
