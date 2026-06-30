@@ -20,6 +20,14 @@ def test_machine_id_is_stable(tmp_path):
     assert load_machine_id(tmp_path) == load_machine_id(tmp_path)
 
 
+def test_machine_id_is_isolated_per_local_root(tmp_path):
+    first = tmp_path / "machine-a"
+    second = tmp_path / "machine-b"
+    assert load_machine_id(first) != load_machine_id(second)
+    assert load_machine_id(first) == load_machine_id(first)
+    assert load_machine_id(second) == load_machine_id(second)
+
+
 def test_rules_include_and_exclude(tmp_path):
     config = tmp_path / "a.yaml"
     config.write_text('''rules:

@@ -170,6 +170,37 @@ def test_second_export_of_already_exported_event_skips_append_and_rebuilds_state
     assert replace[3][0]["fingerprint"] == "f" * 64
 
 
+def test_dry_run_can_preview_same_fingerprint_from_two_machine_ids(tmp_path):
+    db = tmp_path / "state.db"
+    store = ReadonlyStateStore(db); store.initialize()
+    for machine_id, suffix in (("machine-a", "1"), ("machine-b", "2")):
+        with closing(sqlite3.connect(db)) as conn:
+            conn.execute("""INSERT INTO runs(started_at,dry_run,status,account_alias)
+                VALUES('now',0,'completed','box')""")
+            run_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            conn.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
+                message_id,subject,sender,message_date) VALUES(?,?,?,?,?,?,?,?,?)""",
+                (run_id, "box", "INBOX", "1", f"4{suffix}", f"<m-{suffix}@example.invalid>", "Subject",
+                 "sender@example.invalid", "2026-06-30T00:00:00+00:00"))
+            message_row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            conn.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
+                ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
+                status,reason,fingerprint,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (message_row_id, "box", f"att-{suffix}", "box@example.invalid", 1, f"a-{suffix}.pdf",
+                 f"a-{suffix}.pdf", "application/pdf", 1, "a" * 64, "ready_for_caronte",
+                 "test", "f" * 64, f"2026-06-30T00:00:0{suffix}+00:00"))
+            conn.commit()
+        store.add_audit_event(machine_id=machine_id, account_alias="box",
+            entity_type="attachment", entity_id=f"att-{suffix}", fingerprint="f" * 64,
+            action="attachment_quarantined", status="ready_for_caronte",
+            details={"machine": machine_id})
+    preview = adapter(db, FakeSheets(), enabled=False).export(dry_run=True).preview
+    assert len(preview) == 2
+    assert {row["machine_id"] for row in preview} == {"machine-a", "machine-b"}
+    assert len({row["event_id"] for row in preview}) == 2
+    assert {row["fingerprint"] for row in preview} == {"f" * 64}
+
+
 def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
     class IsolatedScanMailbox(FakeMailbox):
         instances = []
