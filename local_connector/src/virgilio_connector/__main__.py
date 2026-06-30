@@ -110,6 +110,24 @@ def _pilot_preview_human_summary(preview: dict[str, object]) -> list[str]:
     return lines
 
 
+def _doctor_human_summary(result) -> list[str]:
+    lines = [f"Esito doctor: {result.status}"]
+    for account in result.accounts:
+        lines.append(
+            f"Account {account['account_alias']}: user={account['username_env']}, "
+            f"password={account['password_env']}, imap={account['imap']}"
+        )
+    for warning in result.warnings:
+        lines.append(f"Warning: {warning}")
+    for error in result.errors:
+        lines.append(f"Errore: {error}")
+    for fix in result.suggested_fixes:
+        lines.append(f"Azione consigliata: {fix}")
+    if result.suggested_next_commands:
+        lines.append(f"Prossimo comando: {result.suggested_next_commands[0]}")
+    return lines
+
+
 def main() -> int:
     _load_env_file(Path(".env"))
     parser = argparse.ArgumentParser(prog=_prog_name())
@@ -140,6 +158,7 @@ def main() -> int:
     pipeline.add_argument("--human", action="store_true")
     doctor = commands.add_parser("doctor")
     doctor.add_argument("--config", type=Path, required=True)
+    doctor.add_argument("--human", action="store_true")
     conflicts = commands.add_parser("check-local-conflicts")
     conflicts.add_argument("--config", type=Path, required=True)
     exporter = commands.add_parser("export-central-events")
@@ -331,10 +350,21 @@ def main() -> int:
                 scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
             ).run()
         except MultiAccountConfigError as exc:
-            parser.exit(2, json.dumps({
-                "status": "BLOCKED", "errors": [str(exc)], "warnings": [], "accounts": []
-            }, ensure_ascii=False, separators=(",", ":")) + "\n")
-        print(result.to_json())
+            payload = {
+                "status": "BLOCKED",
+                "errors": [str(exc)],
+                "warnings": [],
+                "accounts": [],
+                "suggested_fixes": ["Correggi il file di configurazione locale e riesegui il doctor."],
+                "suggested_next_commands": [
+                    f"python -m virgilio_connector doctor --config {args.config} --human"
+                ],
+            }
+            parser.exit(2, json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n")
+        if args.human:
+            _print_human(_doctor_human_summary(result))
+        else:
+            print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "check-local-conflicts":
         local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))

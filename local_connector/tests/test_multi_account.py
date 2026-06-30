@@ -919,6 +919,7 @@ def test_doctor_ready_with_scanner_warning(tmp_path):
     assert result.accounts[0]["username_env"] == "OK"
     assert result.accounts[0]["password_env"] == "OK"
     assert "secret" not in result.to_json()
+    assert any("scanner locale" in item for item in result.suggested_fixes)
 
 
 def test_doctor_missing_config_cli_blocked(tmp_path, monkeypatch, capsys):
@@ -931,7 +932,11 @@ def test_doctor_missing_config_cli_blocked(tmp_path, monkeypatch, capsys):
         main()
     assert exc.value.code == 2
     captured = capsys.readouterr()
-    assert json.loads(captured.err or captured.out)["status"] == "BLOCKED"
+    payload = json.loads(captured.err or captured.out)
+    assert payload["status"] == "BLOCKED"
+    assert payload["suggested_fixes"] == [
+        "Correggi il file di configurazione locale e riesegui il doctor."
+    ]
 
 
 def test_doctor_duplicate_alias_blocked(tmp_path):
@@ -978,6 +983,8 @@ def test_doctor_env_and_storage_missing_blocked(tmp_path):
     assert result.status == "BLOCKED"
     assert any("username_env missing" in item for item in result.errors)
     assert any("staging_dir does not exist" in item for item in result.errors)
+    assert any("variabili ambiente IMAP" in item for item in result.suggested_fixes)
+    assert any("storage.staging_dir" in item for item in result.suggested_fixes)
 
 
 def test_doctor_imap_error_does_not_block_other_account(tmp_path):
@@ -1000,3 +1007,28 @@ def test_doctor_imap_error_does_not_block_other_account(tmp_path):
     calls = [str(call).upper() for inst in FakeDoctorMailbox.instances for call in inst.calls]
     for forbidden in ("STORE", "COPY", "MOVE", "DELETE", "EXPUNGE"):
         assert not any(forbidden in call for call in calls)
+    assert any("input_folder" in item for item in result.suggested_fixes)
+
+
+def test_doctor_cli_human_output_shows_actions(tmp_path, monkeypatch, capsys):
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    config = doctor_config(tmp_path, staging)
+    monkeypatch.setenv("VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME", "user@example.invalid")
+    monkeypatch.setenv("VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD", "secret")
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio", "doctor", "--config", str(config), "--human",
+    ])
+    import virgilio_connector.__main__ as cli
+    monkeypatch.setattr(cli, "select_scanner", lambda *_: FakeUnavailableScanner())
+    monkeypatch.setattr(cli, "LocalDoctor", lambda *args, **kwargs: LocalDoctor(
+        *args,
+        **kwargs,
+        mailbox_factory=lambda config: FakeDoctorMailbox(config),
+    ))
+
+    assert cli.main() == 0
+    text = capsys.readouterr().out
+    assert "Esito doctor: READY_WITH_WARNINGS" in text
+    assert "Azione consigliata:" in text
+    assert '"status"' not in text

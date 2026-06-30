@@ -242,6 +242,7 @@ Prima di un pilota reale:
 
 ```powershell
 python -m virgilio_connector doctor --config accounts.local.yaml
+python -m virgilio_connector doctor --config accounts.local.yaml --human
 ```
 
 Il doctor verifica config, variabili ambiente senza stampare segreti, IMAP
@@ -250,6 +251,11 @@ read-only, SQLite locale, storage e scanner. Stato globale:
 - `READY`: prerequisiti ok;
 - `READY_WITH_WARNINGS`: eseguibile ma con avvisi, ad esempio scanner assente;
 - `BLOCKED`: correggere errori prima della pipeline.
+
+Con `--human` stampa una sintesi leggibile con errori, warning e azioni
+consigliate per i casi piu' comuni, ad esempio env IMAP mancanti,
+`storage.staging_dir` assente/non scrivibile, alias duplicati o check IMAP
+read-only fallito.
 
 ### Scanner locale opzionale
 

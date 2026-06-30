@@ -22,12 +22,19 @@ class DoctorResult:
     errors: tuple[str, ...]
     warnings: tuple[str, ...]
     accounts: tuple[dict[str, object], ...]
+    suggested_fixes: tuple[str, ...] = ()
+    suggested_next_commands: tuple[str, ...] = ()
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False, separators=(",", ":"))
 
 
 class LocalDoctor:
+    NEXT_COMMANDS = (
+        "python -m virgilio_connector doctor --config accounts.local.yaml --human",
+        "virgilio pilot --config accounts.local.yaml --human",
+    )
+
     def __init__(self, accounts: Sequence[LocalImapAccount], *,
                  storage: LocalStorageConfig,
                  paths: LocalDataPaths,
@@ -58,7 +65,14 @@ class LocalDoctor:
         if not self.scanner.available:
             warnings.append("scanner unavailable; attachments may remain quarantined_unverified")
         status = "BLOCKED" if errors else "READY_WITH_WARNINGS" if warnings else "READY"
-        return DoctorResult(status, tuple(errors), tuple(warnings), tuple(account_rows))
+        return DoctorResult(
+            status,
+            tuple(errors),
+            tuple(warnings),
+            tuple(account_rows),
+            suggested_fixes=_suggested_fixes(errors, warnings),
+            suggested_next_commands=self.NEXT_COMMANDS,
+        )
 
     def _check_account(self, account: LocalImapAccount, errors: list[str]) -> dict[str, object]:
         row: dict[str, object] = {
@@ -115,3 +129,30 @@ class LocalDoctor:
             temp.unlink()
         except Exception as exc:
             errors.append(f"storage staging_dir not writable: {type(exc).__name__}")
+
+
+def _suggested_fixes(errors: Sequence[str], warnings: Sequence[str]) -> tuple[str, ...]:
+    suggestions: list[str] = []
+
+    def add(message: str) -> None:
+        if message not in suggestions:
+            suggestions.append(message)
+
+    if any("no enabled account configured" in item for item in errors):
+        add("Abilita almeno un account con enabled: true nel file di configurazione.")
+    if any("account_alias values are not unique" in item for item in errors):
+        add("Rendi univoci gli account_alias nel file di configurazione.")
+    if any(item.endswith(": username_env missing") or item.endswith(": password_env missing")
+           for item in errors):
+        add("Imposta le variabili ambiente IMAP richieste e riesegui il doctor.")
+    if any("IMAP read-only check failed" in item for item in errors):
+        add("Controlla credenziali IMAP, host/porta e input_folder; il doctor usa solo accesso read-only.")
+    if any("local data not writable or SQLite not migrable" in item for item in errors):
+        add("Verifica VIRGILIO_LOCAL_DATA_DIR e i permessi di scrittura della postazione.")
+    if any("storage staging_dir" in item for item in errors):
+        add("Correggi storage.staging_dir oppure crea la cartella locale prima della pipeline.")
+    if any("scanner unavailable" in item for item in warnings):
+        add("Installa o configura uno scanner locale, oppure accetta il warning per un dry-run iniziale.")
+    if not suggestions:
+        add("Riesegui il doctor dopo la correzione per confermare che il pilot resti solo locale.")
+    return tuple(suggestions)
