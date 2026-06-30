@@ -138,6 +138,38 @@ def test_state_sheet_is_rebuilt_from_latest_event_without_reappending_events(tmp
     assert row["notes"] == '{"step":"done"}'
 
 
+def test_second_export_of_already_exported_event_skips_append_and_rebuilds_state(tmp_path):
+    db = state_with_event(tmp_path)
+    event_row = BucolicheAppendOnlyAdapter(
+        state_db=db,
+        config=BucolicheConfig(enabled=True),
+        client=FakeSheets(),
+        environ={},
+    ).export(dry_run=True).preview[0]
+    store = ReadonlyStateStore(db); store.initialize()
+    with closing(sqlite3.connect(db)) as conn:
+        conn.execute("""INSERT INTO local_export_status(
+            event_id,target_adapter,exported_at,export_result,error_type
+        ) VALUES(?,?,?,?,?)""", (
+            event_row["event_id"],
+            BucolicheAppendOnlyAdapter.TARGET,
+            "2026-06-30T00:00:00+00:00",
+            "exported",
+            None,
+        ))
+        conn.commit()
+    fake = FakeSheets()
+    result = adapter(db, fake).export(dry_run=False)
+    assert result.events_pending == 0
+    assert result.events_exported == 0
+    assert result.already_exported == 1
+    assert len(fake.calls) == 1
+    replace = fake.calls[0]
+    assert replace[:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
+    assert len(replace[3]) == 1
+    assert replace[3][0]["fingerprint"] == "f" * 64
+
+
 def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
     class IsolatedScanMailbox(FakeMailbox):
         instances = []
