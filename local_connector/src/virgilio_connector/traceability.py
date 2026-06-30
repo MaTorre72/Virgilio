@@ -195,7 +195,10 @@ def export_central_events(state_db: Path, local_root: Path, format_name: str) ->
 
 
 def central_event_rows(state_db: Path) -> list[dict]:
-    """Build export rows in memory without modifying SQLite or local files."""
+    """Build export rows in memory without modifying SQLite or local files.
+
+    Legacy attachment rows missing attachment_id/sha256 are intentionally skipped.
+    """
     from .readonly_state import ensure_state_db
     ensure_state_db(state_db.parent)
     with closing(sqlite3.connect(state_db)) as db:
@@ -206,7 +209,14 @@ def central_event_rows(state_db: Path) -> list[dict]:
             a.staged_path,a.manifest_path,m.message_id AS source_message_id,m.message_uid AS source_message_uid
             FROM audit_events e LEFT JOIN attachments a ON a.attachment_id=e.entity_id
             LEFT JOIN messages m ON m.id=a.message_id
-            WHERE e.fingerprint IS NOT NULL AND e.fingerprint != '' ORDER BY e.id""")]
+            WHERE e.fingerprint IS NOT NULL AND e.fingerprint != ''
+              AND NOT EXISTS (
+                    SELECT 1 FROM attachments legacy
+                    WHERE legacy.account_alias=e.account_alias
+                      AND legacy.fingerprint=e.fingerprint
+                      AND (legacy.attachment_id IS NULL OR legacy.sha256 IS NULL)
+                )
+            ORDER BY e.id""")]
     for row in rows:
         row["event_id"] = hashlib.sha256(f"{row['machine_id']}|{row['event_type']}|{row['fingerprint']}|{row['created_at']}".encode()).hexdigest()
         row["global_state_suggestion"] = _global_state(row["event_type"], row["local_state"])

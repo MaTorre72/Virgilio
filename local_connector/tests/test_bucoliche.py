@@ -229,6 +229,34 @@ def test_output_never_contains_credentials(tmp_path):
     assert not any(value in text for value in ("password", "token", "service_account", "private_key", "base64"))
 
 
+def test_bucoliche_dry_run_skips_legacy_attachment_without_attachment_id(tmp_path):
+    local_root = tmp_path / ".local_data"
+    db = local_root / "state.db"
+    store = ReadonlyStateStore(db); store.initialize()
+    with sqlite3.connect(db) as conn:
+        conn.execute("""INSERT INTO runs(started_at,dry_run,status,account_alias)
+            VALUES('now',0,'completed','box')""")
+        run_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
+            message_id,subject,sender,message_date) VALUES(?,?,?,?,?,?,?,?,?)""",
+            (run_id, "box", "INBOX", "1", "42", "<m@example.invalid>", "Legacy",
+             "sender@example.invalid", "2026-06-30T00:00:00+00:00"))
+        message_row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
+            ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
+            status,reason,fingerprint,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (message_row_id, "box", None, "box@example.invalid", 1, "legacy.pdf", "legacy.pdf",
+             "application/pdf", 1, "b" * 64, "ready_for_caronte", "legacy", "f" * 64, "now"))
+        conn.commit()
+    store.add_audit_event(machine_id="machine-test", account_alias="box",
+        entity_type="attachment", entity_id="legacy-missing-id", fingerprint="f" * 64,
+        action="attachment_quarantined", status="ready_for_caronte", details={"legacy": True})
+    result = adapter(db, FakeSheets(), enabled=False).export(dry_run=True)
+    assert result.events_total == 0
+    assert result.events_pending == 0
+    assert result.preview == ()
+
+
 def test_load_config_defaults_and_explicit_values(tmp_path):
     path = tmp_path / "accounts.yaml"
     path.write_text("""bucoliche:
