@@ -20,7 +20,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 |---|---|---|---|---|---|
 | DONE | P1 | Comando unico `virgilio pilot` | CLI | help, dry-run, exit code | Medio |
 | DONE | P1 | Output umano oltre JSON | CLI/report | snapshot essenziale | Basso |
-| TODO | P1 | Configurazione guidata | config/CLI | nessun segreto; config valida | Medio |
+| DONE | P1 | Configurazione guidata | config/CLI | nessun segreto; config valida | Medio |
 | TODO | P1 | Diagnostica errori comuni | doctor | fixture errori noti | Basso |
 | TODO | P2 | README “10 comandi essenziali” | README | comandi verificati | Basso |
 
@@ -62,3 +62,4 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 - 2026-06-30 - Aggiunto test di regressione sul secondo export Bucoliche già marcato `exported`: nessun nuovo append su `Bucoliche_Eventi`, `Bucoliche_Stato` continua a rigenerarsi.
 - 2026-06-30 - Aggiunto il comando unico `virgilio pilot`: wrapper dry-run con preview integrato, exit code coerente ed entrypoint console dedicato.
 - 2026-06-30 - `run-local-pipeline`, `pilot-preview`, `pilot-run-safe` e `virgilio pilot` supportano `--human` per uno snapshot leggibile, mantenendo il JSON come output predefinito per script e automazioni.
+- 2026-06-30 - Aggiunto `virgilio init-config`: genera uno scheletro `accounts.local.yaml` valido e senza segreti nel file, con sezioni account/storage/Bucoliche/rules e note sulle env locali.

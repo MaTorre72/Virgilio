@@ -34,6 +34,7 @@ from .multi_account import (
     MultiAccountConfigError,
     MultiAccountImapProcessor,
     MultiAccountReadonlyScanner,
+    scaffold_local_config,
     load_storage_config,
     load_multi_account_config,
 )
@@ -165,6 +166,21 @@ def main() -> int:
     pilot_preview.add_argument("--human", action="store_true")
     oauth_login = commands.add_parser("google-oauth-login")
     oauth_login.add_argument("--config", type=Path, required=True)
+    init_config = commands.add_parser("init-config")
+    init_config.add_argument("--output", type=Path, required=True)
+    init_config.add_argument("--email", required=True)
+    init_config.add_argument("--staging-dir", type=Path, required=True)
+    init_config.add_argument("--provider", choices=("gmail_workspace", "generic_imap"),
+                             default="gmail_workspace")
+    init_config.add_argument("--account-alias")
+    init_config.add_argument("--imap-host")
+    init_config.add_argument("--imap-port", type=int, default=993)
+    init_config.add_argument("--input-folder")
+    init_config.add_argument("--done-folder")
+    init_config.add_argument("--error-folder")
+    init_config.add_argument("--enable-bucoliche", action="store_true")
+    init_config.add_argument("--dry-run", action="store_true")
+    init_config.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -502,6 +518,38 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         print(result.to_json())
         return 0 if result.status in {"token_created", "token_refreshed"} else 1
+    if args.command == "init-config":
+        try:
+            content = scaffold_local_config(
+                email=args.email,
+                staging_dir=args.staging_dir,
+                account_alias=args.account_alias,
+                provider_hint=args.provider,
+                imap_host=args.imap_host,
+                imap_port=args.imap_port,
+                input_folder=args.input_folder,
+                done_folder=args.done_folder,
+                error_folder=args.error_folder,
+                bucoliche_enabled=args.enable_bucoliche,
+            )
+            if args.output.exists() and not args.force and not args.dry_run:
+                raise MultiAccountConfigError(f"refusing to overwrite existing file: {args.output}")
+        except MultiAccountConfigError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.dry_run:
+            print(content)
+            return 0
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content, encoding="utf-8", newline="\n")
+        print(json.dumps({
+            "status": "written",
+            "path": str(args.output),
+            "next_commands": [
+                f"python -m virgilio_connector doctor --config {args.output}",
+                f"virgilio pilot --config {args.output} --human",
+            ],
+        }, ensure_ascii=False, separators=(",", ":")))
+        return 0
     return 2
 
 

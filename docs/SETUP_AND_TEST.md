@@ -9,6 +9,15 @@ cd C:\Users\Marco\Documents\Virgilio
 
 Configurazioni reali devono stare solo in `.env`, mai nel repository.
 
+Per creare uno scheletro locale valido senza segreti nel file:
+
+```powershell
+virgilio init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
+```
+
+Il comando genera un `accounts.local.yaml` con account, storage, Bucoliche e rules minime;
+le credenziali restano solo come nomi di variabili d'ambiente da valorizzare localmente.
+
 ## Test Python
 
 ```powershell

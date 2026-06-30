@@ -27,6 +27,20 @@ class MultiAccountConfigError(ValueError):
 
 _ALIAS_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{1,62}$")
 _ENV_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
+_PROVIDER_DEFAULTS = {
+    "gmail_workspace": {
+        "imap_host": "imap.gmail.com",
+        "input_folder": "Virgilio/da-traghettare",
+        "done_folder": "Virgilio/traghettate",
+        "error_folder": "Virgilio/errore",
+    },
+    "generic_imap": {
+        "imap_host": "imap.example.invalid",
+        "input_folder": "INBOX",
+        "done_folder": "done",
+        "error_folder": "error",
+    },
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +168,68 @@ class MultiAccountAttachmentResult:
     included: bool = True
     rule_name: str | None = None
     reason: str | None = None
+
+
+def scaffold_local_config(*, email: str, staging_dir: Path, account_alias: str | None = None,
+                          provider_hint: str = "gmail_workspace", imap_host: str | None = None,
+                          imap_port: int = 993, input_folder: str | None = None,
+                          done_folder: str | None = None, error_folder: str | None = None,
+                          bucoliche_enabled: bool = False,
+                          credentials_mode: str = "user_oauth_local") -> str:
+    if provider_hint not in _PROVIDER_DEFAULTS:
+        raise MultiAccountConfigError(f"unsupported provider_hint: {provider_hint}")
+    alias = account_alias or _alias_from_email(email)
+    if not _ALIAS_RE.fullmatch(alias):
+        raise MultiAccountConfigError("account_alias must be lowercase, stable and filesystem-safe")
+    if "@" not in email or not email.strip():
+        raise MultiAccountConfigError("email is required")
+    if not 1 <= int(imap_port) <= 65535:
+        raise MultiAccountConfigError("imap_port must be between 1 and 65535")
+    defaults = _PROVIDER_DEFAULTS[provider_hint]
+    username_env = _env_name(alias, "USERNAME")
+    password_env = _env_name(alias, "PASSWORD")
+    lines = [
+        "accounts:",
+        f"  - account_alias: {alias}",
+        f"    email: {email}",
+        f"    provider_hint: {provider_hint}",
+        f"    imap_host: {imap_host or defaults['imap_host']}",
+        f"    imap_port: {int(imap_port)}",
+        f"    username_env: {username_env}",
+        f"    password_env: {password_env}",
+        f"    input_folder: {_quoted(input_folder or defaults['input_folder'])}",
+        f"    done_folder: {_quoted(done_folder or defaults['done_folder'])}",
+        f"    error_folder: {_quoted(error_folder or defaults['error_folder'])}",
+        "    enabled: true",
+        "    max_messages: 25",
+        "    ack_enabled: false",
+        "    ack_strategy: no_ack_manual",
+        "storage:",
+        "  adapter: local_filesystem",
+        f"  staging_dir: {_quoted(str(staging_dir))}",
+        "  use_account_subfolders: true",
+        "  copy_manifest: true",
+        "  overwrite: false",
+        "  create_staging_dir: false",
+        "bucoliche:",
+        f"  enabled: {_bool_text(bucoliche_enabled)}",
+        "  adapter: google_sheets_append_only",
+        f"  credentials_mode: {credentials_mode}",
+        "  spreadsheet_id_env: VIRGILIO_BUCOLICHE_SPREADSHEET_ID",
+        "  oauth_client_secrets_path_env: VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH",
+        "  oauth_token_path_env: VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH",
+        "rules:",
+        "  default_action: include",
+        "",
+        "# Inserire i valori reali solo in .env o nelle variabili d'ambiente locali:",
+        f"# {username_env}=utente@example.com",
+        f"# {password_env}=password-app-o-token",
+        "# VIRGILIO_BUCOLICHE_SPREADSHEET_ID=sheet-id-di-test",
+        "# VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH=C:\\path\\client_secret.json",
+        "# VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH=C:\\path\\google-token.json",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def load_multi_account_config(path: str | Path) -> tuple[LocalImapAccount, ...]:
@@ -624,3 +700,26 @@ def _to_bool(value: object) -> bool:
     if isinstance(value, str) and value.lower() in {"true", "false"}:
         return value.lower() == "true"
     raise MultiAccountConfigError("enabled must be true or false")
+
+
+def _alias_from_email(email: str) -> str:
+    local_part = email.split("@", 1)[0].strip().lower()
+    alias = re.sub(r"[^a-z0-9]+", "_", local_part).strip("_")
+    if len(alias) < 2:
+        alias = "mailbox_locale"
+    if not alias[0].isalnum():
+        alias = f"a{alias}"
+    return alias[:63]
+
+
+def _env_name(alias: str, suffix: str) -> str:
+    token = re.sub(r"[^A-Z0-9]+", "_", alias.upper()).strip("_")
+    return f"VIRGILIO_IMAP_{token}_{suffix}"
+
+
+def _quoted(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def _bool_text(value: bool) -> str:
+    return "true" if value else "false"

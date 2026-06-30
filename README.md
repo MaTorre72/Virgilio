@@ -86,6 +86,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_conn
 Per una vista sintetica leggibile del pilota senza cambiare il default JSON:
 
 ```powershell
+virgilio init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
 python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human
 virgilio pilot --config accounts.local.yaml --human
 ```

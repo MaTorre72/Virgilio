@@ -7,7 +7,12 @@ import pytest
 
 from virgilio_connector.bucoliche import BucolicheConfig, CONFLICT_COLUMNS, EVENT_COLUMNS
 from virgilio_connector.local_paths import LocalDataPaths
-from virgilio_connector.multi_account import LocalImapAccount, LocalStorageConfig
+from virgilio_connector.multi_account import (
+    LocalImapAccount,
+    LocalStorageConfig,
+    load_storage_config,
+    load_multi_account_config,
+)
 from virgilio_connector.pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup,
                                                 PilotCheck, PilotPreview, PilotSafeRunner)
 from virgilio_connector.readonly_state import ReadonlyStateStore
@@ -221,6 +226,11 @@ def test_new_cli_commands_are_registered(tmp_path, monkeypatch):
             main()
         assert exc.value.code == 2
 
+    monkeypatch.setattr(sys, "argv", ["virgilio_connector", "init-config"])
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 2
+
 
 def test_pilot_cli_returns_preview_and_safe_result(tmp_path, monkeypatch, capsys):
     import virgilio_connector.__main__ as cli
@@ -331,6 +341,39 @@ def test_pilot_cli_human_output_includes_snapshot(tmp_path, monkeypatch, capsys)
     assert "Esito pilot-run-safe: READY_WITH_WARNINGS (dry-run)" in text
     assert "Prossimo comando: preview-step" in text
     assert '"status"' not in text
+
+
+def test_init_config_cli_writes_valid_template(tmp_path, monkeypatch, capsys):
+    from virgilio_connector.__main__ import main
+    output = tmp_path / "accounts.local.yaml"
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio", "init-config",
+        "--output", str(output),
+        "--email", "marco.rossi@example.com",
+        "--staging-dir", str(tmp_path / "staging"),
+    ])
+    assert main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "written"
+    assert output.is_file()
+    assert load_storage_config(output).staging_dir == tmp_path / "staging"
+    assert load_multi_account_config(output)[0].account_alias == "marco_rossi"
+
+
+def test_init_config_cli_dry_run_does_not_write(tmp_path, monkeypatch, capsys):
+    from virgilio_connector.__main__ import main
+    output = tmp_path / "accounts.local.yaml"
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio", "init-config",
+        "--output", str(output),
+        "--email", "box@example.com",
+        "--staging-dir", str(tmp_path / "staging"),
+        "--dry-run",
+    ])
+    assert main() == 0
+    text = capsys.readouterr().out
+    assert "accounts:" in text
+    assert not output.exists()
 
 
 def test_console_script_registers_virgilio_entrypoint():
