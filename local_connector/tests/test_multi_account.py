@@ -327,12 +327,20 @@ def test_process_writes_quarantine_manifest_and_sqlite_per_account(tmp_path):
     assert manifest["connector_type"] == "local_imap"
     assert manifest["account_alias"] == "marco_sigmapiu"
     assert manifest["source_email"] == "user@example.invalid"
+    assert manifest["source_sender"] == "sender@example.invalid"
+    assert manifest["source_mailbox"] == "Virgilio/da-traghettare"
     assert manifest["source_message_uid"] == "41"
     assert manifest["source_message_id"] == "<a@example.invalid>"
+    assert manifest["source_message_date"] == "2026-06-25T10:00:00+00:00"
+    assert manifest["source_thread_id"] is None
     assert manifest["attachment_id"] == result[0].attachment_id
+    assert manifest["file_extension"] == ".pdf"
     assert manifest["sha256"] == result[0].sha256
     assert manifest["scan_engine"] == "fake"
     assert manifest["scan_result"] == "clean"
+    assert manifest["policy_included"] is True
+    assert manifest["policy_rule"] is None
+    assert manifest["status_reason"] == "fake clean"
     assert manifest["fingerprint"] == result[0].fingerprint
     assert manifest["audit_trail"][-1]["action"] == "manifest_created"
     assert all(item["machine_id"] for item in manifest["audit_trail"])
@@ -467,6 +475,8 @@ def test_storage_real_copy_manifest_hash_and_sqlite(tmp_path):
     assert manifest["storage_adapter"] == "local_filesystem"
     assert manifest["staged_filename"] == staged_file.name
     assert manifest["account_alias"] == "marco_sigmapiu"
+    assert manifest["source_mailbox"] == "Virgilio/da-traghettare"
+    assert manifest["status_reason"] == "fake clean"
     forbidden = {"password", "token", "file_bytes", "base64", "content", "raw"}
     assert not (forbidden & set(manifest))
     with sqlite3.connect(paths.state_db) as db:

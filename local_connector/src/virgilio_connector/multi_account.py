@@ -492,7 +492,7 @@ class MultiAccountImapProcessor:
             manifest_path = manifests / f"{attachment_id}.manifest.json"
             manifest = self._manifest(account, message, attachment, attachment_id,
                 sanitized, digest, status, scan_engine, scan_result, source_email,
-                fingerprint, load_machine_id(self.paths.root))
+                fingerprint, load_machine_id(self.paths.root), included, rule_name, reason)
             manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2),
                                      encoding="utf-8")
             manifest_relative = manifest_path.relative_to(self.paths.root).as_posix()
@@ -531,25 +531,36 @@ class MultiAccountImapProcessor:
     def _manifest(account: LocalImapAccount, message: MessageReference, attachment,
                   attachment_id: str, sanitized: str | None, digest: str,
                   status: str, scan_engine: str | None, scan_result: str | None,
-                  source_email: str, fingerprint: str, machine_id: str
+                  source_email: str, fingerprint: str, machine_id: str,
+                  included: bool, rule_name: str | None, reason: str
                   ) -> dict[str, object]:
+        original_filename = attachment.original_filename or ""
+        file_extension = Path(original_filename).suffix.casefold() if original_filename else ""
         return {
             "schema_version": "1.0",
             "connector_type": "local_imap",
             "account_alias": account.account_alias,
             "source_email": source_email,
+            "source_sender": message.sender,
+            "source_mailbox": message.mailbox,
             "source_message_uid": message.message_uid,
             "source_message_id": message.message_id,
+            "source_message_date": message.date,
+            "source_thread_id": message.thread_id,
             "subject": message.subject,
             "attachment_id": attachment_id,
             "original_filename": attachment.original_filename,
             "sanitized_filename": sanitized,
+            "file_extension": file_extension,
             "sha256": digest,
             "size_bytes": len(attachment.payload),
             "mime_type": attachment.declared_mime_type,
             "scan_engine": scan_engine,
             "scan_result": scan_result,
             "quarantine_status": status,
+            "policy_included": included,
+            "policy_rule": rule_name,
+            "status_reason": reason,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "fingerprint": fingerprint,
             "audit_trail": [

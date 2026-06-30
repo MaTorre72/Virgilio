@@ -40,7 +40,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 |---|---|---|---|---|---|
 | DONE | P2 | Confronto Docling/Unstructured su fixture | spike isolato | report qualita; nessuna produzione | Medio |
 | DONE | P2 | Estrazione testo e tabelle senza AI | parser | fixture PDF/DOCX/XLSX | Alto |
-| TODO | P2 | Manifest arricchito | manifest | schema retrocompatibile | Medio |
+| DONE | P2 | Manifest arricchito | manifest | schema retrocompatibile | Medio |
 
 ## Milestone 5 - Classificazione assistita
 
@@ -73,3 +73,4 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 - 2026-06-30 - `local_connector/README.md` ora include la sezione "10 comandi essenziali" con il flusso locale minimo v1.1 allineato alla CLI corrente.
 - 2026-06-30 - Aggiunto `compare-parser-fixtures`, spike isolato che confronta snapshot Docling/Unstructured su fixture sintetiche e produce un report locale di qualita senza dipendenze o parsing reale.
 - 2026-06-30 - Aggiunto `extract-local-fixtures`: parser locale `stdlib_local` che estrae testo e tabelle minime da fixture sintetiche `PDF/DOCX/XLSX` con sole librerie standard, fuori dalla pipeline produttiva.
+- 2026-06-30 - Il manifest locale e staged ora include anche metadati retrocompatibili di provenienza e decisione (`source_sender`, `source_mailbox`, `source_message_date`, `source_thread_id`, `file_extension`, `policy_*`, `status_reason`) senza cambiare i consumer esistenti.

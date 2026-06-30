@@ -438,9 +438,12 @@ del salvataggio: `subject_contains`, `from_contains`, `filename_contains`,
 `filename_extensions`, dimensione minima/massima e `require_attachment`.
 Senza `rules` il comportamento precedente resta invariato (`default_action: include`).
 
-Ogni nuovo manifest include `fingerprint` deterministico e `audit_trail`. L'identità
-della postazione è generata una sola volta in `.local_data/machine_id`; SQLite registra
-gli eventi append-only in `audit_events`.
+Ogni nuovo manifest include `fingerprint` deterministico, `audit_trail` e metadati
+retrocompatibili aggiuntivi su provenienza e decisione locale:
+`source_sender`, `source_mailbox`, `source_message_date`, `source_thread_id`,
+`file_extension`, `policy_included`, `policy_rule`, `status_reason`.
+L'identità della postazione è generata una sola volta in `.local_data/machine_id`;
+SQLite registra gli eventi append-only in `audit_events`.
 
 ```powershell
 python -m virgilio_connector check-local-conflicts --config accounts.local.yaml
