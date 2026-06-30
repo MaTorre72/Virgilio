@@ -37,6 +37,26 @@ class ClassificationProposal:
         return asdict(self)
 
 
+@dataclass(frozen=True, slots=True)
+class ClassificationReview:
+    manifest_path: str
+    attachment_id: str
+    account_alias: str
+    dry_run: bool
+    status: str
+    proposed_classification: str
+    reviewer: str
+    decision: str
+    review_completed: bool
+    approved_for_future_flow: bool
+    review_notes: str
+    reasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 class AttachmentClassificationProposer:
     def __init__(self, config: LiteLLMGatewayConfig, *,
                  gateway: LiteLLMGateway | None = None,
@@ -123,6 +143,56 @@ def classification_human_summary(result: ClassificationProposal) -> list[str]:
     return lines
 
 
+def review_classification_proposal(proposal_path: str | Path, *, decision: str, reviewer: str,
+                                   review_notes: str = "") -> ClassificationReview:
+    path = Path(proposal_path)
+    proposal = _load_proposal(path)
+    normalized_decision = decision.strip().lower()
+    normalized_reviewer = reviewer.strip()
+    notes = review_notes.strip()
+    if normalized_decision not in {"approve", "reject"}:
+        raise ClassificationProposalError("decision must be approve or reject")
+    if not normalized_reviewer:
+        raise ClassificationProposalError("reviewer is required")
+    status = "approved_for_future_flow" if normalized_decision == "approve" else "rejected_for_manual_triage"
+    warnings = list(proposal.warnings)
+    warnings = [item for item in warnings if item != "human_review_required"]
+    warnings.append(f"human_review_{normalized_decision}d")
+    reasons = list(proposal.reasons)
+    reasons.append(f"human review decision: {normalized_decision}")
+    if notes:
+        reasons.append(f"review notes: {notes}")
+    return ClassificationReview(
+        manifest_path=proposal.manifest_path,
+        attachment_id=proposal.attachment_id,
+        account_alias=proposal.account_alias,
+        dry_run=True,
+        status=status,
+        proposed_classification=proposal.proposed_classification,
+        reviewer=normalized_reviewer,
+        decision=normalized_decision,
+        review_completed=True,
+        approved_for_future_flow=normalized_decision == "approve",
+        review_notes=notes,
+        reasons=tuple(reasons),
+        warnings=tuple(warnings),
+    )
+
+
+def classification_review_human_summary(result: ClassificationReview) -> list[str]:
+    lines = [
+        f"Review classificazione: {result.decision}",
+        f"Classe proposta: {result.proposed_classification}",
+        f"Attachment: {result.attachment_id}; reviewer: {result.reviewer}",
+        f"Esito workflow futuro: {'abilitato' if result.approved_for_future_flow else 'bloccato'}",
+    ]
+    if result.review_notes:
+        lines.append(f"Note review: {result.review_notes}")
+    if result.warnings:
+        lines.append(f"Warning: {result.warnings[-1]}")
+    return lines
+
+
 def _load_manifest(path: Path) -> Mapping[str, Any]:
     if not path.is_file():
         raise ClassificationProposalError(f"manifest not found: {path}")
@@ -137,6 +207,43 @@ def _load_manifest(path: Path) -> Mapping[str, Any]:
         if value is None or not str(value).strip():
             raise ClassificationProposalError(f"manifest field {field} is required")
     return manifest
+
+
+def _load_proposal(path: Path) -> ClassificationProposal:
+    if not path.is_file():
+        raise ClassificationProposalError(f"proposal not found: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ClassificationProposalError(f"proposal is not valid JSON: {path}") from exc
+    if not isinstance(payload, dict):
+        raise ClassificationProposalError("proposal must be a JSON object")
+    if payload.get("dry_run") is not True:
+        raise ClassificationProposalError("proposal must keep dry_run=true")
+    if payload.get("review_required") is not True:
+        raise ClassificationProposalError("proposal must require human review")
+    if payload.get("status") != "proposal_only":
+        raise ClassificationProposalError("proposal status must be proposal_only")
+    try:
+        return ClassificationProposal(
+            manifest_path=str(payload["manifest_path"]),
+            attachment_id=str(payload["attachment_id"]),
+            account_alias=str(payload["account_alias"]),
+            dry_run=bool(payload["dry_run"]),
+            review_required=bool(payload["review_required"]),
+            status=str(payload["status"]),
+            proposed_classification=str(payload["proposed_classification"]),
+            confidence=str(payload["confidence"]),
+            reasons=tuple(str(item) for item in payload.get("reasons", [])),
+            warnings=tuple(str(item) for item in payload.get("warnings", [])),
+            llm_output_text=str(payload.get("llm_output_text", "")),
+            llm_provider=str(payload.get("llm_provider", "")),
+            llm_model=str(payload.get("llm_model", "")),
+            llm_total_tokens=int(payload.get("llm_total_tokens", 0)),
+            llm_estimated_cost_eur=float(payload.get("llm_estimated_cost_eur", 0.0)),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ClassificationProposalError("proposal payload is incomplete or malformed") from exc
 
 
 def _build_prompt(manifest: Mapping[str, Any], classification: str, confidence: str,

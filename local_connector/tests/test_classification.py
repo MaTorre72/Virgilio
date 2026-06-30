@@ -7,7 +7,8 @@ import sys
 import pytest
 
 from virgilio_connector.classification import (AttachmentClassificationProposer,
-                                               ClassificationProposalError)
+                                               ClassificationProposalError,
+                                               review_classification_proposal)
 from virgilio_connector.litellm_gateway import LiteLLMGatewayConfig
 
 
@@ -97,3 +98,58 @@ def test_cli_classify_manifest_dry_run_human_summary(tmp_path, monkeypatch, caps
     output = capsys.readouterr().out
     assert "Proposta classificazione: riunione_verbale" in output
     assert "Revisione umana obbligatoria: si" in output
+
+
+def test_review_classification_proposal_approves_dry_run_output(tmp_path):
+    manifest = _write_manifest(tmp_path / "invoice.manifest.json")
+    proposal = AttachmentClassificationProposer(LiteLLMGatewayConfig(max_cost_eur=0.1)).propose_from_manifest(manifest)
+    proposal_file = tmp_path / "proposal.json"
+    proposal_file.write_text(json.dumps(proposal.to_dict(), ensure_ascii=False), encoding="utf-8")
+
+    result = review_classification_proposal(
+        proposal_file,
+        decision="approve",
+        reviewer="operatore.test",
+        review_notes="Confermata su metadati locali",
+    )
+
+    assert result.review_completed is True
+    assert result.approved_for_future_flow is True
+    assert result.status == "approved_for_future_flow"
+    assert result.decision == "approve"
+    assert "human_review_approved" in result.warnings
+    assert any("human review decision: approve" == item for item in result.reasons)
+
+
+def test_review_classification_proposal_rejects_non_reviewable_payload(tmp_path):
+    proposal_file = tmp_path / "proposal.json"
+    proposal_file.write_text(json.dumps({
+        "dry_run": True,
+        "review_required": False,
+        "status": "proposal_only",
+    }), encoding="utf-8")
+
+    with pytest.raises(ClassificationProposalError, match="proposal must require human review"):
+        review_classification_proposal(proposal_file, decision="reject", reviewer="operatore.test")
+
+
+def test_cli_review_classification_dry_run_human_summary(tmp_path, monkeypatch, capsys):
+    from virgilio_connector.__main__ import main
+
+    manifest = _write_manifest(tmp_path / "invoice.manifest.json")
+    proposal = AttachmentClassificationProposer(LiteLLMGatewayConfig(max_cost_eur=0.1)).propose_from_manifest(manifest)
+    proposal_file = tmp_path / "proposal.json"
+    proposal_file.write_text(json.dumps(proposal.to_dict(), ensure_ascii=False), encoding="utf-8")
+
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio", "review-classification-dry-run",
+        "--proposal-file", str(proposal_file),
+        "--decision", "approve",
+        "--reviewer", "operatore.test",
+        "--notes", "Verifica completata",
+        "--human",
+    ])
+    assert main() == 0
+    output = capsys.readouterr().out
+    assert "Review classificazione: approve" in output
+    assert "Esito workflow futuro: abilitato" in output

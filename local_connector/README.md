@@ -515,6 +515,25 @@ euristica conservativa, passa il contesto al gateway `mock` per preparare il
 flusso futuro e restituisce sempre `review_required=true`. Non esegue ack, non
 aggiorna SQLite e non invia richieste a provider esterni.
 
+Per completare la review umana in modo esplicito e ancora offline, salvare prima
+il JSON della proposta e poi registrare una decisione locale:
+
+```powershell
+python -m virgilio_connector classify-manifest-dry-run `
+  --manifest .\staging\demo_box\demo__att-123__report.pdf.manifest.json `
+  > .\classification-proposal.json
+python -m virgilio_connector review-classification-dry-run `
+  --proposal-file .\classification-proposal.json `
+  --decision approve `
+  --reviewer operatore.test `
+  --notes "Verifica locale completata" `
+  --human
+```
+
+La review accetta solo proposte `dry_run` con `review_required=true`, registra
+approvazione o rifiuto senza azioni automatiche e restituisce soltanto un esito
+locale per il workflow futuro.
+
 ### Bucoliche append-only
 
 La sezione `bucoliche` di `accounts.local.yaml` è disabilitata per default. Impostare
