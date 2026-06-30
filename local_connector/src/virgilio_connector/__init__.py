@@ -66,11 +66,14 @@ from .caronte_http import (
     CaronteDryRunUrlNotConfigured,
 )
 from .classification import (AttachmentClassificationProposer,
+                             ClassificationFeedback,
                              ClassificationProposal,
                              ClassificationProposalError,
                              ClassificationReview,
+                             classification_feedback_human_summary,
                              classification_human_summary,
                              classification_review_human_summary,
+                             record_classification_feedback,
                              review_classification_proposal)
 from .staging_transport import (
     LocalDriveStagingConfig,
@@ -130,6 +133,7 @@ __all__ = [
     "ClassificationProposal",
     "ClassificationProposalError",
     "ClassificationReview",
+    "ClassificationFeedback",
     "CommandAttemptRecord",
     "CommandAttemptStatus",
     "ContractValidationError",
@@ -208,10 +212,12 @@ __all__ = [
     "UnsupportedSchemaError",
     "command_from_json",
     "classification_human_summary",
+    "classification_feedback_human_summary",
     "classification_review_human_summary",
     "command_to_json",
     "evaluate_ack",
     "review_classification_proposal",
+    "record_classification_feedback",
     "response_from_json",
     "response_to_json",
 ]

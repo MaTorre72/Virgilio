@@ -57,6 +57,27 @@ class ClassificationReview:
         return asdict(self)
 
 
+@dataclass(frozen=True, slots=True)
+class ClassificationFeedback:
+    manifest_path: str
+    attachment_id: str
+    account_alias: str
+    dry_run: bool
+    status: str
+    proposed_classification: str
+    reviewer: str
+    review_decision: str
+    final_classification: str
+    feedback_recorded: bool
+    correction_applied: bool
+    feedback_notes: str
+    reasons: tuple[str, ...]
+    warnings: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 class AttachmentClassificationProposer:
     def __init__(self, config: LiteLLMGatewayConfig, *,
                  gateway: LiteLLMGateway | None = None,
@@ -193,6 +214,58 @@ def classification_review_human_summary(result: ClassificationReview) -> list[st
     return lines
 
 
+def record_classification_feedback(review_path: str | Path, *, final_classification: str,
+                                   feedback_notes: str = "") -> ClassificationFeedback:
+    path = Path(review_path)
+    review = _load_review(path)
+    normalized_final_classification = final_classification.strip()
+    notes = feedback_notes.strip()
+    if not normalized_final_classification:
+        raise ClassificationProposalError("final_classification is required")
+    correction_applied = normalized_final_classification != review.proposed_classification
+    warnings = list(review.warnings)
+    warnings.append("feedback_loop_recorded")
+    reasons = list(review.reasons)
+    reasons.append(
+        "feedback classification corrected"
+        if correction_applied else
+        "feedback classification confirmed"
+    )
+    reasons.append(f"final classification: {normalized_final_classification}")
+    if notes:
+        reasons.append(f"feedback notes: {notes}")
+    return ClassificationFeedback(
+        manifest_path=review.manifest_path,
+        attachment_id=review.attachment_id,
+        account_alias=review.account_alias,
+        dry_run=True,
+        status="feedback_recorded",
+        proposed_classification=review.proposed_classification,
+        reviewer=review.reviewer,
+        review_decision=review.decision,
+        final_classification=normalized_final_classification,
+        feedback_recorded=True,
+        correction_applied=correction_applied,
+        feedback_notes=notes,
+        reasons=tuple(reasons),
+        warnings=tuple(warnings),
+    )
+
+
+def classification_feedback_human_summary(result: ClassificationFeedback) -> list[str]:
+    lines = [
+        f"Feedback classificazione: {result.status}",
+        f"Classe finale: {result.final_classification}",
+        f"Attachment: {result.attachment_id}; reviewer: {result.reviewer}",
+        f"Correzione applicata: {'si' if result.correction_applied else 'no'}",
+    ]
+    if result.feedback_notes:
+        lines.append(f"Note feedback: {result.feedback_notes}")
+    if result.warnings:
+        lines.append(f"Warning: {result.warnings[-1]}")
+    return lines
+
+
 def _load_manifest(path: Path) -> Mapping[str, Any]:
     if not path.is_file():
         raise ClassificationProposalError(f"manifest not found: {path}")
@@ -244,6 +317,39 @@ def _load_proposal(path: Path) -> ClassificationProposal:
         )
     except (KeyError, TypeError, ValueError) as exc:
         raise ClassificationProposalError("proposal payload is incomplete or malformed") from exc
+
+
+def _load_review(path: Path) -> ClassificationReview:
+    if not path.is_file():
+        raise ClassificationProposalError(f"review not found: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ClassificationProposalError(f"review is not valid JSON: {path}") from exc
+    if not isinstance(payload, dict):
+        raise ClassificationProposalError("review must be a JSON object")
+    if payload.get("dry_run") is not True:
+        raise ClassificationProposalError("review must keep dry_run=true")
+    if payload.get("review_completed") is not True:
+        raise ClassificationProposalError("review must be completed")
+    try:
+        return ClassificationReview(
+            manifest_path=str(payload["manifest_path"]),
+            attachment_id=str(payload["attachment_id"]),
+            account_alias=str(payload["account_alias"]),
+            dry_run=bool(payload["dry_run"]),
+            status=str(payload["status"]),
+            proposed_classification=str(payload["proposed_classification"]),
+            reviewer=str(payload["reviewer"]),
+            decision=str(payload["decision"]),
+            review_completed=bool(payload["review_completed"]),
+            approved_for_future_flow=bool(payload["approved_for_future_flow"]),
+            review_notes=str(payload.get("review_notes", "")),
+            reasons=tuple(str(item) for item in payload.get("reasons", [])),
+            warnings=tuple(str(item) for item in payload.get("warnings", [])),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ClassificationProposalError("review payload is incomplete or malformed") from exc
 
 
 def _build_prompt(manifest: Mapping[str, Any], classification: str, confidence: str,

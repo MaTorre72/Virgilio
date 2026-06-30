@@ -534,6 +534,27 @@ La review accetta solo proposte `dry_run` con `review_required=true`, registra
 approvazione o rifiuto senza azioni automatiche e restituisce soltanto un esito
 locale per il workflow futuro.
 
+Per chiudere anche il feedback loop e tracciare l'eventuale correzione finale
+decisa dall'operatore, salvare il JSON della review e registrare la classe
+confermata o corretta:
+
+```powershell
+python -m virgilio_connector review-classification-dry-run `
+  --proposal-file .\classification-proposal.json `
+  --decision reject `
+  --reviewer operatore.test `
+  > .\classification-review.json
+python -m virgilio_connector classification-feedback-dry-run `
+  --review-file .\classification-review.json `
+  --final-classification documento_amministrativo_revisionato `
+  --notes "Correzione locale tracciata" `
+  --human
+```
+
+Il feedback loop accetta solo review locali `dry_run` completate, registra la
+classe finale e distingue fra conferma della proposta e correzione manuale.
+Resta offline: non aggiorna SQLite, non esegue ack e non chiama provider esterni.
+
 ### Bucoliche append-only
 
 La sezione `bucoliche` di `accounts.local.yaml` è disabilitata per default. Impostare

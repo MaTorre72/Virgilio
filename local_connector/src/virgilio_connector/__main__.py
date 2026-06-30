@@ -14,9 +14,11 @@ from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
 from .bucoliche import (BucolicheAppendOnlyAdapter, BucolicheError,
                         GoogleOAuthLogin, load_bucoliche_config)
 from .classification import (AttachmentClassificationProposer,
+                             classification_feedback_human_summary,
                              ClassificationProposalError,
                              classification_human_summary,
                              classification_review_human_summary,
+                             record_classification_feedback,
                              review_classification_proposal)
 from .completion import CompletionError, LocalCompletionRunner
 from .staging_transport import (
@@ -187,6 +189,11 @@ def main() -> int:
     review_classification.add_argument("--reviewer", required=True)
     review_classification.add_argument("--notes", default="")
     review_classification.add_argument("--human", action="store_true")
+    classification_feedback = commands.add_parser("classification-feedback-dry-run")
+    classification_feedback.add_argument("--review-file", type=Path, required=True)
+    classification_feedback.add_argument("--final-classification", required=True)
+    classification_feedback.add_argument("--notes", default="")
+    classification_feedback.add_argument("--human", action="store_true")
     parser_spike = commands.add_parser("compare-parser-fixtures")
     parser_spike.add_argument("--catalog", type=Path, required=True)
     parser_spike.add_argument("--snapshots-dir", type=Path, required=True)
@@ -365,6 +372,20 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         if args.human:
             _print_human(classification_review_human_summary(result))
+        else:
+            print(json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "classification-feedback-dry-run":
+        try:
+            result = record_classification_feedback(
+                args.review_file,
+                final_classification=args.final_classification,
+                feedback_notes=args.notes,
+            )
+        except ClassificationProposalError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(classification_feedback_human_summary(result))
         else:
             print(json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":")))
         return 0

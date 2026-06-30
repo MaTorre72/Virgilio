@@ -8,6 +8,7 @@ import pytest
 
 from virgilio_connector.classification import (AttachmentClassificationProposer,
                                                ClassificationProposalError,
+                                               record_classification_feedback,
                                                review_classification_proposal)
 from virgilio_connector.litellm_gateway import LiteLLMGatewayConfig
 
@@ -153,3 +154,71 @@ def test_cli_review_classification_dry_run_human_summary(tmp_path, monkeypatch, 
     output = capsys.readouterr().out
     assert "Review classificazione: approve" in output
     assert "Esito workflow futuro: abilitato" in output
+
+
+def test_record_classification_feedback_tracks_manual_correction(tmp_path):
+    manifest = _write_manifest(tmp_path / "invoice.manifest.json")
+    proposal = AttachmentClassificationProposer(LiteLLMGatewayConfig(max_cost_eur=0.1)).propose_from_manifest(manifest)
+    proposal_file = tmp_path / "proposal.json"
+    proposal_file.write_text(json.dumps(proposal.to_dict(), ensure_ascii=False), encoding="utf-8")
+    review = review_classification_proposal(
+        proposal_file,
+        decision="approve",
+        reviewer="operatore.test",
+        review_notes="Confermata con riserva",
+    )
+    review_file = tmp_path / "review.json"
+    review_file.write_text(json.dumps(review.to_dict(), ensure_ascii=False), encoding="utf-8")
+
+    result = record_classification_feedback(
+        review_file,
+        final_classification="documento_contabile_corretto",
+        feedback_notes="Classe finale corretta dopo controllo umano",
+    )
+
+    assert result.feedback_recorded is True
+    assert result.status == "feedback_recorded"
+    assert result.correction_applied is True
+    assert result.final_classification == "documento_contabile_corretto"
+    assert "feedback_loop_recorded" in result.warnings
+    assert any("feedback classification corrected" == item for item in result.reasons)
+
+
+def test_record_classification_feedback_rejects_incomplete_review_payload(tmp_path):
+    review_file = tmp_path / "review.json"
+    review_file.write_text(json.dumps({
+        "dry_run": True,
+        "review_completed": False,
+    }), encoding="utf-8")
+
+    with pytest.raises(ClassificationProposalError, match="review must be completed"):
+        record_classification_feedback(review_file, final_classification="classe_finale")
+
+
+def test_cli_classification_feedback_dry_run_human_summary(tmp_path, monkeypatch, capsys):
+    from virgilio_connector.__main__ import main
+
+    manifest = _write_manifest(tmp_path / "invoice.manifest.json")
+    proposal = AttachmentClassificationProposer(LiteLLMGatewayConfig(max_cost_eur=0.1)).propose_from_manifest(manifest)
+    proposal_file = tmp_path / "proposal.json"
+    proposal_file.write_text(json.dumps(proposal.to_dict(), ensure_ascii=False), encoding="utf-8")
+    review = review_classification_proposal(
+        proposal_file,
+        decision="reject",
+        reviewer="operatore.test",
+        review_notes="Serve una classe piu specifica",
+    )
+    review_file = tmp_path / "review.json"
+    review_file.write_text(json.dumps(review.to_dict(), ensure_ascii=False), encoding="utf-8")
+
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio", "classification-feedback-dry-run",
+        "--review-file", str(review_file),
+        "--final-classification", "documento_amministrativo_revisionato",
+        "--notes", "Correzione tracciata",
+        "--human",
+    ])
+    assert main() == 0
+    output = capsys.readouterr().out
+    assert "Feedback classificazione: feedback_recorded" in output
+    assert "Correzione applicata: si" in output

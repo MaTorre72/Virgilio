@@ -49,7 +49,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 | DONE | P3 | Gateway LiteLLM | adapter futuro | mock provider; budget | Alto |
 | DONE | P3 | Proposta classificazione | classifier futuro | nessuna azione automatica | Alto |
 | DONE | P3 | Human review | workflow futuro | conferma obbligatoria | Alto |
-| TODO | P3 | Feedback loop | audit futuro | correzioni tracciate | Alto |
+| DONE | P3 | Feedback loop | audit futuro | correzioni tracciate | Alto |
 
 ## Registro avanzamento
 
@@ -76,3 +76,4 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 - 2026-06-30 - Il manifest locale e staged ora include anche metadati retrocompatibili di provenienza e decisione (`source_sender`, `source_mailbox`, `source_message_date`, `source_thread_id`, `file_extension`, `policy_*`, `status_reason`) senza cambiare i consumer esistenti.
 - 2026-06-30 - Aggiunto `classify-manifest-dry-run`: legge un manifest locale, propone una classificazione prudente con review obbligatoria e allega il responso mock LiteLLM senza reti o azioni automatiche.
 - 2026-06-30 - Aggiunto `review-classification-dry-run`: accetta solo proposte locali `dry_run` con `review_required=true`, registra approvazione/rifiuto umano e mantiene il workflow futuro senza azioni automatiche.
+- 2026-06-30 - Aggiunto `classification-feedback-dry-run`: accetta solo review locali `dry_run` completate, traccia la classificazione finale e distingue tra conferma e correzione manuale senza scrivere stato operativo.
