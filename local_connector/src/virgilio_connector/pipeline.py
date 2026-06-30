@@ -23,6 +23,7 @@ class PipelineResult:
     status: str
     errors: tuple[str, ...]
     warnings: tuple[str, ...] = ()
+    human_summary: tuple[str, ...] = ()
 
 
 class LocalPipelineRunner:
@@ -83,7 +84,8 @@ class LocalPipelineRunner:
         }
         report["human_summary"] = self._human_summary(report, status=status, dry_run=dry_run)
         report_path = None if dry_run else self._write_report(report)
-        return PipelineResult(report_path, dry_run, status, tuple(errors), tuple(warnings))
+        return PipelineResult(report_path, dry_run, status, tuple(errors), tuple(warnings),
+                              tuple(report["human_summary"]))
 
     @staticmethod
     def _phase(name: str, timings: dict[str, float], errors: list[str], call):

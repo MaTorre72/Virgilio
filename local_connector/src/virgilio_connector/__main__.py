@@ -69,6 +69,46 @@ def _load_pilot_components(config_path: Path):
     return accounts, storage_config, bucoliche_config, LocalDataPaths(local_root)
 
 
+def _print_human(lines) -> None:
+    print("\n".join(lines))
+
+
+def _pilot_safe_human_summary(result, *, label: str = "Esito pilot") -> list[str]:
+    lines = [f"{label}: {result.status} ({'dry-run' if result.dry_run else 'run reale'})",
+             f"Pilot check: {result.pilot_check}"]
+    if result.pipeline_status:
+        lines.append(f"Pipeline locale: {result.pipeline_status}")
+    if result.export_status:
+        lines.append(f"Export Bucoliche: {result.export_status}")
+    if result.stopped_at:
+        lines.append(f"Interrotto a: {result.stopped_at}")
+    for warning in result.warnings:
+        lines.append(f"Warning: {warning}")
+    for error in result.errors:
+        lines.append(f"Errore: {error}")
+    if result.suggested_next_commands:
+        lines.append(f"Prossimo comando: {result.suggested_next_commands[0]}")
+    return lines
+
+
+def _pilot_preview_human_summary(preview: dict[str, object]) -> list[str]:
+    accounts = [item["account_alias"] for item in preview.get("accounts", [])]
+    account_text = ", ".join(accounts) if accounts else "nessun account abilitato"
+    lines = [
+        f"Stato preview pilota: {preview['pilot_check']}",
+        f"Account abilitate: {account_text}",
+        f"Eventi esportabili: {preview['events_exportable']}; conflitti locali: {preview['local_conflicts']}",
+    ]
+    if preview.get("sheet_target"):
+        lines.append(f"Target Bucoliche: {preview['sheet_target']}")
+    for warning in preview.get("warnings", []):
+        lines.append(f"Warning: {warning}")
+    next_commands = preview.get("next_commands", [])
+    if next_commands:
+        lines.append(f"Prossimo comando: {next_commands[0]}")
+    return lines
+
+
 def main() -> int:
     _load_env_file(Path(".env"))
     parser = argparse.ArgumentParser(prog=_prog_name())
@@ -96,6 +136,7 @@ def main() -> int:
     pipeline = commands.add_parser("run-local-pipeline")
     pipeline.add_argument("--config", type=Path, required=True)
     pipeline.add_argument("--dry-run", action="store_true")
+    pipeline.add_argument("--human", action="store_true")
     doctor = commands.add_parser("doctor")
     doctor.add_argument("--config", type=Path, required=True)
     conflicts = commands.add_parser("check-local-conflicts")
@@ -112,13 +153,16 @@ def main() -> int:
     pilot_check.add_argument("--config", type=Path, required=True)
     pilot_safe = commands.add_parser("pilot-run-safe")
     pilot_safe.add_argument("--config", type=Path, required=True)
+    pilot_safe.add_argument("--human", action="store_true")
     pilot = commands.add_parser("pilot")
     pilot.add_argument("--config", type=Path, required=True)
+    pilot.add_argument("--human", action="store_true")
     sheet_setup = commands.add_parser("setup-bucoliche-test-sheet")
     sheet_setup.add_argument("--config", type=Path, required=True)
     sheet_setup.add_argument("--dry-run", action="store_true")
     pilot_preview = commands.add_parser("pilot-preview")
     pilot_preview.add_argument("--config", type=Path, required=True)
+    pilot_preview.add_argument("--human", action="store_true")
     oauth_login = commands.add_parser("google-oauth-login")
     oauth_login.add_argument("--config", type=Path, required=True)
     args = parser.parse_args()
@@ -256,7 +300,10 @@ def main() -> int:
             ).run(dry_run=args.dry_run)
         except (MultiAccountConfigError, ValueError) as exc:
             parser.exit(2, f"error: {exc}\n")
-        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        if args.human:
+            _print_human(result.human_summary)
+        else:
+            print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.status in {"completed", "completed_with_warnings"} else 1
     if args.command == "doctor":
         local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
@@ -311,7 +358,10 @@ def main() -> int:
                       "warnings": [], "suggested_next_commands": []}
             print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
             return 2
-        print(result.to_json())
+        if args.human:
+            _print_human(_pilot_safe_human_summary(result))
+        else:
+            print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "pilot-check":
         local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
@@ -412,7 +462,12 @@ def main() -> int:
             "preview": preview,
             "pilot_run_safe": asdict(pilot_result),
         }
-        print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        if args.human:
+            _print_human(_pilot_preview_human_summary(preview))
+            print()
+            _print_human(_pilot_safe_human_summary(pilot_result, label="Esito pilot-run-safe"))
+        else:
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
         return 0 if pilot_result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "setup-bucoliche-test-sheet":
         try:
@@ -435,7 +490,10 @@ def main() -> int:
                 bucoliche=bucoliche_config, paths=paths, pilot_status=pilot.status).run()
         except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
             parser.exit(2, f"error: {exc}\n")
-        print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+        if args.human:
+            _print_human(_pilot_preview_human_summary(result))
+        else:
+            print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
         return 0 if result["pilot_check"] in {"READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "google-oauth-login":
         try:

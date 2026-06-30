@@ -736,6 +736,7 @@ def test_pipeline_dry_run_no_report_and_order(tmp_path):
     result = runner.run(dry_run=True)
     assert result.status == "completed_with_warnings"
     assert result.report_path is None
+    assert result.human_summary[0] == "Esito pipeline: completed_with_warnings (dry-run)"
     assert log == [("scan", True), ("process", True), ("storage", True), ("completion", True)]
     assert (tmp_path / ".local_data" / "state.db").is_file()
 
@@ -829,6 +830,27 @@ def test_pipeline_cli_dry_run_keeps_storage_and_bucoliche_separate(tmp_path, mon
                    ("completion", True)]
     assert json.loads(capsys.readouterr().out)["dry_run"] is True
     assert (tmp_path / ".local_data" / "state.db").is_file()
+
+
+def test_pipeline_cli_human_output_uses_summary(tmp_path, monkeypatch, capsys):
+    config = write_storage_and_bucoliche_config(tmp_path)
+    log = []
+    import virgilio_connector.__main__ as cli
+    monkeypatch.setattr(cli, "MultiAccountReadonlyScanner",
+                        lambda *a, **k: FakePhase("scan", log))
+    monkeypatch.setattr(cli, "MultiAccountImapProcessor",
+                        lambda *a, **k: FakePhase("process", log))
+    monkeypatch.setattr(cli, "LocalFilesystemStorageAdapter",
+                        lambda *a, **k: FakePhase("storage", log))
+    monkeypatch.setattr(cli, "LocalCompletionRunner",
+                        lambda *a, **k: FakePhase("completion", log))
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(tmp_path / ".local_data"))
+    monkeypatch.setattr(sys, "argv", ["virgilio_connector", "run-local-pipeline",
+                                      "--config", str(config), "--dry-run", "--human"])
+    assert cli.main() == 0
+    text = capsys.readouterr().out
+    assert "Esito pipeline: completed_with_warnings (dry-run)" in text
+    assert '"dry_run"' not in text
 
 
 class FakeDoctorMailbox:

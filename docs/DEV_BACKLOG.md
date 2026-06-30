@@ -19,7 +19,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
 | DONE | P1 | Comando unico `virgilio pilot` | CLI | help, dry-run, exit code | Medio |
-| TODO | P1 | Output umano oltre JSON | CLI/report | snapshot essenziale | Basso |
+| DONE | P1 | Output umano oltre JSON | CLI/report | snapshot essenziale | Basso |
 | TODO | P1 | Configurazione guidata | config/CLI | nessun segreto; config valida | Medio |
 | TODO | P1 | Diagnostica errori comuni | doctor | fixture errori noti | Basso |
 | TODO | P2 | README “10 comandi essenziali” | README | comandi verificati | Basso |
@@ -61,3 +61,4 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 - 2026-06-30 - Export centrale e Bucoliche ora saltano i record legacy con `attachment_id=None` rilevati come `legacy_incomplete`, senza toccare gli eventi sintetici validi.
 - 2026-06-30 - Aggiunto test di regressione sul secondo export Bucoliche già marcato `exported`: nessun nuovo append su `Bucoliche_Eventi`, `Bucoliche_Stato` continua a rigenerarsi.
 - 2026-06-30 - Aggiunto il comando unico `virgilio pilot`: wrapper dry-run con preview integrato, exit code coerente ed entrypoint console dedicato.
+- 2026-06-30 - `run-local-pipeline`, `pilot-preview`, `pilot-run-safe` e `virgilio pilot` supportano `--human` per uno snapshot leggibile, mantenendo il JSON come output predefinito per script e automazioni.

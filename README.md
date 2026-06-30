@@ -82,3 +82,10 @@ Per il prossimo task autonomo usare il prompt `advance.md`, oppure chiedere “v
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
+
+Per una vista sintetica leggibile del pilota senza cambiare il default JSON:
+
+```powershell
+python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human
+virgilio pilot --config accounts.local.yaml --human
+```

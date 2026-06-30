@@ -27,10 +27,11 @@ class FakeReadClient:
 
 
 class FakePipelineResult:
-    def __init__(self, status="completed", errors=(), warnings=()):
+    def __init__(self, status="completed", errors=(), warnings=(), human_summary=()):
         self.status = status
         self.errors = tuple(errors)
         self.warnings = tuple(warnings)
+        self.human_summary = tuple(human_summary)
 
 
 class FakePipelineRunner:
@@ -270,6 +271,66 @@ def test_pilot_cli_returns_preview_and_safe_result(tmp_path, monkeypatch, capsys
     assert payload["dry_run"] is True
     assert payload["preview"]["next_commands"] == ["preview-step"]
     assert payload["pilot_run_safe"]["export_status"] == "dry_run"
+
+
+def test_pilot_cli_human_output_includes_snapshot(tmp_path, monkeypatch, capsys):
+    import virgilio_connector.__main__ as cli
+
+    @dataclass
+    class FakePilotResult:
+        status: str
+        dry_run: bool = True
+        stopped_at: str | None = None
+        pilot_check: str = "READY_WITH_WARNINGS"
+        pipeline_status: str | None = "completed_with_warnings"
+        export_status: str | None = "dry_run"
+        errors: tuple[str, ...] = ()
+        warnings: tuple[str, ...] = ("warn",)
+        suggested_next_commands: tuple[str, ...] = ("run-real",)
+
+    class FakePilotCheck:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def run(self):
+            return type("PilotCheckResult", (), {"status": "READY_WITH_WARNINGS"})()
+
+    class FakePilotPreview:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def run(self):
+            return {
+                "pilot_check": "READY_WITH_WARNINGS",
+                "accounts": [{"account_alias": "demo_box", "ack_enabled": False}],
+                "events_exportable": 3,
+                "local_conflicts": 0,
+                "sheet_target": "1234...5678",
+                "warnings": [],
+                "next_commands": ["preview-step"],
+            }
+
+    class FakePilotSafeRunner:
+        def __init__(self, **kwargs):
+            pass
+
+        def run(self):
+            return FakePilotResult("READY_WITH_WARNINGS")
+
+    monkeypatch.setattr(cli, "_load_pilot_components",
+                        lambda config: (("account",), "storage", "bucoliche", "paths"))
+    monkeypatch.setattr(cli, "PilotCheck", FakePilotCheck)
+    monkeypatch.setattr(cli, "PilotPreview", FakePilotPreview)
+    monkeypatch.setattr(cli, "PilotSafeRunner", FakePilotSafeRunner)
+    monkeypatch.setattr(sys, "argv", ["virgilio", "pilot", "--config",
+                                      str(tmp_path / "accounts.yaml"), "--human"])
+
+    assert cli.main() == 0
+    text = capsys.readouterr().out
+    assert "Stato preview pilota: READY_WITH_WARNINGS" in text
+    assert "Esito pilot-run-safe: READY_WITH_WARNINGS (dry-run)" in text
+    assert "Prossimo comando: preview-step" in text
+    assert '"status"' not in text
 
 
 def test_console_script_registers_virgilio_entrypoint():
