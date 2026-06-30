@@ -65,6 +65,10 @@ from .caronte_http import (
     CaronteDryRunHttpClient,
     CaronteDryRunUrlNotConfigured,
 )
+from .classification import (AttachmentClassificationProposer,
+                             ClassificationProposal,
+                             ClassificationProposalError,
+                             classification_human_summary)
 from .staging_transport import (
     LocalDriveStagingConfig,
     LocalDriveStagingTransport,
@@ -120,6 +124,8 @@ __all__ = [
     "CaronteDryRunHttpClient",
     "CaronteDryRunUrlNotConfigured",
     "CaronteResponse",
+    "ClassificationProposal",
+    "ClassificationProposalError",
     "CommandAttemptRecord",
     "CommandAttemptStatus",
     "ContractValidationError",
@@ -142,6 +148,7 @@ __all__ = [
     "DriveStagingIntakeTestError",
     "DriveStagingIntakeTestResponse",
     "DriveStagingIntakeTestUrlNotConfigured",
+    "AttachmentClassificationProposer",
     "LocalImapAccount",
     "LocalStorageConfig",
     "MultiAccountAttachmentResult",
@@ -196,6 +203,7 @@ __all__ = [
     "StagingTransportError",
     "UnsupportedSchemaError",
     "command_from_json",
+    "classification_human_summary",
     "command_to_json",
     "evaluate_ack",
     "response_from_json",

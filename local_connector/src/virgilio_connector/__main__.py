@@ -13,6 +13,9 @@ import sys
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
 from .bucoliche import (BucolicheAppendOnlyAdapter, BucolicheError,
                         GoogleOAuthLogin, load_bucoliche_config)
+from .classification import (AttachmentClassificationProposer,
+                             ClassificationProposalError,
+                             classification_human_summary)
 from .completion import CompletionError, LocalCompletionRunner
 from .staging_transport import (
     LocalDriveStagingConfig,
@@ -161,6 +164,21 @@ def main() -> int:
                                  default=float(os.environ.get("VIRGILIO_LITELLM_MAX_COST_EUR", "0.5")))
     litellm_gateway.add_argument("--cost-per-1k-eur", type=float,
                                  default=float(os.environ.get("VIRGILIO_LITELLM_COST_PER_1K_EUR", "0.002")))
+    classify_manifest = commands.add_parser("classify-manifest-dry-run")
+    classify_manifest.add_argument("--manifest", type=Path, required=True)
+    classify_manifest.add_argument("--provider", default=os.environ.get("VIRGILIO_LITELLM_PROVIDER", "mock"))
+    classify_manifest.add_argument("--model", default=os.environ.get("VIRGILIO_LITELLM_MODEL", "gpt-4o-mini"))
+    classify_manifest.add_argument("--budget-tokens", type=int,
+                                   default=int(os.environ.get("VIRGILIO_LITELLM_BUDGET_TOKENS", "2000")))
+    classify_manifest.add_argument("--max-output-tokens", type=int,
+                                   default=int(os.environ.get("VIRGILIO_LITELLM_MAX_OUTPUT_TOKENS", "400")))
+    classify_manifest.add_argument("--max-prompt-chars", type=int,
+                                   default=int(os.environ.get("VIRGILIO_LITELLM_MAX_PROMPT_CHARS", "12000")))
+    classify_manifest.add_argument("--max-cost-eur", type=float,
+                                   default=float(os.environ.get("VIRGILIO_LITELLM_MAX_COST_EUR", "0.5")))
+    classify_manifest.add_argument("--cost-per-1k-eur", type=float,
+                                   default=float(os.environ.get("VIRGILIO_LITELLM_COST_PER_1K_EUR", "0.002")))
+    classify_manifest.add_argument("--human", action="store_true")
     parser_spike = commands.add_parser("compare-parser-fixtures")
     parser_spike.add_argument("--catalog", type=Path, required=True)
     parser_spike.add_argument("--snapshots-dir", type=Path, required=True)
@@ -305,6 +323,27 @@ def main() -> int:
         except (OSError, ValueError, LiteLLMGatewayError, LiteLLMBudgetError) as exc:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "classify-manifest-dry-run":
+        try:
+            prompt_chars = len(args.manifest.read_text(encoding="utf-8").strip())
+            prompt_tokens = max(1, (prompt_chars + 3) // 4) if prompt_chars else 0
+            max_output_tokens = max(1, min(args.max_output_tokens, args.budget_tokens - prompt_tokens))
+            result = AttachmentClassificationProposer(LiteLLMGatewayConfig(
+                provider=args.provider,
+                model=args.model,
+                max_total_tokens=args.budget_tokens,
+                max_output_tokens=max_output_tokens,
+                max_prompt_chars=args.max_prompt_chars,
+                max_cost_eur=args.max_cost_eur,
+                estimated_cost_per_1k_tokens_eur=args.cost_per_1k_eur,
+            )).propose_from_manifest(args.manifest)
+        except (ClassificationProposalError, ValueError, LiteLLMGatewayError, LiteLLMBudgetError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(classification_human_summary(result))
+        else:
+            print(json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":")))
         return 0
     if args.command == "compare-parser-fixtures":
         try:

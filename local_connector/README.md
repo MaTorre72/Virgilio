@@ -501,6 +501,20 @@ blocca prompt troppo lunghi o oltre budget prima di qualsiasi futuro adapter
 esterno. Serve per preparare la classificazione assistita senza introdurre rete
 o azioni automatiche.
 
+Per proporre una prima classificazione prudente su un manifest locale gia'
+prodotto dal connettore, senza scrivere stato operativo, è disponibile anche:
+
+```powershell
+python -m virgilio_connector classify-manifest-dry-run `
+  --manifest .\staging\demo_box\demo__att-123__report.pdf.manifest.json `
+  --human
+```
+
+Il comando usa solo i metadati del manifest locale, aggiunge una proposta
+euristica conservativa, passa il contesto al gateway `mock` per preparare il
+flusso futuro e restituisce sempre `review_required=true`. Non esegue ack, non
+aggiorna SQLite e non invia richieste a provider esterni.
+
 ### Bucoliche append-only
 
 La sezione `bucoliche` di `accounts.local.yaml` è disabilitata per default. Impostare
