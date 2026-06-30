@@ -11,7 +11,26 @@ from virgilio_connector.bucoliche import (
     CONFLICT_COLUMNS, EVENT_COLUMNS, STATE_COLUMNS, GoogleOAuthLogin,
     load_bucoliche_config,
 )
+from virgilio_connector.completion import LocalCompletionRunner
+from virgilio_connector.local_paths import LocalDataPaths
+from virgilio_connector.multi_account import (
+    MultiAccountImapProcessor,
+    MultiAccountReadonlyScanner,
+    load_multi_account_config,
+    load_storage_config,
+)
+from virgilio_connector.pipeline import LocalPipelineRunner
 from virgilio_connector.readonly_state import ReadonlyStateStore
+from virgilio_connector.storage_adapter import LocalFilesystemStorageAdapter
+
+from test_multi_account import (
+    FakeAckMailbox,
+    FakeMailbox,
+    FakeProcessMailbox,
+    FakeScanner,
+    ScanVerdict,
+    write_storage_config,
+)
 
 
 class FakeSheets:
@@ -117,6 +136,91 @@ def test_state_sheet_is_rebuilt_from_latest_event_without_reappending_events(tmp
     assert row["current_global_state"] == "completed"
     assert row["last_result"] == "ok"
     assert row["notes"] == '{"step":"done"}'
+
+
+def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
+    class IsolatedScanMailbox(FakeMailbox):
+        instances = []
+
+    class IsolatedProcessMailbox(FakeProcessMailbox):
+        instances = []
+
+    class IsolatedAckMailbox(FakeAckMailbox):
+        instances = []
+
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    config = write_storage_config(tmp_path, staging)
+    accounts = load_multi_account_config(config)[:1]
+    storage_config = load_storage_config(config)
+    paths = LocalDataPaths(tmp_path / ".local_data")
+
+    def runner():
+        return LocalPipelineRunner(
+            accounts,
+            paths=paths,
+            config_path=config,
+            scanner_factory=lambda: MultiAccountReadonlyScanner(
+                accounts,
+                paths=paths,
+                environ={
+                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
+                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+                },
+                mailbox_factory=lambda account, root: IsolatedScanMailbox(account, root),
+            ),
+            processor_factory=lambda: MultiAccountImapProcessor(
+                accounts,
+                paths=paths,
+                environ={
+                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
+                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+                },
+                mailbox_factory=lambda account, root: IsolatedProcessMailbox(account, root),
+                scanner=FakeScanner(ScanVerdict.CLEAN),
+            ),
+            storage_factory=lambda: LocalFilesystemStorageAdapter(
+                state_db=paths.state_db,
+                local_data_root=paths.root,
+                config=storage_config,
+            ),
+            completion_factory=lambda: LocalCompletionRunner(
+                accounts,
+                paths=paths,
+                environ={
+                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
+                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+                },
+                mailbox_factory=lambda account: IsolatedAckMailbox(account),
+            ),
+        )
+
+    fake = FakeSheets()
+    first_pipeline = runner().run(dry_run=False)
+    first_export = BucolicheAppendOnlyAdapter(
+        state_db=paths.state_db,
+        config=BucolicheConfig(enabled=True),
+        client=fake,
+        environ={},
+    ).export(dry_run=False)
+    second_pipeline = runner().run(dry_run=False)
+    second_export = BucolicheAppendOnlyAdapter(
+        state_db=paths.state_db,
+        config=BucolicheConfig(enabled=True),
+        client=fake,
+        environ={},
+    ).export(dry_run=False)
+
+    assert first_pipeline.status == "completed"
+    assert second_pipeline.status == "completed"
+    assert first_export.events_exported == 6
+    assert second_export.events_exported == 0
+    assert second_export.already_exported == 6
+    assert [call[0] for call in fake.calls].count("Bucoliche_Eventi") == 6
+    state_replace = fake.calls[-1]
+    assert state_replace[:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
+    assert len(state_replace[3]) == 2
+    assert all(row["current_global_state"] == "completed" for row in state_replace[3])
 
 
 def test_output_never_contains_credentials(tmp_path):

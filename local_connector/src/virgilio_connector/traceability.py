@@ -205,7 +205,8 @@ def central_event_rows(state_db: Path) -> list[dict]:
             e.details_json,a.source_email,a.sha256,a.status AS local_state,a.staged_filename,
             a.staged_path,a.manifest_path,m.message_id AS source_message_id,m.message_uid AS source_message_uid
             FROM audit_events e LEFT JOIN attachments a ON a.attachment_id=e.entity_id
-            LEFT JOIN messages m ON m.id=a.message_id ORDER BY e.id""")]
+            LEFT JOIN messages m ON m.id=a.message_id
+            WHERE e.fingerprint IS NOT NULL AND e.fingerprint != '' ORDER BY e.id""")]
     for row in rows:
         row["event_id"] = hashlib.sha256(f"{row['machine_id']}|{row['event_type']}|{row['fingerprint']}|{row['created_at']}".encode()).hexdigest()
         row["global_state_suggestion"] = _global_state(row["event_type"], row["local_state"])

@@ -9,7 +9,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 | DONE | P0 | Refresh `Bucoliche_Stato` derivato dagli eventi | `bucoliche.py`, CLI, test | fake Sheet; idempotenza; Eventi immutato | Medio |
 | DONE | P0 | `pilot-run-safe`: sequenza completa controllata | pipeline, CLI | dry-run senza effetti; stop su gate | Alto |
 | DONE | P1 | Report pilota finale leggibile | pipeline, reports | fixture; JSON sicuro e sintesi umana | Basso |
-| TODO | P1 | Idempotenza end-to-end | SQLite, Bucoliche, test | doppio run senza duplicati | Alto |
+| DONE | P1 | Idempotenza end-to-end | SQLite, Bucoliche, test | doppio run senza duplicati | Alto |
 | TODO | P1 | Eliminare `example.invalid` da dati operativi | manifest/state | fixture realistica; nessun placeholder esportato | Medio |
 | TODO | P1 | Gestire `attachment_id=None` | state/export | legacy fixture; skip `legacy_incomplete` | Medio |
 | TODO | P1 | Verificare secondo export già esportato | Bucoliche test | zero append al retry | Medio |
@@ -56,4 +56,5 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 - 2026-06-29 - Report pipeline arricchito con `human_summary` leggibile e sicura; test report verdi.
 - 2026-06-29 - `pilot-run-safe` aggiunto come wrapper dry-run con stop su gate; test CLI/sequenza verdi.
 - 2026-06-29 - `Bucoliche_Stato` rigenerato dagli eventi durante export; test fake/idempotenza verdi.
-- 2026-06-29 - Creato governo autonomo; prossimo task: `Idempotenza end-to-end`.
+- 2026-06-30 - Doppio run end-to-end reso idempotente: export Bucoliche ignora eventi senza fingerprint e la completion registra eventi per allegato solo al primo completamento utile.
+- 2026-06-29 - Creato governo autonomo; prossimo task: `Eliminare example.invalid da dati operativi`.

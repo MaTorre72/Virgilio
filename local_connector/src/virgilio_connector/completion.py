@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sqlite3
+from contextlib import closing
 from typing import Callable, Mapping, Sequence
 
 from .imap_readonly import ImapCompletionMailbox
@@ -75,14 +76,17 @@ class LocalCompletionRunner:
                         attempted=False,
                         completed=result.status in {"completed", "already_completed", "already_acked"},
                     )
-                    action = ("message_completed" if result.status in
-                              {"completed", "already_completed", "already_acked"}
-                              else "failed" if result.status == "ack_failed" else "skipped")
-                    store.add_audit_event(machine_id=load_machine_id(self.paths.root),
-                        account_alias=result.account_alias, entity_type="message",
-                        entity_id=result.message_id or result.message_uid,
-                        fingerprint=None, action=action, status=result.status,
-                        details={"reason": result.reason or ""})
+                    if result.status != "already_completed":
+                        action = ("message_completed" if result.status in
+                                  {"completed", "already_acked"}
+                                  else "failed" if result.status == "ack_failed" else "skipped")
+                        machine_id = load_machine_id(self.paths.root)
+                        for attachment_id, fingerprint in self._attachment_audit_targets(result.message_row_id):
+                            store.add_audit_event(machine_id=machine_id,
+                                account_alias=result.account_alias, entity_type="attachment",
+                                entity_id=attachment_id, fingerprint=fingerprint,
+                                action=action, status=result.status,
+                                details={"reason": result.reason or ""})
         return tuple(CompletionResult(**{**asdict(item), "report_path": report_path or item.report_path})
                      for item in results)
 
@@ -197,6 +201,14 @@ class LocalCompletionRunner:
         }
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return path.relative_to(self.paths.root).as_posix()
+
+    def _attachment_audit_targets(self, message_row_id: int) -> tuple[tuple[str, str], ...]:
+        uri = f"{self.paths.state_db.resolve().as_uri()}?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True)) as db:
+            rows = db.execute("""SELECT attachment_id,fingerprint FROM attachments
+                WHERE message_id=? AND attachment_id IS NOT NULL AND fingerprint IS NOT NULL
+                ORDER BY id""", (message_row_id,)).fetchall()
+        return tuple((str(row[0]), str(row[1])) for row in rows)
 
     def _default_mailbox(self, account: LocalImapAccount):
         config = account.to_imap_config(self.environ)
