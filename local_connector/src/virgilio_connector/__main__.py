@@ -29,6 +29,9 @@ from .drive_staging_intake_test import (
 )
 from .doctor import LocalDoctor
 from .local_paths import LocalDataPaths
+from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
+                              LiteLLMGatewayConfig, LiteLLMGatewayError,
+                              LiteLLMRequest)
 from .multi_account import (
     LocalStorageConfig,
     MultiAccountConfigError,
@@ -140,6 +143,21 @@ def main() -> int:
     verifier.add_argument("--manifest", type=Path, required=True)
     intake = commands.add_parser("intake-drive-staging-test")
     intake.add_argument("--manifest", type=Path, required=True)
+    litellm_gateway = commands.add_parser("litellm-gateway-dry-run")
+    litellm_gateway.add_argument("--prompt-file", type=Path, required=True)
+    litellm_gateway.add_argument("--system-prompt-file", type=Path)
+    litellm_gateway.add_argument("--provider", default=os.environ.get("VIRGILIO_LITELLM_PROVIDER", "mock"))
+    litellm_gateway.add_argument("--model", default=os.environ.get("VIRGILIO_LITELLM_MODEL", "gpt-4o-mini"))
+    litellm_gateway.add_argument("--budget-tokens", type=int,
+                                 default=int(os.environ.get("VIRGILIO_LITELLM_BUDGET_TOKENS", "2000")))
+    litellm_gateway.add_argument("--max-output-tokens", type=int,
+                                 default=int(os.environ.get("VIRGILIO_LITELLM_MAX_OUTPUT_TOKENS", "400")))
+    litellm_gateway.add_argument("--max-prompt-chars", type=int,
+                                 default=int(os.environ.get("VIRGILIO_LITELLM_MAX_PROMPT_CHARS", "12000")))
+    litellm_gateway.add_argument("--max-cost-eur", type=float,
+                                 default=float(os.environ.get("VIRGILIO_LITELLM_MAX_COST_EUR", "0.5")))
+    litellm_gateway.add_argument("--cost-per-1k-eur", type=float,
+                                 default=float(os.environ.get("VIRGILIO_LITELLM_COST_PER_1K_EUR", "0.002")))
     scanner = commands.add_parser("scan-imap-accounts")
     scanner.add_argument("--config", type=Path, required=True)
     scanner.add_argument("--dry-run", action="store_true")
@@ -256,6 +274,27 @@ def main() -> int:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.ok else 1
+    if args.command == "litellm-gateway-dry-run":
+        try:
+            prompt = args.prompt_file.read_text(encoding="utf-8")
+            system_prompt = (args.system_prompt_file.read_text(encoding="utf-8")
+                             if args.system_prompt_file else "")
+            prompt_tokens = max(1, (len(prompt.strip()) + 3) // 4) if prompt.strip() else 0
+            prompt_tokens += max(1, (len(system_prompt.strip()) + 3) // 4) if system_prompt.strip() else 0
+            max_output_tokens = max(1, min(args.max_output_tokens, args.budget_tokens - prompt_tokens))
+            result = LiteLLMGateway(LiteLLMGatewayConfig(
+                provider=args.provider,
+                model=args.model,
+                max_total_tokens=args.budget_tokens,
+                max_output_tokens=max_output_tokens,
+                max_prompt_chars=args.max_prompt_chars,
+                max_cost_eur=args.max_cost_eur,
+                estimated_cost_per_1k_tokens_eur=args.cost_per_1k_eur,
+            )).run(LiteLLMRequest(prompt=prompt, system_prompt=system_prompt))
+        except (OSError, ValueError, LiteLLMGatewayError, LiteLLMBudgetError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0
     if args.command == "scan-imap-accounts":
         try:
             accounts = load_multi_account_config(args.config)

@@ -46,7 +46,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
-| TODO | P3 | Gateway LiteLLM | adapter futuro | mock provider; budget | Alto |
+| DONE | P3 | Gateway LiteLLM | adapter futuro | mock provider; budget | Alto |
 | TODO | P3 | Proposta classificazione | classifier futuro | nessuna azione automatica | Alto |
 | TODO | P3 | Human review | workflow futuro | conferma obbligatoria | Alto |
 | TODO | P3 | Feedback loop | audit futuro | correzioni tracciate | Alto |
@@ -68,3 +68,4 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 - 2026-06-30 - L'export Bucoliche ora ordina gli eventi in modo deterministico per timestamp, fingerprint e macchina, così due export equivalenti da postazioni diverse producono lo stesso merge anche con `audit_events.id` invertiti.
 - 2026-06-30 - `Bucoliche_Stato` ora consolida davvero il cross-machine: una sola riga per fingerprint, `machine_id` aggregati in modo deterministico e note marcate `cross_machine` quando lo stesso allegato arriva da più postazioni.
 - 2026-06-30 - `Bucoliche_Stato` segnala `conflict_cross_machine` quando lo stesso fingerprint arriva da più macchine con esiti terminali incompatibili, includendo `machine_states` nelle note senza risoluzione automatica.
+- 2026-06-30 - Aggiunto `litellm-gateway-dry-run`: adapter LiteLLM futuro mock-only con budget locale su token/costo, senza rete né dipendenze LiteLLM, pronto per la futura classificazione assistita.

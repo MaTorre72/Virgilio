@@ -104,6 +104,10 @@ from .storage_adapter import (
 )
 from .pipeline import LocalPipelineRunner, PipelineResult
 from .doctor import DoctorResult, LocalDoctor
+from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
+                              LiteLLMGatewayConfig, LiteLLMGatewayError,
+                              LiteLLMRequest, LiteLLMResponse,
+                              MockLiteLLMProvider)
 
 __all__ = [
     "AckDecision",
@@ -157,6 +161,13 @@ __all__ = [
     "PipelineResult",
     "DoctorResult",
     "LocalDoctor",
+    "LiteLLMBudgetError",
+    "LiteLLMGateway",
+    "LiteLLMGatewayConfig",
+    "LiteLLMGatewayError",
+    "LiteLLMRequest",
+    "LiteLLMResponse",
+    "MockLiteLLMProvider",
     "LocalScanResult",
     "LocalScanner",
     "MessageStatus",
@@ -191,7 +202,7 @@ __all__ = [
     "response_to_json",
 ]
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 from .completion import (
     CompletionError,
     CompletionResult,

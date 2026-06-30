@@ -449,7 +449,25 @@ python -m virgilio_connector export-central-events --config accounts.local.yaml 
 ```
 
 Gli export sono scritti in `.local_data/exports/` e preparano il futuro adapter
-Bucoliche append-only. Nessuna API Google, Docling, LiteLLM o classificazione AI è attiva.
+Bucoliche append-only. Nessuna API Google, Docling o classificazione AI è attiva.
+
+### Gateway LiteLLM mock-only
+
+Il gateway LiteLLM futuro è ora preparato solo come adapter locale budgetato,
+senza dipendenze LiteLLM e senza chiamate reali. Il comando seguente legge un
+prompt locale, stima token/costo e restituisce una risposta simulata:
+
+```powershell
+python -m virgilio_connector litellm-gateway-dry-run `
+  --prompt-file .\prompt.txt `
+  --budget-tokens 1200 `
+  --max-cost-eur 0.05
+```
+
+Il provider predefinito è `mock`, l'output è sempre `dry_run=true` e il gateway
+blocca prompt troppo lunghi o oltre budget prima di qualsiasi futuro adapter
+esterno. Serve per preparare la classificazione assistita senza introdurre rete
+o azioni automatiche.
 
 ### Bucoliche append-only
 
