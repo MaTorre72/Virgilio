@@ -215,12 +215,24 @@ python -m virgilio_connector complete-staged-messages `
   --dry-run
 python -m virgilio_connector complete-staged-messages `
   --config accounts.local.yaml
+python -m virgilio_connector ack-completed-messages `
+  --config accounts.local.yaml `
+  --dry-run
+python -m virgilio_connector ack-completed-messages `
+  --config accounts.local.yaml
 ```
 
 Il comando completa solo messaggi con almeno un allegato `staged_storage` e senza
 stati bloccanti come `scan_failed`, `rejected_malware`, `staging_failed` o
 `staging_conflict`. Genera un report JSON in `.local_data/reports/`. Non chiama
 Apps Script, non scrive Bucoliche, non invia notifiche e non cancella messaggi.
+
+`ack-completed-messages` e' il wrapper prudente per il run reale: il dry-run
+mostra sia il piano di ack sia l'esito dei gate; l'esecuzione reale procede solo
+se i messaggi sono ackable, non ci sono conflitti locali sui relativi allegati e
+gli eventi Bucoliche collegati risultano gia' esportati in `local_export_status`.
+Se il gate fallisce non apre IMAP in scrittura e invita prima a rieseguire
+`check-local-conflicts` o `export-to-bucoliche`.
 
 ### Pipeline locale unica
 

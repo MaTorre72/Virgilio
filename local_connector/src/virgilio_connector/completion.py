@@ -10,11 +10,12 @@ import sqlite3
 from contextlib import closing
 from typing import Callable, Mapping, Sequence
 
+from .bucoliche import BucolicheAppendOnlyAdapter
 from .imap_readonly import ImapCompletionMailbox
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountConfigError
 from .readonly_state import ReadonlyStateStore, ensure_state_db
-from .traceability import load_machine_id
+from .traceability import LocalConflictChecker, central_event_rows, load_machine_id
 
 
 BLOCKING_ATTACHMENT_STATES = {
@@ -39,6 +40,130 @@ class CompletionResult:
     ack_strategy: str | None
     report_path: str | None = None
     reason: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AckCompletedMessagesResult:
+    status: str
+    dry_run: bool
+    gate_status: str
+    messages_planned: int
+    pending_export_events: int
+    local_conflicts: int
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+    results: tuple[CompletionResult, ...]
+
+
+class ControlledAckRunner:
+    def __init__(self, accounts: Sequence[LocalImapAccount], *,
+                 paths: LocalDataPaths | None = None,
+                 environ: Mapping[str, str] | None = None,
+                 mailbox_factory: Callable[[LocalImapAccount], object] | None = None) -> None:
+        self.completion = LocalCompletionRunner(
+            accounts,
+            paths=paths,
+            environ=environ,
+            mailbox_factory=mailbox_factory,
+        )
+        self.paths = self.completion.paths
+
+    def run(self, *, dry_run: bool) -> AckCompletedMessagesResult:
+        preview = self.completion.complete(dry_run=True)
+        planned = tuple(item for item in preview if item.status == "planned")
+        warnings = []
+        errors = []
+
+        if not planned:
+            warnings.append("no ackable staged messages found")
+
+        candidate_attachment_ids = {
+            attachment_id
+            for item in planned
+            for attachment_id in item.staged_attachments
+            if attachment_id
+        }
+        candidate_fingerprints = self._candidate_fingerprints(candidate_attachment_ids)
+
+        conflict_payload = LocalConflictChecker(self.paths.state_db).check()
+        relevant_conflicts = tuple(
+            conflict for conflict in conflict_payload["conflicts"]
+            if conflict.get("attachment_id") in candidate_attachment_ids
+            or conflict.get("fingerprint") in candidate_fingerprints
+        )
+        if relevant_conflicts:
+            errors.append("local conflicts detected; run check-local-conflicts before ack")
+
+        pending_export_events = self._pending_export_events(candidate_attachment_ids)
+        if pending_export_events:
+            errors.append("pending Bucoliche export events detected; run export-to-bucoliche first")
+
+        gate_status = "BLOCKED" if errors else "READY"
+        if dry_run:
+            return AckCompletedMessagesResult(
+                status="dry_run",
+                dry_run=True,
+                gate_status=gate_status,
+                messages_planned=len(planned),
+                pending_export_events=pending_export_events,
+                local_conflicts=len(relevant_conflicts),
+                errors=tuple(errors),
+                warnings=tuple(warnings),
+                results=preview,
+            )
+        if errors or not planned:
+            return AckCompletedMessagesResult(
+                status="blocked",
+                dry_run=False,
+                gate_status=gate_status if errors else "BLOCKED",
+                messages_planned=len(planned),
+                pending_export_events=pending_export_events,
+                local_conflicts=len(relevant_conflicts),
+                errors=tuple(errors),
+                warnings=tuple(warnings),
+                results=preview,
+            )
+        results = self.completion.complete(dry_run=False)
+        return AckCompletedMessagesResult(
+            status="completed",
+            dry_run=False,
+            gate_status="READY",
+            messages_planned=len(planned),
+            pending_export_events=0,
+            local_conflicts=0,
+            errors=(),
+            warnings=tuple(warnings),
+            results=results,
+        )
+
+    def _candidate_fingerprints(self, attachment_ids: set[str]) -> set[str]:
+        if not attachment_ids:
+            return set()
+        placeholders = ",".join("?" for _ in attachment_ids)
+        uri = f"{self.paths.state_db.resolve().as_uri()}?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True)) as db:
+            rows = db.execute(f"""SELECT fingerprint FROM attachments
+                WHERE attachment_id IN ({placeholders}) AND fingerprint IS NOT NULL""",
+                tuple(sorted(attachment_ids))).fetchall()
+        return {str(row[0]) for row in rows if row[0]}
+
+    def _pending_export_events(self, attachment_ids: set[str]) -> int:
+        if not attachment_ids:
+            return 0
+        exported = self._successful_exported_event_ids()
+        return sum(
+            1
+            for row in central_event_rows(self.paths.state_db)
+            if row.get("attachment_id") in attachment_ids and row["event_id"] not in exported
+        )
+
+    def _successful_exported_event_ids(self) -> set[str]:
+        uri = f"{self.paths.state_db.resolve().as_uri()}?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True)) as db:
+            rows = db.execute("""SELECT event_id FROM local_export_status
+                WHERE target_adapter=? AND export_result='exported'""",
+                (BucolicheAppendOnlyAdapter.TARGET,)).fetchall()
+        return {str(row[0]) for row in rows}
 
 
 class LocalCompletionRunner:

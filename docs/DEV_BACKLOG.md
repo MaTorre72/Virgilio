@@ -7,7 +7,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
 | DONE | P0 | Comando esplicito `refresh-bucoliche-state` senza append eventi | `bucoliche.py`, CLI, README | dry-run con preview; run reale aggiorna solo `Bucoliche_Stato` | Medio |
-| TODO | P0 | Comando esplicito `ack-completed-messages` come wrapper controllato | CLI, completion, README | dry-run separato; gate export/conflitti/stato | Alto |
+| DONE | P0 | Comando esplicito `ack-completed-messages` come wrapper controllato | CLI, completion, README | dry-run separato; gate export/conflitti/stato | Alto |
 | TODO | P1 | GUI minima locale `tkinter` sopra configurazione e comandi | nuovo layer GUI, README, test smoke mirato | nessuna logica duplicata; CLI invariata | Medio |
 
 ## Milestone 1 - Stabilizzazione pilota locale
@@ -86,3 +86,4 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 - 2026-06-30 - Aggiunto `classify-manifest-dry-run`: legge un manifest locale, propone una classificazione prudente con review obbligatoria e allega il responso mock LiteLLM senza reti o azioni automatiche.
 - 2026-06-30 - Aggiunto `review-classification-dry-run`: accetta solo proposte locali `dry_run` con `review_required=true`, registra approvazione/rifiuto umano e mantiene il workflow futuro senza azioni automatiche.
 - 2026-06-30 - Aggiunto `classification-feedback-dry-run`: accetta solo review locali `dry_run` completate, traccia la classificazione finale e distingue tra conferma e correzione manuale senza scrivere stato operativo.
+- 2026-06-30 - Aggiunto `ack-completed-messages`: wrapper esplicito per il completion reale con dry-run separato e gate locali su export Bucoliche gia registrato, conflitti candidate-specific e stato ackabile prima di aprire IMAP in scrittura.

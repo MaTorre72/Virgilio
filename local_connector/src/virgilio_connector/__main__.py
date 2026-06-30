@@ -20,7 +20,7 @@ from .classification import (AttachmentClassificationProposer,
                              classification_review_human_summary,
                              record_classification_feedback,
                              review_classification_proposal)
-from .completion import CompletionError, LocalCompletionRunner
+from .completion import CompletionError, ControlledAckRunner, LocalCompletionRunner
 from .staging_transport import (
     LocalDriveStagingConfig,
     LocalDriveStagingTransport,
@@ -214,6 +214,9 @@ def main() -> int:
     completer = commands.add_parser("complete-staged-messages")
     completer.add_argument("--config", type=Path, required=True)
     completer.add_argument("--dry-run", action="store_true")
+    ack_wrapper = commands.add_parser("ack-completed-messages")
+    ack_wrapper.add_argument("--config", type=Path, required=True)
+    ack_wrapper.add_argument("--dry-run", action="store_true")
     pipeline = commands.add_parser("run-local-pipeline")
     pipeline.add_argument("--config", type=Path, required=True)
     pipeline.add_argument("--dry-run", action="store_true")
@@ -469,6 +472,21 @@ def main() -> int:
         print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
                          separators=(",", ":")))
         return 0 if all(item.status != "ack_failed" for item in results) else 1
+    if args.command == "ack-completed-messages":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            accounts = load_multi_account_config(args.config)
+            result = ControlledAckRunner(
+                accounts,
+                paths=LocalDataPaths(local_root),
+            ).run(dry_run=args.dry_run)
+        except (MultiAccountConfigError, CompletionError, FileNotFoundError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps({
+            **asdict(result),
+            "results": [asdict(item) for item in result.results],
+        }, ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.status in {"dry_run", "completed"} else 1
     if args.command == "run-local-pipeline":
         local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
         try:

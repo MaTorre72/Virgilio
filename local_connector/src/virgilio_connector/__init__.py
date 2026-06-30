@@ -168,6 +168,8 @@ __all__ = [
     "load_multi_account_config",
     "CompletionError",
     "CompletionResult",
+    "AckCompletedMessagesResult",
+    "ControlledAckRunner",
     "LocalCompletionRunner",
     "LocalFilesystemStorageAdapter",
     "StorageAdapterError",
@@ -224,7 +226,9 @@ __all__ = [
 
 __version__ = "0.11.0"
 from .completion import (
+    AckCompletedMessagesResult,
     CompletionError,
     CompletionResult,
+    ControlledAckRunner,
     LocalCompletionRunner,
 )

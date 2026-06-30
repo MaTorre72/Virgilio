@@ -6,7 +6,7 @@ import sys
 import pytest
 
 from virgilio_connector.imap_readonly import DetectedAttachment
-from virgilio_connector.completion import LocalCompletionRunner
+from virgilio_connector.completion import ControlledAckRunner, LocalCompletionRunner
 from virgilio_connector.multi_account import (
     LocalImapAccount,
     MultiAccountImapProcessor,
@@ -24,9 +24,10 @@ from virgilio_connector.storage_adapter import (
     LocalFilesystemStorageAdapter,
     StorageAdapterError,
 )
+from virgilio_connector.bucoliche import BucolicheAppendOnlyAdapter
 from virgilio_connector.pipeline import LocalPipelineRunner
 from virgilio_connector.doctor import LocalDoctor
-from virgilio_connector.traceability import load_rules
+from virgilio_connector.traceability import central_event_rows, load_rules
 
 
 def write_config(tmp_path: Path) -> Path:
@@ -577,6 +578,48 @@ def complete(paths, accounts, *, dry_run=False, mailbox_factory=None):
     ).complete(dry_run=dry_run)
 
 
+def controlled_ack(paths, accounts, *, dry_run=False, mailbox_factory=None):
+    return ControlledAckRunner(
+        accounts,
+        paths=paths,
+        environ={
+            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+        },
+        mailbox_factory=mailbox_factory or (lambda account: FakeAckMailbox(account)),
+    ).run(dry_run=dry_run)
+
+
+def mark_candidate_events_exported(paths, accounts, *, leave_pending=0):
+    preview = controlled_ack(paths, accounts, dry_run=True)
+    attachment_ids = {
+        attachment_id
+        for item in preview.results
+        if item.status == "planned"
+        for attachment_id in item.staged_attachments
+    }
+    event_ids = [
+        row["event_id"] for row in central_event_rows(paths.state_db)
+        if row["attachment_id"] in attachment_ids
+    ]
+    exported = event_ids[:-leave_pending] if leave_pending else event_ids
+    with sqlite3.connect(paths.state_db) as db:
+        db.executemany("""INSERT INTO local_export_status(
+            event_id,target_adapter,exported_at,export_result,error_type
+        ) VALUES(?,?,?,?,?)""", [
+            (
+                event_id,
+                BucolicheAppendOnlyAdapter.TARGET,
+                "2026-06-30T00:00:01+00:00",
+                "exported",
+                None,
+            )
+            for event_id in exported
+        ])
+        db.commit()
+    return len(event_ids)
+
+
 def test_completion_dry_run_plans_without_imap_or_sqlite_changes(tmp_path):
     accounts, paths = staged_fixture(tmp_path)
     calls = []
@@ -719,6 +762,86 @@ def test_complete_staged_messages_cli_dry_run(tmp_path, monkeypatch, capsys):
     assert main() == 0
     output = json.loads(capsys.readouterr().out)
     assert output[0]["status"] == "planned"
+
+
+def test_controlled_ack_dry_run_reports_gate_ready(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    mark_candidate_events_exported(paths, accounts)
+    result = controlled_ack(paths, accounts, dry_run=True)
+    assert result.status == "dry_run"
+    assert result.gate_status == "READY"
+    assert result.messages_planned == 2
+    assert result.pending_export_events == 0
+    assert result.local_conflicts == 0
+    assert result.results[0].status == "planned"
+
+
+def test_controlled_ack_real_run_blocks_when_export_is_pending(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    total = mark_candidate_events_exported(paths, accounts, leave_pending=1)
+    calls = []
+    result = controlled_ack(paths, accounts, mailbox_factory=lambda account: calls.append(account))
+    assert result.status == "blocked"
+    assert result.gate_status == "BLOCKED"
+    assert result.pending_export_events == 1
+    assert total > 1
+    assert any("export-to-bucoliche" in item for item in result.errors)
+    assert calls == []
+
+
+def test_controlled_ack_real_run_blocks_on_candidate_conflict(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    mark_candidate_events_exported(paths, accounts)
+    with sqlite3.connect(paths.state_db) as db:
+        base = db.execute("""SELECT fingerprint,attachment_id,relative_path
+            FROM attachments ORDER BY id LIMIT 1""").fetchone()
+    with sqlite3.connect(paths.state_db) as db:
+        db.execute("""INSERT INTO runs(started_at,dry_run,status,messages_seen,attachments_seen,account_alias)
+            VALUES('now',0,'completed',1,1,'marco_sigmapiu')""")
+        run_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        db.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
+            message_id,subject,sender,message_date) VALUES(?,?,?,?,?,?,?,?,?)""",
+            (run_id, "marco_sigmapiu", "Virgilio/da-traghettare", "123", "77",
+             "<dup@example.invalid>", "Dup", "sender@example.invalid", "2026-06-25T10:00:00+00:00"))
+        message_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+        db.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
+            ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
+            status,relative_path,reason,fingerprint,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (message_id, "marco_sigmapiu", "dup-1", "user@example.invalid", 1, "dup.pdf", "dup.pdf",
+             "application/pdf", 1, "b" * 64, "staged_storage",
+             base[2], "dup", base[0], "now"))
+        db.commit()
+    calls = []
+    result = controlled_ack(paths, accounts, mailbox_factory=lambda account: calls.append(account))
+    assert result.status == "blocked"
+    assert result.local_conflicts >= 1
+    assert any("check-local-conflicts" in item for item in result.errors)
+    assert calls == []
+
+
+def test_controlled_ack_real_run_completes_after_export_gate_is_satisfied(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    mark_candidate_events_exported(paths, accounts)
+    result = controlled_ack(paths, accounts)
+    assert result.status == "completed"
+    assert result.gate_status == "READY"
+    assert result.results[0].status == "completed"
+
+
+def test_ack_completed_messages_cli_dry_run(tmp_path, monkeypatch, capsys):
+    accounts, paths = staged_fixture(tmp_path)
+    mark_candidate_events_exported(paths, accounts)
+    config = write_config(tmp_path / "cli-ack")
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(paths.root))
+    monkeypatch.setattr(sys, "argv", [
+        "python -m virgilio_connector", "ack-completed-messages",
+        "--config", str(config), "--dry-run",
+    ])
+    from virgilio_connector.__main__ import main
+    assert main() == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["status"] == "dry_run"
+    assert output["gate_status"] == "READY"
 
 
 class FakePhase:
