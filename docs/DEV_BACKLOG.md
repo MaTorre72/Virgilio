@@ -30,7 +30,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 |---|---|---|---|---|---|
 | DONE | P1 | Simulare due `machine_id` | test/audit | fixture isolate | Medio |
 | DONE | P1 | Merge eventi da due export | Bucoliche | ordine deterministico | Alto |
-| TODO | P1 | Stato consolidato cross-machine | Bucoliche_Stato | una riga/fingerprint | Alto |
+| DONE | P1 | Stato consolidato cross-machine | Bucoliche_Stato | una riga/fingerprint | Alto |
 | TODO | P1 | Conflitti cross-machine | conflict detector | collisioni rilevate | Alto |
 | TODO | P2 | Policy manuale risoluzione conflitti | docs/state | nessuna risoluzione automatica | Medio |
 
@@ -66,3 +66,4 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 - 2026-06-30 - `doctor` ora espone suggerimenti azionabili sugli errori ricorrenti e supporta `--human` per una diagnosi locale leggibile senza segreti.
 - 2026-06-30 - Coperti nei test due `machine_id` isolati: `load_machine_id` resta stabile per root locale e l'export Bucoliche preview conserva due eventi distinti sullo stesso fingerprint.
 - 2026-06-30 - L'export Bucoliche ora ordina gli eventi in modo deterministico per timestamp, fingerprint e macchina, così due export equivalenti da postazioni diverse producono lo stesso merge anche con `audit_events.id` invertiti.
+- 2026-06-30 - `Bucoliche_Stato` ora consolida davvero il cross-machine: una sola riga per fingerprint, `machine_id` aggregati in modo deterministico e note marcate `cross_machine` quando lo stesso allegato arriva da più postazioni.

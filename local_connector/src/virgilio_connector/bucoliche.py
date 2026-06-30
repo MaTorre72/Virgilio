@@ -278,26 +278,29 @@ def _conflict_row(row: Mapping[str, object]) -> dict:
 
 
 def _state_rows(events: Sequence[Mapping[str, object]]) -> tuple[dict[str, object], ...]:
-    by_fingerprint: dict[str, Mapping[str, object]] = {}
+    by_fingerprint: dict[str, list[Mapping[str, object]]] = {}
     for row in events:
         fingerprint = str(row.get("fingerprint", "")).strip()
         if not fingerprint:
             continue
-        previous = by_fingerprint.get(fingerprint)
-        current_key = (str(row.get("created_at", "")), str(row.get("event_id", "")))
-        previous_key = ("", "") if previous is None else (
-            str(previous.get("created_at", "")),
-            str(previous.get("event_id", "")),
-        )
-        if previous is None or current_key >= previous_key:
-            by_fingerprint[fingerprint] = row
+        by_fingerprint.setdefault(fingerprint, []).append(row)
     rows = []
     for fingerprint in sorted(by_fingerprint):
-        current = by_fingerprint[fingerprint]
+        grouped = sorted(by_fingerprint[fingerprint], key=lambda row: (
+            str(row.get("created_at", "")),
+            str(row.get("event_id", "")),
+        ))
+        current = max(grouped, key=lambda row: (
+            _state_priority(str(row.get("global_state_suggestion", ""))),
+            str(row.get("created_at", "")),
+            str(row.get("event_id", "")),
+        ))
+        machine_ids = sorted({str(row.get("machine_id", "")).strip()
+                              for row in grouped if str(row.get("machine_id", "")).strip()})
         rows.append({
             "fingerprint": fingerprint,
             "last_event_at": current.get("created_at", ""),
-            "machine_id": current.get("machine_id", ""),
+            "machine_id": ",".join(machine_ids) if len(machine_ids) > 1 else current.get("machine_id", ""),
             "account_alias": current.get("account_alias", ""),
             "source_email": current.get("source_email", ""),
             "attachment_id": current.get("attachment_id", ""),
@@ -306,9 +309,36 @@ def _state_rows(events: Sequence[Mapping[str, object]]) -> tuple[dict[str, objec
             "last_result": current.get("result", ""),
             "conflict_type": current.get("conflict_type", ""),
             "staged_filename": current.get("staged_filename", ""),
-            "notes": current.get("notes", ""),
+            "notes": _state_notes(current, machine_ids),
         })
     return tuple(rows)
+
+
+def _state_notes(current: Mapping[str, object], machine_ids: Sequence[str]) -> str:
+    raw = str(current.get("notes", "") or "")
+    if len(machine_ids) <= 1:
+        return raw
+    try:
+        payload = json.loads(raw) if raw else {}
+    except json.JSONDecodeError:
+        payload = {"latest_note": raw}
+    if not isinstance(payload, dict):
+        payload = {"latest_note": payload}
+    payload["machine_ids"] = list(machine_ids)
+    payload["cross_machine"] = True
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+
+def _state_priority(value: str) -> int:
+    return {
+        "conflict": 5,
+        "completed": 4,
+        "staged": 3,
+        "acquired": 2,
+        "duplicate_seen": 1,
+        "skipped": 1,
+        "failed": 1,
+    }.get(value, 0)
 
 
 def build_google_sheets_client(config: BucolicheConfig,
