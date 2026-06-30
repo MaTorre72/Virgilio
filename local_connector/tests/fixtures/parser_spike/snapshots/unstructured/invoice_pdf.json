@@ -1,0 +1,8 @@
+{
+  "fixture_id": "invoice_pdf",
+  "text": "Invoice for Customer ACME. Total due 120.00.",
+  "tables": [
+    [["Item", "Qty"], ["Widget", "2"]]
+  ],
+  "warnings": ["price column not detected"]
+}

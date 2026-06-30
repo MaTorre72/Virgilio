@@ -1,0 +1,20 @@
+{
+  "fixtures": [
+    {
+      "fixture_id": "invoice_pdf",
+      "source_file": "fixtures/invoice.pdf",
+      "format": "pdf",
+      "required_terms": ["Invoice", "Customer", "Total"],
+      "expected_table_headers": ["Item", "Qty", "Price"],
+      "notes": "Synthetic invoice with one table."
+    },
+    {
+      "fixture_id": "minutes_docx",
+      "source_file": "fixtures/minutes.docx",
+      "format": "docx",
+      "required_terms": ["Meeting", "Decisions", "Actions"],
+      "expected_table_headers": [],
+      "notes": "Synthetic meeting minutes without tables."
+    }
+  ]
+}

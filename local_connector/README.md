@@ -451,6 +451,21 @@ python -m virgilio_connector export-central-events --config accounts.local.yaml 
 Gli export sono scritti in `.local_data/exports/` e preparano il futuro adapter
 Bucoliche append-only. Nessuna API Google, Docling o classificazione AI è attiva.
 
+### Spike parser su fixture sintetiche
+
+Prima di introdurre estrazione reale, il comando seguente confronta snapshot
+locali Docling/Unstructured su fixture sintetiche e produce un report di qualita':
+
+```powershell
+python -m virgilio_connector compare-parser-fixtures `
+  --catalog local_connector\tests\fixtures\parser_spike\catalog.json `
+  --snapshots-dir local_connector\tests\fixtures\parser_spike\snapshots `
+  --human
+```
+
+Lo spike non usa rete, non apre documenti reali e non entra nella pipeline
+produttiva. Dettagli: [`../docs/PARSER_SPIKE_DOCLING_UNSTRUCTURED.md`](../docs/PARSER_SPIKE_DOCLING_UNSTRUCTURED.md).
+
 ### Gateway LiteLLM mock-only
 
 Il gateway LiteLLM futuro è ora preparato solo come adapter locale budgetato,

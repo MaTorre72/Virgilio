@@ -1,8 +1,8 @@
 # Backlog di sviluppo
 
-Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, poi ordine di tabella.
+Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi ordine di tabella.
 
-## Milestone 1 — Stabilizzazione pilota locale
+## Milestone 1 - Stabilizzazione pilota locale
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
@@ -12,9 +12,9 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 | DONE | P1 | Idempotenza end-to-end | SQLite, Bucoliche, test | doppio run senza duplicati | Alto |
 | DONE | P1 | Eliminare `example.invalid` da dati operativi | manifest/state | fixture realistica; nessun placeholder esportato | Medio |
 | DONE | P1 | Gestire `attachment_id=None` | state/export | legacy fixture; skip `legacy_incomplete` | Medio |
-| DONE | P1 | Verificare secondo export già esportato | Bucoliche test | zero append al retry | Medio |
+| DONE | P1 | Verificare secondo export gia esportato | Bucoliche test | zero append al retry | Medio |
 
-## Milestone 2 — Usabilità minima
+## Milestone 2 - Usabilita minima
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
@@ -22,9 +22,9 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 | DONE | P1 | Output umano oltre JSON | CLI/report | snapshot essenziale | Basso |
 | DONE | P1 | Configurazione guidata | config/CLI | nessun segreto; config valida | Medio |
 | DONE | P1 | Diagnostica errori comuni | doctor | fixture errori noti | Basso |
-| DONE | P2 | README “10 comandi essenziali” | README | comandi verificati | Basso |
+| DONE | P2 | README "10 comandi essenziali" | README | comandi verificati | Basso |
 
-## Milestone 3 — Multi-postazione
+## Milestone 3 - Multi-postazione
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
@@ -34,15 +34,15 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 | DONE | P1 | Conflitti cross-machine | conflict detector | collisioni rilevate | Alto |
 | DONE | P2 | Policy manuale risoluzione conflitti | docs/state | nessuna risoluzione automatica | Medio |
 
-## Milestone 4 — Parsing allegati
+## Milestone 4 - Parsing allegati
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
-| TODO | P2 | Confronto Docling/Unstructured su fixture | spike isolato | report qualità; nessuna produzione | Medio |
+| DONE | P2 | Confronto Docling/Unstructured su fixture | spike isolato | report qualita; nessuna produzione | Medio |
 | TODO | P2 | Estrazione testo e tabelle senza AI | parser | fixture PDF/DOCX/XLSX | Alto |
 | TODO | P2 | Manifest arricchito | manifest | schema retrocompatibile | Medio |
 
-## Milestone 5 — Classificazione assistita
+## Milestone 5 - Classificazione assistita
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
@@ -59,15 +59,16 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorità, po
 - 2026-06-30 - Doppio run end-to-end reso idempotente: export Bucoliche ignora eventi senza fingerprint e la completion registra eventi per allegato solo al primo completamento utile.
 - 2026-06-30 - Manifest e SQLite usano l'email operativa risolta da `username_env` quando disponibile, evitando l'export di `example.invalid` dai config placeholder.
 - 2026-06-30 - Export centrale e Bucoliche ora saltano i record legacy con `attachment_id=None` rilevati come `legacy_incomplete`, senza toccare gli eventi sintetici validi.
-- 2026-06-30 - Aggiunto test di regressione sul secondo export Bucoliche già marcato `exported`: nessun nuovo append su `Bucoliche_Eventi`, `Bucoliche_Stato` continua a rigenerarsi.
+- 2026-06-30 - Aggiunto test di regressione sul secondo export Bucoliche gia marcato `exported`: nessun nuovo append su `Bucoliche_Eventi`, `Bucoliche_Stato` continua a rigenerarsi.
 - 2026-06-30 - Aggiunto il comando unico `virgilio pilot`: wrapper dry-run con preview integrato, exit code coerente ed entrypoint console dedicato.
 - 2026-06-30 - `run-local-pipeline`, `pilot-preview`, `pilot-run-safe` e `virgilio pilot` supportano `--human` per uno snapshot leggibile, mantenendo il JSON come output predefinito per script e automazioni.
 - 2026-06-30 - Aggiunto `virgilio init-config`: genera uno scheletro `accounts.local.yaml` valido e senza segreti nel file, con sezioni account/storage/Bucoliche/rules e note sulle env locali.
 - 2026-06-30 - `doctor` ora espone suggerimenti azionabili sugli errori ricorrenti e supporta `--human` per una diagnosi locale leggibile senza segreti.
 - 2026-06-30 - Coperti nei test due `machine_id` isolati: `load_machine_id` resta stabile per root locale e l'export Bucoliche preview conserva due eventi distinti sullo stesso fingerprint.
-- 2026-06-30 - L'export Bucoliche ora ordina gli eventi in modo deterministico per timestamp, fingerprint e macchina, così due export equivalenti da postazioni diverse producono lo stesso merge anche con `audit_events.id` invertiti.
-- 2026-06-30 - `Bucoliche_Stato` ora consolida davvero il cross-machine: una sola riga per fingerprint, `machine_id` aggregati in modo deterministico e note marcate `cross_machine` quando lo stesso allegato arriva da più postazioni.
-- 2026-06-30 - `Bucoliche_Stato` segnala `conflict_cross_machine` quando lo stesso fingerprint arriva da più macchine con esiti terminali incompatibili, includendo `machine_states` nelle note senza risoluzione automatica.
-- 2026-06-30 - Aggiunto `litellm-gateway-dry-run`: adapter LiteLLM futuro mock-only con budget locale su token/costo, senza rete né dipendenze LiteLLM, pronto per la futura classificazione assistita.
+- 2026-06-30 - L'export Bucoliche ora ordina gli eventi in modo deterministico per timestamp, fingerprint e macchina, cosi due export equivalenti da postazioni diverse producono lo stesso merge anche con `audit_events.id` invertiti.
+- 2026-06-30 - `Bucoliche_Stato` ora consolida davvero il cross-machine: una sola riga per fingerprint, `machine_id` aggregati in modo deterministico e note marcate `cross_machine` quando lo stesso allegato arriva da piu postazioni.
+- 2026-06-30 - `Bucoliche_Stato` segnala `conflict_cross_machine` quando lo stesso fingerprint arriva da piu macchine con esiti terminali incompatibili, includendo `machine_states` nelle note senza risoluzione automatica.
+- 2026-06-30 - Aggiunto `litellm-gateway-dry-run`: adapter LiteLLM futuro mock-only con budget locale su token/costo, senza rete ne dipendenze LiteLLM, pronto per la futura classificazione assistita.
 - 2026-06-30 - Documentata la policy manuale per `conflict_cross_machine`: triage su `state.db`, macchina autorevole unica, nessuna modifica manuale ai tab Bucoliche e nessuna risoluzione automatica.
 - 2026-06-30 - `local_connector/README.md` ora include la sezione "10 comandi essenziali" con il flusso locale minimo v1.1 allineato alla CLI corrente.
+- 2026-06-30 - Aggiunto `compare-parser-fixtures`, spike isolato che confronta snapshot Docling/Unstructured su fixture sintetiche e produce un report locale di qualita senza dipendenze o parsing reale.

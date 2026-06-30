@@ -41,6 +41,7 @@ from .multi_account import (
     load_storage_config,
     load_multi_account_config,
 )
+from .parser_spike import compare_parser_fixtures, parser_spike_human_summary
 from .pipeline import LocalPipelineRunner
 from .pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup, PilotCheck,
                               PilotPreview, PilotSafeRunner,
@@ -158,6 +159,10 @@ def main() -> int:
                                  default=float(os.environ.get("VIRGILIO_LITELLM_MAX_COST_EUR", "0.5")))
     litellm_gateway.add_argument("--cost-per-1k-eur", type=float,
                                  default=float(os.environ.get("VIRGILIO_LITELLM_COST_PER_1K_EUR", "0.002")))
+    parser_spike = commands.add_parser("compare-parser-fixtures")
+    parser_spike.add_argument("--catalog", type=Path, required=True)
+    parser_spike.add_argument("--snapshots-dir", type=Path, required=True)
+    parser_spike.add_argument("--human", action="store_true")
     scanner = commands.add_parser("scan-imap-accounts")
     scanner.add_argument("--config", type=Path, required=True)
     scanner.add_argument("--dry-run", action="store_true")
@@ -294,6 +299,16 @@ def main() -> int:
         except (OSError, ValueError, LiteLLMGatewayError, LiteLLMBudgetError) as exc:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "compare-parser-fixtures":
+        try:
+            report = compare_parser_fixtures(args.catalog, args.snapshots_dir)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(parser_spike_human_summary(report))
+        else:
+            print(json.dumps(report, ensure_ascii=False, separators=(",", ":")))
         return 0
     if args.command == "scan-imap-accounts":
         try:
