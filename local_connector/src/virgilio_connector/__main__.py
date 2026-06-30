@@ -229,6 +229,9 @@ def main() -> int:
     bucoliche = commands.add_parser("export-to-bucoliche")
     bucoliche.add_argument("--config", type=Path, required=True)
     bucoliche.add_argument("--dry-run", action="store_true")
+    refresh_state = commands.add_parser("refresh-bucoliche-state")
+    refresh_state.add_argument("--config", type=Path, required=True)
+    refresh_state.add_argument("--dry-run", action="store_true")
     doctor_bucoliche = commands.add_parser("doctor-bucoliche")
     doctor_bucoliche.add_argument("--config", type=Path, required=True)
     pilot_check = commands.add_parser("pilot-check")
@@ -543,6 +546,18 @@ def main() -> int:
             load_multi_account_config(args.config)
             result = BucolicheAppendOnlyAdapter(state_db=local_root / "state.db",
                 config=load_bucoliche_config(args.config)).export(dry_run=args.dry_run)
+        except (MultiAccountConfigError, BucolicheError, sqlite3.Error) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 1 if result.status == "completed_with_errors" else 0
+    if args.command == "refresh-bucoliche-state":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            load_multi_account_config(args.config)
+            result = BucolicheAppendOnlyAdapter(
+                state_db=local_root / "state.db",
+                config=load_bucoliche_config(args.config),
+            ).refresh_state(dry_run=args.dry_run)
         except (MultiAccountConfigError, BucolicheError, sqlite3.Error) as exc:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))

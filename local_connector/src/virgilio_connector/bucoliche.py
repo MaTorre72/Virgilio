@@ -188,6 +188,15 @@ class BucolicheExportResult:
     errors: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class BucolicheStateRefreshResult:
+    status: str
+    dry_run: bool
+    state_rows_total: int
+    preview: tuple[dict[str, object], ...]
+    errors: tuple[str, ...]
+
+
 class BucolicheAppendOnlyAdapter:
     TARGET = "google_sheets_append_only"
     CONFLICT_TARGET = "google_sheets_conflicts_append_only"
@@ -203,7 +212,6 @@ class BucolicheAppendOnlyAdapter:
         self.config.validate()
         ensure_state_db(self.state_db.parent)
         events = [_event_row(row) for row in central_event_rows(self.state_db)]
-        state_rows = _state_rows(events)
         exported = self._successful_event_ids(self.TARGET)
         pending = [row for row in events if row["event_id"] not in exported]
         all_conflicts = [row for row in events if row["conflict_type"] or
@@ -236,13 +244,47 @@ class BucolicheAppendOnlyAdapter:
                 self._record(row["event_id"], self.CONFLICT_TARGET,
                              "export_failed", error_type)
                 errors.append(f"conflict {row['event_id']}: {error_type}")
-        try:
-            client.replace_rows(self.config.state_sheet, STATE_COLUMNS, state_rows)
-        except Exception as exc:
-            errors.append(f"state {self.config.state_sheet}: {type(exc).__name__}")
+        state_result = self.refresh_state(dry_run=False, client=client)
+        errors.extend(state_result.errors)
         return BucolicheExportResult("completed_with_errors" if errors else "completed",
             False, len(events), len(pending), done, len(events) - len(pending),
             len(conflicts), (), tuple(errors))
+
+    def refresh_state(self, *, dry_run: bool,
+                      client: SheetsAppendClient | None = None) -> BucolicheStateRefreshResult:
+        self.config.validate()
+        ensure_state_db(self.state_db.parent)
+        state_rows = _state_rows([
+            _event_row(row) for row in central_event_rows(self.state_db)
+        ])
+        if dry_run:
+            return BucolicheStateRefreshResult(
+                status="dry_run",
+                dry_run=True,
+                state_rows_total=len(state_rows),
+                preview=state_rows[:5],
+                errors=(),
+            )
+        if not self.config.enabled:
+            raise BucolicheError("Bucoliche adapter is disabled; set bucoliche.enabled=true")
+        active_client = client or self.client or self._client_from_env()
+        try:
+            active_client.replace_rows(self.config.state_sheet, STATE_COLUMNS, state_rows)
+        except Exception as exc:
+            return BucolicheStateRefreshResult(
+                status="completed_with_errors",
+                dry_run=False,
+                state_rows_total=len(state_rows),
+                preview=(),
+                errors=(f"state {self.config.state_sheet}: {type(exc).__name__}",),
+            )
+        return BucolicheStateRefreshResult(
+            status="completed",
+            dry_run=False,
+            state_rows_total=len(state_rows),
+            preview=(),
+            errors=(),
+        )
 
     def _client_from_env(self) -> SheetsAppendClient:
         return build_google_sheets_client(self.config, self.environ)

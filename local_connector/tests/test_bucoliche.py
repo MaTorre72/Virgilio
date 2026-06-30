@@ -443,6 +443,58 @@ bucoliche:
     assert json.loads(capsys.readouterr().out)["events_pending"] == 1
 
 
+def test_refresh_bucoliche_state_dry_run_returns_state_preview_without_event_append(tmp_path):
+    db = tmp_path / "state.db"
+    store = ReadonlyStateStore(db); store.initialize()
+    store.add_audit_event(machine_id="machine-test", account_alias="box",
+        entity_type="attachment", entity_id="att-1", fingerprint="f" * 64,
+        action="message_completed", status="ok", details={"step": "done"})
+    fake = FakeSheets()
+    result = adapter(db, fake, enabled=False).refresh_state(dry_run=True)
+    assert result.status == "dry_run"
+    assert result.state_rows_total == 1
+    assert result.preview[0]["current_global_state"] == "completed"
+    assert fake.calls == []
+
+
+def test_refresh_bucoliche_state_real_run_replaces_only_state_sheet(tmp_path):
+    db = state_with_event(tmp_path)
+    fake = FakeSheets()
+    result = adapter(db, fake).refresh_state(dry_run=False)
+    assert result.status == "completed"
+    assert len(fake.calls) == 1
+    assert fake.calls[0][:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
+    assert len(fake.calls[0][3]) == 1
+
+
+def test_refresh_bucoliche_state_cli_dry_run(tmp_path, monkeypatch, capsys):
+    local_root = tmp_path / ".local_data"
+    state_with_event(local_root)
+    config = tmp_path / "accounts.yaml"
+    config.write_text("""accounts:
+  - account_alias: test_box
+    email: test@example.invalid
+    provider_hint: generic_imap
+    imap_host: imap.example.invalid
+    imap_port: 993
+    username_env: TEST_USER
+    password_env: TEST_PASS
+    input_folder: INBOX
+    done_folder: done
+    error_folder: error
+bucoliche:
+  enabled: false
+""", encoding="utf-8")
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(local_root))
+    monkeypatch.setattr(sys, "argv", ["virgilio_connector", "refresh-bucoliche-state",
+        "--config", str(config), "--dry-run"])
+    from virgilio_connector.__main__ import main
+    assert main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["state_rows_total"] == 1
+    assert payload["preview"][0]["fingerprint"] == "f" * 64
+
+
 class FakeOAuthCredentials:
     def __init__(self, *, valid=True, expired=False, refresh_token="refresh-secret"):
         self.valid, self.expired, self.refresh_token = valid, expired, refresh_token

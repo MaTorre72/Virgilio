@@ -562,11 +562,19 @@ localmente `VIRGILIO_BUCOLICHE_SPREADSHEET_ID` e
 `VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON`; non committare mai questi valori.
 
 ```powershell
+python -m virgilio_connector refresh-bucoliche-state --config accounts.local.yaml --dry-run
+python -m virgilio_connector refresh-bucoliche-state --config accounts.local.yaml
 python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml --dry-run
 python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml
 ```
 
-Il dry-run non chiama Google e mostra conteggio e prime cinque righe. Il run reale
+`refresh-bucoliche-state` rigenera solo `Bucoliche_Stato` partendo dagli eventi
+locali, senza appendere righe a `Bucoliche_Eventi`; il dry-run non scrive e mostra
+le prime cinque righe dello snapshot. Il run reale
+riscrive soltanto il tab di stato.
+
+`export-to-bucoliche` invece
+usa lo stesso snapshot ma aggiunge anche gli eventi mancanti. Il dry-run non chiama Google e mostra conteggio e prime cinque righe. Il run reale
 richiede `bucoliche.enabled: true` e aggiunge soltanto nuove righe a
 `Bucoliche_Eventi`; i conflitti sono aggiunti anche a `Bucoliche_Conflitti`.
 Ad ogni export viene inoltre rigenerato `Bucoliche_Stato` come snapshot derivata
@@ -595,8 +603,8 @@ alla CLI attuale del repository.
 6. `python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --human`
 7. `python -m virgilio_connector check-local-conflicts --config accounts.local.yaml`
 8. `python -m virgilio_connector export-central-events --config accounts.local.yaml --format jsonl`
-9. `python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml --dry-run`
-10. `python -m virgilio_connector litellm-gateway-dry-run --prompt-file .\prompt.txt --budget-tokens 1200 --max-cost-eur 0.05`
+9. `python -m virgilio_connector refresh-bucoliche-state --config accounts.local.yaml --dry-run`
+10. `python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml --dry-run`
 
 Ordine consigliato: `init-config`, `doctor`, `pilot`, poi dry-run completi prima
 di ogni esecuzione reale. I comandi Google/Bucoliche restano di test e il gateway

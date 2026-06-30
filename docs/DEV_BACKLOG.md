@@ -2,6 +2,14 @@
 
 Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi ordine di tabella.
 
+## Milestone 0 - Delta MVP operativo minimo
+
+| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|
+| DONE | P0 | Comando esplicito `refresh-bucoliche-state` senza append eventi | `bucoliche.py`, CLI, README | dry-run con preview; run reale aggiorna solo `Bucoliche_Stato` | Medio |
+| TODO | P0 | Comando esplicito `ack-completed-messages` come wrapper controllato | CLI, completion, README | dry-run separato; gate export/conflitti/stato | Alto |
+| TODO | P1 | GUI minima locale `tkinter` sopra configurazione e comandi | nuovo layer GUI, README, test smoke mirato | nessuna logica duplicata; CLI invariata | Medio |
+
 ## Milestone 1 - Stabilizzazione pilota locale
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
@@ -53,6 +61,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 
 ## Registro avanzamento
 
+- 2026-06-30 - Aggiunto `refresh-bucoliche-state`: rigenera solo `Bucoliche_Stato` da eventi locali, con dry-run che mostra preview e senza append su `Bucoliche_Eventi`.
 - 2026-06-29 - Report pipeline arricchito con `human_summary` leggibile e sicura; test report verdi.
 - 2026-06-29 - `pilot-run-safe` aggiunto come wrapper dry-run con stop su gate; test CLI/sequenza verdi.
 - 2026-06-29 - `Bucoliche_Stato` rigenerato dagli eventi durante export; test fake/idempotenza verdi.
