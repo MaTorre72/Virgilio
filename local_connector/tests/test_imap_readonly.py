@@ -4,7 +4,13 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from virgilio_connector.imap_readonly import ImapReadonlyConfig, ImapReadonlyError, ImapReadonlyMailbox
+from virgilio_connector.imap_readonly import (
+    ImapCompletionError,
+    ImapCompletionMailbox,
+    ImapReadonlyConfig,
+    ImapReadonlyError,
+    ImapReadonlyMailbox,
+)
 
 
 def eml_bytes():
@@ -21,6 +27,9 @@ def eml_bytes():
 
 class FakeImapClient:
     instances = []
+    list_data = [b'(\\HasNoChildren) "/" "Virgilio/traghettate"']
+    copy_status = "OK"
+    copy_data = [b"copied"]
 
     def __init__(self, host, port, *, timeout):
         self.calls = [("connect", host, port, timeout)]
@@ -38,7 +47,13 @@ class FakeImapClient:
         self.calls.append(("uid", command, *args))
         if command == "SEARCH":
             return "OK", [b"42"]
+        if command == "COPY":
+            return self.copy_status, self.copy_data
         return "OK", [(b"42 (BODY[] {1})", eml_bytes()), b")"]
+
+    def list(self, directory='""', pattern='*'):
+        self.calls.append(("list", directory, pattern))
+        return "OK", list(self.list_data)
 
     def response(self, name):
         self.calls.append(("response", name))
@@ -54,10 +69,18 @@ class FakeImapClient:
 class ImapReadonlyTests(unittest.TestCase):
     def setUp(self):
         FakeImapClient.instances.clear()
+        FakeImapClient.list_data = [b'(\\HasNoChildren) "/" "Virgilio/traghettate"']
+        FakeImapClient.copy_status = "OK"
+        FakeImapClient.copy_data = [b"copied"]
         self.temp = tempfile.TemporaryDirectory()
         self.adapter = ImapReadonlyMailbox(
             ImapReadonlyConfig("imap.example.invalid", "test-user", "test-password"),
             Path(self.temp.name), client_factory=FakeImapClient)
+        self.completion = ImapCompletionMailbox(
+            ImapReadonlyConfig("imap.example.invalid", "test-user", "test-password"),
+            done_folder="Virgilio/traghettate",
+            client_factory=FakeImapClient,
+        )
 
     def tearDown(self):
         self.temp.cleanup()
@@ -86,6 +109,49 @@ class ImapReadonlyTests(unittest.TestCase):
 
     def test_password_is_redacted_from_config_repr(self):
         self.assertNotIn("test-password", repr(self.adapter.config))
+
+    def test_completion_copy_uses_exact_done_folder_when_safe(self):
+        self.completion.add_done_label_only("42")
+        calls = [call for client in FakeImapClient.instances for call in client.calls]
+        self.assertIn(("list", '""', "*"), calls)
+        self.assertIn(("select", "Virgilio/da-traghettare", False), calls)
+        self.assertIn(("uid", "COPY", "42", "Virgilio/traghettate"), calls)
+        texts = [str(call).upper() for call in calls]
+        for forbidden in ("STORE", "DELETE", "EXPUNGE", "MOVE", "SEEN"):
+            self.assertFalse(any(forbidden in item for item in texts))
+
+    def test_completion_quotes_nested_mailbox_with_spaces(self):
+        FakeImapClient.list_data = [b'(\\HasNoChildren) "/" "Virgilio/Pratica chiusa"']
+        completion = ImapCompletionMailbox(
+            ImapReadonlyConfig("imap.example.invalid", "test-user", "test-password"),
+            done_folder="Virgilio/Pratica chiusa",
+            client_factory=FakeImapClient,
+        )
+        completion.add_done_label_only("42")
+        calls = [call for client in FakeImapClient.instances for call in client.calls]
+        self.assertIn(("uid", "COPY", "42", '"Virgilio/Pratica chiusa"'), calls)
+
+    def test_completion_blocks_copy_when_done_folder_missing_from_list(self):
+        FakeImapClient.list_data = [b'(\\HasNoChildren) "/" "Virgilio/altro"']
+        with self.assertRaises(ImapCompletionError) as ctx:
+            self.completion.add_done_label_only("42")
+        message = str(ctx.exception)
+        self.assertIn("done_folder_not_found_in_imap_list", message)
+        self.assertIn("Virgilio/traghettate", message)
+        calls = [call for client in FakeImapClient.instances for call in client.calls]
+        self.assertFalse(any(call[:2] == ("uid", "COPY") for call in calls))
+
+    def test_completion_copy_failure_includes_diagnostics(self):
+        FakeImapClient.copy_status = "NO"
+        FakeImapClient.copy_data = [b"[TRYCREATE] mailbox not available"]
+        with self.assertRaises(ImapCompletionError) as ctx:
+            self.completion.add_done_label_only("42")
+        message = str(ctx.exception)
+        self.assertIn("UID COPY DONE failed", message)
+        self.assertIn("imap_status=NO", message)
+        self.assertIn("Virgilio/traghettate", message)
+        self.assertIn("TRYCREATE", message)
+        self.assertIn("Mostra in IMAP", message)
 
 
 if __name__ == "__main__":

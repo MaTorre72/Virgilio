@@ -8,6 +8,7 @@ from email.parser import BytesParser
 from email.utils import parsedate_to_datetime
 import imaplib
 from pathlib import Path
+import re
 from typing import Callable
 
 from .files import sanitize_filename
@@ -16,6 +17,10 @@ from .ports import AttachmentReference, MessageReference
 
 class ImapReadonlyError(RuntimeError):
     """Raised when the read-only IMAP session cannot return valid data."""
+
+
+class ImapCompletionError(ImapReadonlyError):
+    """Raised when prudent IMAP completion cannot safely add the done label."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,11 +201,40 @@ class ImapCompletionMailbox:
     def add_done_label_only(self, uid: str) -> None:
         client = self._connect()
         try:
+            listed = self.list_mailboxes(client=client)
+            if self.done_folder not in listed:
+                raise ImapCompletionError(
+                    "done_folder_not_found_in_imap_list: "
+                    f"done_folder={self.done_folder!r}; "
+                    f"available_mailboxes={', '.join(listed) if listed else '<empty>'}; "
+                    "verify exact IMAP name and 'Mostra in IMAP'"
+                )
             self._select(client, self.config.mailbox, readonly=False)
-            status, _ = client.uid("COPY", str(uid), self.done_folder)
-            ImapReadonlyMailbox._require_ok(status, "UID COPY DONE")
+            target = self._mailbox_argument(self.done_folder)
+            status, data = client.uid("COPY", str(uid), target)
+            self._require_completion_ok(
+                status,
+                "UID COPY DONE",
+                done_folder=self.done_folder,
+                data=data,
+            )
         finally:
             ImapReadonlyMailbox._close(client)
+
+    def list_mailboxes(self, *, client=None) -> tuple[str, ...]:
+        close_client = client is None
+        active_client = client or self._connect()
+        try:
+            status, data = active_client.list('""', "*")
+            self._require_completion_ok(status, "LIST", done_folder=self.done_folder, data=data)
+            return tuple(
+                item
+                for item in (self._parse_list_mailbox_name(line) for line in data or ())
+                if item
+            )
+        finally:
+            if close_client:
+                ImapReadonlyMailbox._close(active_client)
 
     def _connect(self):
         client = self._client_factory(self.config.host, self.config.port,
@@ -211,5 +245,96 @@ class ImapCompletionMailbox:
 
     @staticmethod
     def _select(client, mailbox: str, *, readonly: bool) -> None:
-        status, _ = client.select(mailbox, readonly=readonly)
-        ImapReadonlyMailbox._require_ok(status, "SELECT")
+        status, data = client.select(ImapCompletionMailbox._mailbox_argument(mailbox),
+                                     readonly=readonly)
+        ImapCompletionMailbox._require_completion_ok(
+            status, "SELECT", done_folder=mailbox, data=data)
+
+    @staticmethod
+    def _mailbox_argument(mailbox: str) -> str:
+        if re.fullmatch(r"[A-Za-z0-9_\-./]+", mailbox):
+            return mailbox
+        escaped = mailbox.replace("\\", "\\\\").replace('"', '\\"')
+        return f'"{escaped}"'
+
+    @staticmethod
+    def _parse_list_mailbox_name(line) -> str | None:
+        if line is None:
+            return None
+        text = line.decode("utf-8", "replace") if isinstance(line, bytes) else str(line)
+        if not text:
+            return None
+        if text.startswith("("):
+            closing = text.find(")")
+            if closing != -1:
+                text = text[closing + 1:].lstrip()
+        if not text:
+            return None
+        if text.startswith("NIL"):
+            text = text[3:].lstrip()
+        elif text.startswith('"'):
+            text = ImapCompletionMailbox._consume_quoted(text)[0].lstrip()
+        else:
+            parts = text.split(maxsplit=1)
+            text = parts[1].lstrip() if len(parts) == 2 else ""
+        if not text:
+            return None
+        if text.startswith('"'):
+            _, mailbox = ImapCompletionMailbox._consume_quoted(text)
+            return mailbox
+        return text
+
+    @staticmethod
+    def _consume_quoted(text: str) -> tuple[str, str]:
+        escaped = False
+        collected: list[str] = []
+        for index, char in enumerate(text[1:], start=1):
+            if escaped:
+                collected.append(char)
+                escaped = False
+                continue
+            if char == "\\":
+                escaped = True
+                continue
+            if char == '"':
+                return text[index + 1:], "".join(collected)
+            collected.append(char)
+        return "", text.strip('"')
+
+    @staticmethod
+    def _require_completion_ok(status, operation: str, *,
+                               done_folder: str | None = None,
+                               data=None) -> None:
+        text = status.decode("ascii", "replace") if isinstance(status, bytes) else str(status)
+        if text.upper() == "OK":
+            return
+        detail = ImapCompletionMailbox._stringify_imap_data(data)
+        context = f"; done_folder={done_folder!r}" if done_folder is not None else ""
+        suffix = (
+            "; verify exact IMAP name and 'Mostra in IMAP'"
+            if operation == "UID COPY DONE"
+            else ""
+        )
+        raise ImapCompletionError(
+            f"{operation} failed{context}; imap_status={text}; imap_detail={detail}{suffix}"
+        )
+
+    @staticmethod
+    def _stringify_imap_data(data) -> str:
+        if not data:
+            return "<none>"
+        parts: list[str] = []
+        for item in data:
+            if isinstance(item, bytes):
+                parts.append(item.decode("utf-8", "replace"))
+            elif isinstance(item, tuple):
+                tuple_parts = []
+                for value in item:
+                    if isinstance(value, bytes):
+                        tuple_parts.append(value.decode("utf-8", "replace"))
+                    else:
+                        tuple_parts.append(str(value))
+                parts.append(" | ".join(tuple_parts))
+            else:
+                parts.append(str(item))
+        return " ; ".join(parts)

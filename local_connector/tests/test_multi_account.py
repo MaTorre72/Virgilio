@@ -141,11 +141,13 @@ class FailingScanner:
 class FakeAckMailbox:
     instances = []
 
-    def __init__(self, account, *, input_present=True, done_present=False, fail=False):
+    def __init__(self, account, *, input_present=True, done_present=False,
+                 fail=False, fail_message="ack boom"):
         self.account = account
         self.input_present = input_present
         self.done_present = done_present
         self.fail = fail
+        self.fail_message = fail_message
         self.calls = []
         self.__class__.instances.append(self)
 
@@ -161,7 +163,7 @@ class FakeAckMailbox:
         self.calls.append(("add_done_label_only", self.account.account_alias,
                            self.account.done_folder, uid))
         if self.fail:
-            raise RuntimeError("ack boom")
+            raise RuntimeError(self.fail_message)
 
 
 def test_loads_multi_account_yaml_without_secret_values(tmp_path):
@@ -633,6 +635,16 @@ def test_completion_dry_run_plans_without_imap_or_sqlite_changes(tmp_path):
     assert states == [("open",)]
 
 
+def test_controlled_ack_dry_run_does_not_open_imap_in_write_mode(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    mark_candidate_events_exported(paths, accounts)
+    calls = []
+    result = controlled_ack(paths, accounts, dry_run=True,
+                            mailbox_factory=lambda account: calls.append(account))
+    assert result.status == "dry_run"
+    assert calls == []
+
+
 def test_completion_real_ack_updates_sqlite_and_report(tmp_path):
     accounts, paths = staged_fixture(tmp_path)
     FakeAckMailbox.instances.clear()
@@ -665,6 +677,7 @@ def test_completion_real_ack_updates_sqlite_and_report(tmp_path):
     assert rows[0][5] is not None
     assert rows[0][6] == result[0].report_path
     assert attachments == 2
+    assert result[0].reason == "marcata come traghettata; messaggio non rimosso dalla cartella input"
 
 
 def test_completion_skips_blocking_attachment_states(tmp_path):
@@ -713,8 +726,26 @@ def test_completion_already_in_done_folder(tmp_path):
     result = complete(paths, accounts,
         mailbox_factory=lambda account: FakeAckMailbox(account, input_present=False, done_present=True))
     assert result[0].status == "already_acked"
+    assert "gia presente in done_folder" in result[0].reason
     with sqlite3.connect(paths.state_db) as db:
         assert db.execute("SELECT message_state FROM messages WHERE id=1").fetchone()[0] == "completed"
+
+
+def test_completion_ack_failure_surfaces_copy_diagnostics(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    result = complete(
+        paths,
+        accounts,
+        mailbox_factory=lambda account: FakeAckMailbox(
+            account,
+            fail=True,
+            fail_message=("done_folder_not_found_in_imap_list: done_folder='Virgilio/traghettate'; "
+                          "verify exact IMAP name and 'Mostra in IMAP'"),
+        ),
+    )
+    assert result[0].status == "ack_failed"
+    assert "done_folder_not_found_in_imap_list" in result[0].reason
+    assert "Mostra in IMAP" in result[0].reason
 
 
 def test_completion_ack_failure_does_not_block_other_account(tmp_path):

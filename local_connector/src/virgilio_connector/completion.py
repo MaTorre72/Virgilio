@@ -255,7 +255,7 @@ class LocalCompletionRunner:
         if dry_run:
             return CompletionResult(**base, status="planned",
                                     ack_strategy=account.ack_strategy,
-                                    reason="would add done label only")
+                                    reason="would mark as traghettata; input message not removed")
         mailbox = self.mailbox_factory(account)
         try:
             if not mailbox.input_contains_uid(str(row["message_uid"])):
@@ -265,7 +265,8 @@ class LocalCompletionRunner:
                         ack_result="already_acked", attempted=False, completed=True)
                     return CompletionResult(**base, status="already_acked",
                                             ack_strategy=account.ack_strategy,
-                                            reason="message already present in done folder")
+                                            reason=("marcata come traghettata; gia presente in "
+                                                    "done_folder; messaggio non rimosso dalla cartella input"))
                 store.update_message_completion(int(row["message_row_id"]),
                     message_state="ack_failed", ack_strategy=account.ack_strategy,
                     ack_result="message_not_found", attempted=True, completed=False)
@@ -281,7 +282,7 @@ class LocalCompletionRunner:
                 ack_result="completed", attempted=False, completed=True)
             return CompletionResult(**base, status="completed",
                                     ack_strategy=account.ack_strategy,
-                                    reason="done label added; input message not removed")
+                                    reason="marcata come traghettata; messaggio non rimosso dalla cartella input")
         except Exception as exc:
             store.update_message_completion(int(row["message_row_id"]),
                 message_state="ack_failed", ack_strategy=account.ack_strategy,

@@ -206,6 +206,9 @@ done_folder: Virgilio/traghettate
 La strategia iniziale `add_done_label_only` copia il messaggio nella cartella/label
 `done_folder` con IMAP `COPY`. Non rimuove il messaggio dalla cartella input, non
 usa `STORE`, `MOVE`, `DELETE` o `EXPUNGE` e non marca il messaggio come letto.
+In v1.1 "ack" non significa spostamento: significa marcatura prudente come
+traghettata tramite copia in `done_folder`, lasciando il messaggio anche in
+`input_folder`. La label/cartella `da-traghettare` non viene rimossa.
 
 Esecuzione:
 
@@ -232,7 +235,10 @@ mostra sia il piano di ack sia l'esito dei gate; l'esecuzione reale procede solo
 se i messaggi sono ackable, non ci sono conflitti locali sui relativi allegati e
 gli eventi Bucoliche collegati risultano gia' esportati in `local_export_status`.
 Se il gate fallisce non apre IMAP in scrittura e invita prima a rieseguire
-`check-local-conflicts` o `export-to-bucoliche`.
+`check-local-conflicts` o `export-to-bucoliche`. Prima del `COPY` reale verifica
+anche che `done_folder` compaia nella `IMAP LIST`; se manca, il comando fallisce
+con una reason diagnostica che cita il nome IMAP usato e suggerisce di verificare
+il nome esatto e l'opzione Gmail "Mostra in IMAP".
 
 ### Pipeline locale unica
 
