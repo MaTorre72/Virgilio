@@ -102,6 +102,38 @@ function caronteRegistraVirgilioInbox(payload) {
   }
 }
 
+function caronteGetVirgilioInboxForForm(inboxId) {
+  const normalizedInboxId = _virgilioInboxStringOrEmpty_(inboxId);
+  if (!normalizedInboxId) {
+    return { ok: false, inbox_id: '', found: false, message: 'inbox_id mancante.' };
+  }
+
+  try {
+    const spreadsheetId = _virgilioInboxResolveSpreadsheetId_();
+    const sheetName = _virgilioInboxResolveSheetName_();
+    const ss = SpreadsheetApp.openById(spreadsheetId);
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      return {
+        ok: false,
+        inbox_id: normalizedInboxId,
+        found: false,
+        message: 'Tab Virgilio_Inbox non configurato.',
+      };
+    }
+    _virgilioInboxEnsureHeader_(sheet, VIRGILIO_INBOX_FIELDS);
+    return _virgilioInboxFindFormContextByInboxId_(sheet, normalizedInboxId);
+  } catch (err) {
+    return {
+      ok: false,
+      inbox_id: normalizedInboxId,
+      found: false,
+      message: _virgilioInboxStringOrEmpty_(err && err.message) ||
+        'Lookup Virgilio_Inbox non riuscito.',
+    };
+  }
+}
+
 function _virgilioInboxResolveSpreadsheetId_(spreadsheetId) {
   const props = PropertiesService.getScriptProperties();
   const configSpreadsheetId = typeof CONFIG !== 'undefined' && CONFIG
@@ -275,6 +307,42 @@ function _virgilioInboxFindExistingRow_(sheet, key, sha256) {
     match = { row: rowNumber, entry: entry, conflict: '' };
   }
   return match || { row: 0, entry: null, conflict: '' };
+}
+
+function _virgilioInboxFindFormContextByInboxId_(sheet, inboxId) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return {
+      ok: false,
+      inbox_id: inboxId,
+      found: false,
+      message: 'Virgilio_Inbox vuoto.',
+    };
+  }
+  const values = sheet.getRange(2, 1, lastRow - 1, VIRGILIO_INBOX_FIELDS.length).getValues();
+  for (let index = 0; index < values.length; index += 1) {
+    const entry = _virgilioInboxEntryFromRow_(values[index]);
+    if (_virgilioInboxStringOrEmpty_(entry.inbox_id) !== inboxId) continue;
+    return {
+      ok: true,
+      inbox_id: inboxId,
+      found: true,
+      status: _virgilioInboxStringOrEmpty_(entry.status),
+      source_subject: _virgilioInboxStringOrEmpty_(entry.source_subject),
+      source_sender: _virgilioInboxStringOrEmpty_(entry.source_sender),
+      original_filename: _virgilioInboxStringOrEmpty_(entry.original_filename),
+      staged_filename: _virgilioInboxStringOrEmpty_(entry.staged_filename),
+      suggested_cliente: _virgilioInboxStringOrEmpty_(entry.suggested_cliente),
+      suggested_sito: _virgilioInboxStringOrEmpty_(entry.suggested_sito),
+      suggested_pratica: _virgilioInboxStringOrEmpty_(entry.suggested_pratica),
+    };
+  }
+  return {
+    ok: false,
+    inbox_id: inboxId,
+    found: false,
+    message: 'inbox_id non trovato in Virgilio_Inbox.',
+  };
 }
 
 function _virgilioInboxEntryKey_(entry) {
@@ -485,6 +553,12 @@ function testVirgilioInboxSchema() {
     !_virgilioInboxValidateIntakePayload_(payloadMissingDriveId).ok,
     'drive_file_id obbligatorio dopo verify'
   );
+
+  const formContext = _virgilioInboxFindFormContextByInboxId_(fakeSheet, 'inbox-fixed-1');
+  _driveStagingAssert_(formContext.ok && formContext.found, 'lookup inbox_id per form');
+  _driveStagingAssert_(formContext.original_filename === 'analisi.pdf', 'filename esposto al form');
+  const missingContext = _virgilioInboxFindFormContextByInboxId_(fakeSheet, 'missing');
+  _driveStagingAssert_(!missingContext.ok && !missingContext.found, 'lookup inbox_id mancante');
   Logger.log('testVirgilioInboxSchema: OK');
 }
 

@@ -397,6 +397,11 @@ Riprendere il flusso completo lato umano senza rompere il motore esistente.
 Il form Virgilio 1.0 non viene riscritto. 
 Può essere esteso solo per leggere un inbox_id e precompilare campi informativi già noti se pertinenti: nome file, mittente, oggetto, data, ecc...
 
+Stato attuale:
+- il form legge gia` `inbox_id` dal `doGet(e)` della Web App;
+- il template riceve solo contesto read-only da `Virgilio_Inbox`;
+- il primo step mostra il documento in presa in carico e puo` precompilare suggerimenti gia presenti senza cambiare il submit.
+
 **Task**
 
 - lasciare il form com'e`, al massimo con prefill controllato;

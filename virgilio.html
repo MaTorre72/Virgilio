@@ -585,6 +585,43 @@ body::before {
   transition: opacity 0.2s;
 }
 
+.inbox-context {
+  display: none;
+  background: rgba(122,170,138,0.10);
+  border: 1px solid rgba(61,107,90,0.22);
+  border-left: 3px solid var(--verde2);
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  border-radius: 0 2px 2px 0;
+}
+
+.inbox-context.show { display: block; }
+
+.inbox-context.error {
+  background: rgba(139,32,32,0.06);
+  border-color: rgba(139,32,32,0.20);
+  border-left-color: var(--rosso);
+}
+
+.inbox-context-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--verde2);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.inbox-context.error .inbox-context-label {
+  color: var(--rosso);
+}
+
+.inbox-context-body {
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
 </style>
 </head>
 <body>
@@ -639,6 +676,11 @@ body::before {
       <div class="v-says">
         <div class="v-says-label">Virgilio dice</div>
         <p>Dimmi chi ci aspetta. Se è un <strong>cliente nuovo</strong>, lo registreremo insieme nell'Empireo.</p>
+      </div>
+
+      <div class="inbox-context" id="inboxContextBlock">
+        <div class="inbox-context-label">Documento in presa in carico</div>
+        <div class="inbox-context-body" id="inboxContextBody"></div>
       </div>
 
       <div class="field">
@@ -778,6 +820,7 @@ body::before {
 </div><!-- /stage -->
 
 <script>
+const INBOX_CONTEXT = <?!= virgilioInboxContextJson ?>;
 const TIPI = {
   'AUA':          'Autorizzazione Unica Ambientale',
   'AIA':          'Autorizzazione Integrata Ambientale',
@@ -796,6 +839,7 @@ const TIPI = {
 
 // Anagrafica caricata da DB — usata da onClienteChange() per il datalist siti
 window._anagrafica = null;
+window._virgilioInboxContext = INBOX_CONTEXT || {};
 
 // ── CARICAMENTO ANAGRAFICA DA DB ─────────────────────────────────────────────
 
@@ -808,10 +852,12 @@ google.script.run
     window._anagrafica = dati;
     _popolaClienti(dati.clienti);
     _popolaTecnici(dati.team);
+    applyInboxSuggestions();
     // I tipiPratica potrebbero aggiornare TIPI in futuro — per ora usa JS
   })
   .withFailureHandler(function() {
     _usaFallbackAnagrafica();
+    applyInboxSuggestions();
   })
   .getAnagraficaVirgilio();
 
@@ -950,6 +996,10 @@ function getCliente() {
   return v;
 }
 
+function getInboxId() {
+  return (window._virgilioInboxContext && window._virgilioInboxContext.inbox_id) || '';
+}
+
 function getPratica() {
   const c = document.querySelector('input[name="pratica"]:checked');
   return c ? c.value : null;
@@ -964,6 +1014,57 @@ function slugify(s) {
 }
 
 function aggiorna() { /* aggiorna anteprima nel step4 */ buildRiepilogo(); }
+
+function renderInboxContext() {
+  const context = window._virgilioInboxContext || {};
+  const block = document.getElementById('inboxContextBlock');
+  const body = document.getElementById('inboxContextBody');
+  if (!block || !body || !context.enabled) return;
+
+  if (!context.found) {
+    block.classList.add('show', 'error');
+    body.innerHTML =
+      `<strong>Inbox:</strong> ${escapeHtml(context.inbox_id || '-')}<br>` +
+      `${escapeHtml(context.message || 'Documento non trovato nella Virgilio_Inbox.')}`;
+    return;
+  }
+
+  const dettagli = [];
+  dettagli.push(`<strong>Inbox:</strong> ${escapeHtml(context.inbox_id)}`);
+  if (context.original_filename) dettagli.push(`<strong>File:</strong> ${escapeHtml(context.original_filename)}`);
+  if (context.source_sender) dettagli.push(`<strong>Mittente:</strong> ${escapeHtml(context.source_sender)}`);
+  if (context.source_subject) dettagli.push(`<strong>Oggetto:</strong> ${escapeHtml(context.source_subject)}`);
+  if (context.status) dettagli.push(`<strong>Stato:</strong> ${escapeHtml(context.status)}`);
+  block.classList.add('show');
+  body.innerHTML = dettagli.join('<br>');
+}
+
+function applyInboxSuggestions() {
+  const context = window._virgilioInboxContext || {};
+  if (!context.found) return;
+
+  if (context.suggested_cliente) {
+    const select = document.getElementById('clienteSelect');
+    const existingOption = Array.from(select.options).some(option => option.value === context.suggested_cliente);
+    if (existingOption) {
+      select.value = context.suggested_cliente;
+    } else {
+      select.value = '__nuovo__';
+      document.getElementById('nuovoCliente').value = context.suggested_cliente;
+    }
+  }
+  if (context.suggested_sito) {
+    document.getElementById('sitoInput').value = context.suggested_sito;
+  }
+  if (context.suggested_pratica) {
+    const radio = document.querySelector(`input[name="pratica"][value="${context.suggested_pratica}"]`);
+    if (radio) {
+      radio.checked = true;
+      document.getElementById('praticaDesc').textContent = TIPI[context.suggested_pratica] || '';
+    }
+  }
+  onClienteChange();
+}
 
 function vai(n) {
   // Validazioni
@@ -1000,6 +1101,7 @@ function buildRiepilogo() {
 
   const rb = document.getElementById('riepilogoBlock');
   rb.innerHTML = `
+    ${getInboxId() ? `<div class="riepilogo-row"><div class="r-key">Inbox</div><div class="r-val">${escapeHtml(getInboxId())}</div></div>` : ''}
     <div class="riepilogo-row">
       <div class="r-key">Cliente</div>
       <div class="r-val">${escapeHtml(cliente) || '—'}</div>
@@ -1189,6 +1291,10 @@ function ricomincia() {
   currentStep = 1;
   vai(1);
 }
+
+renderInboxContext();
+applyInboxSuggestions();
+aggiorna();
 </script>
 </body>
 </html>
