@@ -128,6 +128,7 @@ Conseguenza pratica:
 | `drive_staging_intake_test.gs` | `caronteSetupStagingDriveTestIntake` | Configura tab test intake | spreadsheetId, sheetName | tab e props pronte | `SpreadsheetApp`, `PropertiesService` | Si | Tab separato da `Bucoliche` reale |
 | `drive_staging_intake_test.gs` | `caronteRegistraStagingDriveTest` | Registra presa in carico test | payload metadata-only | risposta standard | `DriveApp`, `SpreadsheetApp` | Si | Scrive solo nel tab test |
 | `virgilio_inbox.gs` | `caronteSetupVirgilioInbox` | Crea o consolida il tab `Virgilio_Inbox` | spreadsheetId, sheetName opzionale | tab pronto con header canonico | `SpreadsheetApp`, `PropertiesService`, `caronte_bridge.gs` | Si | Rifiuta mismatch su tab gia popolati |
+| `virgilio_inbox.gs` | `caronteRegistraVirgilioInbox` | Intake metadata-only idempotente della inbox | payload con `manifest` e metadati Drive opzionali | create/update di una sola riga `Virgilio_Inbox` | `SpreadsheetApp`, `caronte_bridge.gs` | Si | usa `fingerprint` come chiave primaria e rifiuta path locali / binari |
 
 ### 2.2 Inventario Google Sheet attesi
 

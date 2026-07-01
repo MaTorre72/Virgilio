@@ -8,7 +8,8 @@ const CARONTE_DRY_RUN_SCHEMA = '1.0';
 const CARONTE_DRY_RUN_CONNECTOR = 'local_imap';
 const CARONTE_DRY_RUN_REQUESTED_ACTION = 'stage_attachments_in_limbo';
 const CARONTE_DRY_RUN_FORBIDDEN_FIELDS = [
-  'local_path', 'file_path', 'file_bytes', 'base64', 'content', 'raw'
+  'local_path', 'file_path', 'staged_path', 'manifest_path',
+  'file_bytes', 'base64', 'content', 'raw'
 ];
 const VIRGILIO_INBOX_DEFAULT_STATUS = 'da_lavorare';
 const VIRGILIO_INBOX_FIELDS = [

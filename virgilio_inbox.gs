@@ -3,6 +3,7 @@
 const VIRGILIO_INBOX_SPREADSHEET_PROPERTY = 'VIRGILIO_INBOX_SPREADSHEET_ID';
 const VIRGILIO_INBOX_SHEET_PROPERTY = 'VIRGILIO_INBOX_SHEET_NAME';
 const VIRGILIO_INBOX_DEFAULT_SHEET = 'Virgilio_Inbox';
+const VIRGILIO_INBOX_INTAKE_ACTION = 'intake_virgilio_inbox';
 const VIRGILIO_INBOX_COLUMN_WIDTHS = [
   170, 170, 120, 220, 150, 220, 220, 130, 150, 170, 170,
   220, 220, 170, 170, 240, 220, 180, 180, 180, 240, 280
@@ -13,6 +14,7 @@ function caronteGetVirgilioInboxSchema() {
     spreadsheet_property: VIRGILIO_INBOX_SPREADSHEET_PROPERTY,
     sheet_property: VIRGILIO_INBOX_SHEET_PROPERTY,
     default_sheet_name: VIRGILIO_INBOX_DEFAULT_SHEET,
+    intake_action: VIRGILIO_INBOX_INTAKE_ACTION,
     fields: VIRGILIO_INBOX_FIELDS.slice(),
   };
 }
@@ -41,6 +43,55 @@ function caronteSetupVirgilioInbox(spreadsheetId, sheetName) {
     header_action: headerState.action,
     fields: VIRGILIO_INBOX_FIELDS.slice(),
   };
+}
+
+function caronteRegistraVirgilioInbox(payload) {
+  const validation = _virgilioInboxValidateIntakePayload_(payload);
+  if (!validation.ok) return validation.response;
+
+  try {
+    const spreadsheetId = _virgilioInboxResolveSpreadsheetId_();
+    const sheetName = _virgilioInboxResolveSheetName_();
+    const ss = SpreadsheetApp.openById(spreadsheetId);
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      return _virgilioInboxIntakeResponse_(
+        payload, false, '', false, false, false, 0,
+        'Tab Virgilio_Inbox non presente; eseguire prima il setup esplicito.',
+        [_driveStagingError_(
+          'VIRGILIO_INBOX_NOT_CONFIGURED',
+          'Creare il tab con caronteSetupVirgilioInbox prima della presa in carico.'
+        )]
+      );
+    }
+
+    _virgilioInboxEnsureHeader_(sheet, VIRGILIO_INBOX_FIELDS);
+    const draft = caronteBuildVirgilioInboxDraftFromManifest(payload.manifest, {
+      drive_file_id: _virgilioInboxStringOrEmpty_(payload.drive_file_id),
+      manifest_file_id: _virgilioInboxStringOrEmpty_(payload.manifest_file_id),
+      form_url: _virgilioInboxStringOrEmpty_(payload.form_url),
+    });
+    const result = _virgilioInboxUpsertDraft_(sheet, draft, {
+      now: new Date(),
+    });
+    return _virgilioInboxIntakeResponse_(
+      payload, true, result.inbox_id, result.created, result.updated,
+      result.idempotent, result.row,
+      result.idempotent
+        ? 'Presa in carico inbox gia registrata; nessuna duplicazione creata.'
+        : 'Presa in carico inbox registrata senza contenuti binari o path locali.',
+      []
+    );
+  } catch (err) {
+    return _virgilioInboxIntakeResponse_(
+      payload, false, '', false, false, false, 0,
+      'Presa in carico inbox non completata.',
+      [_driveStagingError_(
+        'VIRGILIO_INBOX_WRITE_FAILED',
+        _virgilioInboxStringOrEmpty_(err && err.message) || 'Scrittura Virgilio_Inbox non riuscita.'
+      )]
+    );
+  }
 }
 
 function _virgilioInboxResolveSpreadsheetId_(spreadsheetId) {
@@ -92,6 +143,210 @@ function _virgilioInboxEnsureHeader_(sheet, headers) {
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   _virgilioInboxFormatSheet_(sheet, headers.length);
   return { action: 'rewritten' };
+}
+
+function _virgilioInboxValidateIntakePayload_(payload) {
+  const errors = [];
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    errors.push(_driveStagingError_('INVALID_PAYLOAD', 'Payload Virgilio_Inbox non valido.'));
+  } else {
+    if (payload.action !== VIRGILIO_INBOX_INTAKE_ACTION) {
+      errors.push(_driveStagingError_('INVALID_ACTION', 'action non supportata.'));
+    }
+    const forbidden = _caronteDryRunFindForbidden_(payload, '$');
+    forbidden.forEach(path => {
+      errors.push(_driveStagingError_(
+        'FORBIDDEN_FIELD',
+        `Campo vietato nel payload metadata-only: ${path}`
+      ));
+    });
+    if (!payload.manifest || typeof payload.manifest !== 'object' || Array.isArray(payload.manifest)) {
+      errors.push(_driveStagingError_('INVALID_MANIFEST', 'manifest obbligatorio.'));
+    } else {
+      const draft = caronteBuildVirgilioInboxDraftFromManifest(payload.manifest, {
+        drive_file_id: _virgilioInboxStringOrEmpty_(payload.drive_file_id),
+        manifest_file_id: _virgilioInboxStringOrEmpty_(payload.manifest_file_id),
+        form_url: _virgilioInboxStringOrEmpty_(payload.form_url),
+      });
+      if (!draft.attachment_id) {
+        errors.push(_driveStagingError_('MISSING_ATTACHMENT_ID', 'attachment_id mancante nel manifest.'));
+      }
+      if (!draft.sha256 || !/^[0-9a-f]{64}$/.test(draft.sha256)) {
+        errors.push(_driveStagingError_('INVALID_SHA256', 'sha256 non valido.'));
+      }
+      if (!draft.fingerprint && !draft.attachment_id) {
+        errors.push(_driveStagingError_(
+          'MISSING_IDEMPOTENCY_KEY',
+          'fingerprint o attachment_id obbligatori per idempotenza.'
+        ));
+      }
+      ['drive_file_id', 'manifest_file_id'].forEach(field => {
+        const value = _virgilioInboxStringOrEmpty_(payload[field]);
+        if (value && /[\\/]/.test(value)) {
+          errors.push(_driveStagingError_('INVALID_FIELD', `${field} non puo contenere path.`));
+        }
+      });
+    }
+  }
+  return {
+    ok: errors.length === 0,
+    response: errors.length === 0
+      ? null
+      : _virgilioInboxIntakeResponse_(
+        payload || {}, false, '', false, false, false, 0,
+        'Richiesta intake inbox rifiutata.', errors
+      )
+  };
+}
+
+function _virgilioInboxUpsertDraft_(sheet, draft, options) {
+  const settings = options && typeof options === 'object' && !Array.isArray(options)
+    ? options
+    : {};
+  const existing = _virgilioInboxFindExistingRow_(
+    sheet,
+    _virgilioInboxEntryKey_(draft),
+    _virgilioInboxStringOrEmpty_(draft.sha256)
+  );
+  if (existing.conflict) {
+    throw new Error(existing.conflict);
+  }
+  if (existing.row > 0) {
+    const merged = _virgilioInboxMergeEntry_(existing.entry, draft);
+    const changed = !_virgilioInboxEntriesEqual_(existing.entry, merged);
+    if (changed) {
+      _virgilioInboxWriteEntry_(sheet, existing.row, merged);
+    }
+    return {
+      inbox_id: merged.inbox_id,
+      row: existing.row,
+      created: false,
+      updated: changed,
+      idempotent: !changed,
+    };
+  }
+
+  const newEntry = _virgilioInboxMergeEntry_({}, draft);
+  newEntry.inbox_id = _virgilioInboxGenerateId_(settings.now, settings.inboxIdFactory);
+  _virgilioInboxAppendEntry_(sheet, newEntry);
+  return {
+    inbox_id: newEntry.inbox_id,
+    row: sheet.getLastRow(),
+    created: true,
+    updated: false,
+    idempotent: false,
+  };
+}
+
+function _virgilioInboxFindExistingRow_(sheet, key, sha256) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { row: 0, entry: null, conflict: '' };
+  const values = sheet.getRange(2, 1, lastRow - 1, VIRGILIO_INBOX_FIELDS.length).getValues();
+  let match = null;
+  for (let index = 0; index < values.length; index += 1) {
+    const rowNumber = index + 2;
+    const entry = _virgilioInboxEntryFromRow_(values[index]);
+    const entryKey = _virgilioInboxEntryKey_(entry);
+    if (!entryKey) continue;
+    if (entryKey !== key) continue;
+    if (match) {
+      return { row: 0, entry: null, conflict: 'Chiave inbox duplicata su piu righe esistenti.' };
+    }
+    if (_virgilioInboxStringOrEmpty_(entry.sha256) !== sha256) {
+      return {
+        row: 0,
+        entry: null,
+        conflict: 'Fingerprint o attachment_id gia registrato con SHA-256 differente.',
+      };
+    }
+    match = { row: rowNumber, entry: entry, conflict: '' };
+  }
+  return match || { row: 0, entry: null, conflict: '' };
+}
+
+function _virgilioInboxEntryKey_(entry) {
+  const fingerprint = _virgilioInboxStringOrEmpty_(entry && entry.fingerprint);
+  if (fingerprint) return `fingerprint:${fingerprint}`;
+  const attachmentId = _virgilioInboxStringOrEmpty_(entry && entry.attachment_id);
+  return attachmentId ? `attachment_id:${attachmentId}` : '';
+}
+
+function _virgilioInboxMergeEntry_(existing, draft) {
+  const merged = {};
+  VIRGILIO_INBOX_FIELDS.forEach(field => {
+    const currentValue = _virgilioInboxStringOrEmpty_(existing && existing[field]);
+    const draftValue = _virgilioInboxStringOrEmpty_(draft && draft[field]);
+    switch (field) {
+      case 'inbox_id':
+        merged[field] = currentValue || draftValue;
+        break;
+      case 'created_at':
+        merged[field] = currentValue || draftValue;
+        break;
+      case 'status':
+        merged[field] = currentValue || draftValue || VIRGILIO_INBOX_DEFAULT_STATUS;
+        break;
+      case 'suggested_cliente':
+      case 'suggested_sito':
+      case 'suggested_pratica':
+      case 'form_url':
+        merged[field] = currentValue || draftValue;
+        break;
+      default:
+        merged[field] = draftValue || currentValue;
+        break;
+    }
+  });
+  return merged;
+}
+
+function _virgilioInboxEntriesEqual_(left, right) {
+  return VIRGILIO_INBOX_FIELDS.every(field =>
+    _virgilioInboxStringOrEmpty_(left && left[field]) ===
+      _virgilioInboxStringOrEmpty_(right && right[field])
+  );
+}
+
+function _virgilioInboxEntryFromRow_(row) {
+  const entry = {};
+  VIRGILIO_INBOX_FIELDS.forEach((field, index) => {
+    entry[field] = _virgilioInboxStringOrEmpty_(row && row[index]);
+  });
+  return entry;
+}
+
+function _virgilioInboxWriteEntry_(sheet, row, entry) {
+  sheet.getRange(row, 1, 1, VIRGILIO_INBOX_FIELDS.length)
+    .setValues([_virgilioInboxEntryToRow_(entry)]);
+}
+
+function _virgilioInboxAppendEntry_(sheet, entry) {
+  sheet.appendRow(_virgilioInboxEntryToRow_(entry));
+}
+
+function _virgilioInboxEntryToRow_(entry) {
+  return VIRGILIO_INBOX_FIELDS.map(field => _virgilioInboxStringOrEmpty_(entry[field]));
+}
+
+function _virgilioInboxGenerateId_(now, customFactory) {
+  if (typeof customFactory === 'function') return customFactory();
+  const prefix = Utilities.formatDate(now || new Date(), 'UTC', "yyyyMMddHHmmss");
+  return `inbox-${prefix}-${Utilities.getUuid()}`;
+}
+
+function _virgilioInboxIntakeResponse_(payload, ok, inboxId, created, updated,
+                                       idempotent, row, message, errors) {
+  return {
+    ok: ok,
+    action: payload && payload.action || '',
+    inbox_id: inboxId,
+    created: created === true,
+    updated: updated === true,
+    idempotent: idempotent === true,
+    row: Number.isInteger(row) ? row : 0,
+    message: message,
+    errors: Array.isArray(errors) ? errors : [],
+  };
 }
 
 function _virgilioInboxFormatSheet_(sheet, headerLength) {
@@ -148,18 +403,88 @@ function testVirgilioInboxSchema() {
     failed = err.message.indexOf('incompatibile') >= 0;
   }
   _driveStagingAssert_(failed, 'mismatch con dati esistenti');
+
+  const payload = {
+    action: VIRGILIO_INBOX_INTAKE_ACTION,
+    manifest: _caronteInboxManifestSample_(),
+    drive_file_id: 'drive-1',
+    manifest_file_id: 'manifest-1',
+  };
+  _driveStagingAssert_(_virgilioInboxValidateIntakePayload_(payload).ok, 'payload intake valido');
+
+  const rows = [VIRGILIO_INBOX_FIELDS.slice()];
+  const fakeSheet = _virgilioInboxFakeSheet_(1, rows);
+  const createdEntry = _virgilioInboxUpsertDraft_(
+    fakeSheet,
+    caronteBuildVirgilioInboxDraftFromManifest(payload.manifest, {
+      drive_file_id: payload.drive_file_id,
+      manifest_file_id: payload.manifest_file_id,
+    }),
+    { inboxIdFactory: () => 'inbox-fixed-1' }
+  );
+  _driveStagingAssert_(createdEntry.created && createdEntry.row === 2, 'riga inbox creata');
+  _driveStagingAssert_(rows[1][0] === 'inbox-fixed-1', 'inbox_id assegnato');
+
+  const retry = _virgilioInboxUpsertDraft_(
+    fakeSheet,
+    caronteBuildVirgilioInboxDraftFromManifest(payload.manifest, {
+      drive_file_id: payload.drive_file_id,
+      manifest_file_id: payload.manifest_file_id,
+    }),
+    { inboxIdFactory: () => 'inbox-fixed-2' }
+  );
+  _driveStagingAssert_(retry.idempotent && !retry.created && rows.length === 2,
+    'retry idempotente senza duplicati');
+
+  const updatedManifest = _caronteInboxManifestSample_();
+  updatedManifest.note = 'nota aggiornata';
+  const updated = _virgilioInboxUpsertDraft_(
+    fakeSheet,
+    caronteBuildVirgilioInboxDraftFromManifest(updatedManifest, {
+      drive_file_id: payload.drive_file_id,
+      manifest_file_id: payload.manifest_file_id,
+    }),
+    { inboxIdFactory: () => 'inbox-fixed-3' }
+  );
+  _driveStagingAssert_(updated.updated && rows[1][21] === 'note=nota aggiornata; status_reason=fake clean; source_mailbox=Virgilio/da-traghettare; source_message_date=2026-06-25T10:00:00+00:00; scan_result=clean; policy_rule=solo-pdf',
+    'update stesso record');
+
+  let conflict = false;
+  try {
+    const conflicting = _caronteInboxManifestSample_();
+    conflicting.sha256 = 'b'.repeat(64);
+    _virgilioInboxUpsertDraft_(fakeSheet,
+      caronteBuildVirgilioInboxDraftFromManifest(conflicting, {}),
+      { inboxIdFactory: () => 'inbox-fixed-4' });
+  } catch (err) {
+    conflict = err.message.indexOf('SHA-256 differente') >= 0;
+  }
+  _driveStagingAssert_(conflict, 'conflitto sha256');
   Logger.log('testVirgilioInboxSchema: OK');
 }
 
 function _virgilioInboxFakeSheet_(lastRow, rows) {
   return {
     rows: rows,
+    getName: () => VIRGILIO_INBOX_DEFAULT_SHEET,
     appendRow: row => rows.push(row),
     getLastRow: () => lastRow === 0 ? rows.length : Math.max(lastRow, rows.length),
-    getRange: (row, column) => ({
-      getValues: () => [rows[row - 1] || []],
+    getRange: (row, column, numRows, numColumns) => ({
+      getValues: () => {
+        if (numRows && numColumns) {
+          return rows.slice(row - 1, row - 1 + numRows)
+            .map(value => (value || []).slice(column - 1, column - 1 + numColumns));
+        }
+        return [rows[row - 1] || []];
+      },
       setValues: values => {
-        rows[row - 1] = values[0].slice();
+        for (let index = 0; index < values.length; index += 1) {
+          const targetRow = row - 1 + index;
+          rows[targetRow] = rows[targetRow] || [];
+          for (let columnIndex = 0; columnIndex < values[index].length; columnIndex += 1) {
+            rows[targetRow][column - 1 + columnIndex] = values[index][columnIndex];
+          }
+        }
       },
       setFontWeight: () => ({
         setBackground: () => ({
