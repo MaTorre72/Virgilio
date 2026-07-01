@@ -1,8 +1,9 @@
-"""Read-only readiness checks for Bucoliche and a controlled local pilot."""
+"""Read-only readiness checks for Bucoliche and controlled local pilot flows."""
 
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -13,11 +14,14 @@ from .bucoliche import (BucolicheConfig, BucolicheError, CONFLICT_COLUMNS,
                         EVENT_COLUMNS, STATE_COLUMNS, BucolicheAppendOnlyAdapter,
                         GoogleSheetsAppendClient,
                         build_google_sheets_client)
+from .completion import AckCompletedMessagesResult, ControlledAckRunner
+from .doctor import DoctorResult, LocalDoctor
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, LocalStorageConfig
 from .pipeline import LocalPipelineRunner
 from .traceability import load_rules
 from .traceability import central_event_rows
+from .traceability import LocalConflictChecker
 from .readonly_state import ensure_state_db
 
 
@@ -399,6 +403,294 @@ class PilotSafeRunner:
                 "python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml",
             ),
         )
+
+
+@dataclass(frozen=True, slots=True)
+class PilotRunV11Result:
+    timestamp: str
+    dry_run: bool
+    doctor_status: str
+    pipeline_status: str
+    conflicts_count: int
+    bucoliche_events_exported: int
+    bucoliche_already_exported: int
+    bucoliche_state_rows: int
+    ack_gate_status: str
+    ack_messages_planned: int
+    ack_completed: int
+    ack_failed: int
+    ack_skip_reason: str | None
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+    final_status: str
+    next_action: str
+    report_path: str | None = None
+
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), ensure_ascii=False, separators=(",", ":"))
+
+
+class PilotRunV11Runner:
+    def __init__(self, *,
+                 accounts: tuple[LocalImapAccount, ...],
+                 paths: LocalDataPaths,
+                 doctor_runner: LocalDoctor,
+                 pipeline_factory: Callable[[], LocalPipelineRunner],
+                 conflict_checker_factory: Callable[[], LocalConflictChecker],
+                 export_factory: Callable[[], BucolicheAppendOnlyAdapter],
+                 ack_factory: Callable[[], ControlledAckRunner]) -> None:
+        self.accounts = accounts
+        self.paths = paths
+        self.doctor_runner = doctor_runner
+        self.pipeline_factory = pipeline_factory
+        self.conflict_checker_factory = conflict_checker_factory
+        self.export_factory = export_factory
+        self.ack_factory = ack_factory
+
+    def run(self, *, dry_run: bool) -> PilotRunV11Result:
+        timestamp = datetime.now(timezone.utc).isoformat()
+        warnings: list[str] = []
+        errors: list[str] = []
+        doctor_status = "NOT_RUN"
+        pipeline_status = "NOT_RUN"
+        conflicts_count = 0
+        events_exported = 0
+        already_exported = 0
+        state_rows = 0
+        ack_gate_status = "NOT_RUN"
+        ack_messages_planned = 0
+        ack_completed = 0
+        ack_failed = 0
+        ack_skip_reason: str | None = None
+
+        doctor = self.doctor_runner.run()
+        doctor_status = doctor.status
+        warnings.extend(doctor.warnings)
+        if doctor.status not in {"READY", "READY_WITH_WARNINGS"}:
+            errors.extend(doctor.errors)
+            return self._finalize(
+                timestamp=timestamp,
+                dry_run=dry_run,
+                doctor_status=doctor_status,
+                pipeline_status=pipeline_status,
+                conflicts_count=conflicts_count,
+                events_exported=events_exported,
+                already_exported=already_exported,
+                state_rows=state_rows,
+                ack_gate_status="SKIPPED_DOCTOR_BLOCKED",
+                ack_messages_planned=ack_messages_planned,
+                ack_completed=ack_completed,
+                ack_failed=ack_failed,
+                ack_skip_reason="doctor_blocked",
+                errors=errors,
+                warnings=warnings,
+                final_status="BLOCKED",
+                next_action="Correggi la configurazione locale e riesegui il pilot-run.",
+            )
+
+        pipeline = self.pipeline_factory().run(dry_run=dry_run)
+        pipeline_status = pipeline.status
+        warnings.extend(pipeline.warnings)
+        if pipeline.errors:
+            errors.extend(pipeline.errors)
+            return self._finalize(
+                timestamp=timestamp,
+                dry_run=dry_run,
+                doctor_status=doctor_status,
+                pipeline_status=pipeline_status,
+                conflicts_count=conflicts_count,
+                events_exported=events_exported,
+                already_exported=already_exported,
+                state_rows=state_rows,
+                ack_gate_status="SKIPPED_PIPELINE_BLOCKED",
+                ack_messages_planned=ack_messages_planned,
+                ack_completed=ack_completed,
+                ack_failed=ack_failed,
+                ack_skip_reason="pipeline_blocked",
+                errors=errors,
+                warnings=warnings,
+                final_status="BLOCKED",
+                next_action="Correggi la pipeline locale e riesegui prima dell'export Bucoliche.",
+            )
+
+        conflict_payload = self.conflict_checker_factory().check()
+        conflicts = tuple(conflict_payload.get("conflicts", ()))
+        conflicts_count = len(conflicts)
+        if conflicts_count:
+            errors.append("local conflicts detected; ack skipped")
+            return self._finalize(
+                timestamp=timestamp,
+                dry_run=dry_run,
+                doctor_status=doctor_status,
+                pipeline_status=pipeline_status,
+                conflicts_count=conflicts_count,
+                events_exported=events_exported,
+                already_exported=already_exported,
+                state_rows=state_rows,
+                ack_gate_status="SKIPPED_CONFLICTS",
+                ack_messages_planned=ack_messages_planned,
+                ack_completed=ack_completed,
+                ack_failed=ack_failed,
+                ack_skip_reason="conflicts_detected",
+                errors=errors,
+                warnings=warnings,
+                final_status="BLOCKED",
+                next_action="Risolvi i conflitti locali e riesegui prima dell'ack.",
+            )
+
+        export_adapter = self.export_factory()
+        export_result = export_adapter.export(dry_run=dry_run)
+        events_exported = export_result.events_exported
+        already_exported = export_result.already_exported
+        state_rows = export_adapter.refresh_state(dry_run=True).state_rows_total
+        if export_result.errors:
+            errors.extend(export_result.errors)
+            return self._finalize(
+                timestamp=timestamp,
+                dry_run=dry_run,
+                doctor_status=doctor_status,
+                pipeline_status=pipeline_status,
+                conflicts_count=conflicts_count,
+                events_exported=events_exported,
+                already_exported=already_exported,
+                state_rows=state_rows,
+                ack_gate_status="SKIPPED_EXPORT_FAILED",
+                ack_messages_planned=ack_messages_planned,
+                ack_completed=ack_completed,
+                ack_failed=ack_failed,
+                ack_skip_reason="export_failed",
+                errors=errors,
+                warnings=warnings,
+                final_status="BLOCKED",
+                next_action="Correggi l'export Bucoliche e riesegui; l'ack resta fermo.",
+            )
+
+        if not any(account.enabled and account.ack_enabled for account in self.accounts):
+            ack_gate_status = "SKIPPED"
+            ack_skip_reason = "ack_enabled_false"
+            warnings.append("ack skipped: ack_enabled_false")
+        else:
+            ack_preview = self.ack_factory().run(dry_run=True)
+            warnings.extend(ack_preview.warnings)
+            ack_messages_planned = ack_preview.messages_planned
+            ack_completed = _ack_completed_count(ack_preview)
+            ack_failed = _ack_failed_count(ack_preview)
+            if ack_preview.gate_status == "BLOCKED":
+                errors.extend(ack_preview.errors)
+                return self._finalize(
+                    timestamp=timestamp,
+                    dry_run=dry_run,
+                    doctor_status=doctor_status,
+                    pipeline_status=pipeline_status,
+                    conflicts_count=conflicts_count,
+                    events_exported=events_exported,
+                    already_exported=already_exported,
+                    state_rows=state_rows,
+                    ack_gate_status="BLOCKED",
+                    ack_messages_planned=ack_messages_planned,
+                    ack_completed=ack_completed,
+                    ack_failed=ack_failed,
+                    ack_skip_reason="ack_gate_blocked",
+                    errors=errors,
+                    warnings=warnings,
+                    final_status="BLOCKED",
+                    next_action="Correggi il gate ack locale e riesegui solo dopo un export Bucoliche pulito.",
+                )
+            if ack_messages_planned == 0:
+                ack_gate_status = "READY_NO_MESSAGES"
+                ack_skip_reason = "no_ackable_messages"
+                warnings.append("ack skipped: no_ackable_messages")
+            elif dry_run:
+                ack_gate_status = ack_preview.gate_status
+            else:
+                ack_result = self.ack_factory().run(dry_run=False)
+                warnings.extend(ack_result.warnings)
+                errors.extend(ack_result.errors)
+                ack_gate_status = ack_result.gate_status
+                ack_messages_planned = ack_result.messages_planned
+                ack_completed = _ack_completed_count(ack_result)
+                ack_failed = _ack_failed_count(ack_result)
+                if ack_failed:
+                    errors.append("ack completed with failures; no automatic rollback")
+
+        final_status = "READY_DRY_RUN" if dry_run else "OK"
+        next_action = "Esegui il run reale quando il dry-run e' pulito." if dry_run else (
+            "Ripeti subito un secondo run consecutivo per confermare 0 nuovi eventi e already_exported coerente."
+        )
+        if (not dry_run and events_exported == 0 and already_exported > 0
+                and ack_messages_planned == 0 and ack_failed == 0):
+            final_status = "OK_NO_NEW_WORK"
+            next_action = "Nessuna nuova azione: il secondo run conferma l'idempotenza locale."
+        elif ack_failed:
+            final_status = "ACK_FAILED"
+            next_action = "Controlla il report dell'ack e riesegui dopo la correzione senza rollback automatici."
+
+        return self._finalize(
+            timestamp=timestamp,
+            dry_run=dry_run,
+            doctor_status=doctor_status,
+            pipeline_status=pipeline_status,
+            conflicts_count=conflicts_count,
+            events_exported=events_exported,
+            already_exported=already_exported,
+            state_rows=state_rows,
+            ack_gate_status=ack_gate_status,
+            ack_messages_planned=ack_messages_planned,
+            ack_completed=ack_completed,
+            ack_failed=ack_failed,
+            ack_skip_reason=ack_skip_reason,
+            errors=errors,
+            warnings=warnings,
+            final_status=final_status,
+            next_action=next_action,
+        )
+
+    def _finalize(self, *, timestamp: str, dry_run: bool, doctor_status: str,
+                  pipeline_status: str, conflicts_count: int, events_exported: int,
+                  already_exported: int, state_rows: int, ack_gate_status: str,
+                  ack_messages_planned: int, ack_completed: int, ack_failed: int,
+                  ack_skip_reason: str | None, errors: list[str], warnings: list[str],
+                  final_status: str, next_action: str) -> PilotRunV11Result:
+        result = PilotRunV11Result(
+            timestamp=timestamp,
+            dry_run=dry_run,
+            doctor_status=doctor_status,
+            pipeline_status=pipeline_status,
+            conflicts_count=conflicts_count,
+            bucoliche_events_exported=events_exported,
+            bucoliche_already_exported=already_exported,
+            bucoliche_state_rows=state_rows,
+            ack_gate_status=ack_gate_status,
+            ack_messages_planned=ack_messages_planned,
+            ack_completed=ack_completed,
+            ack_failed=ack_failed,
+            ack_skip_reason=ack_skip_reason,
+            errors=tuple(errors),
+            warnings=tuple(warnings),
+            final_status=final_status,
+            next_action=next_action,
+        )
+        return PilotRunV11Result(**{
+            **asdict(result),
+            "report_path": self._write_report(result),
+        })
+
+    def _write_report(self, result: PilotRunV11Result) -> str:
+        reports = self.paths.root / "reports"
+        reports.mkdir(parents=True, exist_ok=True)
+        name = datetime.now(timezone.utc).strftime("pilot_run_v11_%Y%m%d_%H%M%S.json")
+        path = reports / name
+        path.write_text(json.dumps(asdict(result), ensure_ascii=False, indent=2), encoding="utf-8")
+        return path.relative_to(self.paths.root).as_posix()
+
+
+def _ack_completed_count(result: AckCompletedMessagesResult) -> int:
+    return sum(1 for item in result.results
+               if item.status in {"completed", "already_completed", "already_acked"})
+
+
+def _ack_failed_count(result: AckCompletedMessagesResult) -> int:
+    return sum(1 for item in result.results if item.status == "ack_failed")
 
 
 def _check(name: str, ok: bool) -> dict[str, str]:

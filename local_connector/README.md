@@ -612,6 +612,34 @@ SQLite resta il diario operativo primario; Bucoliche è una vista centrale condi
 La procedura manuale di triage e chiusura di questi casi e' descritta in
 [`docs/BUCOLICHE_CONFLICT_POLICY.md`](..\docs\BUCOLICHE_CONFLICT_POLICY.md).
 
+## Chiusura v1.1 - comando unico
+
+Per chiudere il pilot v1.1 con un solo comando esplicito:
+
+```powershell
+python -m virgilio_connector pilot-run --config accounts.local.yaml --dry-run --human
+python -m virgilio_connector pilot-run --config accounts.local.yaml --human
+virgilio pilot-run --config accounts.local.yaml --human
+```
+
+`pilot-run` riusa in sequenza `doctor`, `run-local-pipeline`,
+`check-local-conflicts`, `export-to-bucoliche`, il refresh di
+`Bucoliche_Stato` per il report locale e infine `ack-completed-messages`.
+Non duplica la logica operativa e non cambia la prudenza dell'ack:
+`add_done_label_only` fa solo `COPY` verso `done_folder`, senza rimuovere la
+mail da `input_folder`.
+
+Nel dry-run il doctor resta read-only, la pipeline gira in dry-run, export e
+refresh Bucoliche restano simulati e l'ack si ferma alla preview locale. Il run
+reale esegue l'ack solo dopo export Bucoliche riuscito e conflitti locali a
+zero. Se `ack_enabled: false`, il comando termina senza errore e segnala
+`ack skipped: ack_enabled_false`.
+
+Il report finale viene scritto in
+`.local_data/reports/pilot_run_v11_YYYYMMDD_HHMMSS.json`. Per considerare
+chiusa la v1.1 eseguire due run consecutivi: il secondo deve mostrare `0` nuovi
+eventi Bucoliche, `already_exported` coerente e nessuna nuova ack operativa.
+
 ## 10 comandi essenziali
 
 I comandi sotto coprono il flusso locale minimo della v1.1 e restano allineati
@@ -620,9 +648,9 @@ alla CLI attuale del repository.
 1. `virgilio init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging`
 2. `python -m virgilio_connector doctor --config accounts.local.yaml --human`
 3. `virgilio pilot --config accounts.local.yaml --human`
-4. `python -m virgilio_connector pilot-run-safe --config accounts.local.yaml --human`
+4. `python -m virgilio_connector pilot-run --config accounts.local.yaml --dry-run --human`
 5. `python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human`
-6. `python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --human`
+6. `python -m virgilio_connector pilot-run --config accounts.local.yaml --human`
 7. `python -m virgilio_connector check-local-conflicts --config accounts.local.yaml`
 8. `python -m virgilio_connector export-central-events --config accounts.local.yaml --format jsonl`
 9. `python -m virgilio_connector refresh-bucoliche-state --config accounts.local.yaml --dry-run`

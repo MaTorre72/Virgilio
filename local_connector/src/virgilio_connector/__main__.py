@@ -53,7 +53,7 @@ from .parser_spike import (compare_parser_fixtures, extract_local_fixtures,
                            parser_spike_human_summary)
 from .pipeline import LocalPipelineRunner
 from .pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup, PilotCheck,
-                              PilotPreview, PilotSafeRunner,
+                              PilotPreview, PilotRunV11Runner, PilotSafeRunner,
                               has_bucoliche_section)
 from .scanner import select_scanner
 from .storage_adapter import LocalFilesystemStorageAdapter, StorageAdapterError
@@ -139,6 +139,50 @@ def _doctor_human_summary(result) -> list[str]:
     if result.suggested_next_commands:
         lines.append(f"Prossimo comando: {result.suggested_next_commands[0]}")
     return lines
+
+
+def _pilot_run_v11_human_summary(result) -> list[str]:
+    config_status = "BLOCKED" if result.doctor_status == "BLOCKED" else "OK"
+    pipeline_status = "ERROR" if "error" in result.pipeline_status else "OK"
+    ack_suffix = ""
+    if result.ack_skip_reason:
+        ack_suffix = f" / skipped ({result.ack_skip_reason})"
+    lines = [
+        f"Configurazione: {config_status} ({result.doctor_status})",
+        f"Pipeline: {pipeline_status} ({result.pipeline_status})",
+        f"Conflitti: {result.conflicts_count}",
+        ("Bucoliche: eventi nuovi {new} / gia esportati {existing}"
+         .format(new=result.bucoliche_events_exported,
+                 existing=result.bucoliche_already_exported)),
+        f"Stato: {result.bucoliche_state_rows} righe aggiornate",
+        ("Ack: {completed} completati / {failed} falliti / {planned} pianificati{suffix}"
+         .format(completed=result.ack_completed, failed=result.ack_failed,
+                 planned=result.ack_messages_planned, suffix=ack_suffix)),
+        f"Esito finale: {result.final_status}",
+        f"Prossima azione: {result.next_action}",
+    ]
+    for warning in result.warnings[:4]:
+        lines.append(f"Warning: {warning}")
+    for error in result.errors[:4]:
+        lines.append(f"Errore: {error}")
+    return lines[:20]
+
+
+def _build_local_pipeline_runner(accounts, storage_config, paths, config_path):
+    return LocalPipelineRunner(
+        accounts, paths=paths, config_path=config_path,
+        scanner_factory=lambda: MultiAccountReadonlyScanner(accounts, paths=paths),
+        processor_factory=lambda: MultiAccountImapProcessor(
+            accounts, paths=paths,
+            scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+            rules=load_rules(config_path),
+            max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
+        ),
+        storage_factory=lambda: LocalFilesystemStorageAdapter(
+            state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
+        ),
+        completion_factory=lambda: LocalCompletionRunner(accounts, paths=paths),
+    )
 
 
 def main() -> int:
@@ -242,6 +286,10 @@ def main() -> int:
     pilot_safe = commands.add_parser("pilot-run-safe")
     pilot_safe.add_argument("--config", type=Path, required=True)
     pilot_safe.add_argument("--human", action="store_true")
+    pilot_run = commands.add_parser("pilot-run")
+    pilot_run.add_argument("--config", type=Path, required=True)
+    pilot_run.add_argument("--dry-run", action="store_true")
+    pilot_run.add_argument("--human", action="store_true")
     pilot = commands.add_parser("pilot")
     pilot.add_argument("--config", type=Path, required=True)
     pilot.add_argument("--human", action="store_true")
@@ -622,19 +670,8 @@ def main() -> int:
                     config_path=args.config,
                     paths=paths,
                 ),
-                pipeline_factory=lambda: LocalPipelineRunner(
-                    accounts, paths=paths, config_path=args.config,
-                    scanner_factory=lambda: MultiAccountReadonlyScanner(accounts, paths=paths),
-                    processor_factory=lambda: MultiAccountImapProcessor(
-                        accounts, paths=paths,
-                        scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
-                        rules=load_rules(args.config),
-                        max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
-                    ),
-                    storage_factory=lambda: LocalFilesystemStorageAdapter(
-                        state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
-                    ),
-                    completion_factory=lambda: LocalCompletionRunner(accounts, paths=paths),
+                pipeline_factory=lambda: _build_local_pipeline_runner(
+                    accounts, storage_config, paths, args.config,
                 ),
                 export_factory=lambda: BucolicheAppendOnlyAdapter(
                     state_db=paths.state_db,
@@ -648,6 +685,40 @@ def main() -> int:
             return 2
         print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "pilot-run":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            accounts, storage_config, bucoliche_config, paths = _load_pilot_components(args.config)
+            result = PilotRunV11Runner(
+                accounts=accounts,
+                paths=paths,
+                doctor_runner=LocalDoctor(
+                    accounts, storage=storage_config, paths=LocalDataPaths(local_root),
+                    scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+                ),
+                pipeline_factory=lambda: _build_local_pipeline_runner(
+                    accounts, storage_config, paths, args.config,
+                ),
+                conflict_checker_factory=lambda: LocalConflictChecker(paths.state_db),
+                export_factory=lambda: BucolicheAppendOnlyAdapter(
+                    state_db=paths.state_db,
+                    config=bucoliche_config,
+                ),
+                ack_factory=lambda: ControlledAckRunner(
+                    accounts,
+                    paths=paths,
+                ),
+            ).run(dry_run=args.dry_run)
+        except (MultiAccountConfigError, BucolicheError, CompletionError,
+                FileNotFoundError, OSError, ValueError, sqlite3.Error) as exc:
+            payload = {"status": "BLOCKED", "errors": [str(exc)], "warnings": []}
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        if args.human:
+            _print_human(_pilot_run_v11_human_summary(result))
+        else:
+            print(result.to_json())
+        return 0 if result.final_status in {"READY_DRY_RUN", "OK", "OK_NO_NEW_WORK"} else 1
     if args.command == "pilot":
         try:
             accounts, storage_config, bucoliche_config, paths = _load_pilot_components(args.config)
@@ -667,19 +738,8 @@ def main() -> int:
             ).run()
             pilot_result = PilotSafeRunner(
                 pilot_check_runner=pilot_check_runner,
-                pipeline_factory=lambda: LocalPipelineRunner(
-                    accounts, paths=paths, config_path=args.config,
-                    scanner_factory=lambda: MultiAccountReadonlyScanner(accounts, paths=paths),
-                    processor_factory=lambda: MultiAccountImapProcessor(
-                        accounts, paths=paths,
-                        scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
-                        rules=load_rules(args.config),
-                        max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
-                    ),
-                    storage_factory=lambda: LocalFilesystemStorageAdapter(
-                        state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
-                    ),
-                    completion_factory=lambda: LocalCompletionRunner(accounts, paths=paths),
+                pipeline_factory=lambda: _build_local_pipeline_runner(
+                    accounts, storage_config, paths, args.config,
                 ),
                 export_factory=lambda: BucolicheAppendOnlyAdapter(
                     state_db=paths.state_db,

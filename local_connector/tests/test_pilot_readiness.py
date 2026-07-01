@@ -6,6 +6,8 @@ import tomllib
 import pytest
 
 from virgilio_connector.bucoliche import BucolicheConfig, CONFLICT_COLUMNS, EVENT_COLUMNS
+from virgilio_connector.completion import AckCompletedMessagesResult, CompletionResult
+from virgilio_connector.doctor import DoctorResult
 from virgilio_connector.local_paths import LocalDataPaths
 from virgilio_connector.multi_account import (
     LocalImapAccount,
@@ -14,7 +16,8 @@ from virgilio_connector.multi_account import (
     load_multi_account_config,
 )
 from virgilio_connector.pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup,
-                                                PilotCheck, PilotPreview, PilotSafeRunner)
+                                                PilotCheck, PilotPreview, PilotRunV11Runner,
+                                                PilotSafeRunner)
 from virgilio_connector.readonly_state import ReadonlyStateStore
 
 
@@ -50,17 +53,107 @@ class FakePipelineRunner:
 
 
 class FakeExportRunner:
-    def __init__(self, log, status="dry_run", errors=()):
+    def __init__(self, log, status="dry_run", errors=(), events_exported=3, already_exported=1):
         self.log = log
         self.status = status
         self.errors = tuple(errors)
+        self.events_exported = events_exported
+        self.already_exported = already_exported
 
     def export(self, *, dry_run):
         self.log.append(("export", dry_run))
         return type("ExportResult", (), {
             "status": self.status,
+            "events_total": self.events_exported + self.already_exported,
+            "events_pending": self.events_exported,
+            "events_exported": 0 if dry_run else self.events_exported,
+            "already_exported": self.already_exported,
+            "conflicts_pending": 0,
+            "preview": (),
             "errors": self.errors,
         })()
+
+    def refresh_state(self, *, dry_run):
+        self.log.append(("refresh_state", dry_run))
+        return type("RefreshResult", (), {
+            "status": "dry_run" if dry_run else "completed",
+            "state_rows_total": 4,
+            "errors": (),
+        })()
+
+
+class FakeDoctorRunner:
+    def __init__(self, status="READY", errors=(), warnings=()):
+        self.result = DoctorResult(status, tuple(errors), tuple(warnings), ())
+
+    def run(self):
+        return self.result
+
+
+class FakeConflictChecker:
+    def __init__(self, log, conflicts=()):
+        self.log = log
+        self.conflicts = tuple(conflicts)
+
+    def check(self):
+        self.log.append("conflicts")
+        return {
+            "status": "CONFLICTS" if self.conflicts else "OK",
+            "conflicts": list(self.conflicts),
+        }
+
+
+class FakeAckRunner:
+    def __init__(self, log, preview=None, real=None):
+        self.log = log
+        self.preview = preview or AckCompletedMessagesResult(
+            status="dry_run",
+            dry_run=True,
+            gate_status="READY",
+            messages_planned=1,
+            pending_export_events=0,
+            local_conflicts=0,
+            errors=(),
+            warnings=(),
+            results=(CompletionResult(
+                account_alias="test_box",
+                message_row_id=1,
+                message_uid="1",
+                message_id="<1@example.invalid>",
+                subject="msg",
+                staged_attachments=("att-1",),
+                status="planned",
+                dry_run=True,
+                ack_strategy="add_done_label_only",
+                reason="would mark as traghettata; input message not removed",
+            ),),
+        )
+        self.real = real or AckCompletedMessagesResult(
+            status="completed",
+            dry_run=False,
+            gate_status="READY",
+            messages_planned=1,
+            pending_export_events=0,
+            local_conflicts=0,
+            errors=(),
+            warnings=(),
+            results=(CompletionResult(
+                account_alias="test_box",
+                message_row_id=1,
+                message_uid="1",
+                message_id="<1@example.invalid>",
+                subject="msg",
+                staged_attachments=("att-1",),
+                status="completed",
+                dry_run=False,
+                ack_strategy="add_done_label_only",
+                reason="marcata come traghettata; messaggio non rimosso dalla cartella input",
+            ),),
+        )
+
+    def run(self, *, dry_run):
+        self.log.append(("ack", dry_run))
+        return self.preview if dry_run else self.real
 
 
 def sheets():
@@ -145,6 +238,31 @@ def pilot_fixture(tmp_path, *, ack=False, storage=True):
         environ={"TEST_USER": "user", "TEST_PASS": "secret"})
 
 
+def pilot_run_runner(tmp_path, *, ack=False, doctor_status="READY", pipeline=None,
+                     conflicts=(), export_status="completed", export_errors=(),
+                     export_events=3, export_already=1,
+                     ack_preview=None, ack_real=None):
+    root = tmp_path / ".local_data"
+    paths = LocalDataPaths(root)
+    log: list[object] = []
+    return PilotRunV11Runner(
+        accounts=(account(ack),),
+        paths=paths,
+        doctor_runner=FakeDoctorRunner(status=doctor_status),
+        pipeline_factory=lambda: FakePipelineRunner(
+            pipeline or FakePipelineResult(status="completed_with_warnings",
+                                           warnings=("storage: skipped_no_ready_attachments",)),
+            log,
+        ),
+        conflict_checker_factory=lambda: FakeConflictChecker(log, conflicts=conflicts),
+        export_factory=lambda: FakeExportRunner(
+            log, status=export_status, errors=export_errors,
+            events_exported=export_events, already_exported=export_already,
+        ),
+        ack_factory=lambda: FakeAckRunner(log, preview=ack_preview, real=ack_real),
+    ), log
+
+
 def test_pilot_check_valid_and_no_operational_effect(tmp_path):
     result = pilot_fixture(tmp_path).run()
     assert result.status == "READY_WITH_WARNINGS"
@@ -208,9 +326,116 @@ def test_pilot_run_safe_stops_before_export_on_pipeline_error(tmp_path):
     assert log == [("pipeline", True)]
 
 
+def test_pilot_run_v11_real_success_writes_report_and_acks(tmp_path):
+    runner, log = pilot_run_runner(tmp_path, ack=True)
+    result = runner.run(dry_run=False)
+    assert result.final_status == "OK"
+    assert result.doctor_status == "READY"
+    assert result.pipeline_status == "completed_with_warnings"
+    assert result.conflicts_count == 0
+    assert result.bucoliche_events_exported == 3
+    assert result.ack_gate_status == "READY"
+    assert result.ack_messages_planned == 1
+    assert result.ack_completed == 1
+    assert result.ack_failed == 0
+    assert result.report_path
+    assert log == [("pipeline", False), "conflicts", ("export", False), ("refresh_state", True),
+                   ("ack", True), ("ack", False)]
+    report = json.loads((tmp_path / ".local_data" / result.report_path).read_text(encoding="utf-8"))
+    assert report["final_status"] == "OK"
+    assert report["ack_completed"] == 1
+
+
+def test_pilot_run_v11_second_run_reports_ok_no_new_work(tmp_path):
+    preview = AckCompletedMessagesResult(
+        status="dry_run",
+        dry_run=True,
+        gate_status="READY",
+        messages_planned=0,
+        pending_export_events=0,
+        local_conflicts=0,
+        errors=(),
+        warnings=(),
+        results=(CompletionResult(
+            account_alias="test_box",
+            message_row_id=1,
+            message_uid="1",
+            message_id="<1@example.invalid>",
+            subject="msg",
+            staged_attachments=("att-1",),
+            status="already_completed",
+            dry_run=True,
+            ack_strategy="add_done_label_only",
+            reason="message already completed",
+        ),),
+    )
+    runner, log = pilot_run_runner(
+        tmp_path,
+        ack=True,
+        export_status="completed",
+        export_events=0,
+        export_already=4,
+        ack_preview=preview,
+    )
+    result = runner.run(dry_run=False)
+    assert result.final_status == "OK_NO_NEW_WORK"
+    assert result.bucoliche_events_exported == 0
+    assert result.ack_skip_reason == "no_ackable_messages"
+    assert result.ack_completed == 1
+    assert log == [("pipeline", False), "conflicts", ("export", False), ("refresh_state", True),
+                   ("ack", True)]
+
+
+def test_pilot_run_v11_conflicts_block_export_and_ack(tmp_path):
+    runner, log = pilot_run_runner(
+        tmp_path,
+        ack=True,
+        conflicts=({"attachment_id": "att-1", "fingerprint": "fp-1"},),
+    )
+    result = runner.run(dry_run=False)
+    assert result.final_status == "BLOCKED"
+    assert result.conflicts_count == 1
+    assert result.ack_skip_reason == "conflicts_detected"
+    assert log == [("pipeline", False), "conflicts"]
+
+
+def test_pilot_run_v11_export_failure_blocks_ack(tmp_path):
+    runner, log = pilot_run_runner(
+        tmp_path,
+        ack=True,
+        export_status="completed_with_errors",
+        export_errors=("evt-1: RuntimeError",),
+    )
+    result = runner.run(dry_run=False)
+    assert result.final_status == "BLOCKED"
+    assert result.errors == ("evt-1: RuntimeError",)
+    assert result.ack_skip_reason == "export_failed"
+    assert log == [("pipeline", False), "conflicts", ("export", False), ("refresh_state", True)]
+
+
+def test_pilot_run_v11_ack_disabled_is_skipped_without_error(tmp_path):
+    runner, log = pilot_run_runner(tmp_path, ack=False)
+    result = runner.run(dry_run=False)
+    assert result.final_status == "OK"
+    assert result.ack_gate_status == "SKIPPED"
+    assert result.ack_skip_reason == "ack_enabled_false"
+    assert "ack skipped: ack_enabled_false" in result.warnings
+    assert log == [("pipeline", False), "conflicts", ("export", False), ("refresh_state", True)]
+
+
+def test_pilot_run_v11_dry_run_keeps_ack_in_preview_only(tmp_path):
+    runner, log = pilot_run_runner(tmp_path, ack=True)
+    result = runner.run(dry_run=True)
+    assert result.final_status == "READY_DRY_RUN"
+    assert result.dry_run is True
+    assert result.ack_completed == 0
+    assert log == [("pipeline", True), "conflicts", ("export", True), ("refresh_state", True),
+                   ("ack", True)]
+
+
 def test_cli_commands_exist_and_missing_config_blocked(tmp_path, monkeypatch, capsys):
     from virgilio_connector.__main__ import main
-    for command in ("doctor-bucoliche", "pilot-check", "pilot-run-safe", "pilot"):
+    for command in ("doctor-bucoliche", "pilot-check", "pilot-run-safe", "pilot", "pilot-run"):
         monkeypatch.setattr(sys, "argv", ["virgilio_connector", command,
                                           "--config", str(tmp_path / "missing.yaml")])
         assert main() == 2
@@ -357,6 +582,52 @@ def test_pilot_cli_human_output_includes_snapshot(tmp_path, monkeypatch, capsys)
     assert "Esito pilot-run-safe: READY_WITH_WARNINGS (dry-run)" in text
     assert "Prossimo comando: preview-step" in text
     assert '"status"' not in text
+
+
+def test_pilot_run_cli_human_output_is_essential(tmp_path, monkeypatch, capsys):
+    import virgilio_connector.__main__ as cli
+
+    @dataclass
+    class FakePilotRunResult:
+        timestamp: str = "2026-07-01T12:00:00+00:00"
+        dry_run: bool = True
+        doctor_status: str = "READY_WITH_WARNINGS"
+        pipeline_status: str = "completed_with_warnings"
+        conflicts_count: int = 0
+        bucoliche_events_exported: int = 2
+        bucoliche_already_exported: int = 5
+        bucoliche_state_rows: int = 7
+        ack_gate_status: str = "READY"
+        ack_messages_planned: int = 1
+        ack_completed: int = 0
+        ack_failed: int = 0
+        ack_skip_reason: str | None = None
+        errors: tuple[str, ...] = ()
+        warnings: tuple[str, ...] = ("ack skipped: no_ackable_messages",)
+        final_status: str = "READY_DRY_RUN"
+        next_action: str = "Esegui il run reale quando il dry-run e' pulito."
+        report_path: str | None = "reports/pilot_run_v11_20260701_120000.json"
+
+    class FakePilotRunRunner:
+        def __init__(self, **kwargs):
+            pass
+
+        def run(self, *, dry_run):
+            assert dry_run is True
+            return FakePilotRunResult()
+
+    monkeypatch.setattr(cli, "_load_pilot_components",
+                        lambda config: ((account(True),), "storage", "bucoliche", "paths"))
+    monkeypatch.setattr(cli, "PilotRunV11Runner", FakePilotRunRunner)
+    monkeypatch.setattr(sys, "argv", ["virgilio", "pilot-run", "--config",
+                                      str(tmp_path / "accounts.yaml"), "--dry-run", "--human"])
+
+    assert cli.main() == 0
+    text = capsys.readouterr().out
+    assert "Configurazione: OK (READY_WITH_WARNINGS)" in text
+    assert "Pipeline: OK (completed_with_warnings)" in text
+    assert "Bucoliche: eventi nuovi 2 / gia esportati 5" in text
+    assert "Esito finale: READY_DRY_RUN" in text
 
 
 def test_init_config_cli_writes_valid_template(tmp_path, monkeypatch, capsys):
