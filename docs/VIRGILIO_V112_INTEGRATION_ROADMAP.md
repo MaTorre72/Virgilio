@@ -48,7 +48,8 @@ Conseguenza pratica:
 | `setup.gs` | `mostraVirgilio` | Apre il form in dialog modal | nessuno | finestra dialog | `SpreadsheetApp`, `_creaOutputVirgilio_` | Si | Entry point umano interno |
 | `setup.gs` | `caronteSetupCredenziali` | Scrive segnaposto nelle Script Properties | nessuno | credenziali placeholder | `PropertiesService`, `Logger` | Si | Solo setup manuale |
 | `setup.gs` | `generaToken` | Genera token per `VIRGILIO_TOKEN` | nessuno | token in log | `Utilities`, `Logger` | Si | Da copiare in setup credenziali |
-| `setup.gs` | `caronteStatoCredenziali` | Mostra lo stato delle props | nessuno | log diagnostico | `PropertiesService`, `Logger` | Si | Non stampa valori |
+| `setup.gs` | `caronteStatoCredenziali` | Mostra lo stato delle props | nessuno | log diagnostico con riepilogo operativo | `PropertiesService`, `Logger` | Si | Non stampa valori |
+| `setup.gs` | `caronteStatoConfigurazione` | Riepiloga credenziali, URL e hint operativi | nessuno | log diagnostico unico | `PropertiesService`, `Logger` | Si | Non stampa valori sensibili |
 | `setup.gs` | `caronteResetCredenziali` | Rimuove tutte le props | nessuno | props cancellate | `PropertiesService`, `Logger` | Si | Da usare solo per rotazione completa |
 | `caronte.gs` | `doPost` | Endpoint webhook principale | JSON POST | JSON risposta | `ContentService`, `PropertiesService`, `DriveApp`, `GmailApp`, `notifiche.gs`, `bucoliche.gs` | Si | Gestisce anche i rami dry-run locali |
 | `caronte.gs` | `apriPraticaDaVirgilio` | Bridge interno senza deploy pubblico | dati form | risposta JSON parsata | `doPost`, `CONFIG` | Si | Simula la Web App dal dialog |

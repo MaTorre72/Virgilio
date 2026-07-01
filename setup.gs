@@ -87,6 +87,61 @@ function caronteStatoTrigger() {
   }
 }
 
+/**
+ * Mostra un riepilogo sintetico della configurazione operativa.
+ *
+ * Le informazioni sensibili non vengono mai stampate: il log indica solo
+ * se ogni valore richiesto e' presente e quale passo fare in caso contrario.
+ */
+function caronteStatoConfigurazione() {
+  const props = PropertiesService.getScriptProperties();
+  const controlli = [
+    {
+      chiave: 'VIRGILIO_TOKEN',
+      etichetta: 'Token Virgilio',
+      hint: "Eseguire generaToken() e poi caronteSetupCredenziali().",
+    },
+    {
+      chiave: 'WEBHOOK_CHAT',
+      etichetta: 'Webhook Google Chat',
+      hint: "Inserire l'URL del webhook nella setup credenziali.",
+    },
+    {
+      chiave: 'TELEGRAM_TOKEN',
+      etichetta: 'Token Telegram',
+      hint: "Recuperare il token e salvarlo con caronteSetupCredenziali().",
+    },
+    {
+      chiave: 'TELEGRAM_CHAT_ID',
+      etichetta: 'Chat ID Telegram',
+      hint: "Inserire l'ID della chat nel setup credenziali.",
+    },
+    {
+      chiave: 'URL_FORM',
+      etichetta: 'URL form Virgilio',
+      hint: "Copiare l'URL /exec della Web App nel setup credenziali.",
+    },
+  ];
+
+  Logger.log('[Setup] Riepilogo configurazione operativa:');
+  controlli.forEach(({ chiave, etichetta, hint }) => {
+    const valore = props.getProperty(chiave);
+    if (!valore || valore.startsWith('[SOSTITUIRE')) {
+      Logger.log(`  ✗ ${etichetta}: non configurato`);
+      Logger.log(`    -> ${hint}`);
+    } else {
+      Logger.log(`  ✓ ${etichetta}: configurato (${valore.length} caratteri)`);
+    }
+  });
+
+  const urlForm = props.getProperty('URL_FORM');
+  if (!urlForm || urlForm.startsWith('[SOSTITUIRE')) {
+    Logger.log('  → Endpoint webapp: non configurato');
+  } else {
+    Logger.log(`  → Endpoint webapp: pronto (${urlForm})`);
+  }
+}
+
 
 // ── UI INTERNA VIRGILIO — TEST SENZA DEPLOY PUBBLICO ─────────────────────────
 
@@ -191,6 +246,7 @@ function caronteStatoCredenziali() {
       Logger.log(`  ✓ ${chiave}: configurata (${valore.length} caratteri)`);
     }
   }
+  caronteStatoConfigurazione();
 }
 
 
