@@ -59,6 +59,121 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 | DONE | P3 | Human review | workflow futuro | conferma obbligatoria | Alto |
 | DONE | P3 | Feedback loop | audit futuro | correzioni tracciate | Alto |
 
+## Milestone v1.1.2 - Integrazione Caronte Locale -> Virgilio 1.0
+
+Questa milestone traduce la roadmap in backlog eseguibile per i cicli autonomi successivi. Caronte Locale v1.1 resta il motore tecnico locale; Virgilio 1.0 resta il livello umano/Google finale; il ponte resta metadata-only.
+
+### Decisioni architetturali vincolanti
+
+- Il ponte e` temporaneo ma disciplinato.
+- `Virgilio_Inbox` e` il nuovo tab operativo.
+- Il matching allegato-pratica e` umano nella prima fase.
+- `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti` sono registri tecnici, non inbox.
+- `Staging_Local_Test` resta riferimento di contratto e test, non produzione.
+- Virgilio 1.0 puo` prendere in carico solo file gia` visibili in Google Drive.
+- Caronte non scarica direttamente in Drive prima della scansione: prima quarantena locale, poi scan, poi staging/Limbo condiviso.
+
+### Fuori scope fino a chiusura v1.1.2
+
+- AI.
+- RAG.
+- Docling.
+- LiteLLM.
+- parsing automatico documenti.
+- classificazione automatica pratica.
+- nuovo database remoto.
+- server web.
+- nuova GUI complessa.
+- riscrittura completa del form.
+- sostituzione Apps Script con Python.
+- uso operativo di `Staging_Local_Test`.
+- uso di Bucoliche come inbox.
+- trasporto byte/base64 verso Apps Script.
+- archiviazione finale senza conferma umana.
+
+### Ordine operativo consigliato per Codex
+
+1. Implementare `Virgilio_Inbox` schema + setup Apps Script.
+2. Implementare intake metadata-only idempotente.
+3. Collegare Caronte Locale al bridge metadata-only.
+4. Generare `form_url` o `inbox_id` apribile dal form.
+5. Estendere il form con prefill minimale da `inbox_id`.
+6. Collegare submit form a record `Virgilio_Inbox`.
+7. Archiviare file dal Limbo Drive alla cartella pratica.
+8. Registrare esito e notificare Chat/Telegram.
+9. Pulire UX, comandi e configurazione.
+
+### Epica 0 - Caronte locale chiuso
+
+Stato: READY_FOR_FREEZE.
+
+Criteri di accettazione:
+- pilot-run idempotente;
+- ack prudente funzionante;
+- file clean copiati solo dopo scan;
+- nessun allargamento funzionale.
+
+| ID | Stato | Pri | Titolo | Dipendenze | File probabili | Accettazione | Fuori scope specifico |
+|---|---|---|---|---|---|---|---|
+| V112-E0-T01 | DONE | P1 | Confermare contratto metadata-only | roadmap v1.1.2, bridge locale | `local_connector/src/virgilio_connector/*.py`, `docs/*.md` | payload solo metadati, nessun byte o path locale | non estendere il contratto con allegati binari |
+| V112-E0-T02 | DONE | P2 | Documentare policy allegati ammessi | contratto metadata-only | `docs/*.md`, `local_connector/README.md` | allegati ammessi e limiti chiari, scan prima dello staging | non introdurre nuove categorie di file o parsing automatico |
+| V112-E0-T03 | DONE | P2 | Mantenere SQLite e quarantena locale come perimetro chiuso | contratto metadata-only | `local_connector/src/virgilio_connector/*.py`, `docs/*.md` | SQLite resta registro primario locale; quarantena locale prima dello staging Drive | non spostare il registro primario su Google o su servizi remoti |
+| V112-E0-T04 | DONE | P2 | Congelare il perimetro Caronte | gating v1.1 completo | `docs/*.md` | nessun allargamento funzionale, regressioni coperte da contratto | non aprire nuovi flussi utente o nuove GUI |
+
+### Epica 1 - Ponte Caronte -> Virgilio 1.0
+
+Stato: TODO.
+
+Criteri di accettazione:
+- un allegato gia` staged/Drive produce una sola riga `Virgilio_Inbox`;
+- secondo invio non duplica;
+- `Virgilio_Inbox` contiene un `inbox_id`;
+- il payload non contiene byte, base64 o path locali;
+- `Bucoliche_Eventi` e `Bucoliche_Stato` restano registri tecnici, non inbox.
+
+| ID | Stato | Pri | Titolo | Dipendenze | File probabili | Accettazione | Fuori scope specifico |
+|---|---|---|---|---|---|---|---|
+| V112-E1-T01 | TODO | P0 | Definire mapping manifest locale -> `Virgilio_Inbox` | Epica 0 chiusa | `caronte_bridge.gs`, `drive_staging_verify.gs`, `docs/*.md` | mapping documentato e stabile tra manifest e inbox | non riusare `Bucoliche_Eventi`/`Bucoliche_Stato` come inbox |
+| V112-E1-T02 | TODO | P0 | Creare o consolidare lo schema `Virgilio_Inbox` | mapping definito | `virgilio_inbox.gs`, `docs/*.md` | schema con `inbox_id` e campi minimi concordati | non usare `Staging_Local_Test` come produzione |
+| V112-E1-T03 | TODO | P0 | Implementare intake Apps Script metadata-only idempotente | schema inbox, mapping manifest | `caronte_bridge.gs`, `virgilio_inbox.gs` | stesso allegato genera una sola riga, payload senza byte/base64/path | non trasportare contenuti binari o percorsi locali |
+| V112-E1-T04 | TODO | P1 | Verificare visibilita` Drive prima della presa in carico | intake metadata-only | `drive_staging_verify.gs`, `caronte_bridge.gs` | il file deve essere visibile in Google Drive prima di creare o aggiornare inbox | non aggirare la verifica con riferimenti locali |
+
+### Epica 2 - Ripristino flusso umano / form / archiviazione finale / Chat / Telegram
+
+Stato: TODO, dipendente da Epica 1.
+
+Criteri di accettazione:
+- il form si apre da un record `Virgilio_Inbox`;
+- l'utente sceglie cliente, sito, pratica e responsabile;
+- il file viene copiato nella cartella finale corretta;
+- il record `Virgilio_Inbox` passa ad archiviato;
+- Bucoliche/log registra l'esito;
+- Chat/Telegram ricevono messaggio;
+- nessuna automazione irreversibile senza conferma umana.
+
+| ID | Stato | Pri | Titolo | Dipendenze | File probabili | Accettazione | Fuori scope specifico |
+|---|---|---|---|---|---|---|---|
+| V112-E2-T01 | TODO | P0 | Estendere il form per leggere `inbox_id` | Epica 1 pronta | `virgilio.html`, `webapp.gs` | il form legge `inbox_id` senza riscriverlo | non riscrivere il form o cambiare la UX in modo invasivo |
+| V112-E2-T02 | TODO | P0 | Collegare submit form a record `Virgilio_Inbox` | `inbox_id` leggibile | `virgilio.html`, `caronte.gs`, `bucoliche.gs` | submit agganciato al record inbox corretto | non usare il form per creare un inbox nuovo senza correlazione |
+| V112-E2-T03 | TODO | P1 | Archiviare file dal Limbo Drive alla cartella pratica finale | submit collegato | `caronte.gs`, `setup.gs` | file copiato nella cartella finale corretta e record archiviato | non trasformare `Staging_Local_Test` in produzione |
+| V112-E2-T04 | TODO | P1 | Aggiornare Bucoliche/log e notifiche Chat/Telegram | archiviazione finale | `bucoliche.gs`, `notifiche.gs` | esito registrato e notifica inviata | non introdurre automazioni irreversibili senza conferma umana |
+
+### Epica 3 - UX decente e configurazione
+
+Stato: TODO, dipendente da Epica 1 ed Epica 2.
+
+Criteri di accettazione:
+- un operatore tecnico capisce cosa e` pronto o bloccato;
+- un utente normale non vede dettagli macchina inutili;
+- ci sono pochi comandi base;
+- la GUI o il form non espongono fingerprint, manifest o SQLite salvo diagnostica avanzata.
+
+| ID | Stato | Pri | Titolo | Dipendenze | File probabili | Accettazione | Fuori scope specifico |
+|---|---|---|---|---|---|---|---|
+| V112-E3-T01 | TODO | P1 | Semplificare comandi e distinzione test/produzione | Epica 1-2 visibili | `setup.gs`, `README.md`, `docs/*.md` | pochi comandi base e differenza test/prod chiara | non creare nuove superfici operative complesse |
+| V112-E3-T02 | TODO | P1 | Rendere leggibili errori, stati e configurazione | Epica 1-2 visibili | `setup.gs`, `docs/*.md` | errori e stato comprensibili, endpoint e props configurati | non esporre fingerprint, manifest o SQLite in UX normale |
+| V112-E3-T03 | TODO | P2 | Documentare il flusso utente finale | Epica 2 chiusa | `docs/*.md` | flusso utente chiaro, breve e coerente con il backlog | non trasformare la documentazione in logica applicativa |
+
 ## Registro avanzamento
 
 - 2026-06-30 - Aggiunto `refresh-bucoliche-state`: rigenera solo `Bucoliche_Stato` da eventi locali, con dry-run che mostra preview e senza append su `Bucoliche_Eventi`.
