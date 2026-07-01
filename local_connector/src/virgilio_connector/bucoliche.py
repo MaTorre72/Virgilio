@@ -31,7 +31,7 @@ CONFLICT_COLUMNS = (
 STATE_COLUMNS = (
     "fingerprint", "last_event_at", "machine_id", "account_alias", "source_email",
     "attachment_id", "sha256", "current_global_state", "last_result",
-    "conflict_type", "staged_filename", "notes",
+    "conflict_type", "staged_filename", "staged_path", "manifest_path", "notes",
 )
 
 
@@ -328,42 +328,64 @@ def _state_rows(events: Sequence[Mapping[str, object]]) -> tuple[dict[str, objec
         by_fingerprint.setdefault(fingerprint, []).append(row)
     rows = []
     for fingerprint in sorted(by_fingerprint):
-        grouped = sorted(by_fingerprint[fingerprint], key=lambda row: (
-            str(row.get("created_at", "")),
-            str(row.get("event_id", "")),
-        ))
-        current = _pick_state_row(grouped)
+        grouped = sorted(by_fingerprint[fingerprint], key=_event_sort_key)
         latest = grouped[-1]
         machine_ids = sorted({str(row.get("machine_id", "")).strip()
                               for row in grouped if str(row.get("machine_id", "")).strip()})
         machine_states = _machine_states(grouped)
         cross_machine_conflict = _has_cross_machine_conflict(machine_states)
-        state_source = latest if cross_machine_conflict else current
+        current_state = _resolved_global_state(latest)
         rows.append({
             "fingerprint": fingerprint,
-            "last_event_at": latest.get("created_at", ""),
-            "machine_id": ",".join(machine_ids) if len(machine_ids) > 1 else state_source.get("machine_id", ""),
-            "account_alias": state_source.get("account_alias", ""),
-            "source_email": state_source.get("source_email", ""),
-            "attachment_id": state_source.get("attachment_id", ""),
-            "sha256": state_source.get("sha256", ""),
-            "current_global_state": ("conflict" if cross_machine_conflict
-                                      else current.get("global_state_suggestion", "")),
-            "last_result": state_source.get("result", ""),
+            "last_event_at": _to_local_timestamp(latest.get("created_at", "")),
+            "machine_id": ",".join(machine_ids) if len(machine_ids) > 1 else latest.get("machine_id", ""),
+            "account_alias": latest.get("account_alias", ""),
+            "source_email": latest.get("source_email", ""),
+            "attachment_id": latest.get("attachment_id", ""),
+            "sha256": latest.get("sha256", ""),
+            "current_global_state": "conflict" if cross_machine_conflict else current_state,
+            "last_result": latest.get("result", ""),
             "conflict_type": ("conflict_cross_machine" if cross_machine_conflict
-                              else current.get("conflict_type", "")),
-            "staged_filename": state_source.get("staged_filename", ""),
-            "notes": _state_notes(state_source, machine_ids, machine_states, cross_machine_conflict),
+                              else str(latest.get("conflict_type", "") or "")),
+            "staged_filename": latest.get("staged_filename", ""),
+            "staged_path": latest.get("staged_path", ""),
+            "manifest_path": latest.get("manifest_path", ""),
+            "notes": _state_notes(latest, machine_ids, machine_states, cross_machine_conflict),
         })
     return tuple(rows)
 
+def _event_sort_key(row: Mapping[str, object]) -> tuple[datetime, str]:
+    return (_parse_timestamp(row.get("created_at", "")), str(row.get("event_id", "")))
 
-def _pick_state_row(rows: Sequence[Mapping[str, object]]) -> Mapping[str, object]:
-    return max(rows, key=lambda row: (
-        _state_priority(str(row.get("global_state_suggestion", ""))),
-        str(row.get("created_at", "")),
-        str(row.get("event_id", "")),
-    ))
+
+def _parse_timestamp(value: object) -> datetime:
+    text = str(value or "").strip()
+    if not text:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    normalized = text.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if parsed.tzinfo is None:
+        return parsed.astimezone()
+    return parsed
+
+
+def _to_local_timestamp(value: object) -> str:
+    parsed = _parse_timestamp(value)
+    if parsed == datetime.min.replace(tzinfo=timezone.utc):
+        return ""
+    return parsed.astimezone().isoformat()
+
+
+def _resolved_global_state(row: Mapping[str, object]) -> str:
+    if str(row.get("conflict_type", "") or "").strip():
+        return "conflict"
+    value = str(row.get("global_state_suggestion", "") or "").strip()
+    if value in {"completed", "staged", "acquired", "failed", "duplicate_seen"}:
+        return value
+    return "unknown"
 
 
 def _machine_states(grouped: Sequence[Mapping[str, object]]) -> dict[str, str]:
@@ -372,7 +394,7 @@ def _machine_states(grouped: Sequence[Mapping[str, object]]) -> dict[str, str]:
         machine_id = str(row.get("machine_id", "")).strip()
         if machine_id:
             by_machine.setdefault(machine_id, []).append(row)
-    return {machine_id: str(_pick_state_row(rows).get("global_state_suggestion", ""))
+    return {machine_id: _resolved_global_state(sorted(rows, key=_event_sort_key)[-1])
             for machine_id, rows in sorted(by_machine.items())}
 
 
@@ -403,18 +425,6 @@ def _state_notes(current: Mapping[str, object], machine_ids: Sequence[str],
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
 
-def _state_priority(value: str) -> int:
-    return {
-        "conflict": 5,
-        "completed": 4,
-        "staged": 3,
-        "acquired": 2,
-        "duplicate_seen": 1,
-        "skipped": 1,
-        "failed": 1,
-    }.get(value, 0)
-
-
 def build_google_sheets_client(config: BucolicheConfig,
                                environ: Mapping[str, str]) -> GoogleSheetsAppendClient:
     spreadsheet_id = environ.get(config.spreadsheet_id_env, "").strip()
@@ -434,7 +444,10 @@ def build_google_sheets_client(config: BucolicheConfig,
         from google.auth.transport.requests import Request
         credentials = Credentials.from_authorized_user_file(str(token_path), (SHEETS_SCOPE,))
         if credentials.expired and credentials.refresh_token:
-            credentials.refresh(Request())
+            try:
+                credentials.refresh(Request())
+            except Exception:
+                raise BucolicheError("OAuth token refresh failed; verify local network access or run google-oauth-login again") from None
             _write_private_json(token_path, credentials.to_json())
         if not credentials.valid:
             raise BucolicheError("OAuth token invalid; run google-oauth-login")

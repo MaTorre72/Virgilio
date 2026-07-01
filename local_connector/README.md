@@ -589,7 +589,11 @@ python -m virgilio_connector export-to-bucoliche --config accounts.local.yaml
 `refresh-bucoliche-state` rigenera solo `Bucoliche_Stato` partendo dagli eventi
 locali, senza appendere righe a `Bucoliche_Eventi`; il dry-run non scrive e mostra
 le prime cinque righe dello snapshot. Il run reale
-riscrive soltanto il tab di stato.
+riscrive soltanto il tab di stato. `Bucoliche_Eventi` resta append-only, mentre
+`Bucoliche_Stato` e' una vista derivata rigenerabile con una riga per fingerprint.
+I timestamp esposti nello snapshot, incluso `last_event_at`, sono serializzati nel
+timezone locale del sistema che esegue il connettore, in modo deterministico tra
+run consecutivi sulla stessa macchina.
 
 `export-to-bucoliche` invece
 usa lo stesso snapshot ma aggiunge anche gli eventi mancanti. Il dry-run non chiama Google e mostra conteggio e prime cinque righe. Il run reale

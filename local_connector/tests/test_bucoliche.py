@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pathlib import Path
 import sqlite3
 import sys
@@ -9,6 +10,7 @@ import pytest
 from virgilio_connector.bucoliche import (
     BucolicheAppendOnlyAdapter, BucolicheConfig, BucolicheError,
     CONFLICT_COLUMNS, EVENT_COLUMNS, STATE_COLUMNS, GoogleOAuthLogin,
+    build_google_sheets_client,
     load_bucoliche_config,
 )
 from virgilio_connector.completion import LocalCompletionRunner
@@ -287,6 +289,66 @@ def test_state_sheet_marks_cross_machine_conflict_for_terminal_state_collision(t
     }
 
 
+def test_refresh_state_uses_latest_event_so_staged_wins_on_acquired(tmp_path):
+    db = tmp_path / "state.db"
+    store = ReadonlyStateStore(db); store.initialize()
+    with closing(sqlite3.connect(db)) as conn:
+        conn.execute("""INSERT INTO runs(started_at,dry_run,status,account_alias)
+            VALUES('now',0,'completed','box')""")
+        run_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
+            message_id,subject,sender,message_date) VALUES(?,?,?,?,?,?,?,?,?)""",
+            (run_id, "box", "INBOX", "1", "42", "<m@example.invalid>", "Subject",
+             "sender@example.invalid", "2026-06-30T08:00:00+00:00"))
+        message_row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
+            ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
+            status,reason,fingerprint,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (message_row_id, "box", "att-1", "box@example.invalid", 1, "doc.pdf", "doc.pdf",
+             "application/pdf", 1, "a" * 64, "staged_storage", "test", "f" * 64,
+             "2026-06-30T08:00:00+00:00"))
+        conn.commit()
+    store.add_audit_event(machine_id="machine-test", account_alias="box",
+        entity_type="attachment", entity_id="att-1", fingerprint="f" * 64,
+        action="attachment_quarantined", status="queued", details={"step": "acquired"})
+    with closing(sqlite3.connect(db)) as conn:
+        conn.execute("""UPDATE audit_events SET created_at=? WHERE entity_id=? AND action=?""",
+            ("2026-06-30T08:00:00+00:00", "att-1", "attachment_quarantined"))
+        conn.commit()
+    store.add_audit_event(machine_id="machine-test", account_alias="box",
+        entity_type="attachment", entity_id="att-1", fingerprint="f" * 64,
+        action="attachment_staged", status="ok", details={"step": "staged"})
+    with closing(sqlite3.connect(db)) as conn:
+        conn.execute("""UPDATE audit_events SET created_at=? WHERE entity_id=? AND action=?""",
+            ("2026-06-30T09:00:00+00:00", "att-1", "attachment_staged"))
+        conn.commit()
+    row = adapter(db, FakeSheets(), enabled=False).refresh_state(dry_run=True).preview[0]
+    assert row["current_global_state"] == "staged"
+    assert row["last_result"] == "ok"
+
+
+def test_refresh_state_uses_latest_event_so_completed_wins_on_staged(tmp_path):
+    db = tmp_path / "state.db"
+    store = ReadonlyStateStore(db); store.initialize()
+    store.add_audit_event(machine_id="machine-test", account_alias="box",
+        entity_type="attachment", entity_id="att-1", fingerprint="f" * 64,
+        action="attachment_staged", status="ok", details={"step": "staged"})
+    with closing(sqlite3.connect(db)) as conn:
+        conn.execute("""UPDATE audit_events SET created_at=? WHERE entity_id=? AND action=?""",
+            ("2026-06-30T09:00:00+00:00", "att-1", "attachment_staged"))
+        conn.commit()
+    store.add_audit_event(machine_id="machine-test", account_alias="box",
+        entity_type="attachment", entity_id="att-1", fingerprint="f" * 64,
+        action="message_completed", status="ok", details={"step": "completed"})
+    with closing(sqlite3.connect(db)) as conn:
+        conn.execute("""UPDATE audit_events SET created_at=? WHERE entity_id=? AND action=?""",
+            ("2026-06-30T10:00:00+00:00", "att-1", "message_completed"))
+        conn.commit()
+    row = adapter(db, FakeSheets(), enabled=False).refresh_state(dry_run=True).preview[0]
+    assert row["current_global_state"] == "completed"
+    assert row["notes"] == '{"step":"completed"}'
+
+
 def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
     class IsolatedScanMailbox(FakeMailbox):
         instances = []
@@ -465,6 +527,44 @@ def test_refresh_bucoliche_state_real_run_replaces_only_state_sheet(tmp_path):
     assert len(fake.calls) == 1
     assert fake.calls[0][:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
     assert len(fake.calls[0][3]) == 1
+    with closing(sqlite3.connect(db)) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM local_export_status").fetchone()[0] == 0
+
+
+def test_refresh_bucoliche_state_exposes_local_timestamp_and_state_paths(tmp_path):
+    db = tmp_path / "state.db"
+    store = ReadonlyStateStore(db); store.initialize()
+    with closing(sqlite3.connect(db)) as conn:
+        conn.execute("""INSERT INTO runs(started_at,dry_run,status,account_alias)
+            VALUES('now',0,'completed','box')""")
+        run_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
+            message_id,subject,sender,message_date,source_email) VALUES(?,?,?,?,?,?,?,?,?,?)""",
+            (run_id, "box", "INBOX", "1", "42", "<m@example.invalid>", "Subject",
+             "sender@example.invalid", "2026-06-30T10:00:00+00:00", "box@example.invalid"))
+        message_row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
+            ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
+            status,reason,fingerprint,staged_filename,staged_path,manifest_path,created_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (message_row_id, "box", "att-1", "box@example.invalid", 1, "doc.pdf", "doc.pdf",
+             "application/pdf", 1, "a" * 64, "staged_storage", "test", "f" * 64,
+             "doc-final.pdf", "C:/tmp/doc-final.pdf", "C:/tmp/doc-final.json",
+             "2026-06-30T10:00:00+00:00"))
+        conn.execute("""INSERT INTO audit_events(created_at,machine_id,account_alias,entity_type,
+            entity_id,fingerprint,action,status,details_json) VALUES(?,?,?,?,?,?,?,?,?)""",
+            ("2026-06-30T10:00:00+00:00", "machine-test", "box", "attachment", "att-1",
+             "f" * 64, "attachment_staged", "ok", '{"step":"staged"}'))
+        conn.commit()
+    row = adapter(db, FakeSheets(), enabled=False).refresh_state(dry_run=True).preview[0]
+    expected = datetime.fromisoformat("2026-06-30T10:00:00+00:00").astimezone()
+    actual = datetime.fromisoformat(row["last_event_at"])
+    assert actual.tzinfo is not None
+    assert actual.utcoffset() == expected.utcoffset()
+    assert actual.astimezone().replace(microsecond=0) == expected.replace(microsecond=0)
+    assert row["staged_filename"] == "doc-final.pdf"
+    assert row["staged_path"] == "C:/tmp/doc-final.pdf"
+    assert row["manifest_path"] == "C:/tmp/doc-final.json"
 
 
 def test_refresh_bucoliche_state_cli_dry_run(tmp_path, monkeypatch, capsys):
@@ -546,3 +646,31 @@ def test_google_oauth_login_missing_secret_is_blocked_and_safe(tmp_path):
         "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH": str(tmp_path / "token.json")}).run()
     assert result.status == "blocked"
     assert not any(word in result.to_json() for word in ("access_token", "refresh_token", "client_secret"))
+
+
+def test_build_google_sheets_client_reports_clear_oauth_refresh_error(tmp_path, monkeypatch):
+    secret = tmp_path / "client.json"; secret.write_text("{}", encoding="utf-8")
+    token = tmp_path / "token.json"; token.write_text("{}", encoding="utf-8")
+
+    class FailingCredentials:
+        expired = True
+        refresh_token = "refresh-secret"
+        valid = False
+
+        @classmethod
+        def from_authorized_user_file(cls, *_args, **_kwargs):
+            return cls()
+
+        def refresh(self, _request):
+            raise RuntimeError("offline")
+
+    monkeypatch.setitem(sys.modules, "google.oauth2.credentials",
+        type("CredentialsModule", (), {"Credentials": FailingCredentials}))
+    monkeypatch.setitem(sys.modules, "google.auth.transport.requests",
+        type("RequestsModule", (), {"Request": object}))
+    with pytest.raises(BucolicheError, match="OAuth token refresh failed"):
+        build_google_sheets_client(BucolicheConfig(credentials_mode="user_oauth_local"), {
+            "VIRGILIO_BUCOLICHE_SPREADSHEET_ID": "sheet-id",
+            "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH": str(secret),
+            "VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH": str(token),
+        })
