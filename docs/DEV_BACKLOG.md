@@ -134,7 +134,7 @@ Criteri di accettazione:
 | ID | Stato | Pri | Titolo | Dipendenze | File probabili | Accettazione | Fuori scope specifico |
 |---|---|---|---|---|---|---|---|
 | V112-E1-T01 | DONE | P0 | Definire mapping manifest locale -> `Virgilio_Inbox` | Epica 0 chiusa | `caronte_bridge.gs`, `drive_staging_verify.gs`, `docs/*.md` | mapping documentato e stabile tra manifest e inbox | non riusare `Bucoliche_Eventi`/`Bucoliche_Stato` come inbox |
-| V112-E1-T02 | TODO | P0 | Creare o consolidare lo schema `Virgilio_Inbox` | mapping definito | `virgilio_inbox.gs`, `docs/*.md` | schema con `inbox_id` e campi minimi concordati | non usare `Staging_Local_Test` come produzione |
+| V112-E1-T02 | DONE | P0 | Creare o consolidare lo schema `Virgilio_Inbox` | mapping definito | `virgilio_inbox.gs`, `docs/*.md` | schema con `inbox_id` e campi minimi concordati | non usare `Staging_Local_Test` come produzione |
 | V112-E1-T03 | TODO | P0 | Implementare intake Apps Script metadata-only idempotente | schema inbox, mapping manifest | `caronte_bridge.gs`, `virgilio_inbox.gs` | stesso allegato genera una sola riga, payload senza byte/base64/path | non trasportare contenuti binari o percorsi locali |
 | V112-E1-T04 | TODO | P1 | Verificare visibilita` Drive prima della presa in carico | intake metadata-only | `drive_staging_verify.gs`, `caronte_bridge.gs` | il file deve essere visibile in Google Drive prima di creare o aggiornare inbox | non aggirare la verifica con riferimenti locali |
 
@@ -206,3 +206,4 @@ Criteri di accettazione:
 - 2026-07-01 - Aggiunto `pilot-run`: comando unico v1.1 che orchestra `doctor`, pipeline, conflitti, export Bucoliche e ack prudente con report locale `pilot_run_v11_*.json`, mantenendo `virgilio pilot` come preview compatibile.
 - 2026-06-30 - Aggiunto `virgilio gui`: GUI minima locale in `tkinter` che fa da wrapper a `init-config`, `doctor` e `pilot`, costruendo argomenti CLI e mostrando l'output senza duplicare la logica operativa.
 - 2026-07-01 - Definito il mapping stabile `manifest locale -> Virgilio_Inbox`: `caronte_bridge.gs` espone il draft puro della riga inbox, `drive_staging_verify.gs` restituisce `inbox_preview` read-only con i campi gia valorizzabili dal manifest e lascia vuoti i campi demandati ai task successivi (`inbox_id`, suggerimenti, `form_url`).
+- 2026-07-01 - Aggiunto `virgilio_inbox.gs`: setup esplicito e consolidamento non distruttivo dello schema `Virgilio_Inbox`, con header canonico a 22 colonne, `inbox_id` in prima posizione e rifiuto dei mismatch su tab gia popolati.

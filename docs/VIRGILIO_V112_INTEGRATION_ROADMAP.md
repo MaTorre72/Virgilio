@@ -127,6 +127,7 @@ Conseguenza pratica:
 | `drive_staging_verify.gs` | `caronteVerificaStagingDriveDryRun` | Verifica read-only del Limbo su Drive Desktop | payload metadata-only | risposta cloud_visible | `DriveApp`, `PropertiesService` | Si | Legge file + manifest, non modifica nulla |
 | `drive_staging_intake_test.gs` | `caronteSetupStagingDriveTestIntake` | Configura tab test intake | spreadsheetId, sheetName | tab e props pronte | `SpreadsheetApp`, `PropertiesService` | Si | Tab separato da `Bucoliche` reale |
 | `drive_staging_intake_test.gs` | `caronteRegistraStagingDriveTest` | Registra presa in carico test | payload metadata-only | risposta standard | `DriveApp`, `SpreadsheetApp` | Si | Scrive solo nel tab test |
+| `virgilio_inbox.gs` | `caronteSetupVirgilioInbox` | Crea o consolida il tab `Virgilio_Inbox` | spreadsheetId, sheetName opzionale | tab pronto con header canonico | `SpreadsheetApp`, `PropertiesService`, `caronte_bridge.gs` | Si | Rifiuta mismatch su tab gia popolati |
 
 ### 2.2 Inventario Google Sheet attesi
 
