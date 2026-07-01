@@ -403,6 +403,7 @@ Stato attuale:
 - il primo step mostra il documento in presa in carico e puo` precompilare suggerimenti gia presenti senza cambiare il submit.
 - il submit passa ora `inbox_id` fino a `doPost`, aggiorna il record `Virgilio_Inbox` esistente a `in_lavorazione` e salva cliente/sito/pratica scelti senza creare nuovi record inbox.
 - con `inbox_id` presente, `doPost` archivia ora il solo `drive_file_id` del record inbox dentro `02_corrispondenza`, poi marca il record `Virgilio_Inbox` come `archiviato`; il fallback temporale sul Limbo resta solo per i flussi legacy senza inbox.
+- il ramo `doPost` con `inbox_id` registra anche l esito finale su `bucoliche` con metadati minimi del documento archiviato e invia notifiche dedicate Chat/Telegram che confermano sia la pratica sia l archiviazione del file correlato.
 
 **Task**
 
@@ -433,6 +434,7 @@ Stato attuale:
 - il form si apre;
 - il submit crea la cartella corretta;
 - l'utente vede il link finale;
+- `bucoliche` registra l esito finale del record inbox archiviato;
 - Chat e Telegram ricevono il messaggio giusto.
 
 **Cosa NON fare**

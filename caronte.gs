@@ -220,15 +220,30 @@ function doPost(e) {
       );
 
     // Avvisa il team su Chat e Telegram
-    avvisaTeam(
-      dati.cliente,
-      dati.sito,
-      dati.pratica,
-      dati.anno,
-      dati.tecnici || [],
-      dati.note    || '',
-      cartella.url
-    );
+    if (inboxId) {
+      avvisaArchiviazioneVirgilioInbox({
+        cliente: dati.cliente,
+        sito: dati.sito,
+        pratica: dati.pratica,
+        anno: dati.anno,
+        tecnici: dati.tecnici || [],
+        note: dati.note || '',
+        urlCartella: cartella.url,
+        urlCorrispondenza: spostamento.destinationFolderUrl || cartella.url,
+        inboxId: inboxId,
+        fileName: spostamento.fileName || '',
+      });
+    } else {
+      avvisaTeam(
+        dati.cliente,
+        dati.sito,
+        dati.pratica,
+        dati.anno,
+        dati.tecnici || [],
+        dati.note    || '',
+        cartella.url
+      );
+    }
 
     // Registra sulle Bucoliche
     registraSuBucoliche({
@@ -238,9 +253,14 @@ function doPost(e) {
       pratica:     dati.pratica,
       anno:        dati.anno,
       tecnici:     dati.tecnici || [],
-      note:        dati.note    || '',
+      note:        _costruisciNotaEsitoVirgilio_(dati.note, inboxId, spostamento),
       urlCartella: cartella.url,
-      idDrive:  cartella.id,
+      idDrive:     cartella.id,
+      nomeFile:    spostamento.fileName || '',
+      estensione:  spostamento.fileExtension || '',
+      dimensioneKb: Number.isInteger(spostamento.fileSizeKb) ? spostamento.fileSizeKb : '',
+      stato:       inboxId ? 'archiviato' : (spostamento.count > 0 ? 'archiviato' : ''),
+      timestampArchiviazione: inboxId ? _timestampLocale() : '',
     });
 
     // Aggiorna le righe gmail_staging → gmail_archiviato (senza nuove righe duplicate)
@@ -1006,7 +1026,16 @@ function _archiviaAllegatoVirgilioInbox_(inboxId, cliente, sito, idCartellaPrati
     );
   }
 
-  return { count: 1, fileIds: [file.getId()] };
+  return {
+    count: 1,
+    fileIds: [file.getId()],
+    fileName: file.getName(),
+    fileExtension: _estensioneNomeFile_(file.getName()),
+    fileSizeKb: Math.ceil(file.getSize() / 1024),
+    destinationFolderId: destinationFolderId,
+    destinationFolderUrl: corrispondenza.getUrl(),
+    alreadyInDestination: alreadyInDestination,
+  };
 }
 
 function _cartellaContieneFileId_(folder, fileId) {
@@ -1015,6 +1044,26 @@ function _cartellaContieneFileId_(folder, fileId) {
     if (files.next().getId() === fileId) return true;
   }
   return false;
+}
+
+function _costruisciNotaEsitoVirgilio_(note, inboxId, spostamento) {
+  const parts = [];
+  const cleanNote = String(note || '').trim();
+  if (cleanNote) parts.push(cleanNote);
+  if (inboxId) parts.push(`inbox_id=${inboxId}`);
+  if (spostamento && spostamento.fileName) parts.push(`documento=${spostamento.fileName}`);
+  if (inboxId) {
+    parts.push(spostamento && spostamento.alreadyInDestination
+      ? 'esito=archiviazione_gia_allineata'
+      : 'esito=archiviato_da_inbox');
+  }
+  return parts.join('; ');
+}
+
+function _estensioneNomeFile_(fileName) {
+  const value = String(fileName || '').trim();
+  if (!value || value.indexOf('.') < 0) return '';
+  return value.split('.').pop().toLowerCase().substring(0, 10);
 }
 
 
@@ -1204,6 +1253,8 @@ function testCaronteInboxArchiviazione() {
     'archiviazione inbox restituisce file spostato');
   _driveStagingAssert_(movedFile.movedTo === 'folder-corrispondenza',
     'archiviazione inbox sposta il file nella corrispondenza');
+  _driveStagingAssert_(result.fileName === 'analisi.pdf' && result.fileExtension === 'pdf',
+    'archiviazione inbox espone metadati file per log e notifiche');
   _driveStagingAssert_(archiveCalls.length === 1 && archiveCalls[0].destination_folder_id === 'folder-corrispondenza',
     'archiviazione inbox aggiorna il record Virgilio_Inbox');
   Logger.log('testCaronteInboxArchiviazione: OK');
@@ -1252,7 +1303,16 @@ function _archiviaAllegatoVirgilioInboxWithDeps_(deps) {
     );
   }
 
-  return { count: 1, fileIds: [file.getId()] };
+  return {
+    count: 1,
+    fileIds: [file.getId()],
+    fileName: file.getName(),
+    fileExtension: _estensioneNomeFile_(file.getName()),
+    fileSizeKb: Math.ceil(file.getSize ? file.getSize() / 1024 : 0),
+    destinationFolderId: destinationFolderId,
+    destinationFolderUrl: corrispondenza.getUrl(),
+    alreadyInDestination: alreadyInDestination,
+  };
 }
 
 // ── VALIDAZIONE INPUT ─────────────────────────────────────────────────────────

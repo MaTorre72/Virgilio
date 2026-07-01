@@ -140,7 +140,7 @@ Criteri di accettazione:
 
 ### Epica 2 - Ripristino flusso umano / form / archiviazione finale / Chat / Telegram
 
-Stato: TODO, dipendente da Epica 1.
+Stato: DONE, dipendente da Epica 1.
 
 Criteri di accettazione:
 - il form si apre da un record `Virgilio_Inbox`;
@@ -156,7 +156,7 @@ Criteri di accettazione:
 | V112-E2-T01 | DONE | P0 | Estendere il form per leggere `inbox_id` | Epica 1 pronta | `virgilio.html`, `webapp.gs`, `virgilio_inbox.gs` | il form legge `inbox_id` senza riscriverlo | non riscrivere il form o cambiare la UX in modo invasivo |
 | V112-E2-T02 | DONE | P0 | Collegare submit form a record `Virgilio_Inbox` | `inbox_id` leggibile | `virgilio.html`, `caronte.gs`, `bucoliche.gs` | submit agganciato al record inbox corretto | non usare il form per creare un inbox nuovo senza correlazione |
 | V112-E2-T03 | DONE | P1 | Archiviare file dal Limbo Drive alla cartella pratica finale | submit collegato | `caronte.gs`, `virgilio_inbox.gs` | file copiato nella cartella finale corretta e record archiviato | non trasformare `Staging_Local_Test` in produzione |
-| V112-E2-T04 | TODO | P1 | Aggiornare Bucoliche/log e notifiche Chat/Telegram | archiviazione finale | `bucoliche.gs`, `notifiche.gs` | esito registrato e notifica inviata | non introdurre automazioni irreversibili senza conferma umana |
+| V112-E2-T04 | DONE | P1 | Aggiornare Bucoliche/log e notifiche Chat/Telegram | archiviazione finale | `bucoliche.gs`, `notifiche.gs` | esito registrato e notifica inviata | non introdurre automazioni irreversibili senza conferma umana |
 
 ### Epica 3 - UX decente e configurazione
 
@@ -212,3 +212,4 @@ Criteri di accettazione:
 - 2026-07-01 - Completato `V112-E2-T01`: `doGet(e)` legge `inbox_id`, `webapp.gs` passa al template solo contesto read-only da `Virgilio_Inbox`, `virgilio.html` mostra il riepilogo documento e precompila in modo non invasivo eventuali suggerimenti gia presenti senza toccare il submit operativo.
 - 2026-07-01 - Completato `V112-E2-T02`: `virgilio.html` passa `inbox_id` al submit, `caronte.gs` rifiuta i submit con `inbox_id` non correlato e `virgilio_inbox.gs` aggiorna il record esistente con stato `in_lavorazione` e contesto umano minimo del form senza creare un inbox nuovo.
 - 2026-07-01 - Completato `V112-E2-T03`: `doPost` usa ora l `inbox_id` per archiviare l allegato Drive puntuale del record `Virgilio_Inbox` dentro `02_corrispondenza`, mantiene il fallback temporale legacy solo senza inbox e marca il record inbox come `archiviato` con traccia della destinazione finale.
+- 2026-07-01 - Completato `V112-E2-T04`: il ramo `doPost` con `inbox_id` registra ora su `bucoliche` un esito finale coerente (`stato=archiviato`, nome file, note correlate all inbox) e invia notifiche dedicate Chat/Telegram che confermano pratica aperta e documento archiviato, senza cambiare il flusso legacy senza inbox.
