@@ -170,7 +170,7 @@ Criteri di accettazione:
 
 | ID | Stato | Pri | Titolo | Dipendenze | File probabili | Accettazione | Fuori scope specifico |
 |---|---|---|---|---|---|---|---|
-| V112-E3-T01 | TODO | P1 | Semplificare comandi e distinzione test/produzione | Epica 1-2 visibili | `setup.gs`, `README.md`, `docs/*.md` | pochi comandi base e differenza test/prod chiara | non creare nuove superfici operative complesse |
+| V112-E3-T01 | DONE | P1 | Semplificare comandi e distinzione test/produzione | Epica 1-2 visibili | `setup.gs`, `README.md`, `docs/*.md` | pochi comandi base e differenza test/prod chiara | non creare nuove superfici operative complesse |
 | V112-E3-T02 | TODO | P1 | Rendere leggibili errori, stati e configurazione | Epica 1-2 visibili | `setup.gs`, `docs/*.md` | errori e stato comprensibili, endpoint e props configurati | non esporre fingerprint, manifest o SQLite in UX normale |
 | V112-E3-T03 | TODO | P2 | Documentare il flusso utente finale | Epica 2 chiusa | `docs/*.md` | flusso utente chiaro, breve e coerente con il backlog | non trasformare la documentazione in logica applicativa |
 
@@ -213,3 +213,4 @@ Criteri di accettazione:
 - 2026-07-01 - Completato `V112-E2-T02`: `virgilio.html` passa `inbox_id` al submit, `caronte.gs` rifiuta i submit con `inbox_id` non correlato e `virgilio_inbox.gs` aggiorna il record esistente con stato `in_lavorazione` e contesto umano minimo del form senza creare un inbox nuovo.
 - 2026-07-01 - Completato `V112-E2-T03`: `doPost` usa ora l `inbox_id` per archiviare l allegato Drive puntuale del record `Virgilio_Inbox` dentro `02_corrispondenza`, mantiene il fallback temporale legacy solo senza inbox e marca il record inbox come `archiviato` con traccia della destinazione finale.
 - 2026-07-01 - Completato `V112-E2-T04`: il ramo `doPost` con `inbox_id` registra ora su `bucoliche` un esito finale coerente (`stato=archiviato`, nome file, note correlate all inbox) e invia notifiche dedicate Chat/Telegram che confermano pratica aperta e documento archiviato, senza cambiare il flusso legacy senza inbox.
+- 2026-07-01 - Completato `V112-E3-T01`: il README ora separa comandi base e collaudo controllato, con `--dry-run` esplicitato come test e il run reale riservato a configurazioni gia' verificate.

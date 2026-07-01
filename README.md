@@ -77,16 +77,29 @@ Il ciclo autonomo è governato da:
 - `scripts/dev/smoke_local_connector.ps1`: suite, CLI e controllo segreti;
 - `.github/workflows/local-connector-ci.yml`: verifica senza servizi reali.
 
-Per il prossimo task autonomo usare il prompt `advance.md`, oppure chiedere “vai avanti”.
+Per il prossimo task autonomo usare il prompt `advance.md`, oppure chiedere "vai avanti".
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
-Per una vista sintetica leggibile del pilota senza cambiare il default JSON:
+Percorso minimo consigliato:
 
 ```powershell
 virgilio init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
-python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human
+python -m virgilio_connector doctor --config accounts.local.yaml --human
 virgilio pilot --config accounts.local.yaml --human
 ```
+
+I primi due comandi sono di preparazione e controllo locale. `virgilio pilot` resta un
+preview senza effetti operativi. Per un collaudo completo usa prima `--dry-run` e solo
+dopo un account di test:
+
+```powershell
+python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human
+python -m virgilio_connector pilot-run --config accounts.local.yaml --dry-run --human
+python -m virgilio_connector pilot-run --config accounts.local.yaml --human
+```
+
+`--dry-run` significa test controllato. Il run senza `--dry-run` va usato solo su
+configurazioni di test gia' verificate.
