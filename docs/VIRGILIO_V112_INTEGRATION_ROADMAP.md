@@ -406,6 +406,13 @@ Stato attuale:
 - con `inbox_id` presente, `doPost` archivia ora il solo `drive_file_id` del record inbox dentro `02_corrispondenza`, poi marca il record `Virgilio_Inbox` come `archiviato`; il fallback temporale sul Limbo resta solo per i flussi legacy senza inbox.
 - il ramo `doPost` con `inbox_id` registra anche l esito finale su `bucoliche` con metadati minimi del documento archiviato e invia notifiche dedicate Chat/Telegram che confermano sia la pratica sia l archiviazione del file correlato.
 
+Flusso utente finale riassunto:
+1. Caronte crea o aggiorna `Virgilio_Inbox` con metadati locali e `inbox_id`.
+2. Il form Virgilio apre il record inbox e mostra solo contesto read-only utile alla scelta umana.
+3. L'operatore sceglie cliente, sito, pratica e responsabile e invia il submit legato allo stesso `inbox_id`.
+4. `doPost` archivia il file nella cartella pratica corretta e aggiorna il record `Virgilio_Inbox` a `archiviato`.
+5. `Bucoliche` registra l'esito tecnico e Chat/Telegram ricevono la conferma finale.
+
 **Task**
 
 - lasciare il form com'e`, al massimo con prefill controllato;

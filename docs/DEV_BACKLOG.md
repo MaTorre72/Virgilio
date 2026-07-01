@@ -172,7 +172,7 @@ Criteri di accettazione:
 |---|---|---|---|---|---|---|---|
 | V112-E3-T01 | DONE | P1 | Semplificare comandi e distinzione test/produzione | Epica 1-2 visibili | `setup.gs`, `README.md`, `docs/*.md` | pochi comandi base e differenza test/prod chiara | non creare nuove superfici operative complesse |
 | V112-E3-T02 | DONE | P1 | Rendere leggibili errori, stati e configurazione | Epica 1-2 visibili | `setup.gs`, `docs/*.md` | errori e stato comprensibili, endpoint e props configurati | non esporre fingerprint, manifest o SQLite in UX normale |
-| V112-E3-T03 | TODO | P2 | Documentare il flusso utente finale | Epica 2 chiusa | `docs/*.md` | flusso utente chiaro, breve e coerente con il backlog | non trasformare la documentazione in logica applicativa |
+| V112-E3-T03 | DONE | P2 | Documentare il flusso utente finale | Epica 2 chiusa | `docs/*.md` | flusso utente chiaro, breve e coerente con il backlog | non trasformare la documentazione in logica applicativa |
 
 ## Registro avanzamento
 
@@ -215,3 +215,4 @@ Criteri di accettazione:
 - 2026-07-01 - Completato `V112-E2-T04`: il ramo `doPost` con `inbox_id` registra ora su `bucoliche` un esito finale coerente (`stato=archiviato`, nome file, note correlate all inbox) e invia notifiche dedicate Chat/Telegram che confermano pratica aperta e documento archiviato, senza cambiare il flusso legacy senza inbox.
 - 2026-07-01 - Completato `V112-E3-T01`: il README ora separa comandi base e collaudo controllato, con `--dry-run` esplicitato come test e il run reale riservato a configurazioni gia' verificate.
 - 2026-07-01 - Completato `V112-E3-T02`: `setup.gs` ora mostra un riepilogo operativo unico di credenziali, URL form ed endpoint trigger con hint espliciti, senza stampare valori sensibili.
+- 2026-07-01 - Completato `V112-E3-T03`: la roadmap v1.1.2 ora riassume il flusso utente finale con i passi `Virgilio_Inbox -> form -> submit -> archiviazione -> Bucoliche -> notifiche`, senza introdurre nuova logica applicativa.
