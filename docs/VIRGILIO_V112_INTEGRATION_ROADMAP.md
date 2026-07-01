@@ -232,6 +232,42 @@ Schema:
 3. Il ponte scrive una riga in un tab inbox minimale nel foglio Bucoliche, idealmente `Virgilio_Inbox`; se il tab non esiste ancora, va creato come tab tecnico separato, non dentro `bucoliche`.
 4. Il form Virgilio resta invariato e continua a fare la parte umana: scelta cliente/sito/pratica/anno, creazione cartella, notifica e archiviazione finale.
 
+### Mapping stabile manifest locale -> `Virgilio_Inbox`
+
+Il mapping minimo concordato e` questo:
+
+| Colonna `Virgilio_Inbox` | Origine | Regola |
+|---|---|---|
+| `inbox_id` | non ancora valorizzato | verra` generato dal task schema/intake successivo |
+| `created_at` | `manifest.created_at` fallback `manifest.staged_at` | primo timestamp disponibile del manifest |
+| `status` | costante | `da_lavorare` |
+| `command_id` | `manifest.command_id` | stringa vuota se il manifest locale non lo trasporta |
+| `account_alias` | `manifest.account_alias` | copia diretta |
+| `source_email` | `manifest.source_email` | copia diretta |
+| `source_message_id` | `manifest.source_message_id` | copia diretta |
+| `source_message_uid` | `manifest.source_message_uid` | copia diretta |
+| `attachment_id` | `manifest.attachment_id` | copia diretta |
+| `fingerprint` | `manifest.fingerprint` | chiave tecnica primaria per idempotenza futura |
+| `sha256` | `manifest.sha256` | copia diretta |
+| `original_filename` | `manifest.original_filename` | copia diretta |
+| `staged_filename` | `manifest.staged_filename` | copia diretta |
+| `drive_file_id` | lookup Drive successivo | non valorizzato dal manifest puro |
+| `manifest_file_id` | lookup Drive successivo | non valorizzato dal manifest puro |
+| `source_subject` | `manifest.subject` | copia diretta |
+| `source_sender` | `manifest.source_sender` | copia diretta |
+| `suggested_cliente` | non ancora valorizzato | resta vuoto fino a logica esplicita |
+| `suggested_sito` | non ancora valorizzato | resta vuoto fino a logica esplicita |
+| `suggested_pratica` | non ancora valorizzato | resta vuoto fino a logica esplicita |
+| `form_url` | non ancora valorizzato | resta vuoto fino al task di apertura form |
+| `notes` | `manifest.note`, `status_reason`, `source_mailbox`, `source_message_date`, `scan_result`, `policy_rule` | compattati come metadati leggibili, senza introdurre nuove colonne ora |
+
+Conseguenze operative:
+
+- il manifest locale e` gia sufficiente a costruire una preview stabile della riga inbox;
+- i campi assenti dal manifest non vengono inventati;
+- `drive_file_id`, `manifest_file_id`, `inbox_id` e `form_url` restano responsabilita` dei task successivi;
+- `fingerprint` resta la chiave tecnica da usare per evitare duplicazioni future, senza riusare `Bucoliche_Stato` come inbox.
+
 Perche` e` la scelta migliore:
 
 - mantiene compatibilita` con Virgilio 1.0;

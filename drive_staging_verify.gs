@@ -33,7 +33,7 @@ function caronteVerificaStagingDriveDryRun(payload) {
   const folderId = PropertiesService.getScriptProperties()
     .getProperty(DRIVE_STAGING_FOLDER_PROPERTY);
   if (!folderId) {
-    return _driveStagingResponse_(payload, false, false, false, false,
+    return _driveStagingResponse_(payload, false, false, false, false, null,
       'Cartella staging Drive di test non configurata.', [
         _driveStagingError_('STAGING_FOLDER_NOT_CONFIGURED',
           'Configurare VIRGILIO_DRIVE_STAGING_FOLDER_ID nelle Script Properties.')
@@ -44,7 +44,7 @@ function caronteVerificaStagingDriveDryRun(payload) {
     const folder = DriveApp.getFolderById(folderId);
     return _driveStagingVerifyInFolder_(payload, folder);
   } catch (err) {
-    return _driveStagingResponse_(payload, false, false, false, false,
+    return _driveStagingResponse_(payload, false, false, false, false, null,
       'Verifica Drive non completata.', [
         _driveStagingError_('DRIVE_READ_FAILED', 'Cartella staging non leggibile.')
       ]);
@@ -80,7 +80,7 @@ function _driveStagingValidatePayload_(payload) {
   return {
     ok: errors.length === 0,
     response: errors.length === 0 ? null : _driveStagingResponse_(
-      payload || {}, false, false, false, false,
+      payload || {}, false, false, false, false, null,
       'Richiesta verifica staging rifiutata.', errors)
   };
 }
@@ -105,6 +105,7 @@ function _driveStagingVerifyInFolder_(payload, folder) {
   }
 
   let manifestConsistent = false;
+  let inboxPreview = null;
   if (manifestFile.file) {
     try {
       const manifest = JSON.parse(manifestFile.file.getBlob().getDataAsString('UTF-8'));
@@ -113,6 +114,12 @@ function _driveStagingVerifyInFolder_(payload, folder) {
         manifest.staged_filename === payload.staged_filename &&
         manifest.sha256 === payload.sha256 &&
         manifest.size_bytes === payload.size_bytes;
+      if (manifestConsistent) {
+        inboxPreview = caronteBuildVirgilioInboxDraftFromManifest(manifest, {
+          drive_file_id: staged.file ? _driveStagingGetFileIdSafe_(staged.file) : '',
+          manifest_file_id: _driveStagingGetFileIdSafe_(manifestFile.file),
+        });
+      }
       if (!manifestConsistent) {
         errors.push(_driveStagingError_(
           'MANIFEST_MISMATCH', 'Manifest non coerente con i metadati richiesti.'
@@ -131,7 +138,7 @@ function _driveStagingVerifyInFolder_(payload, folder) {
 
   const ok = errors.length === 0;
   return _driveStagingResponse_(
-    payload, ok, Boolean(staged.file), Boolean(manifestFile.file), manifestConsistent,
+    payload, ok, Boolean(staged.file), Boolean(manifestFile.file), manifestConsistent, inboxPreview,
     ok
       ? 'File e manifest visibili su Drive; nessuna presa in carico eseguita.'
       : 'Verifica cloud staging non superata.',
@@ -148,7 +155,7 @@ function _driveStagingFindUnique_(folder, name) {
 }
 
 function _driveStagingResponse_(payload, ok, fileFound, manifestFound,
-                                manifestConsistent, message, errors) {
+                                manifestConsistent, inboxPreview, message, errors) {
   return {
     ok: ok,
     dry_run: true,
@@ -158,10 +165,15 @@ function _driveStagingResponse_(payload, ok, fileFound, manifestFound,
     file_found: fileFound,
     manifest_found: manifestFound,
     manifest_consistent: manifestConsistent,
+    inbox_preview: inboxPreview,
     cloud_visible: ok && fileFound && manifestFound && manifestConsistent,
     message: message,
     errors: errors
   };
+}
+
+function _driveStagingGetFileIdSafe_(file) {
+  return file && typeof file.getId === 'function' ? _caronteStringOrEmpty_(file.getId()) : '';
 }
 
 function _driveStagingError_(code, message) {
@@ -174,6 +186,8 @@ function testDriveStagingCloudVerify() {
   const validFolder = _driveStagingFakeFolder_(payload, true, true);
   _driveStagingAssert_(_driveStagingVerifyInFolder_(payload, validFolder).ok,
     'file e manifest presenti');
+  _driveStagingAssert_(_driveStagingVerifyInFolder_(payload, validFolder).inbox_preview.attachment_id ===
+    payload.attachment_id, 'preview inbox coerente');
 
   _driveStagingAssert_(!_driveStagingVerifyInFolder_(
     payload, _driveStagingFakeFolder_(payload, false, true)).ok, 'file mancante');
@@ -228,6 +242,7 @@ function _driveStagingFakeFolder_(payload, includeFile, includeManifest) {
 
 function _driveStagingFakeFile_(content, size) {
   return {
+    getId: () => 'fake-file-id',
     getSize: () => size,
     getBlob: () => ({ getDataAsString: () => content })
   };
