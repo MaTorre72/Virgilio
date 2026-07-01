@@ -202,8 +202,24 @@ function doPost(e) {
       dati.pratica.trim()
     );
 
-    // Avvisa il team su Chat e Telegram
+    // Sposta gli allegati dal Limbo nella cartella pratica appena creata.
+    // Con inbox_id attivo usa l allegato esplicito del record inbox; senza
+    // inbox_id mantiene il fallback legacy per i casi storici.
+    const spostamento = inboxId
+      ? _archiviaAllegatoVirgilioInbox_(
+        inboxId,
+        dati.cliente,
+        dati.sito,
+        cartella.id,
+        cartella.url
+      )
+      : _spostaAllegatiDalLimbo(
+        dati.cliente,
+        dati.sito,
+        cartella.id
+      );
 
+    // Avvisa il team su Chat e Telegram
     avvisaTeam(
       dati.cliente,
       dati.sito,
@@ -226,14 +242,6 @@ function doPost(e) {
       urlCartella: cartella.url,
       idDrive:  cartella.id,
     });
-
-    // Sposta gli allegati dal Limbo nella cartella pratica appena creata.
-    // Restituisce { count, fileIds } per aggiornare le righe Bucoliche.
-    const spostamento = _spostaAllegatiDalLimbo(
-      dati.cliente,
-      dati.sito,
-      cartella.id
-    );
 
     // Aggiorna le righe gmail_staging → gmail_archiviato (senza nuove righe duplicate)
     if (spostamento.fileIds.length > 0) {
@@ -952,6 +960,63 @@ function _apriLimbo() {
   }
 }
 
+function _archiviaAllegatoVirgilioInbox_(inboxId, cliente, sito, idCartellaPratica, urlCartellaPratica) {
+  const inbox = caronteGetVirgilioInboxForArchive(inboxId);
+  if (!inbox || inbox.ok !== true || !inbox.found) {
+    throw new Error(
+      inbox && inbox.message
+        ? inbox.message
+        : 'Record Virgilio_Inbox non disponibile per l archiviazione finale.'
+    );
+  }
+  if (!inbox.drive_file_id) {
+    throw new Error('drive_file_id mancante nel record Virgilio_Inbox.');
+  }
+
+  const corrispondenza = _trovaCartellaCorrispondenza(idCartellaPratica);
+  const file = DriveApp.getFileById(inbox.drive_file_id);
+  const destinationFolderId = corrispondenza.getId();
+  const alreadyInDestination = _cartellaContieneFileId_(corrispondenza, file.getId());
+
+  if (!alreadyInDestination) {
+    file.moveTo(corrispondenza);
+    Logger.log(
+      `[Caronte] Spostato inbox ${inboxId} in 02_corrispondenza: ${file.getName()}`
+    );
+  } else {
+    Logger.log(
+      `[Caronte] Inbox ${inboxId} gia presente in 02_corrispondenza: ${file.getName()}`
+    );
+  }
+
+  const archived = caronteArchiviaVirgilioInbox({
+    inbox_id: inboxId,
+    archived_at: _timestampLocale(),
+    archived_file_id: file.getId(),
+    destination_folder_id: destinationFolderId,
+    destination_folder_url: corrispondenza.getUrl(),
+    pratica_folder_id: idCartellaPratica,
+    pratica_folder_url: urlCartellaPratica,
+  });
+  if (!archived || archived.ok !== true) {
+    throw new Error(
+      archived && archived.message
+        ? archived.message
+        : 'Aggiornamento finale Virgilio_Inbox non riuscito.'
+    );
+  }
+
+  return { count: 1, fileIds: [file.getId()] };
+}
+
+function _cartellaContieneFileId_(folder, fileId) {
+  const files = folder.getFiles();
+  while (files.hasNext()) {
+    if (files.next().getId() === fileId) return true;
+  }
+  return false;
+}
+
 
 /**
  * Estrae il dominio da un indirizzo email.
@@ -1099,6 +1164,95 @@ function _spostaAllegatiDalLimbo(
 
     return { count: 0, fileIds: [] };
   }
+}
+
+function testCaronteInboxArchiviazione() {
+  const movedFile = {
+    id: 'drive-1',
+    name: 'analisi.pdf',
+    movedTo: '',
+    getId: function() { return this.id; },
+    getName: function() { return this.name; },
+    moveTo: function(folder) { this.movedTo = folder.getId(); }
+  };
+  const destinationFiles = [];
+  const destinationFolder = {
+    getId: () => 'folder-corrispondenza',
+    getUrl: () => 'https://drive.google.com/drive/folders/folder-corrispondenza',
+    getFiles: () => {
+      const values = destinationFiles.slice();
+      return { hasNext: () => values.length > 0, next: () => values.shift() };
+    }
+  };
+  const archiveCalls = [];
+  const result = _archiviaAllegatoVirgilioInboxWithDeps_({
+    inboxId: 'inbox-1',
+    cliente: 'Cliente Demo',
+    sito: 'Sito Demo',
+    idCartellaPratica: 'folder-pratica',
+    urlCartellaPratica: 'https://drive.google.com/drive/folders/folder-pratica',
+    getInbox: () => ({ ok: true, found: true, drive_file_id: 'drive-1' }),
+    getFolder: () => destinationFolder,
+    driveApp: { getFileById: () => movedFile },
+    archiveInbox: payload => {
+      archiveCalls.push(payload);
+      return { ok: true };
+    },
+    nowTimestamp: () => '2026-07-01 20:10:00',
+  });
+  _driveStagingAssert_(result.count === 1 && result.fileIds[0] === 'drive-1',
+    'archiviazione inbox restituisce file spostato');
+  _driveStagingAssert_(movedFile.movedTo === 'folder-corrispondenza',
+    'archiviazione inbox sposta il file nella corrispondenza');
+  _driveStagingAssert_(archiveCalls.length === 1 && archiveCalls[0].destination_folder_id === 'folder-corrispondenza',
+    'archiviazione inbox aggiorna il record Virgilio_Inbox');
+  Logger.log('testCaronteInboxArchiviazione: OK');
+}
+
+function _archiviaAllegatoVirgilioInboxWithDeps_(deps) {
+  const inbox = deps.getInbox(deps.inboxId);
+  if (!inbox || inbox.ok !== true || !inbox.found) {
+    throw new Error(
+      inbox && inbox.message
+        ? inbox.message
+        : 'Record Virgilio_Inbox non disponibile per l archiviazione finale.'
+    );
+  }
+  if (!inbox.drive_file_id) {
+    throw new Error('drive_file_id mancante nel record Virgilio_Inbox.');
+  }
+
+  const corrispondenza = deps.getFolder(
+    deps.idCartellaPratica,
+    deps.cliente,
+    deps.sito
+  );
+  const file = deps.driveApp.getFileById(inbox.drive_file_id);
+  const destinationFolderId = corrispondenza.getId();
+  const alreadyInDestination = _cartellaContieneFileId_(corrispondenza, file.getId());
+
+  if (!alreadyInDestination) {
+    file.moveTo(corrispondenza);
+  }
+
+  const archived = deps.archiveInbox({
+    inbox_id: deps.inboxId,
+    archived_at: deps.nowTimestamp(),
+    archived_file_id: file.getId(),
+    destination_folder_id: destinationFolderId,
+    destination_folder_url: corrispondenza.getUrl(),
+    pratica_folder_id: deps.idCartellaPratica,
+    pratica_folder_url: deps.urlCartellaPratica,
+  });
+  if (!archived || archived.ok !== true) {
+    throw new Error(
+      archived && archived.message
+        ? archived.message
+        : 'Aggiornamento finale Virgilio_Inbox non riuscito.'
+    );
+  }
+
+  return { count: 1, fileIds: [file.getId()] };
 }
 
 // ── VALIDAZIONE INPUT ─────────────────────────────────────────────────────────

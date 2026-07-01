@@ -194,6 +194,103 @@ function caronteCollegaSubmitVirgilioInbox(payload) {
   }
 }
 
+function caronteGetVirgilioInboxForArchive(inboxId) {
+  const normalizedInboxId = _virgilioInboxStringOrEmpty_(inboxId);
+  if (!normalizedInboxId) {
+    return {
+      ok: false,
+      inbox_id: '',
+      found: false,
+      message: 'inbox_id mancante per l archiviazione.',
+    };
+  }
+
+  try {
+    const spreadsheetId = _virgilioInboxResolveSpreadsheetId_();
+    const sheetName = _virgilioInboxResolveSheetName_();
+    const ss = SpreadsheetApp.openById(spreadsheetId);
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      return {
+        ok: false,
+        inbox_id: normalizedInboxId,
+        found: false,
+        message: 'Tab Virgilio_Inbox non configurato.',
+      };
+    }
+    _virgilioInboxEnsureHeader_(sheet, VIRGILIO_INBOX_FIELDS);
+    return _virgilioInboxFindArchiveContextByInboxId_(sheet, normalizedInboxId);
+  } catch (err) {
+    return {
+      ok: false,
+      inbox_id: normalizedInboxId,
+      found: false,
+      message: _virgilioInboxStringOrEmpty_(err && err.message) ||
+        'Lookup archiviazione Virgilio_Inbox non riuscito.',
+    };
+  }
+}
+
+function caronteArchiviaVirgilioInbox(payload) {
+  const normalized = _virgilioInboxNormalizeArchivePayload_(payload);
+  if (!normalized.ok) return normalized.response;
+
+  try {
+    const spreadsheetId = _virgilioInboxResolveSpreadsheetId_();
+    const sheetName = _virgilioInboxResolveSheetName_();
+    const ss = SpreadsheetApp.openById(spreadsheetId);
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      return {
+        ok: false,
+        inbox_id: normalized.payload.inbox_id,
+        archived: false,
+        updated: false,
+        status: '',
+        message: 'Tab Virgilio_Inbox non configurato.',
+      };
+    }
+    _virgilioInboxEnsureHeader_(sheet, VIRGILIO_INBOX_FIELDS);
+    const match = _virgilioInboxFindRowByInboxId_(sheet, normalized.payload.inbox_id);
+    if (!match.found) {
+      return {
+        ok: false,
+        inbox_id: normalized.payload.inbox_id,
+        archived: false,
+        updated: false,
+        status: '',
+        message: 'inbox_id non trovato in Virgilio_Inbox.',
+      };
+    }
+
+    const archived = _virgilioInboxApplyArchiveToEntry_(match.entry, normalized.payload);
+    const changed = !_virgilioInboxEntriesEqual_(match.entry, archived);
+    if (changed) {
+      _virgilioInboxWriteEntry_(sheet, match.row, archived);
+    }
+    return {
+      ok: true,
+      inbox_id: archived.inbox_id,
+      archived: true,
+      updated: changed,
+      status: archived.status,
+      message: changed
+        ? 'Record Virgilio_Inbox marcato come archiviato.'
+        : 'Record Virgilio_Inbox gia archiviato.',
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      inbox_id: normalized.payload.inbox_id,
+      archived: false,
+      updated: false,
+      status: '',
+      message: _virgilioInboxStringOrEmpty_(err && err.message) ||
+        'Archiviazione Virgilio_Inbox non riuscita.',
+    };
+  }
+}
+
 function _virgilioInboxResolveSpreadsheetId_(spreadsheetId) {
   const props = PropertiesService.getScriptProperties();
   const configSpreadsheetId = typeof CONFIG !== 'undefined' && CONFIG
@@ -423,6 +520,29 @@ function _virgilioInboxFindRowByInboxId_(sheet, inboxId) {
   return { found: false, row: 0, entry: null };
 }
 
+function _virgilioInboxFindArchiveContextByInboxId_(sheet, inboxId) {
+  const match = _virgilioInboxFindRowByInboxId_(sheet, inboxId);
+  if (!match.found) {
+    return {
+      ok: false,
+      inbox_id: inboxId,
+      found: false,
+      message: 'inbox_id non trovato in Virgilio_Inbox.',
+    };
+  }
+  return {
+    ok: true,
+    inbox_id: inboxId,
+    found: true,
+    status: _virgilioInboxStringOrEmpty_(match.entry.status),
+    drive_file_id: _virgilioInboxStringOrEmpty_(match.entry.drive_file_id),
+    original_filename: _virgilioInboxStringOrEmpty_(match.entry.original_filename),
+    staged_filename: _virgilioInboxStringOrEmpty_(match.entry.staged_filename),
+    source_subject: _virgilioInboxStringOrEmpty_(match.entry.source_subject),
+    source_sender: _virgilioInboxStringOrEmpty_(match.entry.source_sender),
+  };
+}
+
 function _virgilioInboxEntryKey_(entry) {
   const fingerprint = _virgilioInboxStringOrEmpty_(entry && entry.fingerprint);
   if (fingerprint) return `fingerprint:${fingerprint}`;
@@ -474,6 +594,73 @@ function _virgilioInboxNormalizeSubmitPayload_(payload) {
   return { ok: true, payload: normalized };
 }
 
+function _virgilioInboxNormalizeArchivePayload_(payload) {
+  const normalized = payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? {
+      inbox_id: _virgilioInboxStringOrEmpty_(payload.inbox_id),
+      archived_at: _virgilioInboxStringOrEmpty_(payload.archived_at),
+      archived_file_id: _virgilioInboxStringOrEmpty_(payload.archived_file_id),
+      destination_folder_id: _virgilioInboxStringOrEmpty_(payload.destination_folder_id),
+      destination_folder_url: _virgilioInboxStringOrEmpty_(payload.destination_folder_url),
+      pratica_folder_id: _virgilioInboxStringOrEmpty_(payload.pratica_folder_id),
+      pratica_folder_url: _virgilioInboxStringOrEmpty_(payload.pratica_folder_url),
+    }
+    : null;
+  if (!normalized) {
+    return {
+      ok: false,
+      response: {
+        ok: false,
+        inbox_id: '',
+        archived: false,
+        updated: false,
+        status: '',
+        message: 'Payload archiviazione inbox non valido.',
+      }
+    };
+  }
+  if (!normalized.inbox_id) {
+    return {
+      ok: false,
+      response: {
+        ok: false,
+        inbox_id: '',
+        archived: false,
+        updated: false,
+        status: '',
+        message: 'inbox_id obbligatorio per archiviare il record.',
+      }
+    };
+  }
+  if (!normalized.archived_file_id) {
+    return {
+      ok: false,
+      response: {
+        ok: false,
+        inbox_id: normalized.inbox_id,
+        archived: false,
+        updated: false,
+        status: '',
+        message: 'archived_file_id obbligatorio per archiviare il record.',
+      }
+    };
+  }
+  if (!normalized.destination_folder_id) {
+    return {
+      ok: false,
+      response: {
+        ok: false,
+        inbox_id: normalized.inbox_id,
+        archived: false,
+        updated: false,
+        status: '',
+        message: 'destination_folder_id obbligatorio per archiviare il record.',
+      }
+    };
+  }
+  return { ok: true, payload: normalized };
+}
+
 function _virgilioInboxApplySubmitToEntry_(entry, payload) {
   const linked = _virgilioInboxMergeEntry_(entry, {});
   linked.status = 'in_lavorazione';
@@ -490,6 +677,20 @@ function _virgilioInboxApplySubmitToEntry_(entry, payload) {
     form_submitted_at: payload.submitted_at,
   });
   return linked;
+}
+
+function _virgilioInboxApplyArchiveToEntry_(entry, payload) {
+  const archived = _virgilioInboxMergeEntry_(entry, {});
+  archived.status = 'archiviato';
+  archived.notes = _virgilioInboxUpsertNotes_(archived.notes, {
+    archived_at: payload.archived_at,
+    archived_file_id: payload.archived_file_id,
+    destination_folder_id: payload.destination_folder_id,
+    destination_folder_url: payload.destination_folder_url,
+    pratica_folder_id: payload.pratica_folder_id,
+    pratica_folder_url: payload.pratica_folder_url,
+  });
+  return archived;
 }
 
 function _virgilioInboxUpsertNotes_(notes, updates) {
@@ -753,6 +954,17 @@ function testVirgilioInboxSchema() {
   _driveStagingAssert_(linkedEntry.status === 'in_lavorazione', 'submit cambia stato inbox');
   _driveStagingAssert_(linkedEntry.suggested_cliente === 'Cliente Demo', 'submit salva cliente');
   _driveStagingAssert_(linkedEntry.notes.indexOf('form_pratica=AIA') >= 0, 'submit traccia pratica');
+  const archivedEntry = _virgilioInboxApplyArchiveToEntry_(linkedEntry, {
+    archived_at: '2026-07-01 20:05:00',
+    archived_file_id: 'drive-1',
+    destination_folder_id: 'folder-corrispondenza',
+    destination_folder_url: 'https://drive.google.com/drive/folders/folder-corrispondenza',
+    pratica_folder_id: 'folder-pratica',
+    pratica_folder_url: 'https://drive.google.com/drive/folders/folder-pratica',
+  });
+  _driveStagingAssert_(archivedEntry.status === 'archiviato', 'archiviazione cambia stato inbox');
+  _driveStagingAssert_(archivedEntry.notes.indexOf('destination_folder_id=folder-corrispondenza') >= 0,
+    'archiviazione traccia cartella finale');
   Logger.log('testVirgilioInboxSchema: OK');
 }
 
