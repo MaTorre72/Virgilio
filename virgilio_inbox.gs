@@ -50,6 +50,14 @@ function caronteRegistraVirgilioInbox(payload) {
   if (!validation.ok) return validation.response;
 
   try {
+    const visibility = _driveStagingVerifyInboxVisibility_(payload);
+    if (!visibility.ok) {
+      return _virgilioInboxIntakeResponse_(
+        payload, false, '', false, false, false, 0,
+        'Presa in carico inbox rifiutata: file non verificato come visibile su Drive.',
+        visibility.errors
+      );
+    }
     const spreadsheetId = _virgilioInboxResolveSpreadsheetId_();
     const sheetName = _virgilioInboxResolveSheetName_();
     const ss = SpreadsheetApp.openById(spreadsheetId);
@@ -67,8 +75,8 @@ function caronteRegistraVirgilioInbox(payload) {
 
     _virgilioInboxEnsureHeader_(sheet, VIRGILIO_INBOX_FIELDS);
     const draft = caronteBuildVirgilioInboxDraftFromManifest(payload.manifest, {
-      drive_file_id: _virgilioInboxStringOrEmpty_(payload.drive_file_id),
-      manifest_file_id: _virgilioInboxStringOrEmpty_(payload.manifest_file_id),
+      drive_file_id: visibility.drive_file_id,
+      manifest_file_id: visibility.manifest_file_id,
       form_url: _virgilioInboxStringOrEmpty_(payload.form_url),
     });
     const result = _virgilioInboxUpsertDraft_(sheet, draft, {
@@ -174,6 +182,9 @@ function _virgilioInboxValidateIntakePayload_(payload) {
       if (!draft.sha256 || !/^[0-9a-f]{64}$/.test(draft.sha256)) {
         errors.push(_driveStagingError_('INVALID_SHA256', 'sha256 non valido.'));
       }
+      if (!Number.isInteger(payload.manifest.size_bytes) || payload.manifest.size_bytes < 0) {
+        errors.push(_driveStagingError_('INVALID_SIZE_BYTES', 'size_bytes non valido nel manifest.'));
+      }
       if (!draft.fingerprint && !draft.attachment_id) {
         errors.push(_driveStagingError_(
           'MISSING_IDEMPOTENCY_KEY',
@@ -182,7 +193,9 @@ function _virgilioInboxValidateIntakePayload_(payload) {
       }
       ['drive_file_id', 'manifest_file_id'].forEach(field => {
         const value = _virgilioInboxStringOrEmpty_(payload[field]);
-        if (value && /[\\/]/.test(value)) {
+        if (!value) {
+          errors.push(_driveStagingError_('MISSING_FIELD', `${field} obbligatorio dopo la verify Drive.`));
+        } else if (/[\\/]/.test(value)) {
           errors.push(_driveStagingError_('INVALID_FIELD', `${field} non puo contenere path.`));
         }
       });
@@ -460,6 +473,18 @@ function testVirgilioInboxSchema() {
     conflict = err.message.indexOf('SHA-256 differente') >= 0;
   }
   _driveStagingAssert_(conflict, 'conflitto sha256');
+
+  const visibilityFolder = _driveStagingFakeFolder_(_driveStagingTestPayload_(), true, true);
+  _driveStagingAssert_(
+    _driveStagingVerifyInboxVisibilityInFolder_(payload, visibilityFolder).ok,
+    'gate visibilita drive ok'
+  );
+  const payloadMissingDriveId = Object.assign({}, payload);
+  delete payloadMissingDriveId.drive_file_id;
+  _driveStagingAssert_(
+    !_virgilioInboxValidateIntakePayload_(payloadMissingDriveId).ok,
+    'drive_file_id obbligatorio dopo verify'
+  );
   Logger.log('testVirgilioInboxSchema: OK');
 }
 

@@ -136,7 +136,7 @@ Criteri di accettazione:
 | V112-E1-T01 | DONE | P0 | Definire mapping manifest locale -> `Virgilio_Inbox` | Epica 0 chiusa | `caronte_bridge.gs`, `drive_staging_verify.gs`, `docs/*.md` | mapping documentato e stabile tra manifest e inbox | non riusare `Bucoliche_Eventi`/`Bucoliche_Stato` come inbox |
 | V112-E1-T02 | DONE | P0 | Creare o consolidare lo schema `Virgilio_Inbox` | mapping definito | `virgilio_inbox.gs`, `docs/*.md` | schema con `inbox_id` e campi minimi concordati | non usare `Staging_Local_Test` come produzione |
 | V112-E1-T03 | DONE | P0 | Implementare intake Apps Script metadata-only idempotente | schema inbox, mapping manifest | `caronte_bridge.gs`, `virgilio_inbox.gs` | stesso allegato genera una sola riga, payload senza byte/base64/path | non trasportare contenuti binari o percorsi locali |
-| V112-E1-T04 | TODO | P1 | Verificare visibilita` Drive prima della presa in carico | intake metadata-only | `drive_staging_verify.gs`, `caronte_bridge.gs` | il file deve essere visibile in Google Drive prima di creare o aggiornare inbox | non aggirare la verifica con riferimenti locali |
+| V112-E1-T04 | DONE | P1 | Verificare visibilita` Drive prima della presa in carico | intake metadata-only | `drive_staging_verify.gs`, `caronte_bridge.gs`, `virgilio_inbox.gs` | il file deve essere visibile in Google Drive prima di creare o aggiornare inbox | non aggirare la verifica con riferimenti locali |
 
 ### Epica 2 - Ripristino flusso umano / form / archiviazione finale / Chat / Telegram
 
@@ -208,3 +208,4 @@ Criteri di accettazione:
 - 2026-07-01 - Definito il mapping stabile `manifest locale -> Virgilio_Inbox`: `caronte_bridge.gs` espone il draft puro della riga inbox, `drive_staging_verify.gs` restituisce `inbox_preview` read-only con i campi gia valorizzabili dal manifest e lascia vuoti i campi demandati ai task successivi (`inbox_id`, suggerimenti, `form_url`).
 - 2026-07-01 - Aggiunto `virgilio_inbox.gs`: setup esplicito e consolidamento non distruttivo dello schema `Virgilio_Inbox`, con header canonico a 22 colonne, `inbox_id` in prima posizione e rifiuto dei mismatch su tab gia popolati.
 - 2026-07-01 - Completato `V112-E1-T03`: `caronteRegistraVirgilioInbox` esegue l'intake metadata-only sul tab `Virgilio_Inbox`, genera `inbox_id`, usa `fingerprint` come chiave primaria con fallback `attachment_id`, evita duplicati sul retry e rifiuta conflitti `sha256` o payload con path locali / base64.
+- 2026-07-01 - Completato `V112-E1-T04`: l'intake `Virgilio_Inbox` ora richiede `drive_file_id` e `manifest_file_id` restituiti dalla verify read-only, ricontrolla che file e manifest siano davvero visibili nella cartella Drive configurata e blocca mismatch o intake senza conferma cloud.

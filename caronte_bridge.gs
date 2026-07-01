@@ -276,6 +276,7 @@ function _caronteInboxManifestSample_() {
     attachment_id: 'att-test-1',
     fingerprint: 'fp-test-1',
     sha256: 'a'.repeat(64),
+    size_bytes: 4,
     original_filename: 'documento.pdf',
     staged_filename: 'att-test-1-documento.pdf',
     note: 'sync cloud non verificata',

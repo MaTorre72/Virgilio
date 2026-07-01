@@ -30,25 +30,12 @@ function caronteVerificaStagingDriveDryRun(payload) {
   const validation = _driveStagingValidatePayload_(payload);
   if (!validation.ok) return validation.response;
 
-  const folderId = PropertiesService.getScriptProperties()
-    .getProperty(DRIVE_STAGING_FOLDER_PROPERTY);
-  if (!folderId) {
+  const resolvedFolder = _driveStagingResolveFolder_();
+  if (!resolvedFolder.ok) {
     return _driveStagingResponse_(payload, false, false, false, false, null,
-      'Cartella staging Drive di test non configurata.', [
-        _driveStagingError_('STAGING_FOLDER_NOT_CONFIGURED',
-          'Configurare VIRGILIO_DRIVE_STAGING_FOLDER_ID nelle Script Properties.')
-      ]);
+      resolvedFolder.message, resolvedFolder.errors);
   }
-
-  try {
-    const folder = DriveApp.getFolderById(folderId);
-    return _driveStagingVerifyInFolder_(payload, folder);
-  } catch (err) {
-    return _driveStagingResponse_(payload, false, false, false, false, null,
-      'Verifica Drive non completata.', [
-        _driveStagingError_('DRIVE_READ_FAILED', 'Cartella staging non leggibile.')
-      ]);
-  }
+  return _driveStagingVerifyInFolder_(payload, resolvedFolder.folder);
 }
 
 function _driveStagingValidatePayload_(payload) {
@@ -146,6 +133,160 @@ function _driveStagingVerifyInFolder_(payload, folder) {
   );
 }
 
+function _driveStagingVerifyInboxVisibility_(payload) {
+  const resolvedFolder = _driveStagingResolveFolder_();
+  if (!resolvedFolder.ok) {
+    return {
+      ok: false,
+      drive_file_id: '',
+      manifest_file_id: '',
+      errors: resolvedFolder.errors.slice(),
+    };
+  }
+  return _driveStagingVerifyInboxVisibilityInFolder_(payload, resolvedFolder.folder);
+}
+
+function _driveStagingVerifyInboxVisibilityInFolder_(payload, folder) {
+  const manifest = payload && payload.manifest && typeof payload.manifest === 'object' &&
+    !Array.isArray(payload.manifest)
+    ? payload.manifest
+    : null;
+  if (!manifest) {
+    return {
+      ok: false,
+      drive_file_id: '',
+      manifest_file_id: '',
+      errors: [_driveStagingError_('INVALID_MANIFEST', 'manifest obbligatorio per verificare Drive.')],
+    };
+  }
+
+  const verifyPayload = _driveStagingBuildVerifyPayloadFromManifest_(manifest);
+  if (!verifyPayload.ok) {
+    return {
+      ok: false,
+      drive_file_id: '',
+      manifest_file_id: '',
+      errors: verifyPayload.errors,
+    };
+  }
+
+  const verification = _driveStagingVerifyInFolder_(verifyPayload.payload, folder);
+  const preview = verification.inbox_preview || {};
+  const actualDriveFileId = _caronteStringOrEmpty_(preview.drive_file_id);
+  const actualManifestFileId = _caronteStringOrEmpty_(preview.manifest_file_id);
+  const expectedDriveFileId = _caronteStringOrEmpty_(payload.drive_file_id);
+  const expectedManifestFileId = _caronteStringOrEmpty_(payload.manifest_file_id);
+  const errors = (verification.errors || []).slice();
+
+  if (!verification.cloud_visible) {
+    return {
+      ok: false,
+      drive_file_id: actualDriveFileId,
+      manifest_file_id: actualManifestFileId,
+      errors: errors,
+    };
+  }
+  if (expectedDriveFileId !== actualDriveFileId) {
+    errors.push(_driveStagingError_(
+      'DRIVE_FILE_ID_MISMATCH',
+      'drive_file_id non corrisponde al file staged visibile su Drive.'
+    ));
+  }
+  if (expectedManifestFileId !== actualManifestFileId) {
+    errors.push(_driveStagingError_(
+      'MANIFEST_FILE_ID_MISMATCH',
+      'manifest_file_id non corrisponde al manifest visibile su Drive.'
+    ));
+  }
+  return {
+    ok: errors.length === 0,
+    drive_file_id: actualDriveFileId,
+    manifest_file_id: actualManifestFileId,
+    errors: errors,
+  };
+}
+
+function _driveStagingBuildVerifyPayloadFromManifest_(manifest) {
+  const attachmentId = _caronteStringOrEmpty_(manifest.attachment_id);
+  const stagedFilename = _caronteStringOrEmpty_(manifest.staged_filename);
+  const sha256 = _caronteStringOrEmpty_(manifest.sha256);
+  const sizeBytes = manifest && Number.isInteger(manifest.size_bytes) ? manifest.size_bytes : null;
+  const errors = [];
+
+  if (!attachmentId) {
+    errors.push(_driveStagingError_(
+      'MISSING_ATTACHMENT_ID',
+      'attachment_id mancante nel manifest per la verifica Drive.'
+    ));
+  }
+  if (!stagedFilename) {
+    errors.push(_driveStagingError_(
+      'MISSING_STAGED_FILENAME',
+      'staged_filename mancante nel manifest per la verifica Drive.'
+    ));
+  }
+  if (!/^[0-9a-f]{64}$/.test(sha256)) {
+    errors.push(_driveStagingError_(
+      'INVALID_SHA256',
+      'sha256 del manifest non valido per la verifica Drive.'
+    ));
+  }
+  if (!Number.isInteger(sizeBytes) || sizeBytes < 0) {
+    errors.push(_driveStagingError_(
+      'INVALID_SIZE_BYTES',
+      'size_bytes del manifest non valido per la verifica Drive.'
+    ));
+  }
+
+  return {
+    ok: errors.length === 0,
+    payload: errors.length === 0 ? {
+      action: DRIVE_STAGING_VERIFY_ACTION,
+      dry_run: true,
+      attachment_id: attachmentId,
+      staged_filename: stagedFilename,
+      sha256: sha256,
+      size_bytes: sizeBytes,
+    } : null,
+    errors: errors,
+  };
+}
+
+function _driveStagingResolveFolder_() {
+  const folderId = PropertiesService.getScriptProperties()
+    .getProperty(DRIVE_STAGING_FOLDER_PROPERTY);
+  if (!folderId) {
+    return {
+      ok: false,
+      folder: null,
+      message: 'Cartella staging Drive di test non configurata.',
+      errors: [
+        _driveStagingError_(
+          'STAGING_FOLDER_NOT_CONFIGURED',
+          'Configurare VIRGILIO_DRIVE_STAGING_FOLDER_ID nelle Script Properties.'
+        )
+      ],
+    };
+  }
+  try {
+    return {
+      ok: true,
+      folder: DriveApp.getFolderById(folderId),
+      message: '',
+      errors: [],
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      folder: null,
+      message: 'Verifica Drive non completata.',
+      errors: [
+        _driveStagingError_('DRIVE_READ_FAILED', 'Cartella staging non leggibile.')
+      ],
+    };
+  }
+}
+
 function _driveStagingFindUnique_(folder, name) {
   const iterator = folder.getFilesByName(name);
   if (!iterator.hasNext()) return { file: null, duplicate: false };
@@ -204,6 +345,20 @@ function testDriveStagingCloudVerify() {
   const wrongName = Object.assign({}, payload, { staged_filename: 'other.pdf' });
   _driveStagingAssert_(!_driveStagingVerifyInFolder_(wrongName, validFolder).ok,
     'staged_filename non coerente');
+
+  const inboxPayload = {
+    action: 'intake_virgilio_inbox',
+    manifest: _caronteInboxManifestSample_(),
+    drive_file_id: 'fake-file-id',
+    manifest_file_id: 'fake-file-id',
+  };
+  _driveStagingAssert_(_driveStagingVerifyInboxVisibilityInFolder_(inboxPayload, validFolder).ok,
+    'visibilita inbox verificata');
+  const wrongDriveFileId = Object.assign({}, inboxPayload, { drive_file_id: 'other-file-id' });
+  _driveStagingAssert_(
+    !_driveStagingVerifyInboxVisibilityInFolder_(wrongDriveFileId, validFolder).ok,
+    'drive_file_id incoerente'
+  );
   Logger.log('testDriveStagingCloudVerify: OK');
 }
 
