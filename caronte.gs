@@ -168,6 +168,30 @@ function doPost(e) {
     });
   }
 
+  const inboxId = dati.inbox_id ? dati.inbox_id.toString().trim() : '';
+  let inboxLink = null;
+  if (inboxId) {
+    inboxLink = caronteCollegaSubmitVirgilioInbox({
+      inbox_id: inboxId,
+      cliente: dati.cliente.toString().trim(),
+      sito: dati.sito.toString().trim(),
+      pratica: dati.pratica.toString().trim(),
+      anno: dati.anno.toString().trim(),
+      note: dati.note ? dati.note.toString() : '',
+      tecnici: Array.isArray(dati.tecnici) ? dati.tecnici : [],
+      submitted_at: _timestampLocale(),
+    });
+    if (!inboxLink || inboxLink.ok !== true) {
+      Logger.log(`[Caronte] doPost — inbox non collegata: ${inboxId}`);
+      return _rispostaJSON({
+        status: 'error',
+        messaggio: inboxLink && inboxLink.message
+          ? inboxLink.message
+          : 'Impossibile collegare il submit al record Virgilio_Inbox.',
+      });
+    }
+  }
+
   // 5. Esecuzione operazioni principali
   try {
     // Crea cartella pratica nell'Empireo
@@ -229,6 +253,8 @@ function doPost(e) {
       cartella:         cartella.url,
       id:               cartella.id,
       allegatiSpostati: spostamento.count,
+      inbox_id:         inboxId,
+      inbox_status:     inboxLink && inboxLink.status ? inboxLink.status : '',
     });
 
   } catch (err) {
@@ -271,6 +297,7 @@ function apriPraticaDaVirgilio(dati) {
         anno: dati.anno || new Date().getFullYear().toString(),
         tecnici: Array.isArray(dati.tecnici) ? dati.tecnici : [],
         note: dati.note || '',
+        inbox_id: dati.inbox_id || '',
         origine: 'form_virgilio_interno'
       })
     }

@@ -134,6 +134,66 @@ function caronteGetVirgilioInboxForForm(inboxId) {
   }
 }
 
+function caronteCollegaSubmitVirgilioInbox(payload) {
+  const normalized = _virgilioInboxNormalizeSubmitPayload_(payload);
+  if (!normalized.ok) return normalized.response;
+
+  try {
+    const spreadsheetId = _virgilioInboxResolveSpreadsheetId_();
+    const sheetName = _virgilioInboxResolveSheetName_();
+    const ss = SpreadsheetApp.openById(spreadsheetId);
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      return {
+        ok: false,
+        inbox_id: normalized.payload.inbox_id,
+        linked: false,
+        updated: false,
+        status: '',
+        message: 'Tab Virgilio_Inbox non configurato.',
+      };
+    }
+    _virgilioInboxEnsureHeader_(sheet, VIRGILIO_INBOX_FIELDS);
+    const match = _virgilioInboxFindRowByInboxId_(sheet, normalized.payload.inbox_id);
+    if (!match.found) {
+      return {
+        ok: false,
+        inbox_id: normalized.payload.inbox_id,
+        linked: false,
+        updated: false,
+        status: '',
+        message: 'inbox_id non trovato in Virgilio_Inbox.',
+      };
+    }
+
+    const linked = _virgilioInboxApplySubmitToEntry_(match.entry, normalized.payload);
+    const changed = !_virgilioInboxEntriesEqual_(match.entry, linked);
+    if (changed) {
+      _virgilioInboxWriteEntry_(sheet, match.row, linked);
+    }
+    return {
+      ok: true,
+      inbox_id: linked.inbox_id,
+      linked: true,
+      updated: changed,
+      status: linked.status,
+      message: changed
+        ? 'Submit form collegato al record Virgilio_Inbox.'
+        : 'Submit form gia collegato al record Virgilio_Inbox.',
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      inbox_id: normalized.payload.inbox_id,
+      linked: false,
+      updated: false,
+      status: '',
+      message: _virgilioInboxStringOrEmpty_(err && err.message) ||
+        'Aggancio submit Virgilio_Inbox non riuscito.',
+    };
+  }
+}
+
 function _virgilioInboxResolveSpreadsheetId_(spreadsheetId) {
   const props = PropertiesService.getScriptProperties();
   const configSpreadsheetId = typeof CONFIG !== 'undefined' && CONFIG
@@ -345,11 +405,126 @@ function _virgilioInboxFindFormContextByInboxId_(sheet, inboxId) {
   };
 }
 
+function _virgilioInboxFindRowByInboxId_(sheet, inboxId) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    return { found: false, row: 0, entry: null };
+  }
+  const values = sheet.getRange(2, 1, lastRow - 1, VIRGILIO_INBOX_FIELDS.length).getValues();
+  for (let index = 0; index < values.length; index += 1) {
+    const entry = _virgilioInboxEntryFromRow_(values[index]);
+    if (_virgilioInboxStringOrEmpty_(entry.inbox_id) !== inboxId) continue;
+    return {
+      found: true,
+      row: index + 2,
+      entry: entry,
+    };
+  }
+  return { found: false, row: 0, entry: null };
+}
+
 function _virgilioInboxEntryKey_(entry) {
   const fingerprint = _virgilioInboxStringOrEmpty_(entry && entry.fingerprint);
   if (fingerprint) return `fingerprint:${fingerprint}`;
   const attachmentId = _virgilioInboxStringOrEmpty_(entry && entry.attachment_id);
   return attachmentId ? `attachment_id:${attachmentId}` : '';
+}
+
+function _virgilioInboxNormalizeSubmitPayload_(payload) {
+  const normalized = payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? {
+      inbox_id: _virgilioInboxStringOrEmpty_(payload.inbox_id),
+      cliente: _virgilioInboxStringOrEmpty_(payload.cliente),
+      sito: _virgilioInboxStringOrEmpty_(payload.sito),
+      pratica: _virgilioInboxStringOrEmpty_(payload.pratica),
+      anno: _virgilioInboxStringOrEmpty_(payload.anno),
+      note: _virgilioInboxStringOrEmpty_(payload.note),
+      tecnici: Array.isArray(payload.tecnici)
+        ? payload.tecnici.map(_virgilioInboxStringOrEmpty_).filter(Boolean)
+        : [],
+      submitted_at: _virgilioInboxStringOrEmpty_(payload.submitted_at),
+    }
+    : null;
+  if (!normalized) {
+    return {
+      ok: false,
+      response: {
+        ok: false,
+        inbox_id: '',
+        linked: false,
+        updated: false,
+        status: '',
+        message: 'Payload submit inbox non valido.',
+      }
+    };
+  }
+  if (!normalized.inbox_id) {
+    return {
+      ok: false,
+      response: {
+        ok: false,
+        inbox_id: '',
+        linked: false,
+        updated: false,
+        status: '',
+        message: 'inbox_id obbligatorio per collegare il submit.',
+      }
+    };
+  }
+  return { ok: true, payload: normalized };
+}
+
+function _virgilioInboxApplySubmitToEntry_(entry, payload) {
+  const linked = _virgilioInboxMergeEntry_(entry, {});
+  linked.status = 'in_lavorazione';
+  linked.suggested_cliente = payload.cliente || linked.suggested_cliente;
+  linked.suggested_sito = payload.sito || linked.suggested_sito;
+  linked.suggested_pratica = payload.pratica || linked.suggested_pratica;
+  linked.notes = _virgilioInboxUpsertNotes_(linked.notes, {
+    form_cliente: payload.cliente,
+    form_sito: payload.sito,
+    form_pratica: payload.pratica,
+    form_anno: payload.anno,
+    form_tecnici: payload.tecnici.join(', '),
+    form_note: payload.note,
+    form_submitted_at: payload.submitted_at,
+  });
+  return linked;
+}
+
+function _virgilioInboxUpsertNotes_(notes, updates) {
+  const parts = [];
+  const seen = {};
+  _virgilioInboxStringOrEmpty_(notes)
+    .split(';')
+    .map(item => _virgilioInboxStringOrEmpty_(item))
+    .filter(Boolean)
+    .forEach(item => {
+      const separator = item.indexOf('=');
+      if (separator <= 0) {
+        parts.push(item);
+        return;
+      }
+      const key = _virgilioInboxStringOrEmpty_(item.slice(0, separator));
+      const value = _virgilioInboxStringOrEmpty_(item.slice(separator + 1));
+      if (!key) return;
+      seen[key] = parts.length;
+      parts.push(`${key}=${value}`);
+    });
+
+  Object.keys(updates || {}).forEach(key => {
+    const value = _virgilioInboxNormalizeNoteValue_(updates[key]);
+    if (!value) return;
+    const entry = `${key}=${value}`;
+    if (Object.prototype.hasOwnProperty.call(seen, key)) {
+      parts[seen[key]] = entry;
+    } else {
+      seen[key] = parts.length;
+      parts.push(entry);
+    }
+  });
+
+  return parts.join('; ');
 }
 
 function _virgilioInboxMergeEntry_(existing, draft) {
@@ -457,6 +632,13 @@ function _virgilioInboxStringOrEmpty_(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function _virgilioInboxNormalizeNoteValue_(value) {
+  return _virgilioInboxStringOrEmpty_(value)
+    .replace(/[;=]+/g, ', ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /** Test puri: nessuna lettura/scrittura reale su Sheets. */
 function testVirgilioInboxSchema() {
   const emptySheet = _virgilioInboxFakeSheet_(0, []);
@@ -559,6 +741,18 @@ function testVirgilioInboxSchema() {
   _driveStagingAssert_(formContext.original_filename === 'analisi.pdf', 'filename esposto al form');
   const missingContext = _virgilioInboxFindFormContextByInboxId_(fakeSheet, 'missing');
   _driveStagingAssert_(!missingContext.ok && !missingContext.found, 'lookup inbox_id mancante');
+  const linkedEntry = _virgilioInboxApplySubmitToEntry_(_virgilioInboxEntryFromRow_(rows[1]), {
+    cliente: 'Cliente Demo',
+    sito: 'Sito Demo',
+    pratica: 'AIA',
+    anno: '2026',
+    note: 'nota utente',
+    tecnici: ['Marco', 'Sara'],
+    submitted_at: '2026-07-01 20:00:00',
+  });
+  _driveStagingAssert_(linkedEntry.status === 'in_lavorazione', 'submit cambia stato inbox');
+  _driveStagingAssert_(linkedEntry.suggested_cliente === 'Cliente Demo', 'submit salva cliente');
+  _driveStagingAssert_(linkedEntry.notes.indexOf('form_pratica=AIA') >= 0, 'submit traccia pratica');
   Logger.log('testVirgilioInboxSchema: OK');
 }
 

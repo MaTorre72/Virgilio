@@ -401,6 +401,7 @@ Stato attuale:
 - il form legge gia` `inbox_id` dal `doGet(e)` della Web App;
 - il template riceve solo contesto read-only da `Virgilio_Inbox`;
 - il primo step mostra il documento in presa in carico e puo` precompilare suggerimenti gia presenti senza cambiare il submit.
+- il submit passa ora `inbox_id` fino a `doPost`, aggiorna il record `Virgilio_Inbox` esistente a `in_lavorazione` e salva cliente/sito/pratica scelti senza creare nuovi record inbox.
 
 **Task**
 

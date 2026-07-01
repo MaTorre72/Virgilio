@@ -154,7 +154,7 @@ Criteri di accettazione:
 | ID | Stato | Pri | Titolo | Dipendenze | File probabili | Accettazione | Fuori scope specifico |
 |---|---|---|---|---|---|---|---|
 | V112-E2-T01 | DONE | P0 | Estendere il form per leggere `inbox_id` | Epica 1 pronta | `virgilio.html`, `webapp.gs`, `virgilio_inbox.gs` | il form legge `inbox_id` senza riscriverlo | non riscrivere il form o cambiare la UX in modo invasivo |
-| V112-E2-T02 | TODO | P0 | Collegare submit form a record `Virgilio_Inbox` | `inbox_id` leggibile | `virgilio.html`, `caronte.gs`, `bucoliche.gs` | submit agganciato al record inbox corretto | non usare il form per creare un inbox nuovo senza correlazione |
+| V112-E2-T02 | DONE | P0 | Collegare submit form a record `Virgilio_Inbox` | `inbox_id` leggibile | `virgilio.html`, `caronte.gs`, `bucoliche.gs` | submit agganciato al record inbox corretto | non usare il form per creare un inbox nuovo senza correlazione |
 | V112-E2-T03 | TODO | P1 | Archiviare file dal Limbo Drive alla cartella pratica finale | submit collegato | `caronte.gs`, `setup.gs` | file copiato nella cartella finale corretta e record archiviato | non trasformare `Staging_Local_Test` in produzione |
 | V112-E2-T04 | TODO | P1 | Aggiornare Bucoliche/log e notifiche Chat/Telegram | archiviazione finale | `bucoliche.gs`, `notifiche.gs` | esito registrato e notifica inviata | non introdurre automazioni irreversibili senza conferma umana |
 
@@ -210,3 +210,4 @@ Criteri di accettazione:
 - 2026-07-01 - Completato `V112-E1-T03`: `caronteRegistraVirgilioInbox` esegue l'intake metadata-only sul tab `Virgilio_Inbox`, genera `inbox_id`, usa `fingerprint` come chiave primaria con fallback `attachment_id`, evita duplicati sul retry e rifiuta conflitti `sha256` o payload con path locali / base64.
 - 2026-07-01 - Completato `V112-E1-T04`: l'intake `Virgilio_Inbox` ora richiede `drive_file_id` e `manifest_file_id` restituiti dalla verify read-only, ricontrolla che file e manifest siano davvero visibili nella cartella Drive configurata e blocca mismatch o intake senza conferma cloud.
 - 2026-07-01 - Completato `V112-E2-T01`: `doGet(e)` legge `inbox_id`, `webapp.gs` passa al template solo contesto read-only da `Virgilio_Inbox`, `virgilio.html` mostra il riepilogo documento e precompila in modo non invasivo eventuali suggerimenti gia presenti senza toccare il submit operativo.
+- 2026-07-01 - Completato `V112-E2-T02`: `virgilio.html` passa `inbox_id` al submit, `caronte.gs` rifiuta i submit con `inbox_id` non correlato e `virgilio_inbox.gs` aggiorna il record esistente con stato `in_lavorazione` e contesto umano minimo del form senza creare un inbox nuovo.

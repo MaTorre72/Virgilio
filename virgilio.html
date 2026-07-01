@@ -1149,9 +1149,15 @@ function apri() {
   const anno    = document.getElementById('annoSelect').value;
   const tecnici = getTecnici();
   const note    = document.getElementById('noteInput').value.trim();
+  const inboxId = getInboxId();
+  const inboxContext = window._virgilioInboxContext || {};
 
   if (!cliente || !sito || !pratica || !anno) {
     alert('Compila cliente, sito, pratica e anno prima di aprire la pratica.');
+    return;
+  }
+  if (inboxContext.enabled && !inboxContext.found) {
+    alert('Questo documento non risulta presente nella Virgilio_Inbox. Riapri il form dal record corretto.');
     return;
   }
 
@@ -1214,6 +1220,7 @@ function apri() {
       alert('Errore tecnico durante apertura pratica: ' + err.message);
     })
     .apriPraticaDaVirgilio({
+      inbox_id: inboxId,
       cliente: cliente,
       sito: sito,
       pratica: pratica,
