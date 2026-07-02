@@ -7,6 +7,9 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 Obiettivo: evitare la convivenza in root di sorgente canonica e snapshot `clasp`, cosi il lavoro
 autonomo puo leggere, modificare e sincronizzare il progetto senza ambiguita di rappresentazione.
 
+Stato verificato nel workspace: sorgente canonica in `apps_script/src`, snapshot `clasp` in
+`apps_script/clasp`, root pulita.
+
 ### Task 0.0 - Separare sorgente e snapshot Apps Script
 
 Obiettivo:
@@ -28,7 +31,7 @@ Accettazione:
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
-| TODO | P0 | Separare sorgente e snapshot Apps Script | `.clasp.json`, `.claspignore`, cartelle dedicate Apps Script | root pulita, sorgente e mirror distinti, nessuna perdita di codice | Alto |
+| DONE | P0 | Separare sorgente e snapshot Apps Script | `.clasp.json`, `.claspignore`, cartelle dedicate Apps Script | root pulita, sorgente e mirror distinti, nessuna perdita di codice | Alto |
 
 ## Milestone 0 - Delta MVP operativo minimo
 
@@ -443,3 +446,4 @@ Criteri di accettazione:
 - 2026-07-01 - Completato `V112-E3-T01`: il README ora separa comandi base e collaudo controllato, con `--dry-run` esplicitato come test e il run reale riservato a configurazioni gia' verificate.
 - 2026-07-01 - Completato `V112-E3-T02`: `setup.gs` ora mostra un riepilogo operativo unico di credenziali, URL form ed endpoint trigger con hint espliciti, senza stampare valori sensibili.
 - 2026-07-01 - Completato `V112-E3-T03`: la roadmap v1.1.2 ora riassume il flusso utente finale con i passi `Virgilio_Inbox -> form -> submit -> archiviazione -> Bucoliche -> notifiche`, senza introdurre nuova logica applicativa.
+- 2026-07-03 - Task 0.0 chiuso: la sorgente canonica vive in `apps_script/src` e la snapshot `clasp` in `apps_script/clasp`, con root libera da file Apps Script ambigui.
