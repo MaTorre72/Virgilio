@@ -59,6 +59,205 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi
 | DONE | P3 | Human review | workflow futuro | conferma obbligatoria | Alto |
 | DONE | P3 | Feedback loop | audit futuro | correzioni tracciate | Alto |
 
+## Milestone v1.1.3 - Virgilio unificato
+
+Obiettivo: consolidare Virgilio come un solo flusso operativo con due ingressi tecnici, lessico comune e sviluppo Apps Script tramite `clasp`.
+
+### EPICA 0 - Conciliazione e lessico comune
+
+Obiettivo:
+eliminare ambiguita` tra `staging`/Limbo, Bucoliche tecniche, `Virgilio_Inbox` e Registro.
+
+Task:
+
+- creare documento architettura unificata;
+- mappare termini legacy -> termini ufficiali;
+- individuare file e funzioni da preservare;
+- classificare moduli Google-only e local connector.
+
+Accettazione:
+
+- lessico unico approvato;
+- nessun modulo perso;
+- backlog aggiornato.
+
+| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|
+| TODO | P0 | Creare documento architettura unificata | `docs/ARCHITETTURA_UNIFICATA.md`, `README.md`, `AGENTS.md` | documento breve, coerente e condiviso | Medio |
+| TODO | P0 | Mappare termini legacy -> ufficiali | `docs/ARCHITETTURA_UNIFICATA.md`, `docs/DEV_BACKLOG.md` | lessico unico per UX e backlog | Medio |
+| TODO | P1 | Individuare funzioni da preservare | codice Apps Script, local connector | inventario delle aree da non perdere | Alto |
+| TODO | P1 | Classificare moduli Google-only e local connector | `README.md`, docs | separazione chiara dei due ingressi | Medio |
+
+### EPICA 1 - Registro unico di audit
+
+Obiettivo:
+razionalizzare Bucoliche in un Registro unico.
+
+Task:
+
+- definire schema minimo Registro;
+- mappare eventi local connector nel Registro;
+- mappare eventi Google-only nel Registro;
+- trattare errori e conflitti come eventi di Registro;
+- mantenere eventuali tab tecnici solo come compatibilita` temporanea.
+
+Accettazione:
+
+- un documento Google-only produce eventi Registro;
+- un documento local connector produce eventi Registro;
+- nessun nuovo tab tecnico produttivo viene creato senza necessita`.
+
+| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|
+| TODO | P0 | Definire schema Registro unico | `docs/ARCHITETTURA_UNIFICATA.md`, `docs/NEXT_CODEX_TASKS.md` | schema minimo approvato | Medio |
+| TODO | P1 | Mappare eventi local connector nel Registro | codice local connector, docs | eventi tracciabili senza perdita | Alto |
+| TODO | P1 | Mappare eventi Google-only nel Registro | Apps Script, docs | eventi coerenti con il flusso unico | Alto |
+| TODO | P1 | Trattare errori e conflitti come eventi di Registro | docs, codice tecnico | errori ispezionabili e non silenziati | Alto |
+| TODO | P2 | Mantenere i tab tecnici solo per compatibilita` | docs, eventuali script legacy | nessun nuovo tab produttivo separato | Medio |
+
+### EPICA 2 - Da archiviare / Virgilio_Inbox
+
+Obiettivo:
+definire e usare una sola coda operativa umana.
+
+Task:
+
+- consolidare `Virgilio_Inbox` come tab tecnico;
+- chiamarlo `Da archiviare` nella UX/documentazione;
+- definire schema minimo;
+- generare `inbox_id`;
+- garantire idempotenza;
+- generare `form_url`.
+
+Accettazione:
+
+- un file nel Limbo produce una sola riga `Da archiviare`;
+- secondo passaggio non duplica;
+- stato iniziale `da_archiviare`;
+- form apribile con `inbox_id`.
+
+| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|
+| TODO | P0 | Consolidare `Virgilio_Inbox` come coda tecnica | Apps Script, docs | struttura coerente e non ambigua | Alto |
+| TODO | P0 | Esporre `Da archiviare` nella UX | `README.md`, docs | lessico utente uniforme | Medio |
+| TODO | P0 | Definire schema minimo inbox | Apps Script, docs | campi minimi e idempotenza | Alto |
+| TODO | P1 | Generare `inbox_id` e `form_url` | Apps Script | record apribile dal form | Alto |
+
+### EPICA 3 - Adapter Google-only
+
+Obiettivo:
+portare `GmailApp` dentro il flusso unico.
+
+Flusso:
+`GmailApp -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`
+
+Task:
+
+- preservare funzioni esistenti `GmailApp`;
+- dopo salvataggio in Limbo creare record `Da archiviare`;
+- scrivere evento Registro;
+- non archiviare automaticamente senza form;
+- non usare Bucoliche come coda.
+
+Accettazione:
+
+- mail `GmailApp` produce file in Limbo;
+- produce riga `Da archiviare`;
+- produce evento Registro;
+- link form funziona.
+
+| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|
+| TODO | P0 | Preservare il perimetro Google-only esistente | Apps Script | nessuna regressione del flusso attuale | Alto |
+| TODO | P1 | Creare record `Da archiviare` dopo il Limbo | Apps Script, docs | idempotenza e tracciamento | Alto |
+| TODO | P1 | Scrivere evento Registro dal percorso Google-only | Apps Script, docs | audit coerente | Alto |
+
+### EPICA 4 - Adapter Local connector
+
+Obiettivo:
+portare `IMAP` locale dentro il flusso unico.
+
+Flusso:
+`IMAP -> Quarantena -> Scan -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`
+
+Task:
+
+- preservare `IMAP`, quarantena, scan, SQLite e ack;
+- copiare solo file clean nel Limbo;
+- creare record `Da archiviare`;
+- scrivere evento Registro;
+- mantenere idempotenza;
+- non mandare path locali ad Apps Script.
+
+Accettazione:
+
+- mail `IMAP` produce file clean nel Limbo;
+- produce riga `Da archiviare`;
+- produce evento Registro;
+- secondo run non duplica.
+
+| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|
+| TODO | P0 | Preservare il perimetro local connector esistente | `local_connector/` | niente regressioni locali | Alto |
+| TODO | P1 | Copiare solo file clean nel Limbo | `local_connector/` | niente byte o path locali verso Apps Script | Alto |
+| TODO | P1 | Creare record `Da archiviare` dal local connector | `local_connector/`, Apps Script | idempotenza su secondo run | Alto |
+| TODO | P1 | Scrivere evento Registro dal percorso locale | `local_connector/`, docs | audit unico e coerente | Alto |
+
+### EPICA 5 - Form unico
+
+Obiettivo:
+un solo form per apertura manuale e archiviazione da Limbo.
+
+Task:
+
+- form senza `inbox_id` resta legacy/manuale;
+- form con `inbox_id` mostra contesto documento;
+- prefill solo informativo;
+- submit archivia file nella pratica;
+- aggiorna `Da archiviare`;
+- scrive Registro;
+- invia notifica.
+
+Accettazione:
+
+- form funziona in entrambe le modalita`;
+- file archiviato in `02_corrispondenza`;
+- stato diventa `archiviato`;
+- notifica inviata.
+
+| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|
+| TODO | P0 | Mantenere il form unico con fallback legacy | Apps Script webapp, HTML | apertura manuale e via `inbox_id` | Alto |
+| TODO | P1 | Collegare submit al record inbox corretto | Apps Script | correlazione stabile e idempotente | Alto |
+| TODO | P1 | Aggiornare stato e notifica dopo archiviazione | Apps Script, docs | esito leggibile e tracciato | Medio |
+
+### EPICA 6 - UX e configurazione
+
+Obiettivo:
+rendere comprensibili i due profili.
+
+Task:
+
+- documentare Profilo Google-only;
+- documentare Profilo Local connector;
+- creare comandi e verifiche semplici;
+- distinguere test e produzione;
+- nascondere dettagli macchina all'utente normale.
+
+Accettazione:
+
+- utente capisce quale profilo usa;
+- configurazione verificabile;
+- errori leggibili;
+- nessuna esposizione inutile di manifest, fingerprint o SQLite.
+
+| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|
+| TODO | P1 | Documentare i due profili operativi | `README.md`, docs | chiarezza per utenti e tecnici | Medio |
+| TODO | P1 | Creare comandi e verifiche semplici | `README.md`, `docs/CLASP_WORKFLOW.md` | setup e controllo lineari | Medio |
+| TODO | P2 | Distinguere test e produzione | `README.md`, docs | nessuna ambiguita` operativa | Medio |
+| TODO | P2 | Nascondere dettagli macchina nella UX normale | UI, docs | niente manifest/fingerprint/SQLite visibili | Medio |
+
 ## Milestone v1.1.2 - Integrazione Caronte Locale -> Virgilio 1.0
 
 Questa milestone traduce la roadmap in backlog eseguibile per i cicli autonomi successivi. Caronte Locale v1.1 resta il motore tecnico locale; Virgilio 1.0 resta il livello umano/Google finale; il ponte resta metadata-only.

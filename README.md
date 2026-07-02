@@ -15,6 +15,10 @@ La v1.0 resta l'MVP Google Workspace mono-utente. La linea v1.1 consolida il lav
 
 La branch `codex/v1.1-development` serve a consolidare componenti gia' testati. Non introduce nuove funzioni operative.
 
+## Stato architetturale
+
+Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. Lo sviluppo Apps Script avviene tramite `clasp`, mentre il local connector resta separato, locale e testabile senza servizi reali.
+
 ## Componenti
 
 | Area | Percorso | Stato |
@@ -67,7 +71,7 @@ Ogni automazione critica deve restare verificabile, reversibile e tracciata.
 
 ## Sviluppo autonomo con Codex
 
-Il ciclo autonomo è governato da:
+Il ciclo autonomo e` governato da:
 
 - `AGENTS.md`: regole permanenti e limiti operativi;
 - `docs/DEV_BACKLOG.md`: ordine dei task e stato di avanzamento;
