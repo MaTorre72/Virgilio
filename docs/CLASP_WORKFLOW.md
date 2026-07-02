@@ -36,6 +36,8 @@ clasp login
 ## Collegamento del progetto
 
 - Identificare la cartella Apps Script nel repository.
+- La sorgente canonica vive in `apps_script/src`.
+- La snapshot gestita da `clasp` vive in `apps_script/clasp`.
 - Verificare se esiste `.clasp.json`.
 - Se manca `.clasp.json`, prima ottenere lo `scriptId` dal progetto reale e poi collegare la cartella.
 - Non creare `.clasp.json` senza autorizzazione esplicita quando serve salvare il collegamento.

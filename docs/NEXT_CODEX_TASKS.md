@@ -2,6 +2,16 @@
 
 Ordine operativo per il prossimo sviluppo autonomo.
 
+## V113-00-T01 - Separazione sorgente/snapshot Apps Script
+
+- Obiettivo: mettere sorgente canonica e snapshot `clasp` in due cartelle diverse per evitare
+  conflitti, sovrascritture e root affollata.
+- Input: repo Apps Script, `.clasp.json`, `clasp pull`, struttura corrente del workspace.
+- Output: due cartelle distinte per source e mirror, con mapping chiaro e root leggibile.
+- File probabili: `.clasp.json`, `.claspignore`, cartelle dedicate Apps Script, `docs/AUTONOMOUS_DEVELOPMENT.md`.
+- Accettazione: sorgente e snapshot non convivono piu in root e il progetto resta sincronizzabile.
+- Cosa non fare: non sovrascrivere file canonici, non lasciare due rappresentazioni miste nella stessa cartella.
+
 ## V113-E0-T01 - Mappa funzioni divergenti Google-only/local connector
 
 - Obiettivo: identificare quali funzioni esistono solo in Google-only, solo nel local connector o in entrambi.

@@ -2,6 +2,34 @@
 
 Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Ordine operativo: priorita, poi ordine di tabella.
 
+## Milestone 0.0 - Separazione workspace Apps Script
+
+Obiettivo: evitare la convivenza in root di sorgente canonica e snapshot `clasp`, cosi il lavoro
+autonomo puo leggere, modificare e sincronizzare il progetto senza ambiguita di rappresentazione.
+
+### Task 0.0 - Separare sorgente e snapshot Apps Script
+
+Obiettivo:
+spostare la sorgente Apps Script e la snapshot `clasp` in due cartelle dedicate, mantenendo il repo
+leggibile e impedendo che il pull o il lavoro locale sovrascrivano file canonici.
+
+Task:
+
+- definire due cartelle separate per sorgente canonica e snapshot `clasp`;
+- aggiornare `clasp`/ignore in modo coerente con la nuova struttura;
+- mantenere i file Apps Script esistenti senza perdita o riscrittura cieca;
+- lasciare root libera da conflitti tra `.gs` e snapshot sincronizzata.
+
+Accettazione:
+
+- sorgente e snapshot non condividono piu la stessa cartella;
+- `clasp pull` non sporca la root con file ambigui;
+- nessun file canonico viene sovrascritto o perso.
+
+| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|
+| TODO | P0 | Separare sorgente e snapshot Apps Script | `.clasp.json`, `.claspignore`, cartelle dedicate Apps Script | root pulita, sorgente e mirror distinti, nessuna perdita di codice | Alto |
+
 ## Milestone 0 - Delta MVP operativo minimo
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
