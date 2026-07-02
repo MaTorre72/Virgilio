@@ -4,6 +4,9 @@ Virgilio ha due ingressi tecnici e un solo flusso operativo.
 
 Frase guida: "Virgilio ha due ingressi tecnici e un solo flusso operativo."
 
+Questo documento e` il riferimento condiviso per lessico, ruoli e flusso operativo.
+README, AGENTS e backlog rimandano qui quando serve allineare il modello comune.
+
 ## Flusso unico
 
 Acquisizione -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro

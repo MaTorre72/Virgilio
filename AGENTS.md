@@ -10,6 +10,8 @@ nel Registro.
 
 Virgilio ha due ingressi tecnici e un solo flusso operativo.
 
+Riferimento condiviso per questo modello: `docs/ARCHITETTURA_UNIFICATA.md`.
+
 Ingressi:
 
 - Google-only: `GmailApp -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`

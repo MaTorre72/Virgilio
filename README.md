@@ -18,6 +18,7 @@ La branch `codex/v1.1-development` serve a consolidare componenti gia' testati. 
 ## Stato architetturale
 
 Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. Lo sviluppo Apps Script avviene tramite `clasp`, mentre il local connector resta separato, locale e testabile senza servizi reali.
+Il riferimento condiviso per lessico e flusso e` [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md).
 
 ## Componenti
 
@@ -58,6 +59,7 @@ I test del connettore non devono usare credenziali reali, Gmail reale, Drive rea
 ## Documentazione principale
 
 - [Architettura](docs/ARCHITECTURE.md)
+- [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md)
 - [Caronte Locale](docs/LOCAL_CARONTE.md)
 - [Setup e test](docs/SETUP_AND_TEST.md)
 - [Roadmap v1.1](docs/ROADMAP_V1_1.md)
