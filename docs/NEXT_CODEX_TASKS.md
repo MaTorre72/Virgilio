@@ -1,74 +1,27 @@
 # Next Codex Tasks
 
-Ordine operativo per il prossimo sviluppo autonomo.
+Stato operativo corrente: backlog v1.1.3 attivo e lettura minima per la prossima run.
 
-## V113-00-T01 - Separazione sorgente/snapshot Apps Script
+## V113-E4-T01 - Preservare il perimetro local connector esistente
+- Obiettivo: tenere intatto il perimetro local connector mentre si riallinea il flusso unico.
+- Input: `local_connector/`, note architetturali e backlog attivo.
+- Output: nessuna regressione locale mentre il resto del flusso si consolida.
+- File probabili: `local_connector/`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/DEV_BACKLOG.md`.
+- Criteri di accettazione: i test locali restano verdi e il perimetro non si allarga.
+- Cosa non fare: non introdurre nuovi ingressi, nuove GUI o servizi remoti.
 
-- Stato: DONE nel workspace; sorgente canonica in `apps_script/src` e snapshot `clasp` in `apps_script/clasp`.
-- Conseguenza: la prossima run puo partire dai task v1.1.3 senza riaprire questo punto.
-
-## V113-E0-T01 - Mappa funzioni divergenti Google-only/local connector
-
-- Stato: DONE nel workspace; mappa minima delle funzioni da preservare in `docs/ARCHITETTURA_UNIFICATA.md`.
-- Conseguenza: la prossima run puo` partire da `V113-E0-T02`.
-
-## V113-E0-T02 - Mappa lessico legacy -> lessico ufficiale
-
-- Obiettivo: tradurre i termini tecnici storici nel lessico utente ufficiale.
-- Input: documenti esistenti, README, backlog, note operative.
-- Output: tabella di equivalenza legacy/ufficiale.
-- File probabili: `docs/ARCHITETTURA_UNIFICATA.md`, `docs/DEV_BACKLOG.md`, `AGENTS.md`.
-- Accettazione: `staging`, `Bucoliche_*`, `Virgilio_Inbox` e termini correlati sono spiegati in modo coerente.
-- Cosa non fare: non cambiare i nomi tecnici nel codice se crea rischio.
-
-## V113-E1-T01 - Definisci schema Registro unico
-
-- Stato: DONE nel workspace; schema minimo del Registro definito in `docs/ARCHITETTURA_UNIFICATA.md`.
-- Conseguenza: la prossima run puo partire da `V113-E1-T03 - Tratta errori e conflitti come eventi di Registro`.
-
-## V113-E1-T02 - Mappa eventi local connector nel Registro
-
-- Stato: DONE nel workspace; il local connector espone `export-registro-events` e la proiezione `registro_event_rows()`.
-- Conseguenza: la prossima run deve prendere `V113-E1-T03 - Tratta errori e conflitti come eventi di Registro` dal backlog.
-
-## V113-E1-T03 - Tratta errori e conflitti come eventi di Registro
-
-- Stato: DONE nel workspace; `registraErrore()` e `registraConflitto()` scrivono audit leggibile sui supporti Bucoliche e i conflitti inbox vengono registrati prima del `throw`.
-- Conseguenza: la prossima run puo` partire da `V113-E2-T01 - Definisci schema Da archiviare`.
-
-## V113-E2-T01 - Definisci schema Da archiviare
-
-- Stato: DONE nel workspace; schema minimo di `Da archiviare` definito in `docs/ARCHITETTURA_UNIFICATA.md` con campi core, stati e regola di idempotenza.
-- Conseguenza: la prossima run puo` partire da `V113-E4-T01 - Adapter Local connector verso Da archiviare`.
-
-## V113-E3-T01 - Adapter Google-only verso Da archiviare
-
-- Stato: DONE nel workspace; `caronteTraghetta()` registra `Virgilio_Inbox` per ogni allegato Gmail salvato nel Limbo e mantiene il flusso senza archiviazione automatica.
-- Conseguenza: la prossima run puo` partire da `V113-E4-T01 - Adapter Local connector verso Da archiviare`.
-
-## V113-E4-T01 - Adapter Local connector verso Da archiviare
-
-- Obiettivo: portare il local connector nel flusso unico senza inviare path locali ad Apps Script.
-- Input: quarantena, scan, manifest e metadata locali.
-- Output: file clean nel Limbo, riga inbox e evento Registro.
-- File probabili: `local_connector/`, `docs/ARCHITETTURA_UNIFICATA.md`.
-- Accettazione: secondo run non duplica e il payload resta metadata-only.
-- Cosa non fare: non mandare byte, base64 o path locali ad Apps Script.
-
-## V113-E5-T01 - Form unico con `inbox_id`
-
-- Obiettivo: mantenere un solo form che funzioni sia manualmente sia da `Da archiviare`.
-- Input: form attuale e record inbox.
-- Output: form con apertura manuale legacy e contesto documento via `inbox_id`.
+## V113-E5-T01 - Mantenere il form unico con fallback legacy
+- Obiettivo: mantenere un solo form con apertura manuale e fallback legacy.
+- Input: form attuale, record inbox e note operative.
+- Output: apertura manuale e via `inbox_id` senza riscrittura invasiva.
 - File probabili: Apps Script webapp, HTML del form, `docs/CLASP_WORKFLOW.md`.
-- Accettazione: il form apre la pratica in entrambi i casi e aggiorna il record corretto.
-- Cosa non fare: non riscrivere la UX in modo invasivo.
+- Criteri di accettazione: il form apre la pratica in entrambi i casi e aggiorna il record corretto.
+- Cosa non fare: non cambiare la UX in modo invasivo.
 
-## V113-E6-T01 - UX/configurazione profili
-
-- Obiettivo: distinguere bene profilo Google-only e profilo Local connector.
-- Input: README, docs, comandi di setup e verifica.
-- Output: documentazione e comandi semplici per capire quale profilo si sta usando.
+## V113-E6-T01 - Documentare i due profili operativi
+- Obiettivo: distinguere profilo Google-only e profilo Local connector.
+- Input: README, docs e verifiche di setup.
+- Output: documentazione chiara sui due profili e sui controlli necessari.
 - File probabili: `README.md`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/CLASP_WORKFLOW.md`.
-- Accettazione: un operatore capisce subito il profilo attivo e i controlli necessari.
+- Criteri di accettazione: un operatore capisce subito il profilo attivo.
 - Cosa non fare: non esporre fingerprint, manifest o SQLite nella UX normale.
