@@ -39,16 +39,12 @@ Ordine operativo per il prossimo sviluppo autonomo.
 ## V113-E2-T01 - Definisci schema Da archiviare
 
 - Stato: DONE nel workspace; schema minimo di `Da archiviare` definito in `docs/ARCHITETTURA_UNIFICATA.md` con campi core, stati e regola di idempotenza.
-- Conseguenza: la prossima run puo` partire da `V113-E3-T01 - Adapter Google-only verso Da archiviare`.
+- Conseguenza: la prossima run puo` partire da `V113-E4-T01 - Adapter Local connector verso Da archiviare`.
 
 ## V113-E3-T01 - Adapter Google-only verso Da archiviare
 
-- Obiettivo: far entrare `GmailApp` nel flusso unico verso `Da archiviare`.
-- Input: Google Apps Script attuale e schema inbox.
-- Output: riga inbox e evento Registro dopo il salvataggio nel Limbo.
-- File probabili: Apps Script del progetto reale, `docs/CLASP_WORKFLOW.md`.
-- Accettazione: il percorso Google-only crea record operativi senza archiviazione automatica.
-- Cosa non fare: non usare Bucoliche come coda utente.
+- Stato: DONE nel workspace; `caronteTraghetta()` registra `Virgilio_Inbox` per ogni allegato Gmail salvato nel Limbo e mantiene il flusso senza archiviazione automatica.
+- Conseguenza: la prossima run puo` partire da `V113-E4-T01 - Adapter Local connector verso Da archiviare`.
 
 ## V113-E4-T01 - Adapter Local connector verso Da archiviare
 

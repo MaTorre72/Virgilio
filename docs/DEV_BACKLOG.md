@@ -199,7 +199,7 @@ Accettazione:
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
-| TODO | P0 | Preservare il perimetro Google-only esistente | Apps Script | nessuna regressione del flusso attuale | Alto |
+| DONE | P0 | Preservare il perimetro Google-only esistente | Apps Script | nessuna regressione del flusso attuale | Alto |
 | TODO | P1 | Creare record `Da archiviare` dopo il Limbo | Apps Script, docs | idempotenza e tracciamento | Alto |
 | TODO | P1 | Scrivere evento Registro dal percorso Google-only | Apps Script, docs | audit coerente | Alto |
 
@@ -457,3 +457,4 @@ Criteri di accettazione:
 - 2026-07-03 - Completato `V113-E2-T01`: schema minimo di `Da archiviare` definito in `docs/ARCHITETTURA_UNIFICATA.md`, con coda a singola riga per documento, campi core e stati `da_lavorare` / `in_lavorazione` / `archiviato`; backlog e next tasks riallineati.
 - 2026-07-03 - Consolidata `Virgilio_Inbox` come coda tecnica nella roadmap v1.1.2; backlog riallineato sul primo TODO P0 non bloccato successivo.
 - 2026-07-03 09:50 Europe/Rome - Completato il task `Esporre Da archiviare nella UX`: `README.md` e `docs/VIRGILIO_V112_INTEGRATION_ROADMAP.md` ora espongono `Da archiviare` nella UX con `Virgilio_Inbox` come tab tecnico; backlog riallineato a DONE; runtime circa 20 minuti.
+- 2026-07-03 14:48 Europe/Rome - Completato `V113-E3-T01`: `caronteTraghetta()` registra ora `Virgilio_Inbox` per gli allegati Gmail salvati nel Limbo, con adapter Gmail-only metadata-only e test puri + smoke locali verdi; backlog e next tasks riallineati.

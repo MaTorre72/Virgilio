@@ -633,7 +633,8 @@ function _processaMailUtente(utente) {
       const allegati = messaggio.getAttachments();
       const nomiFileMessaggio = [];
 
-      for (const allegato of allegati) {
+      for (let allegatoIndex = 0; allegatoIndex < allegati.length; allegatoIndex += 1) {
+        const allegato = allegati[allegatoIndex];
         // Filtra firme, immagini incorporate, file di servizio
         // e allegati troppo piccoli.
         if (!èAllegatoReale(allegato)) {
@@ -667,16 +668,57 @@ function _processaMailUtente(utente) {
         }
 
         try {
+          const stagedFilename = _caronteNomeFileLimbo_(allegato, messaggio);
           const fileId = _salvaAllegatoInLimbo(
             allegato,
             messaggio,
             limbo
           );
 
+          const inboxResult = caronteRegistraVirgilioInboxDaGmail({
+            created_at: _timestampLocale(),
+            command_id: 'gmail_staging',
+            account_alias: utente,
+            source_email: utente,
+            source_mailbox: utente,
+            source_message_id: messaggio.getId(),
+            source_message_uid: thread.getId(),
+            attachment_index: allegatoIndex,
+            original_filename: allegato.getName(),
+            staged_filename: stagedFilename,
+            drive_file_id: fileId,
+            source_subject: messaggio.getSubject().substring(0, 200),
+            source_sender: messaggio.getFrom(),
+            source_message_date: messaggio.getDate().toISOString(),
+            status_reason: 'gmail_only_limbo',
+            scan_result: 'gmail_only',
+            policy_rule: 'da_archiviare',
+          });
+          if (!inboxResult.ok) {
+            Logger.log(
+              `[Caronte] AVVISO â€” inbox Gmail non registrata per ${allegato.getName()}: ${inboxResult.message}`
+            );
+            registraErrore(
+              'caronteTraghetta',
+              `Inbox Gmail non registrata: ${inboxResult.message}`,
+              {
+                cliente: _estraiDominio(messaggio.getFrom()),
+                idDrive: fileId,
+                source_message_id: messaggio.getId(),
+                source_message_uid: thread.getId(),
+                original_filename: allegato.getName(),
+                staged_filename: stagedFilename,
+              }
+            );
+          }
+
           // Estrae metadati per le colonne ML di Bucoliche
           const nomeFileOriginale = allegato.getName();
           const estensione = nomeFileOriginale.includes('.')
             ? nomeFileOriginale.split('.').pop().toLowerCase().substring(0, 10)
+            : '';
+          const inboxNota = inboxResult && inboxResult.ok
+            ? `inbox_id=${inboxResult.inbox_id}`
             : '';
 
           registraSuBucoliche({
@@ -686,7 +728,7 @@ function _processaMailUtente(utente) {
             pratica:          '',
             anno:             '',
             tecnici:          [],
-            note:             '',
+            note:             inboxNota,
             urlCartella:      `https://drive.google.com/file/d/${fileId}`,
             idDrive:          fileId,
             // ── Campi ML ──
@@ -709,7 +751,7 @@ function _processaMailUtente(utente) {
           allegatiSalvatiNelThread++;
 
           Logger.log(
-            `[Caronte] Traghettato nel Limbo: ${allegato.getName()}`
+            `[Caronte] Traghettato nel Limbo${inboxResult && inboxResult.ok ? ` e messo in Da archiviare (${inboxResult.inbox_id})` : ''}: ${allegato.getName()}`
           );
 
         } catch (err) {
@@ -815,16 +857,20 @@ function _avvisaTraghettamento(totale, utente, dettagliMail) {
  * @returns {string} ID del file creato su Drive
  */
 function _salvaAllegatoInLimbo(allegato, messaggio, limbo) {
-  const data         = Utilities.formatDate(new Date(), 'Europe/Rome', 'yyyy-MM-dd');
-  const dominio      = _estraiDominio(messaggio.getFrom());
-  const nomeOriginale = allegato.getName();
-  const idMessaggio = messaggio.getId().substring(0, 10);
-  const nomeFile = `${data}_${dominio}_${idMessaggio}_${_sanitizzaNomeFile(nomeOriginale)}`;
+  const nomeFile = _caronteNomeFileLimbo_(allegato, messaggio);
 
   const blob = allegato.copyBlob().setName(nomeFile);
   const file = limbo.createFile(blob);
 
   return file.getId();
+}
+
+function _caronteNomeFileLimbo_(allegato, messaggio) {
+  const data = Utilities.formatDate(new Date(), 'Europe/Rome', 'yyyy-MM-dd');
+  const dominio = _estraiDominio(messaggio.getFrom());
+  const nomeOriginale = allegato.getName();
+  const idMessaggio = messaggio.getId().substring(0, 10);
+  return `${data}_${dominio}_${idMessaggio}_${_sanitizzaNomeFile(nomeOriginale)}`;
 }
 
 

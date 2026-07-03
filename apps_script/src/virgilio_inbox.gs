@@ -102,6 +102,67 @@ function caronteRegistraVirgilioInbox(payload) {
   }
 }
 
+function caronteRegistraVirgilioInboxDaGmail(payload) {
+  const validation = _virgilioInboxValidateGmailPayload_(payload);
+  if (!validation.ok) return validation.response;
+
+  try {
+    const spreadsheetId = _virgilioInboxResolveSpreadsheetId_();
+    const sheetName = _virgilioInboxResolveSheetName_();
+    const ss = SpreadsheetApp.openById(spreadsheetId);
+    const sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      return _virgilioInboxIntakeResponse_(
+        validation.payload, false, '', false, false, false, 0,
+        'Tab Virgilio_Inbox non presente; eseguire prima il setup esplicito.',
+        [_driveStagingError_(
+          'VIRGILIO_INBOX_NOT_CONFIGURED',
+          'Creare il tab con caronteSetupVirgilioInbox prima dell intake Gmail.'
+        )]
+      );
+    }
+
+    _virgilioInboxEnsureHeader_(sheet, VIRGILIO_INBOX_FIELDS);
+    const draft = caronteBuildVirgilioInboxDraftFromGmail(validation.payload, {
+      drive_file_id: validation.payload.drive_file_id,
+      form_url: validation.payload.form_url,
+    });
+    const result = _virgilioInboxUpsertDraft_(sheet, draft, {
+      now: new Date(),
+      inboxIdFactory: validation.payload.inboxIdFactory,
+    });
+    return _virgilioInboxIntakeResponse_(
+      validation.payload,
+      true,
+      result.inbox_id,
+      result.created,
+      result.updated,
+      result.idempotent,
+      result.row,
+      result.idempotent
+        ? 'Presa in carico inbox Gmail gia registrata; nessuna duplicazione creata.'
+        : 'Presa in carico inbox Gmail registrata nel tab Da archiviare.',
+      []
+    );
+  } catch (err) {
+    return _virgilioInboxIntakeResponse_(
+      validation.payload,
+      false,
+      '',
+      false,
+      false,
+      false,
+      0,
+      'Presa in carico inbox Gmail non completata.',
+      [_driveStagingError_(
+        'VIRGILIO_INBOX_GMAIL_WRITE_FAILED',
+        _virgilioInboxStringOrEmpty_(err && err.message) ||
+          'Scrittura Virgilio_Inbox da Gmail non riuscita.'
+      )]
+    );
+  }
+}
+
 function caronteGetVirgilioInboxForForm(inboxId) {
   const normalizedInboxId = _virgilioInboxStringOrEmpty_(inboxId);
   if (!normalizedInboxId) {
@@ -397,6 +458,65 @@ function _virgilioInboxValidateIntakePayload_(payload) {
       : _virgilioInboxIntakeResponse_(
         payload || {}, false, '', false, false, false, 0,
         'Richiesta intake inbox rifiutata.', errors
+      )
+  };
+}
+
+function _virgilioInboxValidateGmailPayload_(payload) {
+  const normalized = payload && typeof payload === 'object' && !Array.isArray(payload)
+    ? {
+      action: _virgilioInboxStringOrEmpty_(payload.action) || 'gmail_inbox_intake',
+      created_at: _virgilioInboxStringOrEmpty_(payload.created_at),
+      command_id: _virgilioInboxStringOrEmpty_(payload.command_id),
+      account_alias: _virgilioInboxStringOrEmpty_(payload.account_alias),
+      source_email: _virgilioInboxStringOrEmpty_(payload.source_email),
+      source_mailbox: _virgilioInboxStringOrEmpty_(payload.source_mailbox),
+      source_message_id: _virgilioInboxStringOrEmpty_(payload.source_message_id),
+      source_message_uid: _virgilioInboxStringOrEmpty_(payload.source_message_uid),
+      attachment_index: Number.isInteger(payload.attachment_index)
+        ? payload.attachment_index
+        : 0,
+      attachment_id: _virgilioInboxStringOrEmpty_(payload.attachment_id),
+      fingerprint: _virgilioInboxStringOrEmpty_(payload.fingerprint),
+      sha256: _virgilioInboxStringOrEmpty_(payload.sha256),
+      original_filename: _virgilioInboxStringOrEmpty_(payload.original_filename),
+      staged_filename: _virgilioInboxStringOrEmpty_(payload.staged_filename),
+      drive_file_id: _virgilioInboxStringOrEmpty_(payload.drive_file_id),
+      form_url: _virgilioInboxStringOrEmpty_(payload.form_url),
+      source_subject: _virgilioInboxStringOrEmpty_(payload.source_subject),
+      source_sender: _virgilioInboxStringOrEmpty_(payload.source_sender),
+      source_message_date: _virgilioInboxStringOrEmpty_(payload.source_message_date),
+      note: _virgilioInboxStringOrEmpty_(payload.note),
+      status_reason: _virgilioInboxStringOrEmpty_(payload.status_reason),
+      scan_result: _virgilioInboxStringOrEmpty_(payload.scan_result),
+      policy_rule: _virgilioInboxStringOrEmpty_(payload.policy_rule),
+      inboxIdFactory: payload.inboxIdFactory,
+    }
+    : null;
+
+  const errors = [];
+  if (!normalized) {
+    errors.push(_driveStagingError_('INVALID_PAYLOAD', 'Payload Gmail Virgilio_Inbox non valido.'));
+  } else {
+    ['drive_file_id', 'source_message_id', 'original_filename', 'staged_filename', 'source_sender']
+      .forEach(field => {
+        if (!_virgilioInboxStringOrEmpty_(normalized[field])) {
+          errors.push(_driveStagingError_('MISSING_FIELD', `${field} obbligatorio per l intake Gmail.`));
+        }
+      });
+    if (normalized.attachment_index < 0) {
+      errors.push(_driveStagingError_('INVALID_FIELD', 'attachment_index non valido.'));
+    }
+  }
+
+  return {
+    ok: errors.length === 0,
+    payload: normalized || {},
+    response: errors.length === 0
+      ? null
+      : _virgilioInboxIntakeResponse_(
+        normalized || {}, false, '', false, false, false, 0,
+        'Richiesta intake inbox Gmail rifiutata.', errors
       )
   };
 }
@@ -955,7 +1075,7 @@ function testVirgilioInboxSchema() {
 
   const formContext = _virgilioInboxFindFormContextByInboxId_(fakeSheet, 'inbox-fixed-1');
   _driveStagingAssert_(formContext.ok && formContext.found, 'lookup inbox_id per form');
-  _driveStagingAssert_(formContext.original_filename === 'analisi.pdf', 'filename esposto al form');
+  _driveStagingAssert_(formContext.original_filename === 'documento.pdf', 'filename esposto al form');
   const missingContext = _virgilioInboxFindFormContextByInboxId_(fakeSheet, 'missing');
   _driveStagingAssert_(!missingContext.ok && !missingContext.found, 'lookup inbox_id mancante');
   const linkedEntry = _virgilioInboxApplySubmitToEntry_(_virgilioInboxEntryFromRow_(rows[1]), {
@@ -981,6 +1101,46 @@ function testVirgilioInboxSchema() {
   _driveStagingAssert_(archivedEntry.status === 'archiviato', 'archiviazione cambia stato inbox');
   _driveStagingAssert_(archivedEntry.notes.indexOf('destination_folder_id=folder-corrispondenza') >= 0,
     'archiviazione traccia cartella finale');
+
+  const gmailDraft = caronteBuildVirgilioInboxDraftFromGmail({
+    created_at: '2026-07-03T10:00:00Z',
+    command_id: 'gmail_staging',
+    account_alias: 'marco@sigmapiu.it',
+    source_email: 'marco@sigmapiu.it',
+    source_message_id: 'msg-gmail-123',
+    source_message_uid: 'thread-gmail-123',
+    attachment_index: 0,
+    original_filename: 'analisi.pdf',
+    staged_filename: '2026-07-03_cliente_msg-gmail-123_analisi.pdf',
+    source_subject: 'Documento da archiviare',
+    source_sender: 'Mario Rossi <mario@example.com>',
+    source_mailbox: 'marco@sigmapiu.it',
+    source_message_date: '2026-07-03 10:00:00',
+    note: 'salvato dal polling Gmail',
+  }, {
+    drive_file_id: 'drive-gmail-123',
+  });
+  _driveStagingAssert_(gmailDraft.status === VIRGILIO_INBOX_DEFAULT_STATUS, 'gmail stato inbox default');
+  _driveStagingAssert_(gmailDraft.command_id === 'gmail_staging', 'gmail command id');
+  _driveStagingAssert_(gmailDraft.attachment_id === 'gmail:msg-gmail-123:0:analisi.pdf', 'gmail attachment key');
+  _driveStagingAssert_(gmailDraft.fingerprint === gmailDraft.attachment_id, 'gmail fingerprint allineato');
+  _driveStagingAssert_(gmailDraft.manifest_file_id === '', 'gmail senza manifest file');
+  _driveStagingAssert_(gmailDraft.notes.indexOf('policy_rule=da_archiviare') >= 0, 'gmail note mapping');
+
+  const gmailRows = [VIRGILIO_INBOX_FIELDS.slice()];
+  const gmailSheet = _virgilioInboxFakeSheet_(1, gmailRows);
+  const gmailCreated = _virgilioInboxUpsertDraft_(
+    gmailSheet,
+    gmailDraft,
+    { inboxIdFactory: () => 'inbox-gmail-1' }
+  );
+  _driveStagingAssert_(gmailCreated.created && gmailCreated.row === 2, 'gmail inbox creata');
+  const gmailRetry = _virgilioInboxUpsertDraft_(
+    gmailSheet,
+    gmailDraft,
+    { inboxIdFactory: () => 'inbox-gmail-2' }
+  );
+  _driveStagingAssert_(gmailRetry.idempotent && gmailRows.length === 2, 'gmail retry idempotente');
   Logger.log('testVirgilioInboxSchema: OK');
 }
 
