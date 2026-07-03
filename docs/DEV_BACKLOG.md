@@ -169,7 +169,7 @@ Accettazione:
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
-| TODO | P0 | Consolidare `Virgilio_Inbox` come coda tecnica | Apps Script, docs | struttura coerente e non ambigua | Alto |
+| DONE | P0 | Consolidare `Virgilio_Inbox` come coda tecnica | Apps Script, docs | struttura coerente e non ambigua | Alto |
 | TODO | P0 | Esporre `Da archiviare` nella UX | `README.md`, docs | lessico utente uniforme | Medio |
 | DONE | P0 | Definire schema minimo inbox | Apps Script, docs | campi minimi e idempotenza | Alto |
 | TODO | P1 | Generare `inbox_id` e `form_url` | Apps Script | record apribile dal form | Alto |
@@ -455,3 +455,4 @@ Criteri di accettazione:
 - 2026-07-03 - Completata la classificazione dei moduli Google-only e local connector: `README.md` e `docs/ARCHITETTURA_UNIFICATA.md` distinguono sorgente Apps Script canonica, snapshot `clasp` e local connector; backlog aggiornato a DONE.
 - 2026-07-03 - Completato `V113-E1-T03`: `registraErrore()` e `registraConflitto()` traducono gli errori Google-only in eventi di audit leggibili, con conflitti inbox registrati prima del throw; backlog e next tasks riallineati.
 - 2026-07-03 - Completato `V113-E2-T01`: schema minimo di `Da archiviare` definito in `docs/ARCHITETTURA_UNIFICATA.md`, con coda a singola riga per documento, campi core e stati `da_lavorare` / `in_lavorazione` / `archiviato`; backlog e next tasks riallineati.
+- 2026-07-03 - Consolidata `Virgilio_Inbox` come coda tecnica nella roadmap v1.1.2; backlog riallineato sul primo TODO P0 non bloccato successivo.

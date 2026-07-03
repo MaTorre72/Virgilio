@@ -23,13 +23,13 @@ Sono registri tecnici:
 - `Bucoliche_Stato` sintetizza lo stato corrente degli allegati/fingerprint;
 - `Bucoliche_Conflitti` evidenzia anomalie tecniche o duplicazioni.
 
-Il punto di ingresso umano/applicativo deve essere `Virgilio_Inbox`.
+Il punto di ingresso tecnico/applicativo resta `Virgilio_Inbox`.
 
-`Virgilio_Inbox` rappresenta la coda dei documenti acquisiti tecnicamente da Caronte e pronti per una decisione umana: scelta cliente, sito, pratica, responsabile, destinazione finale e conferma di archiviazione.
+`Virgilio_Inbox` rappresenta la coda tecnica dei documenti acquisiti da Caronte e pronti per una decisione umana: scelta cliente, sito, pratica, responsabile, destinazione finale e conferma di archiviazione.
 
 Conseguenza pratica:
 - Bucoliche resta registro/audit;
-- Virgilio_Inbox diventa la coda operativa;
+- Virgilio_Inbox resta la coda tecnica;
 - il form Virgilio lavora sui record di Virgilio_Inbox, non direttamente su Bucoliche_Eventi o Bucoliche_Stato.
 
 ## 2. Cosa esiste gia` in Virgilio 1.0
