@@ -139,6 +139,10 @@ function doPost(e) {
     return _rispostaJSON({ status: 'error', messaggio: err.message });
   }
 
+  if (dati.action === VIRGILIO_INBOX_INTAKE_ACTION) {
+    return _rispostaJSON(caronteRegistraVirgilioInbox(dati));
+  }
+
   // 3. Validazione campi obbligatori
   const campiObbligatori = ['cliente', 'sito', 'pratica', 'anno'];
   const campiMancanti = campiObbligatori.filter(c => !dati[c] || !dati[c].toString().trim());

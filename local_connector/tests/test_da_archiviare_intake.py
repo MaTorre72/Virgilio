@@ -1,10 +1,17 @@
 import json
+import socket
+import sys
 
 import pytest
 
 from virgilio_connector.da_archiviare_intake import (
     DA_ARCHIVIARE_INTAKE_ACTION,
+    DaArchiviareIntakeClientError,
     DaArchiviareIntakeError,
+    DaArchiviareIntakeHttpClient,
+    DaArchiviareIntakeResponse,
+    DaArchiviareIntakeTokenNotConfigured,
+    DaArchiviareIntakeUrlNotConfigured,
     build_da_archiviare_intake_payload,
 )
 
@@ -35,6 +42,32 @@ def write_manifest(tmp_path, payload=None):
     path = tmp_path / "file.pdf.manifest.json"
     path.write_text(json.dumps(payload or staged_manifest_payload()), encoding="utf-8")
     return path
+
+
+class FakeResponse:
+    def __init__(self, payload):
+        self.body = json.dumps(payload).encode("utf-8")
+
+    def read(self):
+        return self.body
+
+    def close(self):
+        pass
+
+
+def response_payload(*, ok=True, inbox_id="inbox-fixed-1", created=True, updated=False,
+                     idempotent=False, row=2, message="registrato"):
+    return {
+        "ok": ok,
+        "action": DA_ARCHIVIARE_INTAKE_ACTION,
+        "inbox_id": inbox_id if ok else "",
+        "created": created if ok else False,
+        "updated": updated if ok else False,
+        "idempotent": idempotent if ok else False,
+        "row": row if ok else 0,
+        "message": message if ok else "rifiutato",
+        "errors": [] if ok else [{"code": "INVALID", "message": "rifiutato"}],
+    }
 
 
 def test_builds_metadata_only_payload_without_test_mode(tmp_path):
@@ -102,3 +135,173 @@ def test_requires_drive_ids(tmp_path, drive_file_id, manifest_file_id):
             drive_file_id=drive_file_id,
             manifest_file_id=manifest_file_id,
         )
+
+
+def test_create_record_sends_metadata_only_envelope_with_token(tmp_path):
+    captured = {}
+
+    def opener(request, *, timeout):
+        captured["request"] = request
+        captured["timeout"] = timeout
+        return FakeResponse(response_payload())
+
+    result = DaArchiviareIntakeHttpClient(
+        "https://example.invalid/exec",
+        "token-123",
+        timeout_seconds=11,
+        opener=opener,
+    ).create_record(
+        write_manifest(tmp_path),
+        drive_file_id="drive-123",
+        manifest_file_id="manifest-123",
+        form_url="https://example.invalid/form",
+    )
+    envelope = json.loads(captured["request"].data.decode("utf-8"))
+    serialized = captured["request"].data.decode("utf-8")
+    assert result.ok is True
+    assert result.inbox_id == "inbox-fixed-1"
+    assert captured["timeout"] == 11
+    assert envelope["action"] == DA_ARCHIVIARE_INTAKE_ACTION
+    assert envelope["token"] == "token-123"
+    assert envelope["drive_file_id"] == "drive-123"
+    assert envelope["manifest_file_id"] == "manifest-123"
+    assert envelope["manifest"]["attachment_id"] == "att-123-42-1-aaaaaaaaaaaa"
+    for forbidden in ("local_path", "file_path", "file_bytes", "base64", '"content"', '"raw"'):
+        assert forbidden not in serialized
+
+
+def test_url_not_configured_never_attempts_network(tmp_path):
+    calls = []
+    client = DaArchiviareIntakeHttpClient(
+        None,
+        "token-123",
+        opener=lambda *args, **kwargs: calls.append(args),
+    )
+    with pytest.raises(DaArchiviareIntakeUrlNotConfigured, match="not configured"):
+        client.create_record(
+            write_manifest(tmp_path),
+            drive_file_id="drive-123",
+            manifest_file_id="manifest-123",
+        )
+    assert calls == []
+
+
+def test_token_not_configured_never_attempts_network(tmp_path):
+    calls = []
+    client = DaArchiviareIntakeHttpClient(
+        "https://example.invalid/exec",
+        None,
+        opener=lambda *args, **kwargs: calls.append(args),
+    )
+    with pytest.raises(DaArchiviareIntakeTokenNotConfigured, match="not configured"):
+        client.create_record(
+            write_manifest(tmp_path),
+            drive_file_id="drive-123",
+            manifest_file_id="manifest-123",
+        )
+    assert calls == []
+
+
+def test_response_parsing_accepts_idempotent_retry(tmp_path):
+    client = DaArchiviareIntakeHttpClient(
+        "https://example.invalid/exec",
+        "token-123",
+        opener=lambda request, timeout: FakeResponse(
+            response_payload(created=False, updated=False, idempotent=True)
+        ),
+    )
+    result = client.create_record(
+        write_manifest(tmp_path),
+        drive_file_id="drive-123",
+        manifest_file_id="manifest-123",
+    )
+    assert isinstance(result, DaArchiviareIntakeResponse)
+    assert result.idempotent is True
+    assert result.created is False
+    assert result.updated is False
+
+
+def test_invalid_response_action_is_rejected(tmp_path):
+    client = DaArchiviareIntakeHttpClient(
+        "https://example.invalid/exec",
+        "token-123",
+        opener=lambda request, timeout: FakeResponse({**response_payload(), "action": "other"}),
+    )
+    with pytest.raises(DaArchiviareIntakeClientError, match="intake result"):
+        client.create_record(
+            write_manifest(tmp_path),
+            drive_file_id="drive-123",
+            manifest_file_id="manifest-123",
+        )
+
+
+def test_timeout_has_no_retry(tmp_path):
+    calls = 0
+
+    def opener(request, *, timeout):
+        nonlocal calls
+        calls += 1
+        raise socket.timeout()
+
+    client = DaArchiviareIntakeHttpClient("https://example.invalid/exec", "token-123", opener=opener)
+    with pytest.raises(DaArchiviareIntakeClientError, match="timed out"):
+        client.create_record(
+            write_manifest(tmp_path),
+            drive_file_id="drive-123",
+            manifest_file_id="manifest-123",
+        )
+    assert calls == 1
+
+
+def test_cli_intake_da_archiviare_uses_env_and_prints_json(tmp_path, monkeypatch, capsys):
+    manifest_path = write_manifest(tmp_path)
+    monkeypatch.setenv("VIRGILIO_CARONTE_INTAKE_URL", "https://example.invalid/exec")
+    monkeypatch.setenv("VIRGILIO_TOKEN", "token-123")
+    captured = {}
+
+    class FakeClient:
+        def __init__(self, url, token, *, timeout_seconds=15.0, opener=None):
+            captured["url"] = url
+            captured["token"] = token
+            captured["timeout"] = timeout_seconds
+
+        def create_record(self, manifest_path, *, drive_file_id, manifest_file_id, form_url=""):
+            captured["manifest_path"] = manifest_path
+            captured["drive_file_id"] = drive_file_id
+            captured["manifest_file_id"] = manifest_file_id
+            captured["form_url"] = form_url
+            return DaArchiviareIntakeResponse(
+                ok=True,
+                action=DA_ARCHIVIARE_INTAKE_ACTION,
+                inbox_id="inbox-fixed-1",
+                created=True,
+                updated=False,
+                idempotent=False,
+                row=2,
+                message="registrato",
+                errors=(),
+            )
+
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio",
+        "intake-da-archiviare",
+        "--manifest",
+        str(manifest_path),
+        "--drive-file-id",
+        "drive-123",
+        "--manifest-file-id",
+        "manifest-123",
+    ])
+    import virgilio_connector.__main__ as cli
+
+    monkeypatch.setattr(cli, "DaArchiviareIntakeHttpClient", FakeClient)
+
+    assert cli.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["inbox_id"] == "inbox-fixed-1"
+    assert captured["url"] == "https://example.invalid/exec"
+    assert captured["token"] == "token-123"
+    assert captured["manifest_path"] == manifest_path
+    assert captured["drive_file_id"] == "drive-123"
+    assert captured["manifest_file_id"] == "manifest-123"

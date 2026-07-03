@@ -98,7 +98,12 @@ from .drive_staging_intake_test import (
 )
 from .da_archiviare_intake import (
     DA_ARCHIVIARE_INTAKE_ACTION,
+    DaArchiviareIntakeClientError,
     DaArchiviareIntakeError,
+    DaArchiviareIntakeHttpClient,
+    DaArchiviareIntakeResponse,
+    DaArchiviareIntakeTokenNotConfigured,
+    DaArchiviareIntakeUrlNotConfigured,
     build_da_archiviare_intake_payload,
 )
 from .multi_account import (
@@ -162,7 +167,12 @@ __all__ = [
     "DriveStagingIntakeTestResponse",
     "DriveStagingIntakeTestUrlNotConfigured",
     "DA_ARCHIVIARE_INTAKE_ACTION",
+    "DaArchiviareIntakeClientError",
     "DaArchiviareIntakeError",
+    "DaArchiviareIntakeHttpClient",
+    "DaArchiviareIntakeResponse",
+    "DaArchiviareIntakeTokenNotConfigured",
+    "DaArchiviareIntakeUrlNotConfigured",
     "build_da_archiviare_intake_payload",
     "AttachmentClassificationProposer",
     "LocalImapAccount",

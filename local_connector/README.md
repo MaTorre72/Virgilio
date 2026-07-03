@@ -437,6 +437,34 @@ di allegati, non oggetto, mittente, corpo, password o percorsi completi.
 non e' stato completato e registrato nel template
 `../docs/LOCAL_IMAP_PROBE_REPORT_TEMPLATE.md`.
 
+### Creazione record Da archiviare
+
+Dopo la verifica read-only e il test di presa in carico, il connettore puo`
+creare o aggiornare il record tecnico `Virgilio_Inbox` che la UX mostra come
+`Da archiviare`.
+
+Configurare localmente in `.env` l'URL della Web App e il token Apps Script:
+
+```dotenv
+VIRGILIO_CARONTE_INTAKE_URL=https://script.google.com/macros/s/.../exec
+VIRGILIO_TOKEN=...
+VIRGILIO_CARONTE_TIMEOUT_SECONDS=15
+```
+
+Quindi inviare il manifest staged e gli identificativi restituiti dalla verifica:
+
+```powershell
+python -m virgilio_connector intake-da-archiviare `
+  --manifest "C:\percorso\Drive Desktop\Limbo_Test_Local\file.pdf.manifest.json" `
+  --drive-file-id "..." `
+  --manifest-file-id "..."
+```
+
+Il comando compone il payload metadata-only con `build_da_archiviare_intake_payload()`,
+aggiunge il token solo al trasporto HTTP e stampa la risposta con `inbox_id`,
+`created`, `updated`, `idempotent` e `row`. Un retry identico deve restare
+idempotente e non può inviare byte, base64 o path locali ad Apps Script.
+
 ## Test pytest
 
 ```powershell

@@ -34,6 +34,10 @@ from .drive_staging_intake_test import (
     DriveStagingIntakeTestClient,
     DriveStagingIntakeTestError,
 )
+from .da_archiviare_intake import (
+    DaArchiviareIntakeError,
+    DaArchiviareIntakeHttpClient,
+)
 from .doctor import LocalDoctor
 from .local_paths import LocalDataPaths
 from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
@@ -202,6 +206,11 @@ def main() -> int:
     verifier.add_argument("--manifest", type=Path, required=True)
     intake = commands.add_parser("intake-drive-staging-test")
     intake.add_argument("--manifest", type=Path, required=True)
+    da_archiviare = commands.add_parser("intake-da-archiviare")
+    da_archiviare.add_argument("--manifest", type=Path, required=True)
+    da_archiviare.add_argument("--drive-file-id", required=True)
+    da_archiviare.add_argument("--manifest-file-id", required=True)
+    da_archiviare.add_argument("--form-url", default="")
     litellm_gateway = commands.add_parser("litellm-gateway-dry-run")
     litellm_gateway.add_argument("--prompt-file", type=Path, required=True)
     litellm_gateway.add_argument("--system-prompt-file", type=Path)
@@ -379,6 +388,23 @@ def main() -> int:
         try:
             result = client.intake_manifest(args.manifest)
         except DriveStagingIntakeTestError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.ok else 1
+    if args.command == "intake-da-archiviare":
+        client = DaArchiviareIntakeHttpClient(
+            os.environ.get("VIRGILIO_CARONTE_INTAKE_URL"),
+            os.environ.get("VIRGILIO_TOKEN"),
+            timeout_seconds=float(os.environ.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15")),
+        )
+        try:
+            result = client.create_record(
+                args.manifest,
+                drive_file_id=args.drive_file_id,
+                manifest_file_id=args.manifest_file_id,
+                form_url=args.form_url,
+            )
+        except DaArchiviareIntakeError as exc:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.ok else 1

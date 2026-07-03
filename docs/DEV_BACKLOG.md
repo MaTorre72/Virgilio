@@ -19,7 +19,7 @@ Obiettivo: portare `IMAP` locale nel flusso unico senza inviare dati locali ad A
 |---|---|---|---|---|---|---|
 | V113-E4-T01 | DONE | P0 | Adapter Local connector verso Da archiviare | `local_connector/`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/DEV_BACKLOG.md` | secondo run non duplica, payload metadata-only, niente byte/base64/path locali verso Apps Script, test locali pertinenti verdi | Alto |
 | V113-E4-T02 | DONE | P1 | Copiare solo file clean nel Limbo | `local_connector/` | stage_ready_files() copia solo file con `status='ready_for_caronte'`; test locali pertinenti verdi | Alto |
-| V113-E4-T03 | TODO | P1 | Creare record `Da archiviare` dal local connector | `local_connector/`, Apps Script | idempotenza su secondo run | Alto |
+| V113-E4-T03 | DONE | P1 | Creare record `Da archiviare` dal local connector | `local_connector/`, Apps Script | `intake-da-archiviare` crea/aggiorna `Virgilio_Inbox` senza byte o path locali; retry identico idempotente | Alto |
 | V113-E4-T04 | TODO | P1 | Scrivere evento Registro dal percorso locale | `local_connector/`, docs | audit unico e coerente | Alto |
 
 ### EPICA 5 - Form unico
