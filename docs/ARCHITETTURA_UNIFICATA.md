@@ -36,6 +36,17 @@ Acquisizione -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro
 - Form: interfaccia umana Virgilio.
 - Pratica finale: cartella della commessa/pratica, con archiviazione in `02_corrispondenza` o cartella equivalente.
 
+## Mappa termini legacy -> ufficiali
+
+| Termine legacy | Termine ufficiale o uso corretto | Nota |
+|---|---|---|
+| `staging` | `Limbo` | termine tecnico storico; non usarlo nella UX |
+| `Virgilio_Inbox` | `Da archiviare` | nome tecnico della coda operativa |
+| `Bucoliche_Eventi`, `Bucoliche_Stato`, `Bucoliche_Conflitti` | supporti tecnici del `Registro` | restano compatibilita` tecnica, non inbox |
+| `manifest` | dettaglio diagnostico | resta nel bridge e nei controlli tecnici |
+| `fingerprint` | dettaglio diagnostico | non esporre nella UX normale |
+| `SQLite` | registro operativo locale del connettore | solo nel profilo local connector, non nella UX utente |
+
 ## Ruoli
 
 ### Registro
