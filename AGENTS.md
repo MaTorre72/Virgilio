@@ -2,7 +2,7 @@
 
 ## Missione
 Virgilio acquisisce documenti da email, li porta nel Limbo, li mette in Da archiviare,
-raccoglie la decisione umana e li archivia nella pratica finale registrando l'audit.
+raccoglie la decisione umana e li archivia nella pratica finale registrando tutto nel Registro.
 
 Riferimento architetturale condiviso: `docs/ARCHITETTURA_UNIFICATA.md`.
 
@@ -20,6 +20,7 @@ Riferimento architetturale condiviso: `docs/ARCHITETTURA_UNIFICATA.md`.
 - Se il working tree e` sporco per cause non spiegate, fermarsi.
 
 ## Workflow
+- Verificare branch e `git status --short` prima di modificare.
 - Usare `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md` come fonti operative primarie.
 - Usare `docs/DEV_BACKLOG.md` solo per il task selezionato.
 - Usare `docs/ARCHITETTURA_UNIFICATA.md` solo per dubbi architetturali.
@@ -34,6 +35,7 @@ Riferimento architetturale condiviso: `docs/ARCHITETTURA_UNIFICATA.md`.
 
 ## Chiusura run
 - Verificare diff, stato git e assenza di segreti.
-- Aggiornare backlog e memoria operativa breve.
+- Aggiornare `docs/CODEX_STATE.md`, `docs/NEXT_CODEX_TASKS.md` e, se necessario, solo la sezione pertinente di `docs/DEV_BACKLOG.md`.
+- Verificare `docs/DEFINITION_OF_DONE.md` prima di chiudere il task.
 - Committare solo quando il task e` completo.
 - Non fare merge o reset distruttivi.

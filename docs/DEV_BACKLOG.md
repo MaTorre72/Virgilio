@@ -15,30 +15,30 @@ comune e sviluppo Apps Script tramite `clasp`.
 
 Obiettivo: portare `IMAP` locale nel flusso unico senza inviare dati locali ad Apps Script.
 
-| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
-|---|---|---|---|---|---|
-| TODO | P0 | Preservare il perimetro local connector esistente | `local_connector/` | niente regressioni locali | Alto |
-| TODO | P1 | Copiare solo file clean nel Limbo | `local_connector/` | niente byte o path locali verso Apps Script | Alto |
-| TODO | P1 | Creare record `Da archiviare` dal local connector | `local_connector/`, Apps Script | idempotenza su secondo run | Alto |
-| TODO | P1 | Scrivere evento Registro dal percorso locale | `local_connector/`, docs | audit unico e coerente | Alto |
+| ID | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|---|
+| V113-E4-T01 | TODO | P0 | Adapter Local connector verso Da archiviare | `local_connector/`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/DEV_BACKLOG.md` | secondo run non duplica, payload metadata-only, niente byte/base64/path locali verso Apps Script, test locali pertinenti verdi | Alto |
+| V113-E4-T02 | TODO | P1 | Copiare solo file clean nel Limbo | `local_connector/` | niente byte o path locali verso Apps Script | Alto |
+| V113-E4-T03 | TODO | P1 | Creare record `Da archiviare` dal local connector | `local_connector/`, Apps Script | idempotenza su secondo run | Alto |
+| V113-E4-T04 | TODO | P1 | Scrivere evento Registro dal percorso locale | `local_connector/`, docs | audit unico e coerente | Alto |
 
 ### EPICA 5 - Form unico
 
 Obiettivo: mantenere un solo form per apertura manuale e archiviazione da Limbo.
 
-| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
-|---|---|---|---|---|---|
-| TODO | P0 | Mantenere il form unico con fallback legacy | Apps Script webapp, HTML | apertura manuale e via `inbox_id` | Alto |
-| TODO | P1 | Collegare submit al record inbox corretto | Apps Script | correlazione stabile e idempotente | Alto |
-| TODO | P1 | Aggiornare stato e notifica dopo archiviazione | Apps Script, docs | esito leggibile e tracciato | Medio |
+| ID | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|---|
+| V113-E5-T01 | TODO | P0 | Form unico con `inbox_id` | Apps Script webapp, HTML | apertura manuale e via `inbox_id` | Alto |
+| V113-E5-T02 | TODO | P1 | Collegare submit al record inbox corretto | Apps Script | correlazione stabile e idempotente | Alto |
+| V113-E5-T03 | TODO | P1 | Aggiornare stato e notifica dopo archiviazione | Apps Script, docs | esito leggibile e tracciato | Medio |
 
 ### EPICA 6 - UX e configurazione
 
 Obiettivo: rendere comprensibili i due profili operativi senza esporre dettagli tecnici inutili.
 
-| Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
-|---|---|---|---|---|---|
-| TODO | P1 | Documentare i due profili operativi | `README.md`, docs | chiarezza per utenti e tecnici | Medio |
-| TODO | P1 | Creare comandi e verifiche semplici | `README.md`, `docs/CLASP_WORKFLOW.md` | setup e controllo lineari | Medio |
-| TODO | P2 | Distinguere test e produzione | `README.md`, docs | nessuna ambiguita` operativa | Medio |
-| TODO | P2 | Nascondere dettagli macchina nella UX normale | UI, docs | niente fingerprint, manifest o SQLite visibili | Medio |
+| ID | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
+|---|---|---|---|---|---|---|
+| V113-E6-T01 | TODO | P1 | Documentare i due profili operativi | `README.md`, docs | chiarezza per utenti e tecnici | Medio |
+| V113-E6-T02 | TODO | P1 | Creare comandi e verifiche semplici | `README.md`, `docs/CLASP_WORKFLOW.md` | setup e controllo lineari | Medio |
+| V113-E6-T03 | TODO | P2 | Distinguere test e produzione | `README.md`, docs | nessuna ambiguita` operativa | Medio |
+| V113-E6-T04 | TODO | P2 | Nascondere dettagli macchina nella UX normale | UI, docs | niente fingerprint, manifest o SQLite visibili | Medio |

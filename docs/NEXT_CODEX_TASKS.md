@@ -2,16 +2,16 @@
 
 Stato operativo corrente: backlog v1.1.3 attivo e lettura minima per la prossima run.
 
-## V113-E4-T01 - Preservare il perimetro local connector esistente
-- Obiettivo: tenere intatto il perimetro local connector mentre si riallinea il flusso unico.
-- Input: `local_connector/`, note architetturali e backlog attivo.
-- Output: nessuna regressione locale mentre il resto del flusso si consolida.
+## V113-E4-T01 - Adapter Local connector verso Da archiviare
+- Obiettivo: portare il local connector nel flusso unico senza inviare byte, base64 o path locali ad Apps Script.
+- Input: quarantena, scan, manifest, metadata locali e file clean gia pronti per il Limbo.
+- Output: file clean nel Limbo, record `Da archiviare`, evento Registro, idempotenza su secondo run.
 - File probabili: `local_connector/`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/DEV_BACKLOG.md`.
-- Criteri di accettazione: i test locali restano verdi e il perimetro non si allarga.
-- Cosa non fare: non introdurre nuovi ingressi, nuove GUI o servizi remoti.
+- Criteri di accettazione: il secondo run non duplica, il payload resta metadata-only, non vengono inviati byte, base64 o path locali ad Apps Script, il perimetro local connector resta preservato, i test locali pertinenti restano verdi.
+- Cosa non fare: non introdurre nuovi ingressi, non introdurre nuove GUI, non introdurre server o database remoti, non usare servizi reali, non modificare Apps Script salvo necessita esplicita del task.
 
-## V113-E5-T01 - Mantenere il form unico con fallback legacy
-- Obiettivo: mantenere un solo form con apertura manuale e fallback legacy.
+## V113-E5-T01 - Form unico con inbox_id
+- Obiettivo: mantenere un solo form che funzioni sia manualmente sia da `Da archiviare`.
 - Input: form attuale, record inbox e note operative.
 - Output: apertura manuale e via `inbox_id` senza riscrittura invasiva.
 - File probabili: Apps Script webapp, HTML del form, `docs/CLASP_WORKFLOW.md`.
