@@ -78,7 +78,31 @@ Gli eventi tecnici storici possono alimentare questo schema, ma non diventano nu
 
 ### Da archiviare
 
-`Da archiviare` e` la coda di lavoro corrente. Non e` un archivio storico e non sostituisce il Registro. Serve a rappresentare le pratiche che richiedono una decisione o un completamento umano.
+`Da archiviare` e` la coda di lavoro corrente. Non e` un archivio storico e non sostituisce il Registro.
+Serve a rappresentare le pratiche che richiedono una decisione o un completamento umano.
+
+Schema minimo del record:
+
+- una riga per documento nel Limbo;
+- una sola riga attiva per `fingerprint` o, se manca, `attachment_id`;
+- il flusso normale e` `da_lavorare -> in_lavorazione -> archiviato`;
+- `notes` raccoglie metadati compatti `chiave=valore`, non un secondo archivio.
+
+| Gruppo | Campi | Regola |
+|---|---|---|
+| Identita` riga | `inbox_id`, `created_at`, `status` | sempre presenti; `status` parte da `da_lavorare` |
+| Identita` tecnica | `fingerprint` o `attachment_id`, `sha256`, `drive_file_id`, `manifest_file_id` | almeno una chiave tecnica piu` gli ID Drive/manifest verificati |
+| Provenienza | `command_id`, `account_alias`, `source_email`, `source_message_id`, `source_message_uid`, `source_subject`, `source_sender`, `original_filename`, `staged_filename` | metadati di tracciamento del documento |
+| Interazione umana | `suggested_cliente`, `suggested_sito`, `suggested_pratica`, `form_url` | possono essere valorizzati dal form o restare vuoti fino alla presa in carico |
+| Note | `notes` | metadati compatti `chiave=valore`, usati per stati e correlazioni |
+
+Stati ammessi:
+
+- `da_lavorare`: documento pronto per la decisione umana.
+- `in_lavorazione`: il record e` stato aperto o collegato al form.
+- `archiviato`: il file e` stato trasferito nella pratica finale.
+
+`Virgilio_Inbox` resta il nome tecnico del tab, `Da archiviare` e` il nome utente della coda, e il Registro resta l'unico audit storico.
 
 ## Funzioni da preservare
 

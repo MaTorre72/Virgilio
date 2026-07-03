@@ -38,12 +38,8 @@ Ordine operativo per il prossimo sviluppo autonomo.
 
 ## V113-E2-T01 - Definisci schema Da archiviare
 
-- Obiettivo: formalizzare la coda operativa `Virgilio_Inbox` come `Da archiviare`.
-- Input: flusso form, record inbox, casi legacy.
-- Output: schema minimo, campi obbligatori e stati.
-- File probabili: `docs/ARCHITETTURA_UNIFICATA.md`, `docs/DEV_BACKLOG.md`.
-- Accettazione: una sola riga operativa per documento, con idempotenza.
-- Cosa non fare: non trattare la coda come archivio storico.
+- Stato: DONE nel workspace; schema minimo di `Da archiviare` definito in `docs/ARCHITETTURA_UNIFICATA.md` con campi core, stati e regola di idempotenza.
+- Conseguenza: la prossima run puo` partire da `V113-E3-T01 - Adapter Google-only verso Da archiviare`.
 
 ## V113-E3-T01 - Adapter Google-only verso Da archiviare
 
