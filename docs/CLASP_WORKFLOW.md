@@ -11,12 +11,16 @@ Se il task tocca `local_connector`, non usare `clasp` e resta nel flusso locale.
 - npm disponibile.
 - `clasp` installato e accessibile da shell.
 
-Verifiche iniziali:
+## Controllo minimo
+
+Per capire subito se il profilo Google-only e pronto:
 
 ```powershell
 node -v
-npm -v
 clasp --version
+git branch --show-current
+git status --short
+clasp status
 ```
 
 Se `clasp` manca:
@@ -48,7 +52,7 @@ clasp login
 - Non creare `.clasp.json` senza autorizzazione esplicita quando serve salvare il collegamento.
 - Non committare `.clasprc.json`.
 
-Comandi utili:
+Comandi essenziali:
 
 ```powershell
 clasp clone <SCRIPT_ID> apps_script

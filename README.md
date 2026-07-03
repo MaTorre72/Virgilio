@@ -100,17 +100,21 @@ Per il prossimo task autonomo usare il prompt `advance.md`, oppure chiedere "vai
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
-Percorso minimo consigliato:
+Comandi essenziali:
 
 ```powershell
 virgilio init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
 python -m virgilio_connector doctor --config accounts.local.yaml --human
 virgilio pilot --config accounts.local.yaml --human
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
-I primi due comandi sono di preparazione e controllo locale. `virgilio pilot` resta un
-preview senza effetti operativi. Per un collaudo completo usa prima `--dry-run` e solo
-dopo un account di test:
+- `init-config` prepara il profilo locale.
+- `doctor` controlla la configurazione.
+- `pilot` mostra il flusso senza effetti operativi.
+- Lo smoke locale resta la verifica finale minima.
+
+Per un collaudo completo usa prima `--dry-run` e solo dopo un account di test:
 
 ```powershell
 python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human

@@ -1,6 +1,6 @@
 # Next Codex Tasks
 
-Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E6-T01 - Documentare i due profili operativi`, prossima run da `V113-E6-T02 - Creare comandi e verifiche semplici`.
+Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E6-T02 - Creare comandi e verifiche semplici`, prossima run da `V113-E6-T03 - Distinguere test e produzione`.
 
 ## V113-E4-T01 - Adapter Local connector verso Da archiviare
 - Stato: DONE nel workspace; `build_da_archiviare_intake_payload()` definisce il contratto metadata-only senza test_mode.
@@ -41,7 +41,7 @@ Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E6-T01 - Documenta
 - Cosa non fare: non esporre fingerprint, manifest o SQLite nella UX normale.
 
 ## V113-E6-T02 - Creare comandi e verifiche semplici
-- Stato: TODO
+- Stato: DONE nel workspace; comandi essenziali e verifiche minime allineati.
 - Obiettivo: rendere lineari i comandi e i controlli minimi per il profilo attivo.
 - Input: README, `docs/CLASP_WORKFLOW.md`.
 - Output: comandi brevi e verifiche chiare per setup e controllo.
