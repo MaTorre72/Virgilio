@@ -29,7 +29,7 @@ Obiettivo: mantenere un solo form per apertura manuale e archiviazione da Limbo.
 | ID | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|---|
 | V113-E5-T01 | DONE | P0 | Form unico con `inbox_id` | Apps Script webapp, HTML | apertura manuale e via `inbox_id` | Alto |
-| V113-E5-T02 | TODO | P1 | Collegare submit al record inbox corretto | Apps Script | correlazione stabile e idempotente | Alto |
+| V113-E5-T02 | DONE | P1 | Collegare submit al record inbox corretto | Apps Script | correlazione stabile e idempotente | Alto |
 | V113-E5-T03 | TODO | P1 | Aggiornare stato e notifica dopo archiviazione | Apps Script, docs | esito leggibile e tracciato | Medio |
 
 ### EPICA 6 - UX e configurazione

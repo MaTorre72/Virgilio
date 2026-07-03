@@ -4,9 +4,9 @@
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Milestone attiva: `v1.1.3 - Virgilio unificato`
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V113-E5-T01 - Form unico con inbox_id`
-- Task corrente consigliato: `V113-E5-T02 - Collegare submit al record inbox corretto`
-- Massimo due successivi: `V113-E5-T03 - Aggiornare stato e notifica dopo archiviazione`; `V113-E6-T01 - Documentare i due profili operativi`
+- Ultimo task chiuso noto: `V113-E5-T02 - Collegare submit al record inbox corretto`
+- Task corrente consigliato: `V113-E5-T03 - Aggiornare stato e notifica dopo archiviazione`
+- Massimo due successivi: `V113-E6-T01 - Documentare i due profili operativi`
 - Blocchi aperti: nessuno noto nei documenti
 - Policy permanente: `AGENTS.md`
 - Leggere sempre: `docs/CODEX_STATE.md`, `docs/NEXT_CODEX_TASKS.md`, `docs/DEFINITION_OF_DONE.md`
