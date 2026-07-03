@@ -1,6 +1,6 @@
 # Next Codex Tasks
 
-Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E5-T02 - Collegare submit al record inbox corretto`, prossima run da `V113-E5-T03 - Aggiornare stato e notifica dopo archiviazione`.
+Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E5-T03 - Aggiornare stato e notifica dopo archiviazione`, prossima run da `V113-E6-T01 - Documentare i due profili operativi`.
 
 ## V113-E4-T01 - Adapter Local connector verso Da archiviare
 - Stato: DONE nel workspace; `build_da_archiviare_intake_payload()` definisce il contratto metadata-only senza test_mode.
@@ -22,15 +22,18 @@ Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E5-T02 - Collegare
 - Cosa non fare: non usare il submit per aprire un inbox nuovo.
 
 ## V113-E5-T03 - Aggiornare stato e notifica dopo archiviazione
+- Stato: DONE nel workspace; `doPost` ora propaga lo stato finale `archiviato`, la notifica dedicata riporta il finale e la schermata di successo mostra l'esito inbox.
 - Obiettivo: rendere leggibile l'esito finale dopo l'archiviazione.
 - Input: submit completato, record inbox e notifiche finali.
 - Output: stato e notifica coerenti dopo l'archiviazione.
 - File probabili: Apps Script, docs.
 - Criteri di accettazione: esito finale leggibile e tracciato.
 - Cosa non fare: non cambiare la UX in modo invasivo.
+- Conseguenza: la prossima run puo` partire da `V113-E6-T01 - Documentare i due profili operativi`.
 
 ## V113-E6-T01 - Documentare i due profili operativi
-- Obiettivo: distinguere profilo Google-only e profilo Local connector.
+- Stato: TODO
+- Obiettivo: distinguere profilo Google-only e Local connector.
 - Input: README, docs e verifiche di setup.
 - Output: documentazione chiara sui due profili e sui controlli necessari.
 - File probabili: `README.md`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/CLASP_WORKFLOW.md`.

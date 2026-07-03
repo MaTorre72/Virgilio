@@ -222,6 +222,9 @@ function doPost(e) {
         dati.sito,
         cartella.id
       );
+    const inboxStatus = inboxId
+      ? spostamento.inboxStatus || 'archiviato'
+      : '';
 
     // Avvisa il team su Chat e Telegram
     if (inboxId) {
@@ -236,6 +239,7 @@ function doPost(e) {
         urlCorrispondenza: spostamento.destinationFolderUrl || cartella.url,
         inboxId: inboxId,
         fileName: spostamento.fileName || '',
+        inboxStatus: inboxStatus,
       });
     } else {
       avvisaTeam(
@@ -286,7 +290,7 @@ function doPost(e) {
       id:               cartella.id,
       allegatiSpostati: spostamento.count,
       inbox_id:         inboxId,
-      inbox_status:     inboxLink && inboxLink.status ? inboxLink.status : '',
+      inbox_status:     inboxStatus,
     });
 
   } catch (err) {
@@ -1075,6 +1079,9 @@ function _archiviaAllegatoVirgilioInbox_(inboxId, cliente, sito, idCartellaPrati
         : 'Aggiornamento finale Virgilio_Inbox non riuscito.'
     );
   }
+  const inboxStatus = archived && archived.status
+    ? String(archived.status).trim()
+    : 'archiviato';
 
   return {
     count: 1,
@@ -1085,6 +1092,7 @@ function _archiviaAllegatoVirgilioInbox_(inboxId, cliente, sito, idCartellaPrati
     destinationFolderId: destinationFolderId,
     destinationFolderUrl: corrispondenza.getUrl(),
     alreadyInDestination: alreadyInDestination,
+    inboxStatus: inboxStatus,
   };
 }
 
@@ -1295,7 +1303,7 @@ function testCaronteInboxArchiviazione() {
     driveApp: { getFileById: () => movedFile },
     archiveInbox: payload => {
       archiveCalls.push(payload);
-      return { ok: true };
+      return { ok: true, status: 'archiviato' };
     },
     nowTimestamp: () => '2026-07-01 20:10:00',
   });
@@ -1307,6 +1315,8 @@ function testCaronteInboxArchiviazione() {
     'archiviazione inbox espone metadati file per log e notifiche');
   _driveStagingAssert_(archiveCalls.length === 1 && archiveCalls[0].destination_folder_id === 'folder-corrispondenza',
     'archiviazione inbox aggiorna il record Virgilio_Inbox');
+  _driveStagingAssert_(result.inboxStatus === 'archiviato',
+    'archiviazione inbox espone lo stato finale');
   Logger.log('testCaronteInboxArchiviazione: OK');
 }
 
@@ -1352,6 +1362,9 @@ function _archiviaAllegatoVirgilioInboxWithDeps_(deps) {
         : 'Aggiornamento finale Virgilio_Inbox non riuscito.'
     );
   }
+  const inboxStatus = archived && archived.status
+    ? String(archived.status).trim()
+    : 'archiviato';
 
   return {
     count: 1,
@@ -1362,6 +1375,7 @@ function _archiviaAllegatoVirgilioInboxWithDeps_(deps) {
     destinationFolderId: destinationFolderId,
     destinationFolderUrl: corrispondenza.getUrl(),
     alreadyInDestination: alreadyInDestination,
+    inboxStatus: inboxStatus,
   };
 }
 

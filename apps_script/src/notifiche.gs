@@ -258,6 +258,9 @@ function _costruisciMessaggioArchiviazioneInboxChat(esito) {
   if (esito.note && esito.note.toString().trim()) {
     msg += `Note: ${esito.note.toString().trim()}\n`;
   }
+  if (_virgilioInboxStringOrEmptyForNotifications_(esito.inboxStatus)) {
+    msg += `Stato finale: ${esito.inboxStatus}\n`;
+  }
 
   msg += `📂 Cartella pratica: ${esito.urlCartella}`;
   if (esito.urlCorrispondenza && esito.urlCorrispondenza !== esito.urlCartella) {
@@ -282,6 +285,9 @@ function _costruisciMessaggioArchiviazioneInboxTelegram(esito) {
   }
   if (_virgilioInboxStringOrEmptyForNotifications_(esito.note)) {
     msg += `Note: ${_escapeTelegramHtml(esito.note.toString().trim())}\n`;
+  }
+  if (_virgilioInboxStringOrEmptyForNotifications_(esito.inboxStatus)) {
+    msg += `Stato finale: ${_escapeTelegramHtml(esito.inboxStatus)}\n`;
   }
 
   msg += `<a href="${_escapeTelegramHtml(esito.urlCartella || '')}">📂 Apri la cartella pratica</a>`;
@@ -438,14 +444,21 @@ function testNotificheArchiviazioneInbox() {
     urlCorrispondenza: 'https://drive.google.com/drive/folders/folder-corrispondenza',
     inboxId: 'inbox-1',
     fileName: 'analisi.pdf',
+    inboxStatus: 'archiviato',
   };
   const chat = _costruisciMessaggioArchiviazioneInboxChat(payload);
   const telegram = _costruisciMessaggioArchiviazioneInboxTelegram(payload);
   if (chat.indexOf('Documento: analisi.pdf') < 0) {
     throw new Error('Messaggio Chat archiviazione inbox incompleto.');
   }
+  if (chat.indexOf('Stato finale: archiviato') < 0) {
+    throw new Error('Messaggio Chat archiviazione inbox senza stato finale.');
+  }
   if (telegram.indexOf('Inbox: inbox-1') < 0 || telegram.indexOf('&lt;urgente&gt;') < 0) {
     throw new Error('Messaggio Telegram archiviazione inbox non escapato correttamente.');
+  }
+  if (telegram.indexOf('Stato finale: archiviato') < 0) {
+    throw new Error('Messaggio Telegram archiviazione inbox senza stato finale.');
   }
   Logger.log('testNotificheArchiviazioneInbox: OK');
 }
