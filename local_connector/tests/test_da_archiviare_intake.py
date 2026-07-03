@@ -1,4 +1,5 @@
 import json
+import sqlite3
 import socket
 import sys
 
@@ -27,6 +28,7 @@ def staged_manifest_payload():
         "original_filename": "report.pdf",
         "staged_filename": "att-123-42-1-aaaaaaaaaaaa-report.pdf",
         "sha256": "a" * 64,
+        "fingerprint": "f" * 64,
         "size_bytes": 4,
         "mime_type": "application/pdf",
         "scan_engine": "windows_defender",
@@ -305,3 +307,65 @@ def test_cli_intake_da_archiviare_uses_env_and_prints_json(tmp_path, monkeypatch
     assert captured["manifest_path"] == manifest_path
     assert captured["drive_file_id"] == "drive-123"
     assert captured["manifest_file_id"] == "manifest-123"
+
+
+def test_cli_intake_da_archiviare_writes_audit_event(tmp_path, monkeypatch, capsys):
+    manifest_path = write_manifest(tmp_path)
+    local_root = tmp_path / "local_data"
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(local_root))
+    monkeypatch.setenv("VIRGILIO_CARONTE_INTAKE_URL", "https://example.invalid/exec")
+    monkeypatch.setenv("VIRGILIO_TOKEN", "token-123")
+
+    class FakeClient:
+        def __init__(self, url, token, *, timeout_seconds=15.0, opener=None):
+            pass
+
+        def create_record(self, manifest_path, *, drive_file_id, manifest_file_id, form_url=""):
+            return DaArchiviareIntakeResponse(
+                ok=True,
+                action=DA_ARCHIVIARE_INTAKE_ACTION,
+                inbox_id="inbox-fixed-1",
+                created=True,
+                updated=False,
+                idempotent=False,
+                row=2,
+                message="registrato",
+                errors=(),
+            )
+
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio",
+        "intake-da-archiviare",
+        "--manifest",
+        str(manifest_path),
+        "--drive-file-id",
+        "drive-123",
+        "--manifest-file-id",
+        "manifest-123",
+    ])
+    import virgilio_connector.__main__ as cli
+
+    monkeypatch.setattr(cli, "DaArchiviareIntakeHttpClient", FakeClient)
+
+    assert cli.main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+
+    with sqlite3.connect(local_root / "state.db") as conn:
+        row = conn.execute(
+            """SELECT machine_id, account_alias, entity_type, entity_id, fingerprint,
+                      action, status, details_json
+                 FROM audit_events ORDER BY id DESC LIMIT 1"""
+        ).fetchone()
+
+    assert row[0].startswith("caronte-")
+    assert row[1] == "test-account"
+    assert row[2] == "attachment"
+    assert row[3] == "att-123-42-1-aaaaaaaaaaaa"
+    assert row[4] == "f" * 64
+    assert row[5] == "da_archiviare_intake"
+    assert row[6] == "created"
+    details = json.loads(row[7])
+    assert details["inbox_id"] == "inbox-fixed-1"
+    assert details["drive_file_id"] == "drive-123"
+    assert details["manifest_file_id"] == "manifest-123"

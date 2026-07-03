@@ -282,6 +282,8 @@ def _registro_phase(row: dict) -> str:
         return "conflitto"
     if action == "message_completed":
         return "pratica finale"
+    if action == "da_archiviare_intake":
+        return "da archiviare"
     if action == "attachment_staged" or local_state == "staged_storage":
         return "limbo"
     if action == "failed":
@@ -303,6 +305,8 @@ def _registro_outcome(row: dict) -> str:
     conflict_type = str(row.get("conflict_type", "") or "").strip()
     if conflict_type or action.startswith("conflict_"):
         return "conflitto"
+    if action == "da_archiviare_intake":
+        return "errore" if result == "failed" else "attesa_umano"
     if action == "failed" or result == "failed":
         return "errore"
     if action == "message_completed" or result == "completed":

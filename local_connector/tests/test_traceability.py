@@ -118,6 +118,40 @@ def test_registro_export_maps_local_connector_rows_to_unified_schema(tmp_path):
     assert not any(word in text for word in ("password", "token", "base64", "file_bytes"))
 
 
+def test_registro_export_maps_da_archiviare_intake_to_queue_phase(tmp_path):
+    db = tmp_path / "state.db"
+    store = ReadonlyStateStore(db); store.initialize()
+    machine = load_machine_id(tmp_path)
+    with sqlite3.connect(db) as conn:
+        conn.execute("""INSERT INTO runs(started_at,dry_run,status,account_alias)
+            VALUES('now',0,'completed','box')""")
+        run_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
+            message_id,subject,sender,message_date) VALUES(?,?,?,?,?,?,?,?,?)""",
+            (run_id, "box", "INBOX", "1", "42", "<m@example.invalid>", "Subject",
+             "sender@example.invalid", "2026-06-30T00:00:00+00:00"))
+        message_row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
+            ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
+            status,reason,fingerprint,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (message_row_id, "box", "a1", "box@example.invalid", 1, "a.pdf", "a.pdf",
+             "application/pdf", 1, "a" * 64, "staged_storage", "test", "f" * 64, "now"))
+        conn.execute("""INSERT INTO audit_events(created_at,machine_id,account_alias,entity_type,
+            entity_id,fingerprint,action,status,details_json) VALUES(?,?,?,?,?,?,?,?,?)""",
+            ("2026-06-30T00:00:11+00:00", machine, "box", "attachment", "a1", "f" * 64,
+             "da_archiviare_intake", "created",
+             json.dumps({"inbox_id": "inbox-fixed-1"}, ensure_ascii=False)))
+        conn.commit()
+    target = export_registro_events(db, tmp_path, "jsonl")
+    payload = json.loads(target.read_text(encoding="utf-8").splitlines()[0])
+    assert payload["fase"] == "da archiviare"
+    assert payload["esito"] == "attesa_umano"
+    assert payload["nota"] == "da archiviare intake a1 -> created"
+    correlations = json.loads(payload["correlazioni_tecniche"])
+    assert correlations["event_type"] == "da_archiviare_intake"
+    assert json.loads(correlations["details"]) == {"inbox_id": "inbox-fixed-1"}
+
+
 def test_export_skips_legacy_attachment_without_attachment_id(tmp_path):
     root = tmp_path / ".local_data"
     db = root / "state.db"

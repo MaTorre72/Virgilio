@@ -37,12 +37,15 @@ from .drive_staging_intake_test import (
 from .da_archiviare_intake import (
     DaArchiviareIntakeError,
     DaArchiviareIntakeHttpClient,
+    DaArchiviareIntakeResponse,
+    build_da_archiviare_intake_payload,
 )
 from .doctor import LocalDoctor
 from .local_paths import LocalDataPaths
 from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
                               LiteLLMGatewayConfig, LiteLLMGatewayError,
                               LiteLLMRequest)
+from .readonly_state import ReadonlyStateStore
 from .multi_account import (
     LocalStorageConfig,
     MultiAccountConfigError,
@@ -65,6 +68,7 @@ from .traceability import (
     LocalConflictChecker,
     export_central_events,
     export_registro_events,
+    load_machine_id,
     load_rules,
 )
 
@@ -191,6 +195,50 @@ def _build_local_pipeline_runner(accounts, storage_config, paths, config_path):
             state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
         ),
         completion_factory=lambda: LocalCompletionRunner(accounts, paths=paths),
+    )
+
+
+def _record_da_archiviare_intake_event(local_root: Path, payload: dict[str, object],
+                                       *, result: DaArchiviareIntakeResponse | None = None,
+                                       error: str | None = None) -> None:
+    manifest = payload.get("manifest")
+    if not isinstance(manifest, dict):
+        return
+    attachment_id = str(manifest.get("attachment_id", "")).strip()
+    account_alias = str(manifest.get("account_alias", "")).strip() or "unknown"
+    fingerprint = str(manifest.get("fingerprint", "")).strip() or None
+    details: dict[str, object] = {
+        "drive_file_id": payload.get("drive_file_id", ""),
+        "manifest_file_id": payload.get("manifest_file_id", ""),
+        "form_url": payload.get("form_url", ""),
+    }
+    status = "failed"
+    if result is not None:
+        details.update({
+            "inbox_id": result.inbox_id,
+            "created": result.created,
+            "updated": result.updated,
+            "idempotent": result.idempotent,
+            "row": result.row,
+            "message": result.message,
+        })
+        if result.ok:
+            status = "created" if result.created else "updated" if result.updated else "idempotent"
+        else:
+            details["errors"] = [dict(item) for item in result.errors]
+    if error is not None:
+        details["error"] = error
+    store = ReadonlyStateStore(local_root / "state.db")
+    store.initialize()
+    store.add_audit_event(
+        machine_id=load_machine_id(local_root),
+        account_alias=account_alias,
+        entity_type="attachment",
+        entity_id=attachment_id or (result.inbox_id if result else "unknown"),
+        fingerprint=fingerprint,
+        action="da_archiviare_intake",
+        status=status,
+        details=details,
     )
 
 
@@ -397,7 +445,15 @@ def main() -> int:
             os.environ.get("VIRGILIO_TOKEN"),
             timeout_seconds=float(os.environ.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15")),
         )
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        payload: dict[str, object] | None = None
         try:
+            payload = build_da_archiviare_intake_payload(
+                args.manifest,
+                drive_file_id=args.drive_file_id,
+                manifest_file_id=args.manifest_file_id,
+                form_url=args.form_url,
+            )
             result = client.create_record(
                 args.manifest,
                 drive_file_id=args.drive_file_id,
@@ -405,7 +461,14 @@ def main() -> int:
                 form_url=args.form_url,
             )
         except DaArchiviareIntakeError as exc:
+            if payload is not None:
+                try:
+                    _record_da_archiviare_intake_event(local_root, payload, error=str(exc))
+                except (OSError, sqlite3.Error):
+                    pass
             parser.exit(2, f"error: {exc}\n")
+        if payload is not None:
+            _record_da_archiviare_intake_event(local_root, payload, result=result)
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.ok else 1
     if args.command == "litellm-gateway-dry-run":
