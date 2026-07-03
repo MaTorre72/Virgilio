@@ -72,6 +72,21 @@ Gli eventi tecnici storici possono alimentare questo schema, ma non diventano nu
 
 `Da archiviare` e` la coda di lavoro corrente. Non e` un archivio storico e non sostituisce il Registro. Serve a rappresentare le pratiche che richiedono una decisione o un completamento umano.
 
+## Funzioni da preservare
+
+Questa mappa non e` un inventario completo di helper interni. Serve a indicare le superfici che vanno
+riconciliate senza perdita di comportamento quando la sorgente canonica Apps Script resta separata
+dallo snapshot `clasp`.
+
+| Dominio | Google-only da preservare | Local connector da preservare | Nota di riconciliazione |
+|---|---|---|---|
+| Ingresso web e form | `doGet(e)`, `doPost(e)`, `apriPraticaDaVirgilio(dati)`, `renderInboxContext()`, `applyInboxSuggestions()`, `buildRiepilogo()`, `apri()` | `main()` e i subcommand CLI di `__main__.py` | il form resta unico e non va riscritto in modo invasivo |
+| Coda `Da archiviare` | `caronteGetVirgilioInboxSchema()`, `caronteSetupVirgilioInbox()`, `caronteRegistraVirgilioInbox()`, `caronteCollegaSubmitVirgilioInbox()`, `caronteGetVirgilioInboxForForm()`, `caronteArchiviaVirgilioInbox()` | `DriveStagingVerifyClient.verify_manifest()`, `DriveStagingIntakeTestClient.intake_manifest()` | stesso contratto metadata-only, nessun byte o path locale |
+| Acquisizione e scan | `caronteTraghetta()`, `_processaMailUtente(utente)`, `_salvaAllegatoInLimbo()`, `èAllegatoReale(allegato)` | `MultiAccountReadonlyScanner`, `MultiAccountImapProcessor`, `LocalDriveStagingTransport` | preservare i gate e l'idempotenza dei passaggi |
+| Setup e diagnostica | `caronteSetupTrigger()`, `caronteStopTrigger()`, `caronteStatoTrigger()`, `caronteSetupCredenziali()`, `generaToken()`, `caronteStatoConfigurazione()`, `caronteStatoCredenziali()` | `doctor`, `pilot-check`, `pilot-preview`, `pilot-run`, `init-config` | entrambi devono restare verificabili in dry-run |
+| Audit e notifiche | `registraSuBucoliche()`, `aggiornaRigheAllegati()`, `registraErrore()`, `avvisaTeam()`, `avvisaArchiviazioneVirgilioInbox()`, `avvisaChat()`, `avvisaTelegram()` | `BucolicheAppendOnlyAdapter`, `LocalConflictChecker`, `audit_entry()`, `export_central_events()` | l'audit ufficiale resta unico; il resto e` tecnico |
+| Test e harness | `testVirgilioSenzaDeploy()`, `testVirgilioInboxSchema()`, `testCaronteInboxArchiviazione()`, `testDriveStagingCloudVerify()`, `testNotificheArchiviazioneInbox()` | suite `pytest`, fixture sintetiche, `compare_parser_fixtures()`, `extract_local_fixtures()` | non perdere i test che proteggono il contratto |
+
 ## Cosa resta tecnico o legacy
 
 - `staging` resta un termine tecnico storico e non deve comparire nella UX.

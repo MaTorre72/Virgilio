@@ -9,12 +9,8 @@ Ordine operativo per il prossimo sviluppo autonomo.
 
 ## V113-E0-T01 - Mappa funzioni divergenti Google-only/local connector
 
-- Obiettivo: identificare quali funzioni esistono solo in Google-only, solo nel local connector o in entrambi.
-- Input: `docs/ARCHITETTURA_UNIFICATA.md`, `README.md`, codice Apps Script, codice local connector.
-- Output: mappa di divergenze e di aree da preservare.
-- File probabili: `docs/DEV_BACKLOG.md`, `docs/NEXT_CODEX_TASKS.md`, `docs/ARCHITETTURA_UNIFICATA.md`.
-- Accettazione: elenco chiaro di funzioni da riconciliare senza perdere codice.
-- Cosa non fare: non rinominare in massa, non rifattorizzare oltre il necessario.
+- Stato: DONE nel workspace; mappa minima delle funzioni da preservare in `docs/ARCHITETTURA_UNIFICATA.md`.
+- Conseguenza: la prossima run puo` partire da `V113-E0-T02`.
 
 ## V113-E0-T02 - Mappa lessico legacy -> lessico ufficiale
 

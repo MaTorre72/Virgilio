@@ -116,7 +116,7 @@ Accettazione:
 |---|---|---|---|---|---|
 | DONE | P0 | Creare documento architettura unificata | `docs/ARCHITETTURA_UNIFICATA.md`, `README.md`, `AGENTS.md` | documento breve, coerente e condiviso | Medio |
 | DONE | P0 | Mappare termini legacy -> ufficiali | `docs/ARCHITETTURA_UNIFICATA.md`, `docs/DEV_BACKLOG.md` | tabella di equivalenza legacy/ufficiale e lessico unico per UX e backlog | Medio |
-| TODO | P1 | Individuare funzioni da preservare | codice Apps Script, local connector | inventario delle aree da non perdere | Alto |
+| DONE | P1 | Individuare funzioni da preservare | codice Apps Script, local connector | mappa in `docs/ARCHITETTURA_UNIFICATA.md` e aree da non perdere | Alto |
 | TODO | P1 | Classificare moduli Google-only e local connector | `README.md`, docs | separazione chiara dei due ingressi | Medio |
 
 ### EPICA 1 - Registro unico di audit
@@ -447,6 +447,7 @@ Criteri di accettazione:
 - 2026-07-01 - Completato `V112-E3-T02`: `setup.gs` ora mostra un riepilogo operativo unico di credenziali, URL form ed endpoint trigger con hint espliciti, senza stampare valori sensibili.
 - 2026-07-01 - Completato `V112-E3-T03`: la roadmap v1.1.2 ora riassume il flusso utente finale con i passi `Virgilio_Inbox -> form -> submit -> archiviazione -> Bucoliche -> notifiche`, senza introdurre nuova logica applicativa.
 - 2026-07-03 - Task 0.0 chiuso: la sorgente canonica vive in `apps_script/src` e la snapshot `clasp` in `apps_script/clasp`, con root libera da file Apps Script ambigui.
-- 2026-07-03 - Completato `V113-E0-T01`: `docs/ARCHITETTURA_UNIFICATA.md` e` il riferimento condiviso per lessico e flusso, con link in `README.md` e `AGENTS.md`.
+- 2026-07-03 - `docs/ARCHITETTURA_UNIFICATA.md` e` il riferimento condiviso per lessico e flusso, con link in `README.md` e `AGENTS.md`.
 - 2026-07-03 - Mappati i termini legacy nel lessico ufficiale: tabella di equivalenza in `docs/ARCHITETTURA_UNIFICATA.md` e backlog allineato al vocabolario unico.
 - 2026-07-03 - Completato `V113-E1-T01`: definito lo schema minimo del Registro in `docs/ARCHITETTURA_UNIFICATA.md`, con backlog e next tasks riallineati.
+- 2026-07-03 - Completato `V113-E0-T01`: mappa minima delle funzioni da preservare in `docs/ARCHITETTURA_UNIFICATA.md`, con backlog e next tasks riallineati.
