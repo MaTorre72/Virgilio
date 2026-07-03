@@ -32,6 +32,8 @@ Eseguire solo test puri o mockabili dall'editor Apps Script. I test che richiedo
 
 ## Collaudi reali
 
+I percorsi che escono dal dry-run (`pilot-run` senza `--dry-run` e, nel profilo Google-only, `clasp push`) sono collaudi reali, non test automatici.
+
 Ogni collaudo reale deve indicare:
 
 - branch e commit;

@@ -40,5 +40,5 @@ Obiettivo: rendere comprensibili i due profili operativi senza esporre dettagli 
 |---|---|---|---|---|---|---|
 | V113-E6-T01 | DONE nel workspace; README, architettura e workflow clasp allineati | P1 | Documentare i due profili operativi | `README.md`, docs | chiarezza per utenti e tecnici | Medio |
 | V113-E6-T02 | DONE | P1 | Creare comandi e verifiche semplici | `README.md`, `docs/CLASP_WORKFLOW.md` | setup e controllo lineari | Medio |
-| V113-E6-T03 | TODO | P2 | Distinguere test e produzione | `README.md`, docs | nessuna ambiguita` operativa | Medio |
+| V113-E6-T03 | DONE nel workspace; README e setup/test distinguono test controllati e collaudi reali | P2 | Distinguere test e produzione | `README.md`, docs | nessuna ambiguita operativa | Medio |
 | V113-E6-T04 | TODO | P2 | Nascondere dettagli macchina nella UX normale | UI, docs | niente fingerprint, manifest o SQLite visibili | Medio |

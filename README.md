@@ -100,27 +100,27 @@ Per il prossimo task autonomo usare il prompt `advance.md`, oppure chiedere "vai
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
-Comandi essenziali:
+Verifica locale e test controllati:
 
 ```powershell
 virgilio init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
 python -m virgilio_connector doctor --config accounts.local.yaml --human
 virgilio pilot --config accounts.local.yaml --human
+python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human
+python -m virgilio_connector pilot-run --config accounts.local.yaml --dry-run --human
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
 - `init-config` prepara il profilo locale.
 - `doctor` controlla la configurazione.
 - `pilot` mostra il flusso senza effetti operativi.
+- `run-local-pipeline --dry-run` e `pilot-run --dry-run` restano test controllati.
 - Lo smoke locale resta la verifica finale minima.
 
-Per un collaudo completo usa prima `--dry-run` e solo dopo un account di test:
+Collaudi reali:
 
 ```powershell
-python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human
-python -m virgilio_connector pilot-run --config accounts.local.yaml --dry-run --human
 python -m virgilio_connector pilot-run --config accounts.local.yaml --human
 ```
 
-`--dry-run` significa test controllato. Il run senza `--dry-run` va usato solo su
-configurazioni di test gia' verificate.
+`pilot-run` senza `--dry-run` va usato solo su configurazioni di test gia' verificate.
