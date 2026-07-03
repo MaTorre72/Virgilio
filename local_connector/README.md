@@ -467,10 +467,15 @@ SQLite registra gli eventi append-only in `audit_events`.
 python -m virgilio_connector check-local-conflicts --config accounts.local.yaml
 python -m virgilio_connector export-central-events --config accounts.local.yaml --format jsonl
 python -m virgilio_connector export-central-events --config accounts.local.yaml --format csv
+python -m virgilio_connector export-registro-events --config accounts.local.yaml --format jsonl
+python -m virgilio_connector export-registro-events --config accounts.local.yaml --format csv
 ```
 
 Gli export sono scritti in `.local_data/exports/` e preparano il futuro adapter
-Bucoliche append-only. Nessuna API Google, Docling o classificazione AI è attiva.
+Bucoliche append-only. `export-registro-events` proietta gli stessi eventi nel
+lessico del Registro (`registro_id`, `timestamp_utc`, `ingresso`, `fase`,
+`oggetto`, `esito`, `nota`, `correlazioni_tecniche`). Nessuna API Google,
+Docling o classificazione AI è attiva.
 
 ### Spike parser su fixture sintetiche
 

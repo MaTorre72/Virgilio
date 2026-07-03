@@ -24,7 +24,12 @@ Ordine operativo per il prossimo sviluppo autonomo.
 ## V113-E1-T01 - Definisci schema Registro unico
 
 - Stato: DONE nel workspace; schema minimo del Registro definito in `docs/ARCHITETTURA_UNIFICATA.md`.
-- Conseguenza: la prossima run puo partire da `V113-E2-T01`.
+- Conseguenza: la prossima run puo partire da `V113-E1-T03 - Tratta errori e conflitti come eventi di Registro`.
+
+## V113-E1-T02 - Mappa eventi local connector nel Registro
+
+- Stato: DONE nel workspace; il local connector espone `export-registro-events` e la proiezione `registro_event_rows()`.
+- Conseguenza: la prossima run deve prendere `V113-E1-T03 - Tratta errori e conflitti come eventi di Registro` dal backlog.
 
 ## V113-E2-T01 - Definisci schema Da archiviare
 

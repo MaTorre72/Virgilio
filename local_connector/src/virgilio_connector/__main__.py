@@ -57,7 +57,12 @@ from .pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup, PilotCheck,
                               has_bucoliche_section)
 from .scanner import select_scanner
 from .storage_adapter import LocalFilesystemStorageAdapter, StorageAdapterError
-from .traceability import LocalConflictChecker, export_central_events, load_rules
+from .traceability import (
+    LocalConflictChecker,
+    export_central_events,
+    export_registro_events,
+    load_rules,
+)
 
 
 def _load_env_file(path: Path) -> None:
@@ -273,6 +278,9 @@ def main() -> int:
     exporter = commands.add_parser("export-central-events")
     exporter.add_argument("--config", type=Path, required=True)
     exporter.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
+    registro_exporter = commands.add_parser("export-registro-events")
+    registro_exporter.add_argument("--config", type=Path, required=True)
+    registro_exporter.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
     bucoliche = commands.add_parser("export-to-bucoliche")
     bucoliche.add_argument("--config", type=Path, required=True)
     bucoliche.add_argument("--dry-run", action="store_true")
@@ -604,6 +612,15 @@ def main() -> int:
         try:
             load_multi_account_config(args.config)
             target = export_central_events(local_root / "state.db", local_root, args.format)
+        except (MultiAccountConfigError, FileNotFoundError, sqlite3.Error, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps({"path": target.relative_to(local_root).as_posix()}, separators=(",", ":")))
+        return 0
+    if args.command == "export-registro-events":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            load_multi_account_config(args.config)
+            target = export_registro_events(local_root / "state.db", local_root, args.format)
         except (MultiAccountConfigError, FileNotFoundError, sqlite3.Error, ValueError) as exc:
             parser.exit(2, f"error: {exc}\n")
         print(json.dumps({"path": target.relative_to(local_root).as_posix()}, separators=(",", ":")))

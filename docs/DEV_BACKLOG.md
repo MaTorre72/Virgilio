@@ -141,7 +141,7 @@ Accettazione:
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
 | DONE | P0 | Definire schema Registro unico | `docs/ARCHITETTURA_UNIFICATA.md`, `docs/NEXT_CODEX_TASKS.md` | schema minimo approvato | Medio |
-| TODO | P1 | Mappare eventi local connector nel Registro | codice local connector, docs | eventi tracciabili senza perdita | Alto |
+| DONE | P1 | Mappare eventi local connector nel Registro | codice local connector, docs | eventi tracciabili senza perdita | Alto |
 | TODO | P1 | Mappare eventi Google-only nel Registro | Apps Script, docs | eventi coerenti con il flusso unico | Alto |
 | TODO | P1 | Trattare errori e conflitti come eventi di Registro | docs, codice tecnico | errori ispezionabili e non silenziati | Alto |
 | TODO | P2 | Mantenere i tab tecnici solo per compatibilita` | docs, eventuali script legacy | nessun nuovo tab produttivo separato | Medio |
@@ -450,5 +450,6 @@ Criteri di accettazione:
 - 2026-07-03 - `docs/ARCHITETTURA_UNIFICATA.md` e` il riferimento condiviso per lessico e flusso, con link in `README.md` e `AGENTS.md`.
 - 2026-07-03 - Mappati i termini legacy nel lessico ufficiale: tabella di equivalenza in `docs/ARCHITETTURA_UNIFICATA.md` e backlog allineato al vocabolario unico.
 - 2026-07-03 - Completato `V113-E1-T01`: definito lo schema minimo del Registro in `docs/ARCHITETTURA_UNIFICATA.md`, con backlog e next tasks riallineati.
+- 2026-07-03 - Completato `V113-E1-T02`: il local connector espone la proiezione Registro `export-registro-events` / `registro_event_rows()` e il backlog e` riallineato sul prossimo task di errori e conflitti.
 - 2026-07-03 - Completato `V113-E0-T01`: mappa minima delle funzioni da preservare in `docs/ARCHITETTURA_UNIFICATA.md`, con backlog e next tasks riallineati.
 - 2026-07-03 - Completata la classificazione dei moduli Google-only e local connector: `README.md` e `docs/ARCHITETTURA_UNIFICATA.md` distinguono sorgente Apps Script canonica, snapshot `clasp` e local connector; backlog aggiornato a DONE.

@@ -4,8 +4,8 @@ import sqlite3
 
 from virgilio_connector.readonly_state import ReadonlyStateStore, ensure_state_db
 from virgilio_connector.traceability import (
-    LocalConflictChecker, audit_entry, central_event_rows, export_central_events, global_fingerprint,
-    load_machine_id, load_rules,
+    LocalConflictChecker, audit_entry, central_event_rows, export_central_events,
+    export_registro_events, global_fingerprint, load_machine_id, load_rules,
 )
 
 
@@ -72,6 +72,48 @@ def test_audit_sqlite_export_and_no_secrets(tmp_path):
     payload = json.loads(target.read_text(encoding="utf-8").splitlines()[0])
     assert payload["machine_id"] == machine
     assert payload["fingerprint"] == "f" * 64
+    text = json.dumps(payload).lower()
+    assert not any(word in text for word in ("password", "token", "base64", "file_bytes"))
+
+
+def test_registro_export_maps_local_connector_rows_to_unified_schema(tmp_path):
+    db = tmp_path / "state.db"
+    store = ReadonlyStateStore(db); store.initialize()
+    machine = load_machine_id(tmp_path)
+    with sqlite3.connect(db) as conn:
+        conn.execute("""INSERT INTO runs(started_at,dry_run,status,account_alias)
+            VALUES('now',0,'completed','box')""")
+        run_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
+            message_id,subject,sender,message_date) VALUES(?,?,?,?,?,?,?,?,?)""",
+            (run_id, "box", "INBOX", "1", "42", "<m@example.invalid>", "Subject",
+             "sender@example.invalid", "2026-06-30T00:00:00+00:00"))
+        message_row_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
+            ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
+            status,reason,fingerprint,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (message_row_id, "box", "a1", "box@example.invalid", 1, "a.pdf", "a.pdf",
+             "application/pdf", 1, "a" * 64, "ready_for_caronte", "test", "f" * 64, "now"))
+        conn.commit()
+    store.add_audit_event(machine_id=machine, account_alias="box", entity_type="attachment",
+        entity_id="a1", fingerprint="f" * 64, action="attachment_quarantined",
+        status="quarantined_unverified", details={"reason": "test"})
+    target = export_registro_events(db, tmp_path, "jsonl")
+    assert target.name.startswith("registro_events_")
+    payload = json.loads(target.read_text(encoding="utf-8").splitlines()[0])
+    assert set(payload) == {
+        "registro_id", "timestamp_utc", "ingresso", "fase", "oggetto", "esito",
+        "nota", "correlazioni_tecniche",
+    }
+    assert payload["ingresso"] == "Local connector"
+    assert payload["fase"] == "acquisizione"
+    assert payload["oggetto"] == "a1"
+    assert payload["esito"] == "ok"
+    correlations = json.loads(payload["correlazioni_tecniche"])
+    assert correlations["machine_id"] == machine
+    assert correlations["attachment_id"] == "a1"
+    assert correlations["event_type"] == "attachment_quarantined"
+    assert correlations["details"] == '{"reason":"test"}'
     text = json.dumps(payload).lower()
     assert not any(word in text for word in ("password", "token", "base64", "file_bytes"))
 

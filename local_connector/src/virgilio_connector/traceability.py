@@ -13,6 +13,12 @@ from contextlib import closing
 import uuid
 
 
+REGISTRO_COLUMNS = (
+    "registro_id", "timestamp_utc", "ingresso", "fase", "oggetto",
+    "esito", "nota", "correlazioni_tecniche",
+)
+
+
 def global_fingerprint(account_alias: str, message_id: str, message_uid: str,
                        attachment_id: str, sha256: str) -> str:
     source = message_id.strip() or message_uid.strip()
@@ -194,6 +200,24 @@ def export_central_events(state_db: Path, local_root: Path, format_name: str) ->
     return target
 
 
+def export_registro_events(state_db: Path, local_root: Path, format_name: str) -> Path:
+    rows = registro_event_rows(state_db)
+
+    out = local_root / "exports"; out.mkdir(parents=True, exist_ok=True)
+    target = out / f"registro_events_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.{format_name}"
+    if format_name == "jsonl":
+        target.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    elif format_name == "csv":
+        with target.open("w", encoding="utf-8", newline="") as stream:
+            columns = list(rows[0]) if rows else list(REGISTRO_COLUMNS)
+            writer = csv.DictWriter(stream, fieldnames=columns)
+            writer.writeheader()
+            writer.writerows(rows)
+    else:
+        raise ValueError("format must be jsonl or csv")
+    return target
+
+
 def central_event_rows(state_db: Path) -> list[dict]:
     """Build export rows in memory without modifying SQLite or local files.
 
@@ -231,6 +255,89 @@ def central_event_rows(state_db: Path) -> list[dict]:
         str(row.get("event_id", "")),
     ))
     return rows
+
+
+def registro_event_rows(state_db: Path) -> list[dict]:
+    return [_registro_row(row) for row in central_event_rows(state_db)]
+
+
+def _registro_row(row: dict) -> dict:
+    return {
+        "registro_id": row["event_id"],
+        "timestamp_utc": row.get("created_at", ""),
+        "ingresso": "Local connector",
+        "fase": _registro_phase(row),
+        "oggetto": _registro_object(row),
+        "esito": _registro_outcome(row),
+        "nota": _registro_note(row),
+        "correlazioni_tecniche": _registro_correlations(row),
+    }
+
+
+def _registro_phase(row: dict) -> str:
+    action = str(row.get("event_type", "") or "").strip()
+    local_state = str(row.get("local_state", "") or "").strip()
+    conflict_type = str(row.get("conflict_type", "") or "").strip()
+    if conflict_type or action.startswith("conflict_"):
+        return "conflitto"
+    if action == "message_completed":
+        return "pratica finale"
+    if action == "attachment_staged" or local_state == "staged_storage":
+        return "limbo"
+    if action == "failed":
+        return "errore"
+    return "acquisizione"
+
+
+def _registro_object(row: dict) -> str:
+    for key in ("attachment_id", "source_message_id", "source_message_uid", "fingerprint"):
+        value = str(row.get(key, "") or "").strip()
+        if value:
+            return value
+    return str(row.get("machine_id", "") or "").strip()
+
+
+def _registro_outcome(row: dict) -> str:
+    action = str(row.get("event_type", "") or "").strip()
+    result = str(row.get("result", "") or "").strip()
+    conflict_type = str(row.get("conflict_type", "") or "").strip()
+    if conflict_type or action.startswith("conflict_"):
+        return "conflitto"
+    if action == "failed" or result == "failed":
+        return "errore"
+    if action == "message_completed" or result == "completed":
+        return "archiviato"
+    if action in {"duplicate_seen", "skipped"} or result in {"duplicate_seen", "skipped"}:
+        return "attesa_umano"
+    return "ok"
+
+
+def _registro_note(row: dict) -> str:
+    action = str(row.get("event_type", "") or "evento").replace("_", " ").strip()
+    object_id = str(row.get("attachment_id", "") or "").strip()
+    if object_id:
+        action = f"{action} {object_id}"
+    result = str(row.get("result", "") or "").strip()
+    if result:
+        action = f"{action} -> {result}"
+    return action
+
+
+def _registro_correlations(row: dict) -> str:
+    payload = {}
+    for key in (
+        "machine_id", "account_alias", "source_email", "source_message_id",
+        "source_message_uid", "attachment_id", "fingerprint", "sha256",
+        "event_type", "result", "local_state", "staged_filename", "staged_path",
+        "manifest_path",
+    ):
+        value = row.get(key, "")
+        if value not in {"", None}:
+            payload[key] = value
+    details = str(row.get("notes", "") or "").strip()
+    if details:
+        payload["details"] = details
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
 
 def _global_state(action, state):
