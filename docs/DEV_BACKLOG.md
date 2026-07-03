@@ -140,7 +140,7 @@ Accettazione:
 
 | Stato | Pri | Task e scopo | File probabili | Test / completamento | Rischio |
 |---|---|---|---|---|---|
-| TODO | P0 | Definire schema Registro unico | `docs/ARCHITETTURA_UNIFICATA.md`, `docs/NEXT_CODEX_TASKS.md` | schema minimo approvato | Medio |
+| DONE | P0 | Definire schema Registro unico | `docs/ARCHITETTURA_UNIFICATA.md`, `docs/NEXT_CODEX_TASKS.md` | schema minimo approvato | Medio |
 | TODO | P1 | Mappare eventi local connector nel Registro | codice local connector, docs | eventi tracciabili senza perdita | Alto |
 | TODO | P1 | Mappare eventi Google-only nel Registro | Apps Script, docs | eventi coerenti con il flusso unico | Alto |
 | TODO | P1 | Trattare errori e conflitti come eventi di Registro | docs, codice tecnico | errori ispezionabili e non silenziati | Alto |
@@ -449,3 +449,4 @@ Criteri di accettazione:
 - 2026-07-03 - Task 0.0 chiuso: la sorgente canonica vive in `apps_script/src` e la snapshot `clasp` in `apps_script/clasp`, con root libera da file Apps Script ambigui.
 - 2026-07-03 - Completato `V113-E0-T01`: `docs/ARCHITETTURA_UNIFICATA.md` e` il riferimento condiviso per lessico e flusso, con link in `README.md` e `AGENTS.md`.
 - 2026-07-03 - Mappati i termini legacy nel lessico ufficiale: tabella di equivalenza in `docs/ARCHITETTURA_UNIFICATA.md` e backlog allineato al vocabolario unico.
+- 2026-07-03 - Completato `V113-E1-T01`: definito lo schema minimo del Registro in `docs/ARCHITETTURA_UNIFICATA.md`, con backlog e next tasks riallineati.

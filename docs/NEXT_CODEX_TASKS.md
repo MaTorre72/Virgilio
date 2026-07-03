@@ -27,12 +27,8 @@ Ordine operativo per il prossimo sviluppo autonomo.
 
 ## V113-E1-T01 - Definisci schema Registro unico
 
-- Obiettivo: definire il modello minimo del Registro di audit ufficiale.
-- Input: eventi storici Google-only e local connector.
-- Output: schema minimo e mapping degli eventi.
-- File probabili: `docs/ARCHITETTURA_UNIFICATA.md`, `docs/DEV_BACKLOG.md`.
-- Accettazione: ogni ingresso produce eventi di Registro e gli errori diventano eventi tracciabili.
-- Cosa non fare: non creare nuovi registri produttivi separati.
+- Stato: DONE nel workspace; schema minimo del Registro definito in `docs/ARCHITETTURA_UNIFICATA.md`.
+- Conseguenza: la prossima run puo partire da `V113-E2-T01`.
 
 ## V113-E2-T01 - Definisci schema Da archiviare
 

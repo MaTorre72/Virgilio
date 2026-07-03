@@ -53,6 +53,21 @@ Acquisizione -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro
 
 Il Registro e` l'unico audit ufficiale. Contiene gli eventi rilevanti, gli esiti e le tracce operative necessarie a ricostruire cosa e` successo.
 
+### Schema minimo del Registro
+
+Il Registro resta append-only e usa una riga per ogni evento osservabile. Ogni riga contiene almeno:
+
+- `registro_id`: identificativo univoco dell'evento.
+- `timestamp_utc`: momento dell'evento in UTC.
+- `ingresso`: `Google-only` oppure `Local connector`.
+- `fase`: fase del flusso, per esempio `acquisizione`, `limbo`, `da archiviare`, `form`, `pratica finale`, `errore`, `conflitto`.
+- `oggetto`: riferimento operativo principale, per esempio `inbox_id`, `message_id`, `drive_file_id`, `fingerprint` o `pratica_id`.
+- `esito`: `ok`, `attesa_umano`, `archiviato`, `bloccato`, `errore`, `conflitto`.
+- `nota`: sintesi breve, leggibile e non ambigua.
+- `correlazioni_tecniche`: campo opzionale per compatibilita` e diagnostica.
+
+Gli eventi tecnici storici possono alimentare questo schema, ma non diventano nuovi registri produttivi separati.
+
 ### Da archiviare
 
 `Da archiviare` e` la coda di lavoro corrente. Non e` un archivio storico e non sostituisce il Registro. Serve a rappresentare le pratiche che richiedono una decisione o un completamento umano.
