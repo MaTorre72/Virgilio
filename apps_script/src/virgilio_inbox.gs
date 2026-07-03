@@ -411,6 +411,22 @@ function _virgilioInboxUpsertDraft_(sheet, draft, options) {
     _virgilioInboxStringOrEmpty_(draft.sha256)
   );
   if (existing.conflict) {
+    registraConflitto('virgilioInboxUpsertDraft', existing.conflict, {
+      account_alias: draft.account_alias,
+      source_email: draft.source_email,
+      source_message_id: draft.source_message_id,
+      source_message_uid: draft.source_message_uid,
+      source_subject: draft.source_subject,
+      source_sender: draft.source_sender,
+      attachment_id: draft.attachment_id,
+      fingerprint: draft.fingerprint,
+      sha256: draft.sha256,
+      original_filename: draft.original_filename,
+      staged_filename: draft.staged_filename,
+      drive_file_id: draft.drive_file_id,
+      manifest_file_id: draft.manifest_file_id,
+      inbox_id: draft.inbox_id,
+    });
     throw new Error(existing.conflict);
   }
   if (existing.row > 0) {

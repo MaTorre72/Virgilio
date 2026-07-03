@@ -323,3 +323,39 @@ function testGmailDaTraghettare() {
     Logger.log('⚠ Alcuni thread hanno ancora l\'etichetta trigger. Controllare allegati, permessi o log precedenti.');
   }
 }
+
+/**
+ * Test puro del registro Google-only per errori e conflitti.
+ * Non usa servizi esterni: valida solo il builder della riga audit.
+ */
+function testBucolicheRegistroEventi() {
+  const errore = _bucolicheEventoRegistroRow_('errore', 'doPost', 'Boom', {
+    cliente: 'Cliente Demo',
+    sito: 'Sito Demo',
+    pratica: 'AIA',
+    anno: '2026',
+    urlCartella: 'https://drive.google.com/folder/123',
+    idDrive: 'drive-123',
+    inbox_id: 'inbox-123',
+    source_message_id: 'msg-123',
+    fingerprint: 'fingerprint-123',
+  });
+  _driveStagingAssert_(errore.length === BUCOLICHE_NUM_COLS, 'riga registro a 17 colonne');
+  _driveStagingAssert_(errore[1] === 'ERRORE — doPost', 'prefisso errore Registro');
+  _driveStagingAssert_(errore[7].indexOf('fase=errore') >= 0, 'nota fase errore');
+  _driveStagingAssert_(errore[7].indexOf('correlazioni=') >= 0, 'nota correlazioni errore');
+  _driveStagingAssert_(errore[15] === 'errore', 'stato errore compatibile');
+
+  const conflitto = _bucolicheEventoRegistroRow_('conflitto', 'virgilioInboxUpsertDraft', 'Chiave inbox duplicata', {
+    source_sender: 'noreply@example.com',
+    source_message_uid: 'uid-7',
+    attachment_id: 'att-1',
+    sha256: 'a'.repeat(64),
+    manifest_file_id: 'manifest-1',
+  });
+  _driveStagingAssert_(conflitto[1] === 'CONFLITTO — virgilioInboxUpsertDraft', 'prefisso conflitto Registro');
+  _driveStagingAssert_(conflitto[7].indexOf('fase=conflitto') >= 0, 'nota fase conflitto');
+  _driveStagingAssert_(conflitto[7].indexOf('attachment_id=att-1') >= 0, 'nota correlazioni conflitto');
+  _driveStagingAssert_(conflitto[15] === 'errore', 'stato conflitto compatibile');
+  Logger.log('testBucolicheRegistroEventi: OK');
+}

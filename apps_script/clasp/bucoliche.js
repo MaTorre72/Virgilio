@@ -151,41 +151,94 @@ function aggiornaRigheAllegati(fileIds, datiPratica) {
 
 
 /**
- * Registra un errore sulle Bucoliche con riga colorata in arancione.
+ * Registra un errore sui supporti Bucoliche come evento di Registro.
  *
  * @param {string} origine   - Modulo che ha generato l'errore
  * @param {string} messaggio - Descrizione errore
  * @param {Object} contesto  - Dati parziali disponibili (opzionale)
  */
 function registraErrore(origine, messaggio, contesto) {
+  _bucolicheRegistraEventoRegistro_('errore', origine, messaggio, contesto, '#FCE4D6');
+}
+
+/**
+ * Registra un conflitto sui supporti Bucoliche come evento di Registro.
+ *
+ * @param {string} origine   - Modulo che ha generato il conflitto
+ * @param {string} messaggio - Descrizione conflitto
+ * @param {Object} contesto  - Dati parziali disponibili (opzionale)
+ */
+function registraConflitto(origine, messaggio, contesto) {
+  _bucolicheRegistraEventoRegistro_('conflitto', origine, messaggio, contesto, '#FFF2CC');
+}
+
+function _bucolicheRegistraEventoRegistro_(tipo, origine, messaggio, contesto, sfondo) {
   try {
     const sheet = _aprifoglioBucoliche();
     _assicuraIntestazione(sheet);
 
     const ultimaRiga = sheet.getLastRow() + 1;
-    const ctx = contesto || {};
+    const row = _bucolicheEventoRegistroRow_(tipo, origine, messaggio, contesto);
 
-    sheet.appendRow([
-      _timestampLocale(),                       //  1
-      'ERRORE — ' + (origine || 'sconosciuto'), //  2
-      ctx.cliente   || '',                      //  3
-      ctx.sito      || '',                      //  4
-      ctx.pratica   || '',                      //  5
-      ctx.anno      || '',                      //  6
-      '',                                       //  7
-      messaggio,                                //  8  (messaggio errore in colonna note)
-      '', '', '', '', '', '', '',               //  9-15
-      'errore',                                 // 16
-      '',                                       // 17
-    ]);
+    sheet.appendRow(row);
+    sheet.getRange(ultimaRiga, 1, 1, BUCOLICHE_NUM_COLS).setBackground(sfondo || '#FCE4D6');
 
-    sheet.getRange(ultimaRiga, 1, 1, BUCOLICHE_NUM_COLS).setBackground('#FCE4D6');
-
-    Logger.log(`[Bucoliche] Errore registrato: ${messaggio}`);
+    Logger.log(`[Bucoliche] ${tipo} registrato: ${_bucolicheStringOrEmpty_(messaggio)}`);
 
   } catch (err) {
     Logger.log(`[Bucoliche] ERRORE CRITICO — impossibile scrivere su Bucoliche: ${err.message}`);
   }
+}
+
+function _bucolicheEventoRegistroRow_(tipo, origine, messaggio, contesto) {
+  const ctx = contesto || {};
+  const livello = tipo === 'conflitto' ? 'CONFLITTO' : 'ERRORE';
+  return [
+    _timestampLocale(),                                        //  1
+    `${livello} — ${_bucolicheStringOrEmpty_(origine) || 'sconosciuto'}`, //  2
+    _bucolicheStringOrEmpty_(ctx.cliente),                     //  3
+    _bucolicheStringOrEmpty_(ctx.sito),                        //  4
+    _bucolicheStringOrEmpty_(ctx.pratica),                     //  5
+    _bucolicheStringOrEmpty_(ctx.anno),                        //  6
+    '',                                                        //  7
+    _bucolicheEventoRegistroNota_(tipo, origine, messaggio, ctx), //  8
+    _bucolicheStringOrEmpty_(ctx.urlCartella),                 //  9
+    _bucolicheStringOrEmpty_(ctx.idDrive),                     // 10
+    '', '', '', '', '',                                         // 11-15
+    'errore',                                                  // 16
+    '',                                                        // 17
+  ];
+}
+
+function _bucolicheEventoRegistroNota_(tipo, origine, messaggio, contesto) {
+  const parts = [];
+  const testo = _bucolicheStringOrEmpty_(messaggio);
+  if (testo) parts.push(testo);
+  parts.push(`fase=${_bucolicheStringOrEmpty_(tipo) || 'errore'}`);
+  parts.push(`origine=${_bucolicheStringOrEmpty_(origine) || 'sconosciuto'}`);
+  const correlazioni = _bucolicheEventoRegistroCorrelazioni_(contesto);
+  if (correlazioni) parts.push(`correlazioni=${correlazioni}`);
+  return parts.join('; ');
+}
+
+function _bucolicheEventoRegistroCorrelazioni_(contesto) {
+  const ctx = contesto && typeof contesto === 'object' ? contesto : {};
+  const keys = [
+    'cliente', 'sito', 'pratica', 'anno', 'urlCartella', 'idDrive',
+    'inbox_id', 'account_alias', 'source_email', 'source_message_id',
+    'source_message_uid', 'attachment_id', 'fingerprint', 'sha256',
+    'original_filename', 'staged_filename', 'drive_file_id', 'manifest_file_id',
+  ];
+  const parts = [];
+  for (const key of keys) {
+    const value = _bucolicheStringOrEmpty_(ctx[key]);
+    if (value) parts.push(`${key}=${value}`);
+  }
+  return parts.join('|');
+}
+
+function _bucolicheStringOrEmpty_(value) {
+  return value === null || value === undefined ? '' : String(value).trim();
 }
 
 

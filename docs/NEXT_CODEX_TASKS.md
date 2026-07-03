@@ -31,6 +31,11 @@ Ordine operativo per il prossimo sviluppo autonomo.
 - Stato: DONE nel workspace; il local connector espone `export-registro-events` e la proiezione `registro_event_rows()`.
 - Conseguenza: la prossima run deve prendere `V113-E1-T03 - Tratta errori e conflitti come eventi di Registro` dal backlog.
 
+## V113-E1-T03 - Tratta errori e conflitti come eventi di Registro
+
+- Stato: DONE nel workspace; `registraErrore()` e `registraConflitto()` scrivono audit leggibile sui supporti Bucoliche e i conflitti inbox vengono registrati prima del `throw`.
+- Conseguenza: la prossima run puo` partire da `V113-E2-T01 - Definisci schema Da archiviare`.
+
 ## V113-E2-T01 - Definisci schema Da archiviare
 
 - Obiettivo: formalizzare la coda operativa `Virgilio_Inbox` come `Da archiviare`.
