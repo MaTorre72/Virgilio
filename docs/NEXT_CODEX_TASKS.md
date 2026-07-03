@@ -1,6 +1,6 @@
 # Next Codex Tasks
 
-Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E5-T03 - Aggiornare stato e notifica dopo archiviazione`, prossima run da `V113-E6-T01 - Documentare i due profili operativi`.
+Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E6-T01 - Documentare i due profili operativi`, prossima run da `V113-E6-T02 - Creare comandi e verifiche semplici`.
 
 ## V113-E4-T01 - Adapter Local connector verso Da archiviare
 - Stato: DONE nel workspace; `build_da_archiviare_intake_payload()` definisce il contratto metadata-only senza test_mode.
@@ -29,13 +29,22 @@ Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E5-T03 - Aggiornar
 - File probabili: Apps Script, docs.
 - Criteri di accettazione: esito finale leggibile e tracciato.
 - Cosa non fare: non cambiare la UX in modo invasivo.
-- Conseguenza: la prossima run puo` partire da `V113-E6-T01 - Documentare i due profili operativi`.
+- Conseguenza: la prossima run puo` partire da `V113-E6-T02 - Creare comandi e verifiche semplici`.
 
 ## V113-E6-T01 - Documentare i due profili operativi
-- Stato: TODO
+- Stato: DONE nel workspace; i due profili sono distinti in README, architettura e workflow clasp.
 - Obiettivo: distinguere profilo Google-only e Local connector.
 - Input: README, docs e verifiche di setup.
 - Output: documentazione chiara sui due profili e sui controlli necessari.
 - File probabili: `README.md`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/CLASP_WORKFLOW.md`.
 - Criteri di accettazione: un operatore capisce subito il profilo attivo.
 - Cosa non fare: non esporre fingerprint, manifest o SQLite nella UX normale.
+
+## V113-E6-T02 - Creare comandi e verifiche semplici
+- Stato: TODO
+- Obiettivo: rendere lineari i comandi e i controlli minimi per il profilo attivo.
+- Input: README, `docs/CLASP_WORKFLOW.md`.
+- Output: comandi brevi e verifiche chiare per setup e controllo.
+- File probabili: `README.md`, `docs/CLASP_WORKFLOW.md`.
+- Criteri di accettazione: chi avvia Virgilio capisce subito cosa eseguire.
+- Cosa non fare: non introdurre nuovi tool o flussi inutili.

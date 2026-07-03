@@ -1,5 +1,10 @@
 # Workflow clasp
 
+## Ambito
+
+Questo workflow vale solo per il profilo Google-only, cioe` per `apps_script/src` e `apps_script/clasp`.
+Se il task tocca `local_connector`, non usare `clasp` e resta nel flusso locale.
+
 ## Prerequisiti
 
 - Node.js installato in locale.

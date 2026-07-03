@@ -13,11 +13,14 @@ Acquisizione -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro
 
 ## Profili operativi
 
+Questa e` la distinzione da usare prima di aprire un task o una branch.
+
 ### Google-only
 
 - Ingresso tecnico: `GmailApp`.
 - Usa il Limbo condiviso come prima area operativa visibile in Google Drive.
 - Crea una riga in `Da archiviare` quando il documento e` pronto per la decisione umana.
+- E` il profilo da usare quando il task resta dentro Google Workspace, Apps Script e `clasp`.
 - Rimane il profilo semplice per chi lavora solo in Google Workspace.
 
 ### Local connector
@@ -25,6 +28,7 @@ Acquisizione -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro
 - Ingresso tecnico: `IMAP locale`.
 - Passa prima da `Quarantena`, poi da `Scan`, poi nel Limbo.
 - Produce gli stessi oggetti operativi del profilo Google-only.
+- E` il profilo da usare quando il task deve restare offline, usare fixture e verifiche locali.
 - Rimane il profilo piu` sicuro per piu` caselle, piu` utenti e per la scansione prima del Limbo.
 
 ## Classificazione moduli

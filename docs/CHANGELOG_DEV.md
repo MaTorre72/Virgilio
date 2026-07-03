@@ -2,6 +2,7 @@
 
 Registro avanzamento storico spostato fuori dal backlog attivo.
 
+- 2026-07-03 23:37 +02:00 - Completato V113-E6-T01: README, architettura e workflow clasp distinguono i profili Google-only e Local connector; backlog e state riallineati.
 - 2026-07-03 19:34 +02:00 - Completato V113-E4-T04: `intake-da-archiviare` scrive ora un audit locale in `audit_events` e `export-registro-events` lo proietta come fase `da archiviare`; test mirati, suite `pytest local_connector` e smoke locale verdi.
 - 2026-06-29 - Report pipeline arricchito con `human_summary` leggibile e sicura; test report verdi.
 - 2026-06-29 - `pilot-run-safe` aggiunto come wrapper dry-run con stop su gate; test CLI/sequenza verdi.

@@ -15,6 +15,15 @@ La v1.0 resta l'MVP Google Workspace mono-utente. La linea v1.1 consolida il lav
 
 La branch `codex/v1.1-development` serve a consolidare componenti gia' testati. Non introduce nuove funzioni operative.
 
+## Profili operativi
+
+| Profilo | Quando usarlo | Superficie | Vincoli |
+|---|---|---|---|
+| Google-only | se il task tocca `apps_script/src`, `apps_script/clasp`, GmailApp o `clasp` | Apps Script e snapshot Google | resta nel perimetro Google Workspace |
+| Local connector | se il task tocca `local_connector/src/virgilio_connector` o i test locali | motore locale, fixture e CLI | resta offline, senza servizi reali |
+
+Se il task passa da Apps Script o dal progetto Google, il profilo attivo e` Google-only. Se passa dal motore locale o dai test, il profilo attivo e` Local connector.
+
 ## Stato architetturale
 
 Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. Nella UX la coda si chiama `Da archiviare`; `Virgilio_Inbox` resta il nome tecnico del tab. La sorgente canonica Apps Script vive in `apps_script/src`, lo snapshot `clasp` in `apps_script/clasp`, e il local connector resta separato, locale e testabile senza servizi reali.
