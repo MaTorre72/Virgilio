@@ -17,7 +17,7 @@ La branch `codex/v1.1-development` serve a consolidare componenti gia' testati. 
 
 ## Stato architetturale
 
-Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. La sorgente canonica Apps Script vive in `apps_script/src`, lo snapshot `clasp` in `apps_script/clasp`, e il local connector resta separato, locale e testabile senza servizi reali.
+Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. Nella UX la coda si chiama `Da archiviare`; `Virgilio_Inbox` resta il nome tecnico del tab. La sorgente canonica Apps Script vive in `apps_script/src`, lo snapshot `clasp` in `apps_script/clasp`, e il local connector resta separato, locale e testabile senza servizi reali.
 Il riferimento condiviso per lessico e flusso e` [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md).
 
 ## Componenti

@@ -286,11 +286,11 @@ Il ponte Caronte → Virgilio non deve usare `Bucoliche_Eventi` o `Bucoliche_Sta
 
 Questi tab possono essere usati come fonte tecnica per verificare che l’allegato sia stato acquisito, scansionato, esportato e non sia in conflitto, ma non devono diventare la lista operativa su cui lavora Ugo.
 
-La lista operativa deve essere `Virgilio_Inbox`.
+La lista operativa nella UX deve essere `Da archiviare`; `Virgilio_Inbox` resta il tab tecnico.
 
 Regola:
 - Caronte produce eventi e stato tecnico;
-- il bridge crea o aggiorna un record in `Virgilio_Inbox`;
+- il bridge crea o aggiorna un record nella coda `Da archiviare` sul tab tecnico `Virgilio_Inbox`;
 - il form Virgilio riceve un `inbox_id`;
 - Ugo completa i dati mancanti;
 - Virgilio archivia il file nella cartella finale;
@@ -524,7 +524,7 @@ Checklist di accettazione futura, quando si implementera` il ponte:
 
 4. Ruolo di Bucoliche  
    `Bucoliche` resta registro tecnico/storico, non inbox.  
-   `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti` servono per audit, stato e diagnostica. La coda operativa dei documenti da lavorare sarà `Virgilio_Inbox`.
+   `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti` servono per audit, stato e diagnostica. La coda operativa dei documenti da lavorare nella UX sarà `Da archiviare` (tab tecnico `Virgilio_Inbox`).
 
 5. Ruolo di `Staging_Local_Test`  
    `Staging_Local_Test` resta riferimento di contratto e ambiente di test.  
