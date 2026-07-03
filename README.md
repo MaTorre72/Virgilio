@@ -17,16 +17,18 @@ La branch `codex/v1.1-development` serve a consolidare componenti gia' testati. 
 
 ## Stato architetturale
 
-Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. Lo sviluppo Apps Script avviene tramite `clasp`, mentre il local connector resta separato, locale e testabile senza servizi reali.
+Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. La sorgente canonica Apps Script vive in `apps_script/src`, lo snapshot `clasp` in `apps_script/clasp`, e il local connector resta separato, locale e testabile senza servizi reali.
 Il riferimento condiviso per lessico e flusso e` [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md).
 
 ## Componenti
 
-| Area | Percorso | Stato |
+| Area | Percorso | Ruolo |
 |---|---|---|
-| MVP Google | `*.gs`, `virgilio.html` | v1.0 funzionante, mono-utente |
-| Local IMAP Connector | `local_connector/` | sperimentale, test automatici |
-| Documentazione v1.1 | `docs/` | consolidata |
+| Google-only sorgente | `apps_script/src/` | moduli Apps Script canonici |
+| Google-only snapshot | `apps_script/clasp/` | mirror `clasp`, non sorgente |
+| Local connector | `local_connector/src/virgilio_connector/` | motore locale, offline e testabile |
+| Test local connector | `local_connector/tests/` | fixture e test automatici |
+| Documentazione | `docs/` | riferimento condiviso e backlog |
 | Documenti storici | `docs/archive/` | conservati per audit |
 
 ## Confini v1.1

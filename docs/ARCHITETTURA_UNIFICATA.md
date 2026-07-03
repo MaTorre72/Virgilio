@@ -27,6 +27,13 @@ Acquisizione -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro
 - Produce gli stessi oggetti operativi del profilo Google-only.
 - Rimane il profilo piu` sicuro per piu` caselle, piu` utenti e per la scansione prima del Limbo.
 
+## Classificazione moduli
+
+| Profilo | Moduli canonici | Snapshot / supporto | Nota |
+|---|---|---|---|
+| Google-only | `apps_script/src/*.gs`, `apps_script/src/virgilio.html` | `apps_script/clasp/*.js`, `apps_script/clasp/virgilio.html`, `apps_script/clasp/appsscript.json` | la sorgente canonica e` in `apps_script/src`; `clasp` e` solo mirror di sincronizzazione |
+| Local connector | `local_connector/src/virgilio_connector/*.py` | `local_connector/tests/`, `local_connector/tests/fixtures/`, `local_connector/scripts/` | resta locale, offline e testabile senza servizi reali |
+
 ## Lessico ufficiale
 
 - Quarantena: cartella locale non condivisa, prima della scansione.
