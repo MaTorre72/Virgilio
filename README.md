@@ -55,17 +55,20 @@ In questa fase non sono abilitati come comportamento produttivo:
 ## Test locali
 
 ```powershell
-cd local_connector
-.\.venv\Scripts\python.exe -m pytest
-```
-
-Se la virtualenv e' nella root del repository, usare:
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest local_connector
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m pytest local_connector
 ```
 
 I test del connettore non devono usare credenziali reali, Gmail reale, Drive reale o Bucoliche reale.
+Nel checkout verificato il runtime giusto e` `local_connector\.venv\Scripts\python.exe`; `.\.venv\Scripts\python.exe` non e` disponibile qui.
+
+Se serve l'install editable:
+
+```powershell
+local_connector\.venv\Scripts\python.exe -m pip install -e .\local_connector
+```
+
+Offline questo comando richiede `setuptools` gia` presente nel venv locale. Se `setuptools.build_meta` manca, per test e smoke resta piu` robusto usare `PYTHONPATH=local_connector\src` e il comando smoke ufficiale.
 
 ## Documentazione principale
 
@@ -103,11 +106,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_conn
 Verifica locale e test controllati:
 
 ```powershell
-virgilio init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
-python -m virgilio_connector doctor --config accounts.local.yaml --human
-virgilio pilot --config accounts.local.yaml --human
-python -m virgilio_connector run-local-pipeline --config accounts.local.yaml --dry-run --human
-python -m virgilio_connector pilot-run --config accounts.local.yaml --dry-run --human
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
+local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config local_connector\accounts.local.yaml --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot --config local_connector\accounts.local.yaml --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector run-local-pipeline --config local_connector\accounts.local.yaml --dry-run --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --dry-run --human
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
@@ -120,7 +124,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_conn
 Collaudi reali:
 
 ```powershell
-python -m virgilio_connector pilot-run --config accounts.local.yaml --human
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --human
 ```
 
 `pilot-run` senza `--dry-run` va usato solo su configurazioni di test gia' verificate.

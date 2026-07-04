@@ -4,15 +4,32 @@
 
 ```powershell
 cd C:\Users\Marco\Documents\Virgilio
-.\.venv\Scripts\python.exe -m pip install -e .\local_connector
+local_connector\.venv\Scripts\python.exe --version
 ```
 
-Configurazioni reali devono stare solo in `.env`, mai nel repository.
+Nel checkout verificato il runtime affidabile e` `local_connector\.venv\Scripts\python.exe`.
+Il path `.\.venv\Scripts\python.exe` non e` presente in questo workspace e non va assunto come default.
+
+Per l'install editable:
+
+```powershell
+local_connector\.venv\Scripts\python.exe -m pip install -e .\local_connector
+```
+
+Nota offline importante:
+
+- il comando sopra richiede che il venv abbia gia` `setuptools` disponibile;
+- in questo workspace `setuptools` non e` installato nel venv locale, quindi `pip install -e .\local_connector` non e` autosufficiente offline;
+- `--no-build-isolation` non basta se `setuptools.build_meta` manca nel venv.
+
+Per i test offline non e` necessario forzare l'install editable se si usa il percorso verificato sotto con `PYTHONPATH`.
+
+Configurazioni reali devono stare solo in `.env` o in variabili ambiente locali, mai nel repository.
 
 Per creare uno scheletro locale valido senza segreti nel file:
 
 ```powershell
-virgilio init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
+local_connector\.venv\Scripts\python.exe -m virgilio_connector init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
 ```
 
 Il comando genera un `accounts.local.yaml` con account, storage, Bucoliche e rules minime;
@@ -21,10 +38,40 @@ le credenziali restano solo come nomi di variabili d'ambiente da valorizzare loc
 ## Test Python
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest local_connector
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m pytest local_connector
 ```
 
 I test automatici devono restare offline: niente Gmail reale, Drive reale, Bucoliche reale, notifiche o credenziali.
+
+## Smoke offline raccomandato
+
+Il comando offline piu` robusto e consigliato per questo repo e`:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1
+```
+
+Lo smoke:
+
+- usa `local_connector\.venv\Scripts\python.exe` se presente;
+- imposta `PYTHONPATH` verso `local_connector\src`;
+- esegue la suite `pytest` del local connector;
+- verifica `virgilio_connector --help` e `virgilio_connector pilot --help`;
+- controlla che non siano tracciati file locali o segreti vietati;
+- non esegue Gmail reale, Drive reale, Bucoliche reale o notifiche reali.
+
+## Dry-run locale controllato
+
+Dopo aver valorizzato le env IMAP richieste nella sessione PowerShell corrente:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config local_connector\accounts.local.yaml --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --dry-run --human
+```
+
+Questi restano controlli locali. `pilot-run` senza `--dry-run` non e` un test automatico.
 
 ## Test Apps Script
 
