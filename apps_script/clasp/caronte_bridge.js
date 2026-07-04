@@ -8,8 +8,41 @@ const CARONTE_DRY_RUN_SCHEMA = '1.0';
 const CARONTE_DRY_RUN_CONNECTOR = 'local_imap';
 const CARONTE_DRY_RUN_REQUESTED_ACTION = 'stage_attachments_in_limbo';
 const CARONTE_DRY_RUN_FORBIDDEN_FIELDS = [
-  'local_path', 'file_path', 'file_bytes', 'base64', 'content', 'raw'
+  'local_path', 'file_path', 'staged_path', 'manifest_path',
+  'file_bytes', 'base64', 'content', 'raw'
 ];
+const VIRGILIO_INBOX_DEFAULT_STATUS = 'da_lavorare';
+const VIRGILIO_INBOX_FIELDS = [
+  'inbox_id', 'created_at', 'status', 'command_id', 'account_alias',
+  'source_email', 'source_message_id', 'source_message_uid', 'attachment_id',
+  'fingerprint', 'sha256', 'original_filename', 'staged_filename',
+  'drive_file_id', 'manifest_file_id', 'source_subject', 'source_sender',
+  'suggested_cliente', 'suggested_sito', 'suggested_pratica', 'form_url', 'notes'
+];
+const CARONTE_MANIFEST_TO_VIRGILIO_INBOX_MAP = Object.freeze({
+  inbox_id: { source: null, stage: 'later', note: 'Generato dallo schema inbox.' },
+  created_at: { source: 'created_at|staged_at', stage: 'now', note: 'Timestamp del manifest o staging.' },
+  status: { source: null, stage: 'now', note: 'Valore fisso da_lavorare.' },
+  command_id: { source: 'command_id', stage: 'now', note: 'Vuoto se il manifest non lo trasporta ancora.' },
+  account_alias: { source: 'account_alias', stage: 'now', note: 'Alias locale non segreto.' },
+  source_email: { source: 'source_email', stage: 'now', note: 'Email operativa locale.' },
+  source_message_id: { source: 'source_message_id', stage: 'now', note: 'Header Message-ID di correlazione.' },
+  source_message_uid: { source: 'source_message_uid', stage: 'now', note: 'UID IMAP nel contesto mailbox.' },
+  attachment_id: { source: 'attachment_id', stage: 'now', note: 'Identificativo allegato stabile.' },
+  fingerprint: { source: 'fingerprint', stage: 'now', note: 'Chiave tecnica primaria per idempotenza futura.' },
+  sha256: { source: 'sha256', stage: 'now', note: 'Hash contenuto allegato.' },
+  original_filename: { source: 'original_filename', stage: 'now', note: 'Nome file originale.' },
+  staged_filename: { source: 'staged_filename', stage: 'now', note: 'Nome file nello staging condiviso.' },
+  drive_file_id: { source: null, stage: 'later', note: 'Disponibile solo dopo verifica/lookup Drive.' },
+  manifest_file_id: { source: null, stage: 'later', note: 'Disponibile solo dopo lookup manifest su Drive.' },
+  source_subject: { source: 'subject', stage: 'now', note: 'Oggetto email del manifest locale.' },
+  source_sender: { source: 'source_sender', stage: 'now', note: 'Mittente email del manifest locale.' },
+  suggested_cliente: { source: null, stage: 'later', note: 'Resta vuoto fino a suggerimenti controllati.' },
+  suggested_sito: { source: null, stage: 'later', note: 'Resta vuoto fino a suggerimenti controllati.' },
+  suggested_pratica: { source: null, stage: 'later', note: 'Resta vuoto fino a suggerimenti controllati.' },
+  form_url: { source: null, stage: 'later', note: 'Disponibile dopo apertura form correlata.' },
+  notes: { source: 'note+status_reason+source_mailbox+source_message_date+scan_result+policy_rule', stage: 'now', note: 'Compatta metadati utili non modellati come colonne.' },
+});
 
 /**
  * Valida un comando gia' parsato e restituisce esclusivamente un esito dry-run.
@@ -114,6 +147,137 @@ function _caronteDryRunFindForbidden_(value, path) {
   return found;
 }
 
+function caronteGetVirgilioInboxFieldMap() {
+  return {
+    fields: VIRGILIO_INBOX_FIELDS.slice(),
+    mapping: JSON.parse(JSON.stringify(CARONTE_MANIFEST_TO_VIRGILIO_INBOX_MAP)),
+  };
+}
+
+function caronteBuildVirgilioInboxDraftFromManifest(manifest, options) {
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+    throw new Error('Manifest Virgilio inbox non valido.');
+  }
+  const extra = options && typeof options === 'object' && !Array.isArray(options)
+    ? options
+    : {};
+  const createdAt = _carontePickFirstString_(manifest, ['created_at', 'staged_at']);
+  return {
+    inbox_id: '',
+    created_at: createdAt,
+    status: VIRGILIO_INBOX_DEFAULT_STATUS,
+    command_id: _caronteStringOrEmpty_(manifest.command_id),
+    account_alias: _caronteStringOrEmpty_(manifest.account_alias),
+    source_email: _caronteStringOrEmpty_(manifest.source_email),
+    source_message_id: _caronteStringOrEmpty_(manifest.source_message_id),
+    source_message_uid: _caronteStringOrEmpty_(manifest.source_message_uid),
+    attachment_id: _caronteStringOrEmpty_(manifest.attachment_id),
+    fingerprint: _caronteStringOrEmpty_(manifest.fingerprint),
+    sha256: _caronteStringOrEmpty_(manifest.sha256),
+    original_filename: _caronteStringOrEmpty_(manifest.original_filename),
+    staged_filename: _caronteStringOrEmpty_(manifest.staged_filename),
+    drive_file_id: _caronteStringOrEmpty_(extra.drive_file_id),
+    manifest_file_id: _caronteStringOrEmpty_(extra.manifest_file_id),
+    source_subject: _caronteStringOrEmpty_(manifest.subject),
+    source_sender: _caronteStringOrEmpty_(manifest.source_sender),
+    suggested_cliente: '',
+    suggested_sito: '',
+    suggested_pratica: '',
+    form_url: _caronteStringOrEmpty_(extra.form_url),
+    notes: _caronteInboxNotes_(manifest),
+  };
+}
+
+function caronteBuildVirgilioInboxDraftFromGmail(gmail, options) {
+  if (!gmail || typeof gmail !== 'object' || Array.isArray(gmail)) {
+    throw new Error('Payload Gmail Virgilio inbox non valido.');
+  }
+  const extra = options && typeof options === 'object' && !Array.isArray(options)
+    ? options
+    : {};
+  const createdAt = _caronteStringOrEmpty_(gmail.created_at) ||
+    _caronteStringOrEmpty_(gmail.staged_at) ||
+    new Date().toISOString();
+  const attachmentKey = _caronteBuildGmailInboxKey_(gmail);
+  const accountAlias = _caronteStringOrEmpty_(gmail.account_alias) ||
+    _caronteStringOrEmpty_(gmail.source_mailbox);
+  const sourceEmail = _caronteStringOrEmpty_(gmail.source_email) ||
+    accountAlias;
+
+  return {
+    inbox_id: '',
+    created_at: createdAt,
+    status: VIRGILIO_INBOX_DEFAULT_STATUS,
+    command_id: _caronteStringOrEmpty_(gmail.command_id) || 'gmail_staging',
+    account_alias: accountAlias,
+    source_email: sourceEmail,
+    source_message_id: _caronteStringOrEmpty_(gmail.source_message_id),
+    source_message_uid: _caronteStringOrEmpty_(gmail.source_message_uid),
+    attachment_id: attachmentKey,
+    fingerprint: _caronteStringOrEmpty_(gmail.fingerprint) || attachmentKey,
+    sha256: _caronteStringOrEmpty_(gmail.sha256),
+    original_filename: _caronteStringOrEmpty_(gmail.original_filename),
+    staged_filename: _caronteStringOrEmpty_(gmail.staged_filename),
+    drive_file_id: _caronteStringOrEmpty_(extra.drive_file_id) ||
+      _caronteStringOrEmpty_(gmail.drive_file_id),
+    manifest_file_id: '',
+    source_subject: _caronteStringOrEmpty_(gmail.source_subject),
+    source_sender: _caronteStringOrEmpty_(gmail.source_sender),
+    suggested_cliente: '',
+    suggested_sito: '',
+    suggested_pratica: '',
+    form_url: _caronteStringOrEmpty_(extra.form_url) ||
+      _caronteStringOrEmpty_(gmail.form_url),
+    notes: _caronteInboxNotes_({
+      note: gmail.note,
+      status_reason: _caronteStringOrEmpty_(gmail.status_reason) || 'gmail_only_limbo',
+      source_mailbox: _caronteStringOrEmpty_(gmail.source_mailbox) || accountAlias,
+      source_message_date: _caronteStringOrEmpty_(gmail.source_message_date),
+      scan_result: _caronteStringOrEmpty_(gmail.scan_result) || 'gmail_only',
+      policy_rule: _caronteStringOrEmpty_(gmail.policy_rule) || 'da_archiviare',
+    }),
+  };
+}
+
+function _caronteBuildGmailInboxKey_(gmail) {
+  const sourceMessageId = _caronteStringOrEmpty_(gmail.source_message_id) ||
+    _caronteStringOrEmpty_(gmail.source_message_uid) ||
+    'message';
+  const attachmentIndex = Number.isInteger(gmail.attachment_index) &&
+    gmail.attachment_index >= 0
+    ? gmail.attachment_index
+    : 0;
+  const filename = _caronteStringOrEmpty_(gmail.original_filename) ||
+    _caronteStringOrEmpty_(gmail.staged_filename) ||
+    'allegato';
+  return ['gmail', sourceMessageId, String(attachmentIndex), filename].join(':');
+}
+
+function _caronteInboxNotes_(manifest) {
+  const parts = [
+    ['note', manifest.note],
+    ['status_reason', manifest.status_reason],
+    ['source_mailbox', manifest.source_mailbox],
+    ['source_message_date', manifest.source_message_date],
+    ['scan_result', manifest.scan_result],
+    ['policy_rule', manifest.policy_rule],
+  ].filter(item => _caronteStringOrEmpty_(item[1]) !== '')
+    .map(item => `${item[0]}=${_caronteStringOrEmpty_(item[1])}`);
+  return parts.join('; ');
+}
+
+function _carontePickFirstString_(source, keys) {
+  for (let i = 0; i < keys.length; i += 1) {
+    const value = _caronteStringOrEmpty_(source[keys[i]]);
+    if (value) return value;
+  }
+  return '';
+}
+
+function _caronteStringOrEmpty_(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 /** Test manuali puri: nessuna chiamata a servizi Apps Script. */
 function testCaronteBridgeDryRun() {
   const valid = _caronteDryRunTestPayload_();
@@ -136,6 +300,41 @@ function testCaronteBridgeDryRun() {
   const missingHash = _caronteDryRunTestPayload_();
   delete missingHash.attachments[0].sha256;
   _caronteDryRunAssert_(!caronteRiceviComandoDryRun(missingHash).ok, 'sha256 mancante');
+
+  const draft = caronteBuildVirgilioInboxDraftFromManifest(_caronteInboxManifestSample_(), {
+    drive_file_id: 'drive-123',
+    manifest_file_id: 'manifest-123',
+  });
+  _caronteDryRunAssert_(draft.status === VIRGILIO_INBOX_DEFAULT_STATUS, 'stato inbox default');
+  _caronteDryRunAssert_(draft.attachment_id === 'att-test-1', 'attachment_id mappato');
+  _caronteDryRunAssert_(draft.drive_file_id === 'drive-123', 'drive_file_id passato da verify');
+  _caronteDryRunAssert_(draft.notes.indexOf('source_mailbox=Virgilio/da-traghettare') >= 0,
+    'note mapping');
+
+  const gmailDraft = caronteBuildVirgilioInboxDraftFromGmail({
+    created_at: '2026-07-03T10:00:00Z',
+    command_id: 'gmail_staging',
+    account_alias: 'marco@sigmapiu.it',
+    source_email: 'marco@sigmapiu.it',
+    source_message_id: 'msg-gmail-123',
+    source_message_uid: 'thread-gmail-123',
+    attachment_index: 0,
+    original_filename: 'analisi.pdf',
+    staged_filename: '2026-07-03_cliente_msg-gmail-123_analisi.pdf',
+    source_subject: 'Documento da archiviare',
+    source_sender: 'Mario Rossi <mario@example.com>',
+    source_mailbox: 'marco@sigmapiu.it',
+    source_message_date: '2026-07-03 10:00:00',
+    note: 'salvato dal polling Gmail',
+  }, {
+    drive_file_id: 'drive-gmail-123',
+  });
+  _caronteDryRunAssert_(gmailDraft.status === VIRGILIO_INBOX_DEFAULT_STATUS, 'gmail stato inbox default');
+  _caronteDryRunAssert_(gmailDraft.command_id === 'gmail_staging', 'gmail command id');
+  _caronteDryRunAssert_(gmailDraft.attachment_id === 'gmail:msg-gmail-123:0:analisi.pdf', 'gmail attachment key');
+  _caronteDryRunAssert_(gmailDraft.fingerprint === gmailDraft.attachment_id, 'gmail fingerprint allineato');
+  _caronteDryRunAssert_(gmailDraft.manifest_file_id === '', 'gmail senza manifest file');
+  _caronteDryRunAssert_(gmailDraft.notes.indexOf('policy_rule=da_archiviare') >= 0, 'gmail note mapping');
   Logger.log('testCaronteBridgeDryRun: OK');
 }
 
@@ -147,6 +346,33 @@ function _caronteDryRunTestPayload_() {
       local_temp_id: 'att-test-1', sha256: 'a'.repeat(64),
       quarantine_status: 'ready_for_caronte'
     }]
+  };
+}
+
+function _caronteInboxManifestSample_() {
+  return {
+    schema_version: '1.0',
+    connector_type: 'local_imap',
+    command_id: '01900000-0000-7000-8000-000000000001',
+    created_at: '2026-07-01T12:00:00+00:00',
+    account_alias: 'marco_sigmapiu',
+    source_email: 'marco@example.invalid',
+    source_sender: 'sender@example.invalid',
+    source_mailbox: 'Virgilio/da-traghettare',
+    source_message_uid: '41',
+    source_message_id: '<a@example.invalid>',
+    source_message_date: '2026-06-25T10:00:00+00:00',
+    subject: 'Documento di prova',
+    attachment_id: 'att-test-1',
+    fingerprint: 'fp-test-1',
+    sha256: 'a'.repeat(64),
+    size_bytes: 4,
+    original_filename: 'documento.pdf',
+    staged_filename: 'att-test-1-documento.pdf',
+    note: 'sync cloud non verificata',
+    status_reason: 'fake clean',
+    scan_result: 'clean',
+    policy_rule: 'solo-pdf',
   };
 }
 

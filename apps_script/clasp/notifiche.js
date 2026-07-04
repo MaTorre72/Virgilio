@@ -75,6 +75,31 @@ function avvisaTeam(cliente, sito, pratica, anno, tecnici, note, urlCartella) {
   }
 }
 
+/**
+ * Avvisa il team dell'esito finale di un record Virgilio_Inbox archiviato.
+ *
+ * @param {Object} esito
+ */
+function avvisaArchiviazioneVirgilioInbox(esito) {
+  const payload = esito && typeof esito === 'object' && !Array.isArray(esito)
+    ? esito
+    : {};
+  const messaggioChat = _costruisciMessaggioArchiviazioneInboxChat(payload);
+  const messaggioTelegram = _costruisciMessaggioArchiviazioneInboxTelegram(payload);
+
+  try {
+    avvisaChat(messaggioChat);
+  } catch (err) {
+    Logger.log(`[Notifiche] ERRORE Google Chat: ${err.message}`);
+  }
+
+  try {
+    avvisaTelegram(messaggioTelegram);
+  } catch (err) {
+    Logger.log(`[Notifiche] ERRORE Telegram: ${err.message}`);
+  }
+}
+
 
 /**
  * Invia un messaggio al webhook Google Chat dello spazio team Sigma+.
@@ -217,6 +242,61 @@ function _costruisciMessaggioTelegramHtml(cliente, sito, pratica, anno, tecnici,
   return msg;
 }
 
+function _costruisciMessaggioArchiviazioneInboxChat(esito) {
+  const nomePratica = `${esito.anno}_${esito.pratica}`;
+  const tecniciStr = _notificheTecniciToString_(esito.tecnici);
+  let msg =
+    `📁 *Pratica aperta e documento archiviato*\n` +
+    `Cliente: ${esito.cliente} — Sito: ${esito.sito}\n` +
+    `Pratica: ${nomePratica}\n` +
+    `Documento: ${esito.fileName || 'documento staged'}\n` +
+    `Tecnici: ${tecniciStr}\n`;
+
+  if (esito.inboxId) {
+    msg += `Inbox: ${esito.inboxId}\n`;
+  }
+  if (esito.note && esito.note.toString().trim()) {
+    msg += `Note: ${esito.note.toString().trim()}\n`;
+  }
+  if (_virgilioInboxStringOrEmptyForNotifications_(esito.inboxStatus)) {
+    msg += `Stato finale: ${esito.inboxStatus}\n`;
+  }
+
+  msg += `📂 Cartella pratica: ${esito.urlCartella}`;
+  if (esito.urlCorrispondenza && esito.urlCorrispondenza !== esito.urlCartella) {
+    msg += `\n📎 Corrispondenza: ${esito.urlCorrispondenza}`;
+  }
+  return msg;
+}
+
+function _costruisciMessaggioArchiviazioneInboxTelegram(esito) {
+  const nomePratica = `${esito.anno}_${esito.pratica}`;
+  const tecniciStr = _notificheTecniciToString_(esito.tecnici);
+  let msg =
+    `📁 <b>Pratica aperta e documento archiviato</b>\n` +
+    `Cliente: ${_escapeTelegramHtml(esito.cliente)}\n` +
+    `Sito: ${_escapeTelegramHtml(esito.sito)}\n` +
+    `Pratica: ${_escapeTelegramHtml(nomePratica)}\n` +
+    `Documento: ${_escapeTelegramHtml(esito.fileName || 'documento staged')}\n` +
+    `Tecnici: ${_escapeTelegramHtml(tecniciStr)}\n`;
+
+  if (_virgilioInboxStringOrEmptyForNotifications_(esito.inboxId)) {
+    msg += `Inbox: ${_escapeTelegramHtml(esito.inboxId)}\n`;
+  }
+  if (_virgilioInboxStringOrEmptyForNotifications_(esito.note)) {
+    msg += `Note: ${_escapeTelegramHtml(esito.note.toString().trim())}\n`;
+  }
+  if (_virgilioInboxStringOrEmptyForNotifications_(esito.inboxStatus)) {
+    msg += `Stato finale: ${_escapeTelegramHtml(esito.inboxStatus)}\n`;
+  }
+
+  msg += `<a href="${_escapeTelegramHtml(esito.urlCartella || '')}">📂 Apri la cartella pratica</a>`;
+  if (esito.urlCorrispondenza && esito.urlCorrispondenza !== esito.urlCartella) {
+    msg += `\n<a href="${_escapeTelegramHtml(esito.urlCorrispondenza)}">📎 Apri 02_corrispondenza</a>`;
+  }
+  return msg;
+}
+
 
 /**
  * Escape minimo per testo inserito in messaggi HTML Telegram.
@@ -247,6 +327,16 @@ function _escapeTelegramHtml(value) {
     .replace(/>/g, '&gt;');
 }
 
+function _notificheTecniciToString_(tecnici) {
+  return (Array.isArray(tecnici) && tecnici.length)
+    ? tecnici.join(', ')
+    : 'nessuno assegnato';
+}
+
+function _virgilioInboxStringOrEmptyForNotifications_(value) {
+  return String(value || '').trim();
+}
+
 /**
  * Invia un messaggio semplice al team su tutti i canali.
  * Usato per notifiche di servizio generiche dove non serve il formato completo.
@@ -259,57 +349,6 @@ function avvisaTeamSemplice(messaggio) {
 
   try {avvisaTelegram(_escapeTelegramHtml(messaggio));}
   catch (err) { Logger.log(`[Notifiche] Telegram fallito: ${err.message}`); }
-}
-
-
-/**
- * Invia la notifica pilota P2 per un allegato gia registrato in Bucoliche.
- * Restituisce l'esito per consentire idempotenza e verifiche locali.
- *
- * @param {Object} options
- * @param {Object=} deps
- * @returns {{ok: boolean, channels: string[], errors: Object[]}}
- */
-function avvisaRegistrazionePilotaTeam(options, deps) {
-  const details = options || {};
-  const injected = deps || {};
-  const channels = [];
-  const errors = [];
-  const chatMessage = _costruisciNotificaPilotaChat_(details);
-  const telegramMessage = _costruisciNotificaPilotaTelegram_(details);
-  const chatConfigured = Object.prototype.hasOwnProperty.call(injected, 'chatConfigured')
-    ? injected.chatConfigured
-    : Boolean(CONFIG.WEBHOOK_CHAT);
-  const telegramConfigured = Object.prototype.hasOwnProperty.call(injected, 'telegramConfigured')
-    ? injected.telegramConfigured
-    : Boolean(CONFIG.TELEGRAM_TOKEN && CONFIG.TELEGRAM_CHAT_ID);
-  const sendChat = injected.sendChat || avvisaChat;
-  const sendTelegram = injected.sendTelegram || avvisaTelegram;
-
-  if (chatConfigured) {
-    try {
-      sendChat(chatMessage);
-      channels.push('chat');
-    } catch (err) {
-      errors.push(_driveStagingError_('CHAT_NOTIFICATION_FAILED', String(err.message || err)));
-    }
-  }
-
-  if (telegramConfigured) {
-    try {
-      sendTelegram(telegramMessage);
-      channels.push('telegram');
-    } catch (err) {
-      errors.push(_driveStagingError_('TELEGRAM_NOTIFICATION_FAILED', String(err.message || err)));
-    }
-  }
-
-  if (channels.length === 0 && errors.length === 0) {
-    errors.push(_driveStagingError_('NOTIFICATION_CHANNELS_NOT_CONFIGURED',
-      'Configurare almeno un canale Chat o Telegram per il pilota.'));
-  }
-
-  return { ok: channels.length > 0 && errors.length === 0, channels: channels, errors: errors };
 }
 
 
@@ -393,22 +432,33 @@ function _costruisciTraghettamentoTelegram(totale, dettagliMail) {
   return msg;
 }
 
-function _costruisciNotificaPilotaChat_(details) {
-  const link = details.driveUrl ? `\n📎 Drive: ${details.driveUrl}` : '';
-  return `📌 *Virgilio staging pilota registrato*\n` +
-    `Attachment: ${details.attachmentId || ''}\n` +
-    `File: ${details.stagedFilename || ''}\n` +
-    `Account: ${details.accountAlias || ''}\n` +
-    `Stato: ${details.state || ''}${link}`;
-}
-
-function _costruisciNotificaPilotaTelegram_(details) {
-  const link = details.driveUrl
-    ? `\n<a href="${_escapeTelegramHtml(details.driveUrl)}">📎 Apri il file Drive</a>`
-    : '';
-  return `📌 <b>Virgilio staging pilota registrato</b>\n` +
-    `Attachment: ${_escapeTelegramHtml(details.attachmentId || '')}\n` +
-    `File: ${_escapeTelegramHtml(details.stagedFilename || '')}\n` +
-    `Account: ${_escapeTelegramHtml(details.accountAlias || '')}\n` +
-    `Stato: ${_escapeTelegramHtml(details.state || '')}${link}`;
+function testNotificheArchiviazioneInbox() {
+  const payload = {
+    cliente: 'Cliente Demo',
+    sito: 'Sito Demo',
+    pratica: 'AIA',
+    anno: '2026',
+    tecnici: ['Marco', 'Sara'],
+    note: 'nota <urgente>',
+    urlCartella: 'https://drive.google.com/drive/folders/folder-pratica',
+    urlCorrispondenza: 'https://drive.google.com/drive/folders/folder-corrispondenza',
+    inboxId: 'inbox-1',
+    fileName: 'analisi.pdf',
+    inboxStatus: 'archiviato',
+  };
+  const chat = _costruisciMessaggioArchiviazioneInboxChat(payload);
+  const telegram = _costruisciMessaggioArchiviazioneInboxTelegram(payload);
+  if (chat.indexOf('Documento: analisi.pdf') < 0) {
+    throw new Error('Messaggio Chat archiviazione inbox incompleto.');
+  }
+  if (chat.indexOf('Stato finale: archiviato') < 0) {
+    throw new Error('Messaggio Chat archiviazione inbox senza stato finale.');
+  }
+  if (telegram.indexOf('Inbox: inbox-1') < 0 || telegram.indexOf('&lt;urgente&gt;') < 0) {
+    throw new Error('Messaggio Telegram archiviazione inbox non escapato correttamente.');
+  }
+  if (telegram.indexOf('Stato finale: archiviato') < 0) {
+    throw new Error('Messaggio Telegram archiviazione inbox senza stato finale.');
+  }
+  Logger.log('testNotificheArchiviazioneInbox: OK');
 }

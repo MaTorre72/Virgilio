@@ -1,6 +1,6 @@
 /**
  * ============================================================
- * WEB APP — Interfaccia Virgilio
+ * WEB APP - Interfaccia Virgilio
  * ============================================================
  *
  * Gestisce:
@@ -16,22 +16,29 @@ const VIRGILIO_ICON_FILE_ID = '1hYTL7KS6ZbOMSRhB_PQgF0OvDbtXJOJH';
 
 /**
  * Endpoint GET della Web App.
+ *
+ * @param {Object=} e
+ * @returns {GoogleAppsScript.HTML.HtmlOutput}
  */
-function doGet() {
-  return _creaOutputVirgilio_();
+function doGet(e) {
+  return _creaOutputVirgilio_(e);
 }
 
 
 /**
  * Genera l'interfaccia Virgilio completa.
  *
- * Questa funzione è utilizzata sia dalla Web App sia dalla finestra
+ * Questa funzione e utilizzata sia dalla Web App sia dalla finestra
  * interna aperta dal menu del foglio Google Sheets.
  *
+ * @param {Object=} e
  * @returns {GoogleAppsScript.HTML.HtmlOutput}
  */
-function _creaOutputVirgilio_() {
+function _creaOutputVirgilio_(e) {
   const template = HtmlService.createTemplateFromFile('virgilio');
+  template.virgilioInboxContextJson = JSON.stringify(
+    _caronteBuildVirgilioInboxTemplateContext_(e)
+  );
 
   try {
     template.virgilioIconDataUri =
@@ -39,16 +46,49 @@ function _creaOutputVirgilio_() {
 
   } catch (err) {
     Logger.log(
-      `[WebApp] Logo non caricato (${err.message}) — uso fallback "V"`
+      `[WebApp] Logo non caricato (${err.message}) - uso fallback "V"`
     );
 
-    // Il form resta utilizzabile anche se l'immagine non è disponibile.
+    // Il form resta utilizzabile anche se l'immagine non e disponibile.
     template.virgilioIconDataUri = '';
   }
 
   return template
     .evaluate()
-    .setTitle('Virgilio — Sigma+');
+    .setTitle('Virgilio - Sigma+');
+}
+
+function _caronteBuildVirgilioInboxTemplateContext_(e) {
+  const inboxId = _caronteReadInboxIdParameter_(e);
+  if (!inboxId) {
+    return {
+      enabled: false,
+      inbox_id: '',
+      found: false,
+      message: '',
+    };
+  }
+
+  const lookup = caronteGetVirgilioInboxForForm(inboxId);
+  return {
+    enabled: true,
+    inbox_id: inboxId,
+    found: lookup && lookup.found === true,
+    status: lookup && lookup.status || '',
+    source_subject: lookup && lookup.source_subject || '',
+    source_sender: lookup && lookup.source_sender || '',
+    original_filename: lookup && lookup.original_filename || '',
+    staged_filename: lookup && lookup.staged_filename || '',
+    suggested_cliente: lookup && lookup.suggested_cliente || '',
+    suggested_sito: lookup && lookup.suggested_sito || '',
+    suggested_pratica: lookup && lookup.suggested_pratica || '',
+    message: lookup && lookup.message || '',
+  };
+}
+
+function _caronteReadInboxIdParameter_(e) {
+  if (!e || !e.parameter) return '';
+  return String(e.parameter.inbox_id || '').trim();
 }
 
 
@@ -73,7 +113,7 @@ function _creaDataUriImmagine_(fileId) {
 
   if (!mimeType || !mimeType.startsWith('image/')) {
     throw new Error(
-      `Il file selezionato non è un'immagine. MIME type: ${mimeType}`
+      `Il file selezionato non e un'immagine. MIME type: ${mimeType}`
     );
   }
 

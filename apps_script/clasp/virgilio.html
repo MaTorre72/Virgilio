@@ -1236,6 +1236,7 @@ function mostraSuccessoVirgilio(esito) {
   const pratica = esito.pratica;
   const anno    = esito.anno;
   const tecnici = esito.tecnici || [];
+  const inboxStatus = esito.inbox_status || '';
 
   for (let i = 1; i <= TOTAL; i++) {
     document.getElementById('step' + i).classList.remove('active');
@@ -1245,8 +1246,15 @@ function mostraSuccessoVirgilio(esito) {
     'Il cammino è compiuto. <em>Caronte ha traghettato.</em>';
 
   const tech = tecnici.length ? 'Avvisati: ' + tecnici.join(', ') + '.' : '';
+  const successSubParts = [`Caronte ha creato la cartella nell'Empireo.`];
+  if (tech) {
+    successSubParts.push(tech);
+  }
+  if (inboxStatus) {
+    successSubParts.push(`Stato inbox: ${inboxStatus}.`);
+  }
   document.getElementById('successSub').innerHTML =
-    `Caronte ha creato la cartella nell'Empireo.<br>${escapeHtml(tech)}`;
+    successSubParts.map(escapeHtml).join('<br>');
 
   document.getElementById('successPath').innerHTML =
     `<span style="color:var(--ink-faint);font-size:10px;letter-spacing:0.1em">STRUTTURA AGGIORNATA</span><br>` +

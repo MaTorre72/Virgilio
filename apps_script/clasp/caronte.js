@@ -124,30 +124,6 @@ function doPost(e) {
     return _rispostaJSON(caronteRegistraStagingDriveTest(dati));
   }
 
-  if (dati.action === DRIVE_STAGING_BUCOLICHE_ACTION) {
-    return _rispostaJSON(caronteRegistraBucolicheDaStaging(dati));
-  }
-
-  if (dati.action === 'notify_drive_staging_pilot' && _flagAttivo_(dati.preflight_p3_p4)) {
-    return _rispostaJSON(carontePreflightP3P4FromPayload(dati));
-  }
-
-  if (dati.action === DRIVE_STAGING_NOTIFY_ACTION) {
-    return _rispostaJSON(caronteNotificaPilotaDaStaging(dati));
-  }
-
-  if (dati.action === 'preflight_drive_staging_p3_p4') {
-    return _rispostaJSON(carontePreflightP3P4FromPayload(dati));
-  }
-
-  if (dati.action === DRIVE_STAGING_PRACTICE_MOVE_ACTION) {
-    return _rispostaJSON(caronteSpostaStagingInPraticaPilota(dati));
-  }
-
-  if (dati.action === DRIVE_STAGING_GMAIL_LABEL_MOVE_ACTION) {
-    return _rispostaJSON(caronteCompletaMailboxPilotaP4(dati));
-  }
-
   // 2. Verifica token di sicurezza
   // ⚠ Non loggare mai CONFIG.VIRGILIO_TOKEN — usare solo nomi simbolici nei log
   if (!CONFIG.VIRGILIO_TOKEN || dati.token !== CONFIG.VIRGILIO_TOKEN) {
@@ -161,6 +137,10 @@ function doPost(e) {
   } catch (err) {
     Logger.log(`[Caronte] doPost — rate limit: ${err.message}`);
     return _rispostaJSON({ status: 'error', messaggio: err.message });
+  }
+
+  if (dati.action === VIRGILIO_INBOX_INTAKE_ACTION) {
+    return _rispostaJSON(caronteRegistraVirgilioInbox(dati));
   }
 
   // 3. Validazione campi obbligatori
@@ -192,6 +172,30 @@ function doPost(e) {
     });
   }
 
+  const inboxId = dati.inbox_id ? dati.inbox_id.toString().trim() : '';
+  let inboxLink = null;
+  if (inboxId) {
+    inboxLink = caronteCollegaSubmitVirgilioInbox({
+      inbox_id: inboxId,
+      cliente: dati.cliente.toString().trim(),
+      sito: dati.sito.toString().trim(),
+      pratica: dati.pratica.toString().trim(),
+      anno: dati.anno.toString().trim(),
+      note: dati.note ? dati.note.toString() : '',
+      tecnici: Array.isArray(dati.tecnici) ? dati.tecnici : [],
+      submitted_at: _timestampLocale(),
+    });
+    if (!inboxLink || inboxLink.ok !== true) {
+      Logger.log(`[Caronte] doPost — inbox non collegata: ${inboxId}`);
+      return _rispostaJSON({
+        status: 'error',
+        messaggio: inboxLink && inboxLink.message
+          ? inboxLink.message
+          : 'Impossibile collegare il submit al record Virgilio_Inbox.',
+      });
+    }
+  }
+
   // 5. Esecuzione operazioni principali
   try {
     // Crea cartella pratica nell'Empireo
@@ -202,17 +206,52 @@ function doPost(e) {
       dati.pratica.trim()
     );
 
-    // Avvisa il team su Chat e Telegram
+    // Sposta gli allegati dal Limbo nella cartella pratica appena creata.
+    // Con inbox_id attivo usa l allegato esplicito del record inbox; senza
+    // inbox_id mantiene il fallback legacy per i casi storici.
+    const spostamento = inboxId
+      ? _archiviaAllegatoVirgilioInbox_(
+        inboxId,
+        dati.cliente,
+        dati.sito,
+        cartella.id,
+        cartella.url
+      )
+      : _spostaAllegatiDalLimbo(
+        dati.cliente,
+        dati.sito,
+        cartella.id
+      );
+    const inboxStatus = inboxId
+      ? spostamento.inboxStatus || 'archiviato'
+      : '';
 
-    avvisaTeam(
-      dati.cliente,
-      dati.sito,
-      dati.pratica,
-      dati.anno,
-      dati.tecnici || [],
-      dati.note    || '',
-      cartella.url
-    );
+    // Avvisa il team su Chat e Telegram
+    if (inboxId) {
+      avvisaArchiviazioneVirgilioInbox({
+        cliente: dati.cliente,
+        sito: dati.sito,
+        pratica: dati.pratica,
+        anno: dati.anno,
+        tecnici: dati.tecnici || [],
+        note: dati.note || '',
+        urlCartella: cartella.url,
+        urlCorrispondenza: spostamento.destinationFolderUrl || cartella.url,
+        inboxId: inboxId,
+        fileName: spostamento.fileName || '',
+        inboxStatus: inboxStatus,
+      });
+    } else {
+      avvisaTeam(
+        dati.cliente,
+        dati.sito,
+        dati.pratica,
+        dati.anno,
+        dati.tecnici || [],
+        dati.note    || '',
+        cartella.url
+      );
+    }
 
     // Registra sulle Bucoliche
     registraSuBucoliche({
@@ -222,18 +261,15 @@ function doPost(e) {
       pratica:     dati.pratica,
       anno:        dati.anno,
       tecnici:     dati.tecnici || [],
-      note:        dati.note    || '',
+      note:        _costruisciNotaEsitoVirgilio_(dati.note, inboxId, spostamento),
       urlCartella: cartella.url,
-      idDrive:  cartella.id,
+      idDrive:     cartella.id,
+      nomeFile:    spostamento.fileName || '',
+      estensione:  spostamento.fileExtension || '',
+      dimensioneKb: Number.isInteger(spostamento.fileSizeKb) ? spostamento.fileSizeKb : '',
+      stato:       inboxId ? 'archiviato' : (spostamento.count > 0 ? 'archiviato' : ''),
+      timestampArchiviazione: inboxId ? _timestampLocale() : '',
     });
-
-    // Sposta gli allegati dal Limbo nella cartella pratica appena creata.
-    // Restituisce { count, fileIds } per aggiornare le righe Bucoliche.
-    const spostamento = _spostaAllegatiDalLimbo(
-      dati.cliente,
-      dati.sito,
-      cartella.id
-    );
 
     // Aggiorna le righe gmail_staging → gmail_archiviato (senza nuove righe duplicate)
     if (spostamento.fileIds.length > 0) {
@@ -253,6 +289,8 @@ function doPost(e) {
       cartella:         cartella.url,
       id:               cartella.id,
       allegatiSpostati: spostamento.count,
+      inbox_id:         inboxId,
+      inbox_status:     inboxStatus,
     });
 
   } catch (err) {
@@ -295,6 +333,7 @@ function apriPraticaDaVirgilio(dati) {
         anno: dati.anno || new Date().getFullYear().toString(),
         tecnici: Array.isArray(dati.tecnici) ? dati.tecnici : [],
         note: dati.note || '',
+        inbox_id: dati.inbox_id || '',
         origine: 'form_virgilio_interno'
       })
     }
@@ -602,7 +641,8 @@ function _processaMailUtente(utente) {
       const allegati = messaggio.getAttachments();
       const nomiFileMessaggio = [];
 
-      for (const allegato of allegati) {
+      for (let allegatoIndex = 0; allegatoIndex < allegati.length; allegatoIndex += 1) {
+        const allegato = allegati[allegatoIndex];
         // Filtra firme, immagini incorporate, file di servizio
         // e allegati troppo piccoli.
         if (!èAllegatoReale(allegato)) {
@@ -636,16 +676,57 @@ function _processaMailUtente(utente) {
         }
 
         try {
+          const stagedFilename = _caronteNomeFileLimbo_(allegato, messaggio);
           const fileId = _salvaAllegatoInLimbo(
             allegato,
             messaggio,
             limbo
           );
 
+          const inboxResult = caronteRegistraVirgilioInboxDaGmail({
+            created_at: _timestampLocale(),
+            command_id: 'gmail_staging',
+            account_alias: utente,
+            source_email: utente,
+            source_mailbox: utente,
+            source_message_id: messaggio.getId(),
+            source_message_uid: thread.getId(),
+            attachment_index: allegatoIndex,
+            original_filename: allegato.getName(),
+            staged_filename: stagedFilename,
+            drive_file_id: fileId,
+            source_subject: messaggio.getSubject().substring(0, 200),
+            source_sender: messaggio.getFrom(),
+            source_message_date: messaggio.getDate().toISOString(),
+            status_reason: 'gmail_only_limbo',
+            scan_result: 'gmail_only',
+            policy_rule: 'da_archiviare',
+          });
+          if (!inboxResult.ok) {
+            Logger.log(
+              `[Caronte] AVVISO â€” inbox Gmail non registrata per ${allegato.getName()}: ${inboxResult.message}`
+            );
+            registraErrore(
+              'caronteTraghetta',
+              `Inbox Gmail non registrata: ${inboxResult.message}`,
+              {
+                cliente: _estraiDominio(messaggio.getFrom()),
+                idDrive: fileId,
+                source_message_id: messaggio.getId(),
+                source_message_uid: thread.getId(),
+                original_filename: allegato.getName(),
+                staged_filename: stagedFilename,
+              }
+            );
+          }
+
           // Estrae metadati per le colonne ML di Bucoliche
           const nomeFileOriginale = allegato.getName();
           const estensione = nomeFileOriginale.includes('.')
             ? nomeFileOriginale.split('.').pop().toLowerCase().substring(0, 10)
+            : '';
+          const inboxNota = inboxResult && inboxResult.ok
+            ? `inbox_id=${inboxResult.inbox_id}`
             : '';
 
           registraSuBucoliche({
@@ -655,7 +736,7 @@ function _processaMailUtente(utente) {
             pratica:          '',
             anno:             '',
             tecnici:          [],
-            note:             '',
+            note:             inboxNota,
             urlCartella:      `https://drive.google.com/file/d/${fileId}`,
             idDrive:          fileId,
             // ── Campi ML ──
@@ -678,7 +759,7 @@ function _processaMailUtente(utente) {
           allegatiSalvatiNelThread++;
 
           Logger.log(
-            `[Caronte] Traghettato nel Limbo: ${allegato.getName()}`
+            `[Caronte] Traghettato nel Limbo${inboxResult && inboxResult.ok ? ` e messo in Da archiviare (${inboxResult.inbox_id})` : ''}: ${allegato.getName()}`
           );
 
         } catch (err) {
@@ -784,16 +865,20 @@ function _avvisaTraghettamento(totale, utente, dettagliMail) {
  * @returns {string} ID del file creato su Drive
  */
 function _salvaAllegatoInLimbo(allegato, messaggio, limbo) {
-  const data         = Utilities.formatDate(new Date(), 'Europe/Rome', 'yyyy-MM-dd');
-  const dominio      = _estraiDominio(messaggio.getFrom());
-  const nomeOriginale = allegato.getName();
-  const idMessaggio = messaggio.getId().substring(0, 10);
-  const nomeFile = `${data}_${dominio}_${idMessaggio}_${_sanitizzaNomeFile(nomeOriginale)}`;
+  const nomeFile = _caronteNomeFileLimbo_(allegato, messaggio);
 
   const blob = allegato.copyBlob().setName(nomeFile);
   const file = limbo.createFile(blob);
 
   return file.getId();
+}
+
+function _caronteNomeFileLimbo_(allegato, messaggio) {
+  const data = Utilities.formatDate(new Date(), 'Europe/Rome', 'yyyy-MM-dd');
+  const dominio = _estraiDominio(messaggio.getFrom());
+  const nomeOriginale = allegato.getName();
+  const idMessaggio = messaggio.getId().substring(0, 10);
+  return `${data}_${dominio}_${idMessaggio}_${_sanitizzaNomeFile(nomeOriginale)}`;
 }
 
 
@@ -949,6 +1034,96 @@ function _apriLimbo() {
   }
 }
 
+function _archiviaAllegatoVirgilioInbox_(inboxId, cliente, sito, idCartellaPratica, urlCartellaPratica) {
+  const inbox = caronteGetVirgilioInboxForArchive(inboxId);
+  if (!inbox || inbox.ok !== true || !inbox.found) {
+    throw new Error(
+      inbox && inbox.message
+        ? inbox.message
+        : 'Record Virgilio_Inbox non disponibile per l archiviazione finale.'
+    );
+  }
+  if (!inbox.drive_file_id) {
+    throw new Error('drive_file_id mancante nel record Virgilio_Inbox.');
+  }
+
+  const corrispondenza = _trovaCartellaCorrispondenza(idCartellaPratica);
+  const file = DriveApp.getFileById(inbox.drive_file_id);
+  const destinationFolderId = corrispondenza.getId();
+  const alreadyInDestination = _cartellaContieneFileId_(corrispondenza, file.getId());
+
+  if (!alreadyInDestination) {
+    file.moveTo(corrispondenza);
+    Logger.log(
+      `[Caronte] Spostato inbox ${inboxId} in 02_corrispondenza: ${file.getName()}`
+    );
+  } else {
+    Logger.log(
+      `[Caronte] Inbox ${inboxId} gia presente in 02_corrispondenza: ${file.getName()}`
+    );
+  }
+
+  const archived = caronteArchiviaVirgilioInbox({
+    inbox_id: inboxId,
+    archived_at: _timestampLocale(),
+    archived_file_id: file.getId(),
+    destination_folder_id: destinationFolderId,
+    destination_folder_url: corrispondenza.getUrl(),
+    pratica_folder_id: idCartellaPratica,
+    pratica_folder_url: urlCartellaPratica,
+  });
+  if (!archived || archived.ok !== true) {
+    throw new Error(
+      archived && archived.message
+        ? archived.message
+        : 'Aggiornamento finale Virgilio_Inbox non riuscito.'
+    );
+  }
+  const inboxStatus = archived && archived.status
+    ? String(archived.status).trim()
+    : 'archiviato';
+
+  return {
+    count: 1,
+    fileIds: [file.getId()],
+    fileName: file.getName(),
+    fileExtension: _estensioneNomeFile_(file.getName()),
+    fileSizeKb: Math.ceil(file.getSize() / 1024),
+    destinationFolderId: destinationFolderId,
+    destinationFolderUrl: corrispondenza.getUrl(),
+    alreadyInDestination: alreadyInDestination,
+    inboxStatus: inboxStatus,
+  };
+}
+
+function _cartellaContieneFileId_(folder, fileId) {
+  const files = folder.getFiles();
+  while (files.hasNext()) {
+    if (files.next().getId() === fileId) return true;
+  }
+  return false;
+}
+
+function _costruisciNotaEsitoVirgilio_(note, inboxId, spostamento) {
+  const parts = [];
+  const cleanNote = String(note || '').trim();
+  if (cleanNote) parts.push(cleanNote);
+  if (inboxId) parts.push(`inbox_id=${inboxId}`);
+  if (spostamento && spostamento.fileName) parts.push(`documento=${spostamento.fileName}`);
+  if (inboxId) {
+    parts.push(spostamento && spostamento.alreadyInDestination
+      ? 'esito=archiviazione_gia_allineata'
+      : 'esito=archiviato_da_inbox');
+  }
+  return parts.join('; ');
+}
+
+function _estensioneNomeFile_(fileName) {
+  const value = String(fileName || '').trim();
+  if (!value || value.indexOf('.') < 0) return '';
+  return value.split('.').pop().toLowerCase().substring(0, 10);
+}
+
 
 /**
  * Estrae il dominio da un indirizzo email.
@@ -975,10 +1150,6 @@ function _rispostaJSON(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
-}
-
-function _flagAttivo_(value) {
-  return value === true || value === 'true' || value === 1 || value === '1';
 }
 
 /**
@@ -1100,6 +1271,112 @@ function _spostaAllegatiDalLimbo(
 
     return { count: 0, fileIds: [] };
   }
+}
+
+function testCaronteInboxArchiviazione() {
+  const movedFile = {
+    id: 'drive-1',
+    name: 'analisi.pdf',
+    movedTo: '',
+    getId: function() { return this.id; },
+    getName: function() { return this.name; },
+    moveTo: function(folder) { this.movedTo = folder.getId(); }
+  };
+  const destinationFiles = [];
+  const destinationFolder = {
+    getId: () => 'folder-corrispondenza',
+    getUrl: () => 'https://drive.google.com/drive/folders/folder-corrispondenza',
+    getFiles: () => {
+      const values = destinationFiles.slice();
+      return { hasNext: () => values.length > 0, next: () => values.shift() };
+    }
+  };
+  const archiveCalls = [];
+  const result = _archiviaAllegatoVirgilioInboxWithDeps_({
+    inboxId: 'inbox-1',
+    cliente: 'Cliente Demo',
+    sito: 'Sito Demo',
+    idCartellaPratica: 'folder-pratica',
+    urlCartellaPratica: 'https://drive.google.com/drive/folders/folder-pratica',
+    getInbox: () => ({ ok: true, found: true, drive_file_id: 'drive-1' }),
+    getFolder: () => destinationFolder,
+    driveApp: { getFileById: () => movedFile },
+    archiveInbox: payload => {
+      archiveCalls.push(payload);
+      return { ok: true, status: 'archiviato' };
+    },
+    nowTimestamp: () => '2026-07-01 20:10:00',
+  });
+  _driveStagingAssert_(result.count === 1 && result.fileIds[0] === 'drive-1',
+    'archiviazione inbox restituisce file spostato');
+  _driveStagingAssert_(movedFile.movedTo === 'folder-corrispondenza',
+    'archiviazione inbox sposta il file nella corrispondenza');
+  _driveStagingAssert_(result.fileName === 'analisi.pdf' && result.fileExtension === 'pdf',
+    'archiviazione inbox espone metadati file per log e notifiche');
+  _driveStagingAssert_(archiveCalls.length === 1 && archiveCalls[0].destination_folder_id === 'folder-corrispondenza',
+    'archiviazione inbox aggiorna il record Virgilio_Inbox');
+  _driveStagingAssert_(result.inboxStatus === 'archiviato',
+    'archiviazione inbox espone lo stato finale');
+  Logger.log('testCaronteInboxArchiviazione: OK');
+}
+
+function _archiviaAllegatoVirgilioInboxWithDeps_(deps) {
+  const inbox = deps.getInbox(deps.inboxId);
+  if (!inbox || inbox.ok !== true || !inbox.found) {
+    throw new Error(
+      inbox && inbox.message
+        ? inbox.message
+        : 'Record Virgilio_Inbox non disponibile per l archiviazione finale.'
+    );
+  }
+  if (!inbox.drive_file_id) {
+    throw new Error('drive_file_id mancante nel record Virgilio_Inbox.');
+  }
+
+  const corrispondenza = deps.getFolder(
+    deps.idCartellaPratica,
+    deps.cliente,
+    deps.sito
+  );
+  const file = deps.driveApp.getFileById(inbox.drive_file_id);
+  const destinationFolderId = corrispondenza.getId();
+  const alreadyInDestination = _cartellaContieneFileId_(corrispondenza, file.getId());
+
+  if (!alreadyInDestination) {
+    file.moveTo(corrispondenza);
+  }
+
+  const archived = deps.archiveInbox({
+    inbox_id: deps.inboxId,
+    archived_at: deps.nowTimestamp(),
+    archived_file_id: file.getId(),
+    destination_folder_id: destinationFolderId,
+    destination_folder_url: corrispondenza.getUrl(),
+    pratica_folder_id: deps.idCartellaPratica,
+    pratica_folder_url: deps.urlCartellaPratica,
+  });
+  if (!archived || archived.ok !== true) {
+    throw new Error(
+      archived && archived.message
+        ? archived.message
+        : 'Aggiornamento finale Virgilio_Inbox non riuscito.'
+    );
+  }
+  const inboxStatus = archived && archived.status
+    ? String(archived.status).trim()
+    : 'archiviato';
+
+  return {
+    count: 1,
+    fileIds: [file.getId()],
+    fileName: file.getName(),
+    fileExtension: _estensioneNomeFile_(file.getName()),
+    fileSizeKb: Math.ceil(file.getSize ? file.getSize() / 1024 : 0),
+    destinationFolderId: destinationFolderId,
+    destinationFolderUrl: corrispondenza.getUrl(),
+    alreadyInDestination: alreadyInDestination,
+    inboxStatus: inboxStatus,
+  };
 }
 
 // ── VALIDAZIONE INPUT ─────────────────────────────────────────────────────────

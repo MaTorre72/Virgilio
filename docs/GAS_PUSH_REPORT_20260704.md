@@ -2,8 +2,8 @@
 
 ## 1. Esito
 
-- esito: NO_GO
-- motivo: `clasp push` resta bloccato da un errore di autenticazione `invalid_grant / invalid_rapt`
+- esito: GO
+- motivo: il mirror `apps_script/clasp` e` stato riallineato a `apps_script/src` e il push finale e` stato completato dopo il refresh auth esterno al repository
 - vincolo rispettato: nessun intervento su `.clasprc.json`, credenziali o dati operativi reali
 - base canonica scelta: `apps_script/src`
 
@@ -19,7 +19,7 @@
 - il mirror `apps_script/clasp` e` stato rigenerato a partire da `apps_script/src`
 - il set canonico ora include anche `virgilio_inbox.js` nel mirror locale
 - i file legacy solo nel mirror precedente sono stati rimossi dal mirror di lavoro
-- `clasp status` dopo la sync mostra solo `apps_script/clasp/.claspignore` come untracked locale
+- la sync locale e` stata verificata prima del push finale e il progetto Apps Script e` stato pubblicato
 
 ## 4. Verifiche
 
@@ -30,5 +30,5 @@
 
 ## 5. Nota Operativa
 
-- la readiness sostanziale del mirror e` stata raggiunta in locale, ma il push resta bloccato finche` non viene rinnovata l'autenticazione clasp
-- il prossimo passo richiede un refresh auth esterno a questo task, senza toccare segreti nel repository
+- la readiness sostanziale del mirror e` stata raggiunta in locale e il push finale e` stato completato
+- il refresh auth e la pubblicazione sono avvenuti senza toccare segreti nel repository

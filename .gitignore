@@ -39,6 +39,7 @@ _old/
 *.zip
 *.tmp
 *.bak
+gas_push.bat
 
 # Keep generated office/PDF material local unless explicitly added later.
 # Source code, README, images, and SVG architecture files remain trackable.

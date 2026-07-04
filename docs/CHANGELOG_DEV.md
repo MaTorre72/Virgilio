@@ -2,6 +2,7 @@
 
 Registro avanzamento storico spostato fuori dal backlog attivo.
 
+- 2026-07-04 12:19 +02:00 - Aggiornati `docs/GAS_PUSH_REPORT_20260704.md`, `docs/GAS_V113_EVIDENCE_MATRIX_20260704.md` e `docs/CODEX_STATE.md` dopo il push completato: il mirror `apps_script/clasp` e` stato riallineato da `apps_script/src`, la pubblicazione e` andata a buon fine e la readiness GAS e` ora `GO`.
 - 2026-07-04 12:00 +02:00 - Aggiunti `docs/GAS_V113_EVIDENCE_MATRIX_20260704.md` e `docs/GAS_PUSH_REPORT_20260704.md`: la base canonica e` `apps_script/src`, il mirror precedente e` stato archiviato in `apps_script/archive/pre_push_gas_20260704_114328/`, la sync locale e lo smoke sono verdi, ma `clasp pull`/`clasp push` falliscono con `invalid_grant / invalid_rapt` senza toccare `.clasprc.json`.
 - 2026-07-04 11:21 +02:00 - Aggiunto `docs/GAS_READINESS_20260704.md` con esito `NO_GO`: il mirror Apps Script non e` allineato alla sorgente canonica, il bridge inbox/form/notifiche piu` nuovo e` presente solo in `src` e `clasp push` resta fermo finche` non si sincronizza il layout.
 - 2026-07-04 10:57 +02:00 - Rifatti report e readiness sui collaudi reali del local connector: 291 test e smoke verdi, `doctor`/`pilot-run`/`doctor-bucoliche`/`pilot-preview` verificati, due `pilot-run` reali consecutivi idempotenti; corretto anche `doctor-bucoliche` CLI con summary dedicato e regression test.

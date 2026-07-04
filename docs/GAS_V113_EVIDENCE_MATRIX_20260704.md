@@ -26,4 +26,4 @@ Sintesi finale:
 - `apps_script/src` contiene lo sviluppo v1.1.3 completo e coerente con il backlog chiuso.
 - `apps_script/clasp` e` uno snapshot arretrato da rigenerare.
 - i file legacy solo in `clasp` sono da considerare superati e gia` preservati nello snapshot archivio.
-- la sync locale ha riallineato il mirror, ma il push finale e` rimasto bloccato da `invalid_grant / invalid_rapt`.
+- la sync locale ha riallineato il mirror e il push finale e` stato completato dopo il refresh auth esterno al repository.
