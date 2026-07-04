@@ -22,13 +22,14 @@
 - procedura di setup/test aggiornata per esplicitare che l'install editable offline richiede `setuptools` gia` presente nel venv
 - smoke offline promosso come comando raccomandato per i test locali senza effetti reali
 - preparati i comandi PowerShell sicuri per valorizzare le env IMAP richieste nella sessione corrente
+- toolchain locale verificata fuori dal PATH del thread: `C:\Program Files (x86)\nodejs\node.exe` (`v20.3.1`), `C:\Program Files (x86)\nodejs\npm.cmd` (`9.6.7`), `C:\Users\Marco\AppData\Roaming\npm\clasp.cmd` (`3.3.0`)
+- `clasp status` eseguito con l'entrypoint locale e allineato al mirror `apps_script\clasp`
 
 ## 4. Cosa resta bloccato per intervento umano
 
 - env IMAP mancanti per `doctor` e `pilot-run --dry-run`
-- `npm` non disponibile nel PATH corrente
-- `clasp` non disponibile nel PATH corrente
-- `clasp status` non verificabile finche` `clasp` non viene installato e autenticato localmente
+- il PATH del thread non risolve sempre `node`, `npm` e `clasp`; quando serve usare i percorsi completi
+- per il collaudo reale serve ancora il tuo account IMAP di test e la password o app password
 
 ## 5. Comandi pronti per Marco
 
@@ -88,13 +89,14 @@ Nota su `.clasp.json`:
 
 - `rootDir` e` coerente con `apps_script\clasp`
 - `scriptId` e` presente ma non serve ristamparlo qui
+- `clasp status` e` gia` stato verificato localmente con il binario esplicito; se il PATH non lo risolve, usa i percorsi completi sopra
 
 ## 6. Criteri per passare al collaudo reale
 
 - `doctor --config local_connector\accounts.local.yaml --human` senza errori bloccanti
 - `pilot-run --config local_connector\accounts.local.yaml --dry-run --human` senza blocchi di configurazione
 - smoke offline ancora verde dopo ogni intervento locale
-- `clasp status` verificato se si intende procedere sul profilo Google-only
+- `clasp status` e` gia` verificato localmente; per il profilo Google-only resta solo il login manuale se serve sincronizzare il progetto
 - conferma esplicita dell'utente prima di qualsiasi `pilot-run` senza `--dry-run`
 
 ## 7. Rischi residui

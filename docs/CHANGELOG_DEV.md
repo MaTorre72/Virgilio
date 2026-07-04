@@ -2,6 +2,7 @@
 
 Registro avanzamento storico spostato fuori dal backlog attivo.
 
+- 2026-07-04 10:24 +02:00 - Aggiornata la documentazione di setup/readiness con i binari locali reali `node/npm/clasp`, la verifica `clasp status` eseguita via entrypoint esplicito e le istruzioni per i collaudi locali del connector senza toccare GAS.
 - 2026-07-04 10:06 +02:00 - Aggiunto `docs/TEST_READINESS_20260704.md` e riallineati `README.md` e `docs/SETUP_AND_TEST.md` sul runtime verificato `local_connector\.venv\Scripts\python.exe`, sullo smoke offline raccomandato e sul blocco noto dell'install editable offline senza `setuptools`; preparati anche i comandi sicuri per env IMAP e verifica `clasp`.
 - 2026-07-04 09:36 +02:00 - Aggiunto `docs/TEST_REPORT_20260704.md` con esito `PASS_WITH_WARNINGS`: `pytest local_connector` e smoke offline verdi, `doctor`/`pilot-run --dry-run` bloccati da env IMAP mancanti, `pip install -e .\local_connector` non autosufficiente offline e `clasp` non disponibile nell'ambiente corrente.
 - 2026-07-04 02:35 +02:00 - Completato V113-E6-T04: il README normalizza la UX iniziale senza esporre dettagli macchina; backlog, state e next tasks riallineati.

@@ -61,6 +61,7 @@ local_connector\.venv\Scripts\python.exe -m pytest local_connector
 
 I test del connettore non devono usare credenziali reali, Gmail reale, Drive reale o Bucoliche reale.
 Nel checkout verificato il runtime giusto e` `local_connector\.venv\Scripts\python.exe`; `.\.venv\Scripts\python.exe` non e` disponibile qui.
+Su questa macchina i binari locali trovati sono `C:\Program Files (x86)\nodejs\node.exe`, `C:\Program Files (x86)\nodejs\npm.cmd` e `C:\Users\Marco\AppData\Roaming\npm\clasp.cmd`. Se il PATH non li risolve, usa i percorsi completi.
 
 Se serve l'install editable:
 
@@ -129,3 +130,12 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --confi
 ```
 
 `pilot-run` senza `--dry-run` va usato solo su configurazioni di test gia' verificate.
+
+Per verificare lo snapshot Apps Script locale senza deploy:
+
+```powershell
+& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' --version
+& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' status
+```
+
+`clasp status` conferma il mirror `apps_script\clasp` e non richiede deploy.

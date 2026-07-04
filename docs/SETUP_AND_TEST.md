@@ -9,6 +9,7 @@ local_connector\.venv\Scripts\python.exe --version
 
 Nel checkout verificato il runtime affidabile e` `local_connector\.venv\Scripts\python.exe`.
 Il path `.\.venv\Scripts\python.exe` non e` presente in questo workspace e non va assunto come default.
+Su questa macchina i binari locali trovati sono `C:\Program Files (x86)\nodejs\node.exe`, `C:\Program Files (x86)\nodejs\npm.cmd` e `C:\Users\Marco\AppData\Roaming\npm\clasp.cmd`. Se il PATH non li risolve, usa i percorsi completi.
 
 Per l'install editable:
 
@@ -60,6 +61,19 @@ Lo smoke:
 - verifica `virgilio_connector --help` e `virgilio_connector pilot --help`;
 - controlla che non siano tracciati file locali o segreti vietati;
 - non esegue Gmail reale, Drive reale, Bucoliche reale o notifiche reali.
+
+## Tooling locale
+
+Per verificare la toolchain locale senza deploy:
+
+```powershell
+& 'C:\Program Files (x86)\nodejs\node.exe' -v
+& 'C:\Program Files (x86)\nodejs\npm.cmd' -v
+& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' --version
+& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' status
+```
+
+Se `clasp.cmd` non parte dal PATH, la forma con `node.exe` e` quella verificata qui.
 
 ## Dry-run locale controllato
 

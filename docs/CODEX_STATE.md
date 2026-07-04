@@ -8,8 +8,8 @@
 - Task corrente consigliato: nessuno noto
 - Massimo due successivi: nessuno noto
 - Blocchi aperti: backlog v1.1.3 esaurito; nessun TODO eleggibile nella sezione pertinente di `docs/DEV_BACKLOG.md`
-- Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, env IMAP mancanti per `doctor`/`pilot-run --dry-run`, `clasp` non disponibile nell'ambiente corrente
-- Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`; restano bloccanti solo env IMAP mancanti e tool `clasp` assente
+- Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, env IMAP mancanti per `doctor`/`pilot-run --dry-run`
+- Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato; restano bloccanti solo le env IMAP per il dry-run reale
 - Policy permanente: `AGENTS.md`
 - Leggere sempre: `docs/CODEX_STATE.md`, `docs/NEXT_CODEX_TASKS.md`, `docs/DEFINITION_OF_DONE.md`
 - Leggere on demand: `docs/DEV_BACKLOG.md`, `docs/DEV_BACKLOG_ARCHIVE.md`, `docs/CHANGELOG_DEV.md`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/CLASP_WORKFLOW.md`
