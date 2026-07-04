@@ -457,6 +457,68 @@ def test_new_cli_commands_are_registered(tmp_path, monkeypatch):
     assert exc.value.code == 2
 
 
+def test_doctor_bucoliche_cli_runs_without_human_flag(tmp_path, monkeypatch, capsys):
+    import virgilio_connector.__main__ as cli
+
+    class FakeResult:
+        status = "READY"
+
+        def to_json(self):
+            return '{"status":"READY"}'
+
+    class FakeDoctor:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def run(self):
+            return FakeResult()
+
+    config = tmp_path / "bucoliche.yaml"
+    config.write_text("bucoliche:\n  enabled: true\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "load_bucoliche_config", lambda _path: object())
+    monkeypatch.setattr(cli, "has_bucoliche_section", lambda _path: True)
+    monkeypatch.setattr(cli, "BucolicheDoctor", FakeDoctor)
+    monkeypatch.setattr(sys, "argv", ["virgilio_connector", "doctor-bucoliche",
+                                      "--config", str(config)])
+
+    assert cli.main() == 0
+    assert json.loads(capsys.readouterr().out)["status"] == "READY"
+
+
+def test_doctor_bucoliche_cli_human_uses_doctor_summary(tmp_path, monkeypatch, capsys):
+    import virgilio_connector.__main__ as cli
+
+    class FakeResult:
+        status = "READY"
+        checks = ({"name": "config_section", "status": "OK"},)
+        errors = ()
+        warnings = ()
+        suggested_next_commands = ()
+
+        def to_json(self):
+            return '{"status":"READY"}'
+
+    class FakeDoctor:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def run(self):
+            return FakeResult()
+
+    config = tmp_path / "bucoliche.yaml"
+    config.write_text("bucoliche:\n  enabled: true\n", encoding="utf-8")
+    monkeypatch.setattr(cli, "load_bucoliche_config", lambda _path: object())
+    monkeypatch.setattr(cli, "has_bucoliche_section", lambda _path: True)
+    monkeypatch.setattr(cli, "BucolicheDoctor", FakeDoctor)
+    monkeypatch.setattr(sys, "argv", ["virgilio_connector", "doctor-bucoliche",
+                                      "--config", str(config), "--human"])
+
+    assert cli.main() == 0
+    output = capsys.readouterr().out
+    assert "Esito doctor Bucoliche: READY" in output
+    assert "Check config_section: OK" in output
+
+
 def test_gui_command_calls_launcher(tmp_path, monkeypatch):
     import virgilio_connector.__main__ as cli
 

@@ -3,105 +3,82 @@
 ## 1. Sintesi
 
 - esito: PASS_WITH_WARNINGS
-- i test offline del local connector sono verdi
-- l'ambiente e` stato chiarito sul runtime reale da usare
-- il prossimo dry-run resta bloccato solo da interventi umani su env IMAP e tool `clasp`
+- il local connector e` pronto per collaudi reali sul mailbox di test
+- la parte Bucoliche/Google e` stata verificata in sola lettura e con dry-run
+- resta aperto solo il solito limite di packaging offline e l'assenza di deploy/sync reali
 
 ## 2. Cosa e` gia` verde
 
-- `pytest local_connector`: `289 passed`
-- `scripts/dev/smoke_local_connector.ps1`: `289 passed` e `smoke_local_connector: OK`
-- CLI `virgilio_connector` caricata correttamente
-- Apps Script presente e verificato staticamente
-- working tree iniziale del task: pulito
+- `pytest local_connector`: `291 passed`
+- `scripts/dev/smoke_local_connector.ps1`: `291 passed` e `smoke_local_connector: OK`
+- `doctor --config local_connector\accounts.local.yaml --human`: `READY`
+- `pilot-run --config local_connector\accounts.local.yaml --dry-run --human`: `READY_DRY_RUN`
+- `doctor-bucoliche --config local_connector\accounts.local.yaml --human`: `READY_WITH_WARNINGS`
+- `pilot-preview --config local_connector\accounts.local.yaml --human`: `READY_WITH_WARNINGS`
+- `setup-bucoliche-test-sheet --config local_connector\accounts.local.yaml --dry-run`: `DRY_RUN`
+- `pilot-run --config local_connector\accounts.local.yaml --human`: `OK`
+- secondo `pilot-run --config local_connector\accounts.local.yaml --human`: `OK_NO_NEW_WORK`
 
 ## 3. Cosa e` stato sistemato
 
 - documentazione riallineata sul runtime verificato: `local_connector\.venv\Scripts\python.exe`
-- documentazione aggiornata per chiarire che `.\.venv\Scripts\python.exe` non e` il default valido in questo checkout
-- procedura di setup/test aggiornata per esplicitare che l'install editable offline richiede `setuptools` gia` presente nel venv
-- smoke offline promosso come comando raccomandato per i test locali senza effetti reali
-- preparati i comandi PowerShell sicuri per valorizzare le env IMAP richieste nella sessione corrente
-- toolchain locale verificata fuori dal PATH del thread: `C:\Program Files (x86)\nodejs\node.exe` (`v20.3.1`), `C:\Program Files (x86)\nodejs\npm.cmd` (`9.6.7`), `C:\Users\Marco\AppData\Roaming\npm\clasp.cmd` (`3.3.0`)
-- `clasp status` eseguito con l'entrypoint locale e allineato al mirror `apps_script\clasp`
+- i path relativi in `local_connector\.env` sono stati gestiti rispetto a `local_connector`
+- toolchain locale verificata fuori dal PATH del thread: `node.exe`, `npm.cmd`, `clasp`
+- `clasp status` confermato via entrypoint esplicito
+- il CLI `doctor-bucoliche` ora accetta `--human` e usa un summary dedicato alla readiness Bucoliche
 
-## 4. Cosa resta bloccato per intervento umano
+## 4. Cosa resta aperto
 
-- env IMAP mancanti per `doctor` e `pilot-run --dry-run`
-- il PATH del thread non risolve sempre `node`, `npm` e `clasp`; quando serve usare i percorsi completi
-- per il collaudo reale serve ancora il tuo account IMAP di test e la password o app password
+- `pip install -e .\local_connector` non e` autosufficiente offline finche` il venv non contiene `setuptools`
+- `clasp push` e qualsiasi deploy/sync Apps Script non sono stati eseguiti
+- non e` stata toccata una mailbox non di test
 
 ## 5. Comandi pronti per Marco
 
-### Verifica env richieste dal file locale
+### Caricamento env locale
 
-```powershell
-Select-String -Path .\local_connector\accounts.local.yaml -Pattern "username_env|password_env"
-```
+Se lanci i comandi dal repo root, ricorda che questi valori di `local_connector\.env` vanno risolti rispetto a `local_connector`:
 
-Valori richiesti dal file attuale:
+- `VIRGILIO_LOCAL_DATA_DIR`
+- `VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH`
+- `VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH`
 
-- username: `VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME`
-- password: `VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD`
-
-### Impostazione temporanea nella sessione PowerShell corrente
-
-```powershell
-Set-Item Env:VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME "INSERIRE_EMAIL"
-Set-Item Env:VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD "INSERIRE_PASSWORD_O_APP_PASSWORD"
-```
-
-Note:
-
-- queste variabili valgono solo per la sessione PowerShell corrente
-- per renderle persistenti usare variabili utente Windows
-- non scrivere password in file versionati
-- non committare `.env`
-
-### Dry-run locale dopo le env IMAP
+### Collaudi locali
 
 ```powershell
 cd C:\Users\Marco\Documents\Virgilio
 $env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
 local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config local_connector\accounts.local.yaml --human
 local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --dry-run --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor-bucoliche --config local_connector\accounts.local.yaml --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-preview --config local_connector\accounts.local.yaml --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector setup-bucoliche-test-sheet --config local_connector\accounts.local.yaml --dry-run
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --human
 ```
 
-### Smoke offline raccomandato
+### Smoke consigliato
 
 ```powershell
 cd C:\Users\Marco\Documents\Virgilio
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1
 ```
 
-### Verifica Node/npm/clasp
+### Tooling locale
 
 ```powershell
-node -v
-npm -v
-npm install -g @google/clasp
-clasp --version
-clasp login
-clasp status
+& 'C:\Program Files (x86)\nodejs\node.exe' -v
+& 'C:\Program Files (x86)\nodejs\npm.cmd' -v
+& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' --version
+& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' status
 ```
 
-Nota su `.clasp.json`:
+## 6. Criteri per il prossimo passaggio
 
-- `rootDir` e` coerente con `apps_script\clasp`
-- `scriptId` e` presente ma non serve ristamparlo qui
-- `clasp status` e` gia` stato verificato localmente con il binario esplicito; se il PATH non lo risolve, usa i percorsi completi sopra
-
-## 6. Criteri per passare al collaudo reale
-
-- `doctor --config local_connector\accounts.local.yaml --human` senza errori bloccanti
-- `pilot-run --config local_connector\accounts.local.yaml --dry-run --human` senza blocchi di configurazione
-- smoke offline ancora verde dopo ogni intervento locale
-- `clasp status` e` gia` verificato localmente; per il profilo Google-only resta solo il login manuale se serve sincronizzare il progetto
-- conferma esplicita dell'utente prima di qualsiasi `pilot-run` senza `--dry-run`
+- il local connector e` gia` pronto per ulteriori run reali sul mailbox di test
+- l'eventuale prossimo passo dipende solo dal perimetro che vuoi toccare: locale, Google-only o deploy Apps Script
 
 ## 7. Rischi residui
 
-- finche` il venv locale non include `setuptools`, `pip install -e .\local_connector` non e` ripetibile offline da zero
-- l'assenza di `clasp` impedisce di verificare localmente lo stato di sync Apps Script
-- il dry-run IMAP non puo` avanzare senza credenziali locali o app password fornite dall'utente
-- nessun collaudo reale e` stato eseguito in questo task, correttamente
+- l'install editable offline resta il punto piu` fragile
+- `clasp` e` disponibile via percorso completo, ma non e` stata eseguita alcuna sincronizzazione live
+- le verifiche su dati non di test restano fuori scope

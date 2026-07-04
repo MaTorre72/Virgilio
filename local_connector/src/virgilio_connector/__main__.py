@@ -154,6 +154,26 @@ def _doctor_human_summary(result) -> list[str]:
     return lines
 
 
+def _bucoliche_doctor_human_summary(result) -> list[str]:
+    lines = [f"Esito doctor Bucoliche: {result.status}"]
+    for check in result.checks:
+        name = check.get("name", "check")
+        status = check.get("status", "")
+        extras = [f"{key}={value}" for key, value in check.items()
+                  if key not in {"name", "status"}]
+        line = f"Check {name}: {status}"
+        if extras:
+            line = f"{line} ({', '.join(extras)})"
+        lines.append(line)
+    for warning in result.warnings:
+        lines.append(f"Warning: {warning}")
+    for error in result.errors:
+        lines.append(f"Errore: {error}")
+    for command in result.suggested_next_commands:
+        lines.append(f"Prossimo comando: {command}")
+    return lines
+
+
 def _pilot_run_v11_human_summary(result) -> list[str]:
     config_status = "BLOCKED" if result.doctor_status == "BLOCKED" else "OK"
     pipeline_status = "ERROR" if "error" in result.pipeline_status else "OK"
@@ -346,6 +366,7 @@ def main() -> int:
     refresh_state.add_argument("--dry-run", action="store_true")
     doctor_bucoliche = commands.add_parser("doctor-bucoliche")
     doctor_bucoliche.add_argument("--config", type=Path, required=True)
+    doctor_bucoliche.add_argument("--human", action="store_true")
     pilot_check = commands.add_parser("pilot-check")
     pilot_check.add_argument("--config", type=Path, required=True)
     pilot_safe = commands.add_parser("pilot-run-safe")
@@ -747,7 +768,7 @@ def main() -> int:
             print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
             return 2
         if args.human:
-            _print_human(_pilot_safe_human_summary(result))
+            _print_human(_bucoliche_doctor_human_summary(result))
         else:
             print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1

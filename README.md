@@ -62,6 +62,7 @@ local_connector\.venv\Scripts\python.exe -m pytest local_connector
 I test del connettore non devono usare credenziali reali, Gmail reale, Drive reale o Bucoliche reale.
 Nel checkout verificato il runtime giusto e` `local_connector\.venv\Scripts\python.exe`; `.\.venv\Scripts\python.exe` non e` disponibile qui.
 Su questa macchina i binari locali trovati sono `C:\Program Files (x86)\nodejs\node.exe`, `C:\Program Files (x86)\nodejs\npm.cmd` e `C:\Users\Marco\AppData\Roaming\npm\clasp.cmd`. Se il PATH non li risolve, usa i percorsi completi.
+Se carichi `local_connector\.env` dal repo root, risolvi i path relativi rispetto a `local_connector` prima di lanciare i comandi: vale per `VIRGILIO_LOCAL_DATA_DIR` e per i path OAuth.
 
 Se serve l'install editable:
 
@@ -121,6 +122,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_conn
 - `pilot` mostra il flusso senza effetti operativi.
 - `run-local-pipeline --dry-run` e `pilot-run --dry-run` restano test controllati.
 - Lo smoke locale resta la verifica finale minima.
+- Sul mailbox di test sono stati verificati anche `doctor-bucoliche --human`, `pilot-preview --human`, `setup-bucoliche-test-sheet --dry-run` e due `pilot-run --human` consecutivi per confermare l'idempotenza.
 
 Collaudi reali:
 

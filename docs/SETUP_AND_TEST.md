@@ -24,6 +24,7 @@ Nota offline importante:
 - `--no-build-isolation` non basta se `setuptools.build_meta` manca nel venv.
 
 Per i test offline non e` necessario forzare l'install editable se si usa il percorso verificato sotto con `PYTHONPATH`.
+Se carichi `local_connector\.env` dal repo root, normalizza `VIRGILIO_LOCAL_DATA_DIR` e i path OAuth rispetto a `local_connector` prima di lanciare i comandi.
 
 Configurazioni reali devono stare solo in `.env` o in variabili ambiente locali, mai nel repository.
 
@@ -86,6 +87,7 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --confi
 ```
 
 Questi restano controlli locali. `pilot-run` senza `--dry-run` non e` un test automatico.
+Nel checkout verificato sono stati eseguiti anche `doctor-bucoliche --human`, `pilot-preview --human`, `setup-bucoliche-test-sheet --dry-run` e due `pilot-run --human` consecutivi sul mailbox di test.
 
 ## Test Apps Script
 
