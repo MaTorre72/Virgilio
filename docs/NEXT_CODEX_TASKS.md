@@ -1,6 +1,6 @@
 # Next Codex Tasks
 
-Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E6-T03 - Distinguere test e produzione`, prossima run da `V113-E6-T04 - Nascondere dettagli macchina nella UX normale`.
+Stato operativo corrente: backlog v1.1.3 attivo; chiuso `V113-E6-T04 - Nascondere dettagli macchina nella UX normale`; nessun prossimo task operativo noto.
 
 ## V113-E4-T01 - Adapter Local connector verso Da archiviare
 - Stato: DONE nel workspace; `build_da_archiviare_intake_payload()` definisce il contratto metadata-only senza test_mode.

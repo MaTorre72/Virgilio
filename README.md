@@ -9,7 +9,7 @@ La v1.0 resta l'MVP Google Workspace mono-utente. La linea v1.1 consolida il lav
 - **Virgilio**: interfaccia, guida e supervisione umana;
 - **Caronte Locale**: motore operativo locale, multi-casella e provider-agnostico;
 - **Apps Script**: adattatore Google opzionale, non nucleo definitivo;
-- **SQLite locale**: registro operativo primario del connettore locale;
+- **Persistenza locale**: registro operativo primario del connettore locale;
 - **Bucoliche**: output adapter ispezionabile, non database primario;
 - **Drive Desktop**: storage adapter iniziale di test, non architettura definitiva.
 

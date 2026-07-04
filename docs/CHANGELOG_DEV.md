@@ -2,6 +2,7 @@
 
 Registro avanzamento storico spostato fuori dal backlog attivo.
 
+- 2026-07-04 02:35 +02:00 - Completato V113-E6-T04: il README normalizza la UX iniziale senza esporre dettagli macchina; backlog, state e next tasks riallineati.
 - 2026-07-04 01:35 +02:00 - Completato V113-E6-T03: README e setup/test separano test controllati e collaudi reali; backlog, state e next tasks riallineati.
 - 2026-07-03 23:37 +02:00 - Completato V113-E6-T01: README, architettura e workflow clasp distinguono i profili Google-only e Local connector; backlog e state riallineati.
 - 2026-07-03 19:34 +02:00 - Completato V113-E4-T04: `intake-da-archiviare` scrive ora un audit locale in `audit_events` e `export-registro-events` lo proietta come fase `da archiviare`; test mirati, suite `pytest local_connector` e smoke locale verdi.
