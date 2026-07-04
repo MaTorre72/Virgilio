@@ -2,6 +2,7 @@
 
 Registro avanzamento storico spostato fuori dal backlog attivo.
 
+- 2026-07-04 09:36 +02:00 - Aggiunto `docs/TEST_REPORT_20260704.md` con esito `PASS_WITH_WARNINGS`: `pytest local_connector` e smoke offline verdi, `doctor`/`pilot-run --dry-run` bloccati da env IMAP mancanti, `pip install -e .\local_connector` non autosufficiente offline e `clasp` non disponibile nell'ambiente corrente.
 - 2026-07-04 02:35 +02:00 - Completato V113-E6-T04: il README normalizza la UX iniziale senza esporre dettagli macchina; backlog, state e next tasks riallineati.
 - 2026-07-04 01:35 +02:00 - Completato V113-E6-T03: README e setup/test separano test controllati e collaudi reali; backlog, state e next tasks riallineati.
 - 2026-07-03 23:37 +02:00 - Completato V113-E6-T01: README, architettura e workflow clasp distinguono i profili Google-only e Local connector; backlog e state riallineati.
