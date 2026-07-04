@@ -7,7 +7,7 @@
 - Ultimo task chiuso noto: `V113-E6-T04 - Nascondere dettagli macchina nella UX normale`
 - Task corrente consigliato: nessuno noto
 - Massimo due successivi: nessuno noto
-- Blocchi aperti: nessuno noto nei documenti
+- Blocchi aperti: backlog v1.1.3 esaurito; nessun TODO eleggibile nella sezione pertinente di `docs/DEV_BACKLOG.md`
 - Policy permanente: `AGENTS.md`
 - Leggere sempre: `docs/CODEX_STATE.md`, `docs/NEXT_CODEX_TASKS.md`, `docs/DEFINITION_OF_DONE.md`
 - Leggere on demand: `docs/DEV_BACKLOG.md`, `docs/DEV_BACKLOG_ARCHIVE.md`, `docs/CHANGELOG_DEV.md`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/CLASP_WORKFLOW.md`
