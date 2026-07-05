@@ -97,6 +97,31 @@ function caronteStatoConfigurazione() {
   const props = PropertiesService.getScriptProperties();
   const controlli = [
     {
+      chiave: 'VIRGILIO_BUCOLICHE_SPREADSHEET_ID',
+      etichetta: 'Spreadsheet Bucoliche',
+      hint: "Impostare l'ID del workbook condiviso nelle Script Properties.",
+    },
+    {
+      chiave: 'VIRGILIO_BUCOLICHE_TAB',
+      etichetta: 'Tab Bucoliche',
+      hint: "Tenere il tab canonico o riallinearne uno solo in modo esplicito.",
+    },
+    {
+      chiave: 'VIRGILIO_EMPIREO_ID',
+      etichetta: 'Cartella Empireo',
+      hint: "Impostare l'ID della cartella Drive radice nelle Script Properties.",
+    },
+    {
+      chiave: 'VIRGILIO_ADAMO_ID',
+      etichetta: 'Cartella Adamo',
+      hint: "Impostare l'ID della cartella template nelle Script Properties.",
+    },
+    {
+      chiave: 'VIRGILIO_LIMBO_ID',
+      etichetta: 'Cartella Limbo',
+      hint: "Impostare l'ID della cartella staging condivisa nelle Script Properties.",
+    },
+    {
       chiave: 'VIRGILIO_TOKEN',
       etichetta: 'Token Virgilio',
       hint: "Eseguire generaToken() e poi caronteSetupCredenziali().",

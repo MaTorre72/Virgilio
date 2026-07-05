@@ -46,7 +46,7 @@
 
 ## 4. Mappa GAS
 
-- Script Properties operative: `VIRGILIO_TOKEN`, `WEBHOOK_CHAT`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `URL_FORM`
+- Script Properties operative: `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_TOKEN`, `WEBHOOK_CHAT`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `URL_FORM`
 - Script Properties Drive/test: `VIRGILIO_DRIVE_STAGING_FOLDER_ID`, `VIRGILIO_INTAKE_TEST_SPREADSHEET_ID`, `VIRGILIO_INTAKE_TEST_SHEET_NAME`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`
 - azioni webapp: `local_imap_dry_run`, `verify_drive_staging`, `intake_drive_staging_test`, `intake_virgilio_inbox`
 - tab tecnici: `Virgilio_Inbox`, `Bucoliche_Eventi`, `Bucoliche_Stato`, `Bucoliche_Conflitti`, `Staging_Local_Test`
@@ -60,7 +60,7 @@
 | Verify Drive staging | `VIRGILIO_CARONTE_DRIVE_VERIFY_URL` e manifest metadata-only | `VIRGILIO_DRIVE_STAGING_FOLDER_ID` e `verify_drive_staging` | OK |
 | Intake test Drive staging | `VIRGILIO_CARONTE_INTAKE_TEST_URL` | `VIRGILIO_INTAKE_TEST_SPREADSHEET_ID` e `VIRGILIO_INTAKE_TEST_SHEET_NAME` con tab `Staging_Local_Test` | OK |
 | Intake finale `Da archiviare` | `VIRGILIO_CARONTE_INTAKE_URL` e `VIRGILIO_TOKEN` | `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `intake_virgilio_inbox` | OK con riserva live |
-| Bucoliche | `VIRGILIO_BUCOLICHE_SPREADSHEET_ID` e credenziali Google locali | `CONFIG.BUCOLICHE_ID` e `CONFIG.BUCOLICHE_TAB = bucoliche` | OK |
+| Bucoliche | `VIRGILIO_BUCOLICHE_SPREADSHEET_ID` e `VIRGILIO_BUCOLICHE_TAB` | `caronte.gs` legge gli identificativi da `PropertiesService` | OK |
 | UX vs tab tecnico | `Da archiviare` nella documentazione operativa | `Virgilio_Inbox` come tab tecnico separato | OK |
 | Notifiche | nessun segreto reale in repo | `WEBHOOK_CHAT`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `URL_FORM` | WARNING live non verificato |
 | Staging locale | `VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED` e `VIRGILIO_LOCAL_DRIVE_STAGING_DIR` | nessun equivalente diretto in GAS, per design | OK |
@@ -76,7 +76,7 @@
 
 ## 7. Rischi residui
 
-- `VIRGILIO_INBOX_SPREADSHEET_ID` ha un fallback al foglio Bucoliche se manca; per un setup pulito conviene impostarlo in modo esplicito
+- `VIRGILIO_INBOX_SPREADSHEET_ID` non ha fallback al foglio Bucoliche; per un setup pulito va impostato in modo esplicito
 - `URL_FORM`, `WEBHOOK_CHAT`, `TELEGRAM_TOKEN` e `TELEGRAM_CHAT_ID` sono configurazioni live e non vanno esposte nei log o nei file di repo
 - `docs/GAS_READINESS_20260704.md` resta uno snapshot pre-push NO GO e non va letto come stato corrente
 
@@ -142,4 +142,4 @@ if ($LASTEXITCODE -ne 0) {
 - esito operativo: `PRONTO_CON_RISERVE`
 - pronto per collaudo locale: si
 - pronto per collaudo live senza verifica manuale: no
-- azione richiesta prima di un collaudo reale: confermare live `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `VIRGILIO_DRIVE_STAGING_FOLDER_ID`, `URL_FORM` e le credenziali notifiche
+- azione richiesta prima di un collaudo reale: confermare live `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `VIRGILIO_DRIVE_STAGING_FOLDER_ID`, `URL_FORM` e le credenziali notifiche

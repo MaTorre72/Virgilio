@@ -17,25 +17,19 @@
 
 // ── CONFIGURAZIONE ────────────────────────────────────────────────────────────
 
-// ── CREDENZIALI — lette da PropertiesService, MAI nel codice ─────────────────
-// Eseguire setup.gs → caronteSetupCredenziali() una volta per caricarle.
+// ── CONFIGURAZIONE OPERATIVA ─────────────────────────────────────────────────
+// Identificativi, tab e credenziali vanno letti da PropertiesService.
+// Nessun ID live deve restare hardcoded nel motore.
 const _PROPS = PropertiesService.getScriptProperties();
 
 const CONFIG = {
 
-  // ── ID Drive/Sheets — non segreti, ok nel codice ──
-  // ID Google Sheets "Bucoliche"
-  BUCOLICHE_ID: '1HFtu4nLExP3K1S1qiAIkQ8okW1hfSbubFJm3WE2-fdU',
-  BUCOLICHE_TAB: 'bucoliche',
-
-  // ID cartella Drive radice "Empireo" (01_commesse_Sigma+)
-  EMPIREO_ID: '1-F_vr1waW2MJp1hyQxAKZy0t5hM3qPem',
-
-  // ID cartella template "Adamo"
-  ADAMO_ID: '1T_bSvPtqomoOguvIpiQxkBzVl66i4BsG',
-
-  // ID cartella staging "Limbo" (dentro Empireo)
-  LIMBO_ID: '1y36QA5OUgp2vDMAOD2T7LdPds9_7kk5i',
+  // ── ID Drive/Sheets ──
+  BUCOLICHE_ID: _PROPS.getProperty('VIRGILIO_BUCOLICHE_SPREADSHEET_ID') || '',
+  BUCOLICHE_TAB: _PROPS.getProperty('VIRGILIO_BUCOLICHE_TAB') || 'bucoliche',
+  EMPIREO_ID: _PROPS.getProperty('VIRGILIO_EMPIREO_ID') || '',
+  ADAMO_ID: _PROPS.getProperty('VIRGILIO_ADAMO_ID') || '',
+  LIMBO_ID: _PROPS.getProperty('VIRGILIO_LIMBO_ID') || '',
 
   // ── Etichette Gmail ──
   ETICHETTA_TRIGGER:  'da-traghettare',
@@ -44,10 +38,10 @@ const CONFIG = {
   // ── Credenziali — lette da PropertiesService a runtime ──
   // NON inserire mai valori reali qui sotto.
   // Usare caronteSetupCredenziali() in setup.gs per caricarli.
-  VIRGILIO_TOKEN:   _PROPS.getProperty('VIRGILIO_TOKEN'),
-  WEBHOOK_CHAT:     _PROPS.getProperty('WEBHOOK_CHAT'),
-  TELEGRAM_TOKEN:   _PROPS.getProperty('TELEGRAM_TOKEN'),
-  TELEGRAM_CHAT_ID: _PROPS.getProperty('TELEGRAM_CHAT_ID'),
+  VIRGILIO_TOKEN:   _PROPS.getProperty('VIRGILIO_TOKEN') || '',
+  WEBHOOK_CHAT:     _PROPS.getProperty('WEBHOOK_CHAT') || '',
+  TELEGRAM_TOKEN:   _PROPS.getProperty('TELEGRAM_TOKEN') || '',
+  TELEGRAM_CHAT_ID: _PROPS.getProperty('TELEGRAM_CHAT_ID') || '',
 
   // Utenti Gmail da monitorare
   UTENTI: [

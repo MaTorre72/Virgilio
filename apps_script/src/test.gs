@@ -42,7 +42,7 @@ function caronteTest() {
     Logger.log(`✓ Bucoliche: "${sheet.getName()}"`);
   } catch (err) {
     Logger.log(`✗ Bucoliche NON accessibili: ${err.message}`);
-    Logger.log('  → Verificare BUCOLICHE_ID in CONFIG');
+    Logger.log('  → Verificare VIRGILIO_BUCOLICHE_SPREADSHEET_ID nelle Script Properties');
     tuttoOk = false;
   }
 
@@ -54,7 +54,7 @@ function caronteTest() {
     Logger.log(`✓ Empireo: "${empireo.getName()}"`);
   } catch (err) {
     Logger.log(`✗ Empireo NON accessibile: ${err.message}`);
-    Logger.log('  → Verificare EMPIREO_ID in CONFIG');
+    Logger.log('  → Verificare VIRGILIO_EMPIREO_ID nelle Script Properties');
     tuttoOk = false;
   }
 
@@ -81,7 +81,7 @@ function caronteTest() {
     }
   } catch (err) {
     Logger.log(`✗ Adamo NON accessibile: ${err.message}`);
-    Logger.log('  → Verificare ADAMO_ID in CONFIG');
+    Logger.log('  → Verificare VIRGILIO_ADAMO_ID nelle Script Properties');
     Logger.log('  → Nota: il sistema userà la struttura default come fallback');
     tuttoOk = false;
   }
@@ -94,7 +94,7 @@ function caronteTest() {
     Logger.log(`✓ Limbo: "${limbo.getName()}"`);
   } catch (err) {
     Logger.log(`✗ Limbo NON accessibile: ${err.message}`);
-    Logger.log('  → Verificare LIMBO_ID in CONFIG');
+    Logger.log('  → Verificare VIRGILIO_LIMBO_ID nelle Script Properties');
     tuttoOk = false;
   }
 

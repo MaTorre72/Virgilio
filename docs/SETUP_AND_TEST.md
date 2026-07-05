@@ -93,6 +93,8 @@ Nel checkout verificato sono stati eseguiti anche `doctor-bucoliche --human`, `p
 
 Eseguire solo test puri o mockabili dall'editor Apps Script. I test che richiedono Drive, Gmail, Bucoliche o deployment reale vanno trattati come collaudi manuali separati.
 
+Prima di `caronteTest()` e `caronteTestFinale()` verificare nelle Script Properties gli ID operativi condivisi: `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `VIRGILIO_INTAKE_TEST_SPREADSHEET_ID`, `VIRGILIO_INTAKE_TEST_SHEET_NAME`.
+
 ## Collaudi reali
 
 I percorsi che escono dal dry-run (`pilot-run` senza `--dry-run` e, nel profilo Google-only, `clasp push`) sono collaudi reali, non test automatici.

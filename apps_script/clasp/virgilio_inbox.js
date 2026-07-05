@@ -354,13 +354,14 @@ function caronteArchiviaVirgilioInbox(payload) {
 
 function _virgilioInboxResolveSpreadsheetId_(spreadsheetId) {
   const props = PropertiesService.getScriptProperties();
-  const configSpreadsheetId = typeof CONFIG !== 'undefined' && CONFIG
-    ? _virgilioInboxStringOrEmpty_(CONFIG.BUCOLICHE_ID)
-    : '';
   const value = _virgilioInboxStringOrEmpty_(spreadsheetId) ||
-    _virgilioInboxStringOrEmpty_(props.getProperty(VIRGILIO_INBOX_SPREADSHEET_PROPERTY)) ||
-    configSpreadsheetId;
-  if (!value) throw new Error('ID spreadsheet Virgilio_Inbox obbligatorio.');
+    _virgilioInboxStringOrEmpty_(props.getProperty(VIRGILIO_INBOX_SPREADSHEET_PROPERTY));
+  if (!value) {
+    throw new Error(
+      'ID spreadsheet Virgilio_Inbox obbligatorio. Impostare ' +
+      'VIRGILIO_INBOX_SPREADSHEET_ID nelle Script Properties.'
+    );
+  }
   return value;
 }
 
