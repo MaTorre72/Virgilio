@@ -25,7 +25,7 @@ const _PROPS = PropertiesService.getScriptProperties();
 const CONFIG = {
 
   // ── ID Drive/Sheets ──
-  // Tutti letti da PropertiesService: un solo workbook condiviso, niente hardcode.
+  // Tutti letti da PropertiesService, niente hardcode.
   BUCOLICHE_ID: _PROPS.getProperty('VIRGILIO_BUCOLICHE_SPREADSHEET_ID') || '',
   BUCOLICHE_TAB: _PROPS.getProperty('VIRGILIO_BUCOLICHE_TAB') || 'bucoliche',
   EMPIREO_ID: _PROPS.getProperty('VIRGILIO_EMPIREO_ID') || '',

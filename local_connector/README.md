@@ -163,14 +163,15 @@ Bucoliche, non invia notifiche e non esegue ack IMAP.
 
 ### Storage adapter locale
 
-Configurare nel file account locale una sezione storage, oppure usare le variabili
-`VIRGILIO_STORAGE_ADAPTER=local_filesystem` e `VIRGILIO_STORAGE_STAGING_DIR`.
+Configurare nel file account locale una sezione `storage`. Il path di staging
+deve vivere una sola volta nel YAML e puntare allo stesso Limbo locale usato
+dal flusso operativo.
 Default prudente: la cartella di destinazione deve gia' esistere.
 
 ```yaml
 storage:
   adapter: local_filesystem
-  staging_dir: C:\Percorso\Virgilio_Staging
+  staging_dir: C:\Percorso\Virgilio\Limbo
   use_account_subfolders: true
   copy_manifest: true
   overwrite: false
@@ -343,11 +344,11 @@ manuali su Drive, Bucoliche, Gmail e notifiche prima di chiudere il collaudo.
 ## Staging pilota con Google Drive Desktop
 
 La copia locale verso Drive Desktop e' disabilitata per default. Creare manualmente
-una cartella Limbo di test nel filesystem sincronizzato e configurare `.env`:
+una cartella Limbo nel filesystem sincronizzato e configurare `.env`:
 
 ```dotenv
 VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED=true
-VIRGILIO_LOCAL_DRIVE_STAGING_DIR=C:\percorso\Drive Desktop\Virgilio Limbo Test
+VIRGILIO_LOCAL_DRIVE_STAGING_DIR=C:\percorso\Drive Desktop\Virgilio Limbo
 ```
 
 Il percorso reale resta esclusivamente in `.env`, gia' ignorato da Git. Prima
@@ -357,7 +358,7 @@ eseguire sempre:
 python -m virgilio_connector stage-ready-files --dry-run
 ```
 
-Controllare l'elenco JSON e poi, soltanto sul Limbo di test:
+Controllare l'elenco JSON e poi, soltanto sul Limbo configurato:
 
 ```powershell
 python -m virgilio_connector stage-ready-files
@@ -380,7 +381,7 @@ Dettagli: `../docs/LOCAL_DRIVE_STAGING_TRANSPORT.md`.
 
 Attendere prima che Drive Desktop mostri la sincronizzazione completata. Configurare
 in Apps Script la Script Property `VIRGILIO_DRIVE_STAGING_FOLDER_ID` con l'ID della
-sola cartella `Limbo_Test_Local`. Il Local Connector usa lo stesso deployment `/exec`
+sola cartella `Limbo`. Il Local Connector usa lo stesso deployment `/exec`
 gia' collaudato, configurato separatamente in `.env`:
 
 ```dotenv
@@ -391,7 +392,7 @@ Eseguire una sola verifica indicando il manifest locale:
 
 ```powershell
 python -m virgilio_connector verify-drive-staging `
-  --manifest "C:\percorso\Drive Desktop\Limbo_Test_Local\file.pdf.manifest.json"
+  --manifest "C:\percorso\Drive Desktop\Limbo\file.pdf.manifest.json"
 ```
 
 La CLI legge il manifest locale, invia solo sei campi metadata e stampa la risposta
@@ -455,7 +456,7 @@ Quindi inviare il manifest staged e gli identificativi restituiti dalla verifica
 
 ```powershell
 python -m virgilio_connector intake-da-archiviare `
-  --manifest "C:\percorso\Drive Desktop\Limbo_Test_Local\file.pdf.manifest.json" `
+  --manifest "C:\percorso\Drive Desktop\Limbo\file.pdf.manifest.json" `
   --drive-file-id "..." `
   --manifest-file-id "..."
 ```

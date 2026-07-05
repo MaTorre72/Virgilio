@@ -1,7 +1,7 @@
 /** Controlled test-only intake for Drive Desktop staging. */
 
 const DRIVE_STAGING_INTAKE_TEST_ACTION = 'intake_drive_staging_test';
-const INTAKE_TEST_SPREADSHEET_PROPERTY = 'VIRGILIO_BUCOLICHE_SPREADSHEET_ID';
+const INTAKE_TEST_SPREADSHEET_PROPERTY = 'VIRGILIO_INTAKE_TEST_SPREADSHEET_ID';
 const INTAKE_TEST_SHEET_PROPERTY = 'VIRGILIO_INTAKE_TEST_SHEET_NAME';
 const INTAKE_TEST_DEFAULT_SHEET = 'Staging_Local_Test';
 const INTAKE_TEST_ATTACHMENT_ID_COLUMN = 6;
@@ -20,13 +20,12 @@ function caronteSetupStagingDriveTestIntake(spreadsheetId, sheetName) {
   spreadsheetId = spreadsheetId || props.getProperty(INTAKE_TEST_SPREADSHEET_PROPERTY);
   sheetName = sheetName || props.getProperty(INTAKE_TEST_SHEET_PROPERTY) ||
     INTAKE_TEST_DEFAULT_SHEET;
-  const inboxSheetName = props.getProperty('VIRGILIO_INBOX_SHEET_NAME') || 'Virgilio_Inbox';
   const name = sheetName.trim();
   if (typeof spreadsheetId !== 'string' || !spreadsheetId.trim()) {
-    throw new Error('ID workbook condiviso obbligatorio.');
+    throw new Error('ID spreadsheet test obbligatorio.');
   }
-  if (!name || name === CONFIG.BUCOLICHE_TAB || name === inboxSheetName) {
-    throw new Error('Il tab test deve essere distinto da Bucoliche e Virgilio_Inbox.');
+  if (!name || name === CONFIG.BUCOLICHE_TAB) {
+    throw new Error('Il tab test deve essere distinto da Bucoliche reale.');
   }
   const ss = SpreadsheetApp.openById(spreadsheetId.trim());
   let sheet = ss.getSheetByName(name);
@@ -46,9 +45,7 @@ function caronteRegistraStagingDriveTest(payload) {
   const folderId = props.getProperty(DRIVE_STAGING_FOLDER_PROPERTY);
   const spreadsheetId = props.getProperty(INTAKE_TEST_SPREADSHEET_PROPERTY);
   const sheetName = props.getProperty(INTAKE_TEST_SHEET_PROPERTY);
-  const inboxSheetName = props.getProperty('VIRGILIO_INBOX_SHEET_NAME') || 'Virgilio_Inbox';
-  if (!folderId || !spreadsheetId || !sheetName ||
-      sheetName === CONFIG.BUCOLICHE_TAB || sheetName === inboxSheetName) {
+  if (!folderId || !spreadsheetId || !sheetName || sheetName === CONFIG.BUCOLICHE_TAB) {
     return _intakeTestResponse_(payload, false, false, false, false, false, '',
       'Configurazione intake test assente o non sicura.', [
         _driveStagingError_('INTAKE_TEST_NOT_CONFIGURED', 'Eseguire il setup esplicito del tab test.')

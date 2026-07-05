@@ -43,7 +43,7 @@ def fixture(tmp_path: Path, *, status="ready_for_caronte", enabled=True,
         relative_path=source.relative_to(paths.root).as_posix(), duplicate_of_id=None,
         reason="synthetic", scanner_engine="windows_defender", scan_result="clean")
     store.complete_run(run_id, messages_seen=1, attachments_seen=1)
-    staging = tmp_path / "Drive Desktop" / "Virgilio Limbo Test"
+    staging = tmp_path / "Drive Desktop" / "Virgilio Limbo"
     if staging_exists:
         staging.mkdir(parents=True)
     kwargs = {}

@@ -98,23 +98,33 @@ function caronteStatoConfigurazione() {
   const controlli = [
     {
       chiave: 'VIRGILIO_BUCOLICHE_SPREADSHEET_ID',
-      etichetta: 'Workbook condiviso',
-      hint: "Impostare un solo file per Bucoliche, Virgilio_Inbox e Staging_Local_Test.",
+      etichetta: 'Spreadsheet Bucoliche',
+      hint: "Impostare l'ID del workbook condiviso nelle Script Properties.",
     },
     {
       chiave: 'VIRGILIO_BUCOLICHE_TAB',
       etichetta: 'Tab Bucoliche',
-      hint: "Tenere il tab canonico nel workbook condiviso.",
+      hint: "Tenere il tab canonico o riallinearne uno solo in modo esplicito.",
+    },
+    {
+      chiave: 'VIRGILIO_INBOX_SPREADSHEET_ID',
+      etichetta: 'Spreadsheet Inbox',
+      hint: "Impostare l'ID del workbook della coda Virgilio_Inbox.",
     },
     {
       chiave: 'VIRGILIO_INBOX_SHEET_NAME',
       etichetta: 'Tab Inbox',
-      hint: "Tenere Virgilio_Inbox nello stesso workbook condiviso.",
+      hint: "Tenere il tab Virgilio_Inbox esplicito e configurato.",
+    },
+    {
+      chiave: 'VIRGILIO_INTAKE_TEST_SPREADSHEET_ID',
+      etichetta: 'Spreadsheet test',
+      hint: "Impostare l'ID del workbook di test.",
     },
     {
       chiave: 'VIRGILIO_INTAKE_TEST_SHEET_NAME',
       etichetta: 'Tab test',
-      hint: "Tenere Staging_Local_Test nello stesso workbook condiviso.",
+      hint: "Tenere il tab Staging_Local_Test esplicito e separato.",
     },
     {
       chiave: 'VIRGILIO_EMPIREO_ID',
@@ -221,7 +231,7 @@ function mostraVirgilio() {
  * Carica le credenziali sensibili nelle PropertiesService dello script.
  * Eseguire UNA SOLA VOLTA dopo aver ottenuto tutti i valori necessari.
  *
- * Gli identificativi operativi del workbook condiviso e dei tab
+ * Gli identificativi operativi (Bucoliche, Inbox, test, Empireo, Adamo, Limbo e tab)
  * vanno impostati separatamente nelle Script Properties.
  *
  * ⚠ ISTRUZIONI:

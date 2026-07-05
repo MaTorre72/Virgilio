@@ -7,7 +7,7 @@ const DRIVE_STAGING_VERIFY_ACTION = 'verify_drive_staging';
 const DRIVE_STAGING_FOLDER_PROPERTY = 'VIRGILIO_DRIVE_STAGING_FOLDER_ID';
 
 /**
- * Configurazione manuale una tantum dell'ID della cartella Limbo_Test_Local.
+ * Configurazione manuale una tantum dell'ID della cartella Limbo configurata.
  * La funzione non crea cartelle e non verifica/sincronizza file.
  */
 function caronteConfiguraCartellaStagingDriveTest(folderId) {

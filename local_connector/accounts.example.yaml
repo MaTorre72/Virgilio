@@ -16,7 +16,7 @@ accounts:
 
 storage:
   adapter: local_filesystem
-  staging_dir: C:\Percorso\Virgilio_Staging
+  staging_dir: 'C:\Percorso\Virgilio\Limbo'
   use_account_subfolders: true
   copy_manifest: true
   overwrite: false

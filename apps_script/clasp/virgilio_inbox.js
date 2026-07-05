@@ -1,6 +1,6 @@
-/** Schema e setup esplicito del tab operativo Virgilio_Inbox nello stesso workbook condiviso. */
+/** Schema e setup esplicito del tab operativo Virgilio_Inbox. */
 
-const VIRGILIO_INBOX_SPREADSHEET_PROPERTY = 'VIRGILIO_BUCOLICHE_SPREADSHEET_ID';
+const VIRGILIO_INBOX_SPREADSHEET_PROPERTY = 'VIRGILIO_INBOX_SPREADSHEET_ID';
 const VIRGILIO_INBOX_SHEET_PROPERTY = 'VIRGILIO_INBOX_SHEET_NAME';
 const VIRGILIO_INBOX_DEFAULT_SHEET = 'Virgilio_Inbox';
 const VIRGILIO_INBOX_INTAKE_ACTION = 'intake_virgilio_inbox';
@@ -19,7 +19,7 @@ function caronteGetVirgilioInboxSchema() {
   };
 }
 
-/** Setup esplicito: crea o consolida il tab Virgilio_Inbox nello stesso workbook condiviso. */
+/** Setup esplicito: crea o consolida solo il tab separato Virgilio_Inbox. */
 function caronteSetupVirgilioInbox(spreadsheetId, sheetName) {
   const resolvedSpreadsheetId = _virgilioInboxResolveSpreadsheetId_(spreadsheetId);
   const resolvedSheetName = _virgilioInboxResolveSheetName_(sheetName);
@@ -358,8 +358,8 @@ function _virgilioInboxResolveSpreadsheetId_(spreadsheetId) {
     _virgilioInboxStringOrEmpty_(props.getProperty(VIRGILIO_INBOX_SPREADSHEET_PROPERTY));
   if (!value) {
     throw new Error(
-      'ID workbook condiviso obbligatorio. Impostare ' +
-      'VIRGILIO_BUCOLICHE_SPREADSHEET_ID nelle Script Properties.'
+      'ID spreadsheet Virgilio_Inbox obbligatorio. Impostare ' +
+      'VIRGILIO_INBOX_SPREADSHEET_ID nelle Script Properties.'
     );
   }
   return value;

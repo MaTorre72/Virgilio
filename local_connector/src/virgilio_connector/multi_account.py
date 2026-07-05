@@ -255,11 +255,8 @@ def load_multi_account_config(path: str | Path) -> tuple[LocalImapAccount, ...]:
 def load_storage_config(path: str | Path,
                         environ: Mapping[str, str] | None = None) -> LocalStorageConfig:
     _, raw_storage = _parse_config_yaml(Path(path))
-    env = os.environ if environ is None else environ
     if raw_storage is None:
-        adapter = env.get("VIRGILIO_STORAGE_ADAPTER", "local_filesystem")
-        staging = env.get("VIRGILIO_STORAGE_STAGING_DIR", "").strip()
-        return LocalStorageConfig(adapter, Path(staging) if staging else None)
+        raise MultiAccountConfigError("storage section is required in accounts.local.yaml")
     staging_dir = str(raw_storage.get("staging_dir", "")).strip()
     return LocalStorageConfig(
         adapter=str(raw_storage.get("adapter", "local_filesystem")),
