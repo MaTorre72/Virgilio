@@ -23,7 +23,8 @@ const _PROPS = PropertiesService.getScriptProperties();
 
 const CONFIG = {
 
-  // ── ID Drive/Sheets — non segreti, ok nel codice ──
+  // ── ID Drive/Sheets — letti da PropertiesService, non hardcoded ──
+  // Un solo workbook condiviso, con i tab operativi separati.
   // ID Google Sheets "Bucoliche"
   BUCOLICHE_ID: _PROPS.getProperty('VIRGILIO_BUCOLICHE_SPREADSHEET_ID') || '',
   BUCOLICHE_TAB: _PROPS.getProperty('VIRGILIO_BUCOLICHE_TAB') || 'bucoliche',

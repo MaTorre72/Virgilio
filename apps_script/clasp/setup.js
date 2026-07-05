@@ -98,13 +98,23 @@ function caronteStatoConfigurazione() {
   const controlli = [
     {
       chiave: 'VIRGILIO_BUCOLICHE_SPREADSHEET_ID',
-      etichetta: 'Spreadsheet Bucoliche',
-      hint: "Impostare l'ID del workbook condiviso nelle Script Properties.",
+      etichetta: 'Workbook condiviso',
+      hint: "Impostare un solo file per Bucoliche, Virgilio_Inbox e Staging_Local_Test.",
     },
     {
       chiave: 'VIRGILIO_BUCOLICHE_TAB',
       etichetta: 'Tab Bucoliche',
-      hint: "Tenere il tab canonico o riallinearne uno solo in modo esplicito.",
+      hint: "Tenere il tab canonico nel workbook condiviso.",
+    },
+    {
+      chiave: 'VIRGILIO_INBOX_SHEET_NAME',
+      etichetta: 'Tab Inbox',
+      hint: "Tenere Virgilio_Inbox nello stesso workbook condiviso.",
+    },
+    {
+      chiave: 'VIRGILIO_INTAKE_TEST_SHEET_NAME',
+      etichetta: 'Tab test',
+      hint: "Tenere Staging_Local_Test nello stesso workbook condiviso.",
     },
     {
       chiave: 'VIRGILIO_EMPIREO_ID',
@@ -210,6 +220,9 @@ function mostraVirgilio() {
 /**
  * Carica le credenziali sensibili nelle PropertiesService dello script.
  * Eseguire UNA SOLA VOLTA dopo aver ottenuto tutti i valori necessari.
+ *
+ * Gli identificativi operativi del workbook condiviso e dei tab
+ * vanno impostati separatamente nelle Script Properties.
  *
  * ⚠ ISTRUZIONI:
  * 1. Sostituire i placeholder qui sotto con i valori reali

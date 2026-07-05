@@ -46,8 +46,9 @@
 
 ## 4. Mappa GAS
 
-- Script Properties operative: `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_TOKEN`, `WEBHOOK_CHAT`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `URL_FORM`
-- Script Properties Drive/test: `VIRGILIO_DRIVE_STAGING_FOLDER_ID`, `VIRGILIO_INTAKE_TEST_SPREADSHEET_ID`, `VIRGILIO_INTAKE_TEST_SHEET_NAME`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`
+- Script Properties workbook condiviso: `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`
+- Script Properties tab: `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_INBOX_SHEET_NAME`, `VIRGILIO_INTAKE_TEST_SHEET_NAME`
+- Script Properties Drive/notifiche: `VIRGILIO_DRIVE_STAGING_FOLDER_ID`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_TOKEN`, `WEBHOOK_CHAT`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `URL_FORM`
 - azioni webapp: `local_imap_dry_run`, `verify_drive_staging`, `intake_drive_staging_test`, `intake_virgilio_inbox`
 - tab tecnici: `Virgilio_Inbox`, `Bucoliche_Eventi`, `Bucoliche_Stato`, `Bucoliche_Conflitti`, `Staging_Local_Test`
 - nomi UX: `Da archiviare`, `02_corrispondenza`
@@ -58,25 +59,25 @@
 |---|---|---|---|
 | Dry-run Caronte | `VIRGILIO_CARONTE_DRY_RUN_URL` verso `local_imap_dry_run` | `caronte.gs` intercetta `CARONTE_DRY_RUN_ACTION` | OK |
 | Verify Drive staging | `VIRGILIO_CARONTE_DRIVE_VERIFY_URL` e manifest metadata-only | `VIRGILIO_DRIVE_STAGING_FOLDER_ID` e `verify_drive_staging` | OK |
-| Intake test Drive staging | `VIRGILIO_CARONTE_INTAKE_TEST_URL` | `VIRGILIO_INTAKE_TEST_SPREADSHEET_ID` e `VIRGILIO_INTAKE_TEST_SHEET_NAME` con tab `Staging_Local_Test` | OK |
-| Intake finale `Da archiviare` | `VIRGILIO_CARONTE_INTAKE_URL` e `VIRGILIO_TOKEN` | `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `intake_virgilio_inbox` | OK con riserva live |
+| Intake test Drive staging | `VIRGILIO_CARONTE_INTAKE_TEST_URL` | `VIRGILIO_BUCOLICHE_SPREADSHEET_ID` e `VIRGILIO_INTAKE_TEST_SHEET_NAME` con tab `Staging_Local_Test` | OK |
+| Intake finale `Da archiviare` | `VIRGILIO_CARONTE_INTAKE_URL` e `VIRGILIO_TOKEN` | `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `intake_virgilio_inbox` | OK con riserva live |
 | Bucoliche | `VIRGILIO_BUCOLICHE_SPREADSHEET_ID` e `VIRGILIO_BUCOLICHE_TAB` | `caronte.gs` legge gli identificativi da `PropertiesService` | OK |
-| UX vs tab tecnico | `Da archiviare` nella documentazione operativa | `Virgilio_Inbox` come tab tecnico separato | OK |
+| UX vs tab tecnico | `Da archiviare` nella documentazione operativa | `Virgilio_Inbox` come tab tecnico nello stesso workbook condiviso | OK |
 | Notifiche | nessun segreto reale in repo | `WEBHOOK_CHAT`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `URL_FORM` | WARNING live non verificato |
 | Staging locale | `VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED` e `VIRGILIO_LOCAL_DRIVE_STAGING_DIR` | nessun equivalente diretto in GAS, per design | OK |
 
 ## 6. Risultati dell'allineamento
 
-- `local_connector/.env.example` e` stato riallineato al flusso reale aggiungendo `VIRGILIO_CARONTE_INTAKE_URL` e `VIRGILIO_TOKEN`
+- `local_connector/.env.example` e` stato riallineato al flusso reale con un solo workbook condiviso e i tab `Virgilio_Inbox` / `Staging_Local_Test`
 - `accounts.example.yaml` e` coerente con i nomi attesi dal codice
 - il contratto metadata-only rimane invariato: non si inviano byte, base64 o path locali ad Apps Script
-- il tab tecnico `Virgilio_Inbox` resta separato dalla UX `Da archiviare`
-- `Staging_Local_Test` rimane un tab di test e non una coda operativa
+- il tab tecnico `Virgilio_Inbox` resta nello stesso workbook condiviso della UX `Da archiviare`
+- `Staging_Local_Test` rimane un tab di test nello stesso workbook condiviso
 - il solo punto che non si puo` confermare offline e` il valore live delle Script Properties e degli ID Google
 
 ## 7. Rischi residui
 
-- `VIRGILIO_INBOX_SPREADSHEET_ID` non ha fallback al foglio Bucoliche; per un setup pulito va impostato in modo esplicito
+- il workbook condiviso deve essere sempre `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`; i tab `Virgilio_Inbox` e `Staging_Local_Test` non hanno workbook separati
 - `URL_FORM`, `WEBHOOK_CHAT`, `TELEGRAM_TOKEN` e `TELEGRAM_CHAT_ID` sono configurazioni live e non vanno esposte nei log o nei file di repo
 - `docs/GAS_READINESS_20260704.md` resta uno snapshot pre-push NO GO e non va letto come stato corrente
 
@@ -104,14 +105,13 @@ $required = @(
   'VIRGILIO_CARONTE_INTAKE_URL',
   'VIRGILIO_TOKEN',
   'VIRGILIO_BUCOLICHE_SPREADSHEET_ID',
+  'VIRGILIO_BUCOLICHE_TAB',
   'VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON',
   'VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH',
   'VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH',
   'VIRGILIO_DRIVE_STAGING_FOLDER_ID',
-  'VIRGILIO_INTAKE_TEST_SPREADSHEET_ID',
-  'VIRGILIO_INTAKE_TEST_SHEET_NAME',
-  'VIRGILIO_INBOX_SPREADSHEET_ID',
-  'VIRGILIO_INBOX_SHEET_NAME'
+  'VIRGILIO_INBOX_SHEET_NAME',
+  'VIRGILIO_INTAKE_TEST_SHEET_NAME'
 )
 
 $missing = @()
@@ -142,4 +142,4 @@ if ($LASTEXITCODE -ne 0) {
 - esito operativo: `PRONTO_CON_RISERVE`
 - pronto per collaudo locale: si
 - pronto per collaudo live senza verifica manuale: no
-- azione richiesta prima di un collaudo reale: confermare live `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `VIRGILIO_DRIVE_STAGING_FOLDER_ID`, `URL_FORM` e le credenziali notifiche
+- azione richiesta prima di un collaudo reale: confermare live `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_INBOX_SHEET_NAME`, `VIRGILIO_INTAKE_TEST_SHEET_NAME`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_DRIVE_STAGING_FOLDER_ID`, `URL_FORM` e le credenziali notifiche

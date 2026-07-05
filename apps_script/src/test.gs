@@ -34,15 +34,40 @@ function caronteTest() {
   Logger.log('');
 
   let tuttoOk = true;
+  const props = PropertiesService.getScriptProperties();
 
   // ── 1. Bucoliche ────────────────────────────────────────────
   Logger.log('--- 1. Bucoliche (Google Sheets) ---');
   try {
-    const sheet = SpreadsheetApp.openById(CONFIG.BUCOLICHE_ID);
-    Logger.log(`✓ Bucoliche: "${sheet.getName()}"`);
+    const workbook = SpreadsheetApp.openById(CONFIG.BUCOLICHE_ID);
+    Logger.log(`✓ Bucoliche: "${workbook.getName()}"`);
   } catch (err) {
     Logger.log(`✗ Bucoliche NON accessibili: ${err.message}`);
     Logger.log('  → Verificare VIRGILIO_BUCOLICHE_SPREADSHEET_ID nelle Script Properties');
+    tuttoOk = false;
+  }
+
+  // ── 1b. Tab condivisi nello stesso workbook ───────────────────
+  Logger.log('');
+  Logger.log('--- 1b. Tab condivisi nello stesso workbook ---');
+  try {
+    const workbook = SpreadsheetApp.openById(CONFIG.BUCOLICHE_ID);
+    const requiredTabs = [
+      CONFIG.BUCOLICHE_TAB,
+      props.getProperty('VIRGILIO_INBOX_SHEET_NAME') || 'Virgilio_Inbox',
+      props.getProperty('VIRGILIO_INTAKE_TEST_SHEET_NAME') || 'Staging_Local_Test',
+    ];
+    requiredTabs.forEach(tabName => {
+      const tab = workbook.getSheetByName(tabName);
+      if (tab) {
+        Logger.log(`✓ Tab presente: "${tab.getName()}"`);
+      } else {
+        Logger.log(`✗ Tab mancante nel workbook condiviso: ${tabName}`);
+        tuttoOk = false;
+      }
+    });
+  } catch (err) {
+    Logger.log(`✗ Verifica tab condivisi NON riuscita: ${err.message}`);
     tuttoOk = false;
   }
 
