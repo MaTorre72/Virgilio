@@ -29,6 +29,7 @@ Dopo il collaudo, il profilo da usare resta quello coerente con la superficie de
 
 - Ingresso tecnico: `IMAP locale`.
 - Puo` leggere una o piu` caselle, inclusa una casella Google Workspace via IMAP.
+- Gli esempi di configurazione mostrano almeno due account generici con alias neutri.
 - Passa prima da `Quarantena locale`, poi da `Scan`, poi nel Limbo Drive unico.
 - Produce gli stessi oggetti operativi del profilo Google-only.
 - E` il profilo da usare quando il task deve restare offline, usare fixture e verifiche locali.

@@ -1,17 +1,17 @@
 # Next Codex Tasks
 
-Stato operativo corrente: backlog v1.1.4 attivo; primo task eseguibile `V114-T04 - Configurazione multi-account neutra`.
+Stato operativo corrente: backlog v1.1.4 attivo; primo task eseguibile `V114-T05 - Secrets hardening locale`.
 
 ## Prossimo task
 
-- `V114-T04 - Configurazione multi-account neutra`
-- Obiettivo: esempi e alias sono neutri, almeno due account generici sono previsti e non compaiono riferimenti personali.
-- Ambito: `local_connector/.env.example`, `docs/ARCHITETTURA_UNIFICATA.md`
-- Vincoli: niente dati personali; niente indirizzi reali; niente alias instabili.
+- `V114-T05 - Secrets hardening locale`
+- Obiettivo: `.env`, password, token e log sono trattati in modo sicuro; la configurazione viene validata senza esporre segreti.
+- Ambito: `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md`
+- Vincoli: segreti mai nel sorgente; log mascherati; no servizi reali.
 
 ## Successivi
 
-- `V114-T05 - Secrets hardening locale`
 - `V114-T06 - Secrets e setup GAS`
+- `V114-T07 - Office attachments policy`
 
 La sequenza completa resta in `docs/DEV_BACKLOG.md`.
