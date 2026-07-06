@@ -2,6 +2,7 @@
 
 Registro avanzamento storico spostato fuori dal backlog attivo.
 
+- 2026-07-06 17:28 +02:00 - Completato V114-T05: hardening segreti locale confermata su `local_connector` senza esporre valori sensibili; test mirati su `doctor`/multi-account e smoke `scripts/dev/smoke_local_connector.ps1` verdi; state, next tasks e backlog riallineati su V114-T06.
 - 2026-07-06 12:25 +02:00 - Completato V114-T04: `local_connector/.env.example` usa ora alias neutri e due account generici, `docs/ARCHITETTURA_UNIFICATA.md` lo esplicita, lo smoke locale e` verde e backlog/state/next tasks sono riallineati su V114-T05.
 - 2026-07-06 11:45 +02:00 - Completato V114-T02: il flusso unico ora esplicita Quarantena locale eventuale e Limbo Drive unico in README/architettura; backlog, state e next tasks riallineati su V114-T03.
 - 2026-07-06 11:38 +02:00 - Completato V114-T01: il profilo dopo il collaudo resta esplicito in README e architettura; backlog attivo, state e next tasks avanzati su V114-T02.
