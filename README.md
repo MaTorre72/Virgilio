@@ -19,14 +19,14 @@ La branch `codex/v1.1-development` serve a consolidare componenti gia' testati. 
 
 | Profilo | Quando usarlo | Superficie | Vincoli |
 |---|---|---|---|
-| Google-only | se il task tocca `apps_script/src`, GmailApp o `clasp` | Apps Script canonico in `apps_script/src` | resta nel perimetro Google Workspace |
-| Local connector | se il task tocca `local_connector/src/virgilio_connector` o i test locali | motore locale, fixture e CLI | resta offline, senza servizi reali |
+| Google-only | se il task tocca `apps_script/src`, GmailApp o `clasp` | Apps Script canonico in `apps_script/src`, mono-account | resta nel perimetro Google Workspace |
+| Local connector | se il task tocca `local_connector/src/virgilio_connector` o i test locali | motore locale, fixture e CLI, multi-casella via IMAP | resta offline, senza servizi reali |
 
 Se il task passa da Apps Script o dal progetto Google, il profilo attivo e` Google-only. Se passa dal motore locale o dai test, il profilo attivo e` Local connector.
 
 ## Stato architetturale
 
-Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. Nella UX la coda si chiama `Da archiviare`; `Virgilio_Inbox` resta il nome tecnico del tab. La sorgente canonica Apps Script vive in `apps_script/src` e `clasp` sincronizza direttamente quella cartella; il local connector resta separato, locale e testabile senza servizi reali.
+Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. Nella UX la coda si chiama `Da archiviare`; `Virgilio_Inbox` resta il nome tecnico del tab. Google-only resta mono-account; Local connector puo` essere multi-casella e leggere anche una casella Google Workspace via IMAP. La sorgente canonica Apps Script vive in `apps_script/src` e `clasp` sincronizza direttamente quella cartella; il local connector resta separato, locale e testabile senza servizi reali.
 Il riferimento condiviso per lessico e flusso e` [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md).
 
 ## Componenti

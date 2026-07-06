@@ -2,12 +2,12 @@
 
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
-- Milestone attiva: `v1.1.3 - Virgilio unificato`
+- Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`
 - Task 0.0: chiuso
 - Ultimo task chiuso noto: `V113-E6-T04 - Nascondere dettagli macchina nella UX normale`
-- Task corrente consigliato: nessuno noto
-- Massimo due successivi: nessuno noto
-- Blocchi aperti: backlog v1.1.3 esaurito; nessun TODO eleggibile nella sezione pertinente di `docs/DEV_BACKLOG.md`
+- Task corrente consigliato: `V114-T01 - Architettura operativa post-collaudo`
+- Massimo due successivi: `V114-T02 - Flusso unico e cartelle`; `V114-T03 - Modi operativi supportati`
+- Blocchi aperti: nessuno noto; backlog v1.1.4 aperto
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

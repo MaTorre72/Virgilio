@@ -18,6 +18,7 @@ Questa e` la distinzione da usare prima di aprire un task o una branch.
 ### Google-only
 
 - Ingresso tecnico: `GmailApp`.
+- E` mono-account: usa una sola casella alla volta.
 - Usa il Limbo condiviso come prima area operativa visibile in Google Drive.
 - Crea una riga in `Da archiviare` quando il documento e` pronto per la decisione umana.
 - E` il profilo da usare quando il task resta dentro Google Workspace, Apps Script e `clasp`.
@@ -26,6 +27,7 @@ Questa e` la distinzione da usare prima di aprire un task o una branch.
 ### Local connector
 
 - Ingresso tecnico: `IMAP locale`.
+- Puo` leggere una o piu` caselle, inclusa una casella Google Workspace via IMAP.
 - Passa prima da `Quarantena`, poi da `Scan`, poi nel Limbo.
 - Produce gli stessi oggetti operativi del profilo Google-only.
 - E` il profilo da usare quando il task deve restare offline, usare fixture e verifiche locali.
@@ -70,13 +72,15 @@ Nel profilo Google-only, `registraErrore()` e `registraConflitto()` sono gli hoo
 Il Registro resta append-only e usa una riga per ogni evento osservabile. Ogni riga contiene almeno:
 
 - `registro_id`: identificativo univoco dell'evento.
-- `timestamp_utc`: momento dell'evento in UTC.
+- `timestamp`: momento dell'evento in ora locale `Europe/Rome`.
 - `ingresso`: `Google-only` oppure `Local connector`.
 - `fase`: fase del flusso, per esempio `acquisizione`, `limbo`, `da archiviare`, `form`, `pratica finale`, `errore`, `conflitto`.
 - `oggetto`: riferimento operativo principale, per esempio `inbox_id`, `message_id`, `drive_file_id`, `fingerprint` o `pratica_id`.
 - `esito`: `ok`, `attesa_umano`, `archiviato`, `bloccato`, `errore`, `conflitto`.
 - `nota`: sintesi breve, leggibile e non ambigua.
 - `correlazioni_tecniche`: campo opzionale per compatibilita` e diagnostica.
+
+Tutti i timestamp operativi restano in ora locale `Europe/Rome`; non si introducono campi UTC o copie tecniche parallele.
 
 Gli eventi tecnici storici possono alimentare questo schema, ma non diventano nuovi registri produttivi separati.
 
