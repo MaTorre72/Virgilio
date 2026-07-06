@@ -1,17 +1,17 @@
 # Next Codex Tasks
 
-Stato operativo corrente: backlog v1.1.4 attivo; primo task eseguibile `V114-T03 - Modi operativi supportati`.
+Stato operativo corrente: backlog v1.1.4 attivo; primo task eseguibile `V114-T04 - Configurazione multi-account neutra`.
 
 ## Prossimo task
 
-- `V114-T03 - Modi operativi supportati`
-- Obiettivo: Google-only risulta mono-account; Local connector risulta multi-casella; una casella Google Workspace puo` essere letta via IMAP dal Local connector.
-- Ambito: `docs/ARCHITETTURA_UNIFICATA.md`, `README.md`
-- Vincoli: non mischiare i profili; non aprire un flusso parallelo; non usare servizi reali.
+- `V114-T04 - Configurazione multi-account neutra`
+- Obiettivo: esempi e alias sono neutri, almeno due account generici sono previsti e non compaiono riferimenti personali.
+- Ambito: `local_connector/.env.example`, `docs/ARCHITETTURA_UNIFICATA.md`
+- Vincoli: niente dati personali; niente indirizzi reali; niente alias instabili.
 
 ## Successivi
 
-- `V114-T04 - Configurazione multi-account neutra`
 - `V114-T05 - Secrets hardening locale`
+- `V114-T06 - Secrets e setup GAS`
 
 La sequenza completa resta in `docs/DEV_BACKLOG.md`.
