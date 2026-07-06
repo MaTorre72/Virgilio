@@ -144,27 +144,27 @@ function caronteStatoConfigurazione() {
     {
       chiave: 'VIRGILIO_TOKEN',
       etichetta: 'Token Virgilio',
-      hint: "Eseguire generaToken() e poi caronteSetupCredenziali().",
+      hint: "Eseguire generaToken() e poi impostarlo nelle Script Properties.",
     },
     {
       chiave: 'WEBHOOK_CHAT',
       etichetta: 'Webhook Google Chat',
-      hint: "Inserire l'URL del webhook nella setup credenziali.",
+      hint: "Impostare l'URL del webhook nelle Script Properties.",
     },
     {
       chiave: 'TELEGRAM_TOKEN',
       etichetta: 'Token Telegram',
-      hint: "Recuperare il token e salvarlo con caronteSetupCredenziali().",
+      hint: "Impostare il token Telegram nelle Script Properties.",
     },
     {
       chiave: 'TELEGRAM_CHAT_ID',
       etichetta: 'Chat ID Telegram',
-      hint: "Inserire l'ID della chat nel setup credenziali.",
+      hint: "Impostare l'ID della chat nelle Script Properties.",
     },
     {
       chiave: 'URL_FORM',
       etichetta: 'URL form Virgilio',
-      hint: "Copiare l'URL /exec della Web App nel setup credenziali.",
+      hint: "Impostare l'URL /exec della Web App nelle Script Properties.",
     },
   ];
 
@@ -229,16 +229,17 @@ function mostraVirgilio() {
 
 /**
  * Carica le credenziali sensibili nelle PropertiesService dello script.
+ * I valori vanno impostati nelle Script Properties o passati a runtime,
+ * mai scritti nel file sorgente.
  * Eseguire UNA SOLA VOLTA dopo aver ottenuto tutti i valori necessari.
  *
  * Gli identificativi operativi (Bucoliche, Inbox, test, Empireo, Adamo, Limbo e tab)
  * vanno impostati separatamente nelle Script Properties.
  *
  * ⚠ ISTRUZIONI:
- * 1. Sostituire i placeholder qui sotto con i valori reali
- * 2. Eseguire questa funzione dalla console Apps Script
- * 3. Cancellare i valori reali da qui e salvare — le props sono persistenti
- * 4. Verificare con caronteStatoCredenziali() che siano caricate
+ * 1. Recuperare i valori richiesti
+ * 2. Impostarli nelle Script Properties oppure passarli a caronteSetupCredenziali({ ... })
+ * 3. Verificare con caronteStatoCredenziali() che siano caricate
  *
  * Come ottenere i valori:
  * - VIRGILIO_TOKEN:   eseguire generaToken() e copiare l'output
@@ -247,33 +248,47 @@ function mostraVirgilio() {
  * - TELEGRAM_CHAT_ID: aggiungere @userinfobot al gruppo, invia /start
  * - URL_FORM:         Apps Script → Distribuisci → Gestisci distribuzioni → copia URL /exec
  */
-function caronteSetupCredenziali() {
+function caronteSetupCredenziali(valori) {
   const props = PropertiesService.getScriptProperties();
 
-  props.setProperties({
-    'VIRGILIO_TOKEN':   '[SOSTITUIRE — generare con generaToken()]',
-    'WEBHOOK_CHAT':     '[SOSTITUIRE — URL webhook Google Chat]',
-    'TELEGRAM_TOKEN':   '[SOSTITUIRE — token da @BotFather]',
-    'TELEGRAM_CHAT_ID': '[SOSTITUIRE — chat ID gruppo Telegram]',
-    'URL_FORM':         '[SOSTITUIRE — URL /exec della Web App Virgilio]',
-  });
+  const chiavi = ['VIRGILIO_TOKEN', 'WEBHOOK_CHAT', 'TELEGRAM_TOKEN', 'TELEGRAM_CHAT_ID', 'URL_FORM'];
+  const daSalvare = {};
 
-  Logger.log('[Setup] Credenziali salvate nelle PropertiesService.');
-  Logger.log('[Setup] ⚠ Cancellare ora i valori reali da questa funzione e salvare il file.');
+  if (valori && typeof valori === 'object' && !Array.isArray(valori)) {
+    chiavi.forEach((chiave) => {
+      const valore = valori[chiave];
+      if (typeof valore !== 'string') return;
+      const pulito = valore.trim();
+      if (!pulito || pulito.startsWith('[SOSTITUIRE') || pulito.startsWith('[DA_INSERIRE')) return;
+      daSalvare[chiave] = pulito;
+    });
+  }
+
+  if (Object.keys(daSalvare).length === 0) {
+    Logger.log('[Setup] Nessuna credenziale passata: valorizzare le Script Properties o richiamare caronteSetupCredenziali({ ... }).');
+    caronteStatoCredenziali();
+    return { ok: false, saved: [] };
+  }
+
+  props.setProperties(daSalvare);
+  Logger.log(`[Setup] Credenziali salvate nelle Script Properties: ${Object.keys(daSalvare).join(', ')}`);
+  Logger.log('[Setup] Verificare subito con caronteStatoCredenziali().');
+  caronteStatoCredenziali();
+  return { ok: true, saved: Object.keys(daSalvare) };
 }
 
 
 /**
  * Genera un token segreto robusto per VIRGILIO_TOKEN.
- * Eseguire una volta e copiare l'output nel campo VIRGILIO_TOKEN
- * di caronteSetupCredenziali().
+ * Eseguire una volta e usare il valore generato nelle Script Properties
+ * o nella chiamata a caronteSetupCredenziali({ VIRGILIO_TOKEN: ... }).
  */
 function generaToken() {
   const token = Utilities.getUuid().replace(/-/g, '') +
                 Utilities.getUuid().replace(/-/g, '');
   Logger.log('[Setup] Token generato (64 char hex):');
   Logger.log(token);
-  Logger.log('[Setup] Copiare questo valore in caronteSetupCredenziali() → VIRGILIO_TOKEN');
+  Logger.log('[Setup] Copiare questo valore nelle Script Properties o nella chiamata a caronteSetupCredenziali({ VIRGILIO_TOKEN: ... })');
 }
 
 

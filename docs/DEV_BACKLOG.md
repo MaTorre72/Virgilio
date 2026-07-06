@@ -11,7 +11,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Qui restano solo task attivi o 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,
 mantenendo task piccoli, seriali, verificabili e doc-first.
 
-Nota operativa: il primo task eseguibile e` `V114-T06 - Secrets e setup GAS`.
+Nota operativa: il primo task eseguibile e` `V114-T07 - Office attachments policy`.
 
 | ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
 |---|---|---|---|---|---|---|
@@ -19,7 +19,7 @@ Nota operativa: il primo task eseguibile e` `V114-T06 - Secrets e setup GAS`.
 | V114-T03 | DONE | P0 | Modi operativi supportati | `docs/ARCHITETTURA_UNIFICATA.md`, `README.md` | Google-only risulta mono-account; Local connector risulta multi-casella; una casella Google Workspace puo` essere letta via IMAP dal Local connector | non mischiare i profili; non aprire un flusso parallelo; non usare servizi reali |
 | V114-T04 | DONE | P1 | Configurazione multi-account neutra | `local_connector/.env.example`, `docs/ARCHITETTURA_UNIFICATA.md` | esempi e alias sono neutri, almeno due account generici sono previsti e non compaiono riferimenti personali | niente dati personali; niente indirizzi reali; niente alias instabili |
 | V114-T05 | DONE | P1 | Secrets hardening locale | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | `.env`, password, token e log sono trattati in modo sicuro; la configurazione viene validata senza esporre segreti | segreti mai nel sorgente; log mascherati; no servizi reali |
-| V114-T06 | TODO | P1 | Secrets e setup GAS | `apps_script/src/`, `docs/CLASP_WORKFLOW.md`, `README.md` | nessuna procedura chiede di scrivere segreti nei `.gs`; il setup usa Script Properties e verifica configurazione | non mettere segreti nel codice; non cambiare il form; non usare `clasp push` fuori dal task |
+| V114-T06 | DONE | P1 | Secrets e setup GAS | `apps_script/src/`, `docs/CLASP_WORKFLOW.md`, `README.md` | nessuna procedura chiede di scrivere segreti nei `.gs`; il setup usa Script Properties e verifica configurazione | non mettere segreti nel codice; non cambiare il form; non usare `clasp push` fuori dal task |
 | V114-T07 | TODO | P1 | Office attachments policy | `docs/ARCHITETTURA_UNIFICATA.md`, `apps_script/src/`, `local_connector/` | `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx` sono ammessi solo con scansione obbligatoria; macro-enabled, archivi compressi ed eseguibili restano bloccati | non indebolire i gate di scan; non introdurre nuove categorie di file |
 | V114-T08 | TODO | P1 | Timestamp Europe/Rome only | `apps_script/src/`, `local_connector/`, `docs/ARCHITETTURA_UNIFICATA.md` | tutti i timestamp operativi usano `Europe/Rome`; non compaiono campi UTC, nemmeno interni, in SQLite, manifest, log o Google Sheet | no UTC; no conversioni ambigue; no campi tecnici duplicati |
 | V114-T09 | TODO | P1 | GAS setup e trigger Caronte | `apps_script/src/`, `docs/CLASP_WORKFLOW.md` | la sequenza setup properties -> verifica configurazione -> setup trigger -> stato trigger -> stop trigger -> test minimo e` lineare e distinguibile da produzione | non confondere test e produzione; non saltare la verifica configurazione |

@@ -4,9 +4,9 @@
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V114-T05 - Secrets hardening locale`
-- Task corrente consigliato: `V114-T06 - Secrets e setup GAS`
-- Massimo due successivi: `V114-T07 - Office attachments policy`; `V114-T08 - Timestamp Europe/Rome only`
+- Ultimo task chiuso noto: `V114-T06 - Secrets e setup GAS`
+- Task corrente consigliato: `V114-T07 - Office attachments policy`
+- Massimo due successivi: `V114-T08 - Timestamp Europe/Rome only`; `V114-T09 - GAS setup e trigger Caronte`
 - Blocchi aperti: nessuno noto; backlog v1.1.4 aperto
 - Ultimo smoke locale: `scripts/dev/smoke_local_connector.ps1` -> `OK` (`291 passed in 64.06s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
