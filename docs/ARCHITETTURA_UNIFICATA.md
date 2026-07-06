@@ -14,6 +14,7 @@ Acquisizione -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro
 ## Profili operativi
 
 Questa e` la distinzione da usare prima di aprire un task o una branch.
+Dopo il collaudo, il profilo da usare resta quello coerente con la superficie del lavoro: Google-only per Apps Script e Google Workspace; Local connector per attivita` locali, offline e di test.
 
 ### Google-only
 

@@ -11,11 +11,10 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Qui restano solo task attivi o 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,
 mantenendo task piccoli, seriali, verificabili e doc-first.
 
-Nota operativa: il primo task eseguibile e` `V114-T01 - Architettura operativa post-collaudo`.
+Nota operativa: il primo task eseguibile e` `V114-T02 - Flusso unico e cartelle`.
 
 | ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
 |---|---|---|---|---|---|---|
-| V114-T01 | TODO | P0 | Architettura operativa post-collaudo | `docs/ARCHITETTURA_UNIFICATA.md`, `README.md` | i due ingressi tecnici sono nominati chiaramente e il lettore capisce subito quale profilo usare dopo il collaudo | solo documentazione; niente codice applicativo; niente segreti; niente nuove GUI |
 | V114-T02 | TODO | P0 | Flusso unico e cartelle | `docs/ARCHITETTURA_UNIFICATA.md`, `README.md` | il flusso `Acquisizione -> Quarantena locale eventuale -> Limbo Drive unico -> Da archiviare -> Form -> Pratica finale -> Registro` e` univoco e non ambiguo | non introdurre un secondo Limbo; non confondere Quarantena locale con la cartella condivisa |
 | V114-T03 | TODO | P0 | Modi operativi supportati | `docs/ARCHITETTURA_UNIFICATA.md`, `README.md` | Google-only risulta mono-account; Local connector risulta multi-casella; una casella Google Workspace puo` essere letta via IMAP dal Local connector | non mischiare i profili; non aprire un flusso parallelo; non usare servizi reali |
 | V114-T04 | TODO | P1 | Configurazione multi-account neutra | `local_connector/.env.example`, `docs/ARCHITETTURA_UNIFICATA.md` | esempi e alias sono neutri, almeno due account generici sono previsti e non compaiono riferimenti personali | niente dati personali; niente indirizzi reali; niente alias instabili |

@@ -23,6 +23,7 @@ La branch `codex/v1.1-development` serve a consolidare componenti gia' testati. 
 | Local connector | se il task tocca `local_connector/src/virgilio_connector` o i test locali | motore locale, fixture e CLI, multi-casella via IMAP | resta offline, senza servizi reali |
 
 Se il task passa da Apps Script o dal progetto Google, il profilo attivo e` Google-only. Se passa dal motore locale o dai test, il profilo attivo e` Local connector.
+Dopo il collaudo, vale la stessa regola: Google-only per Apps Script e Google Workspace; Local connector per lavoro locale, offline e di test.
 
 ## Stato architetturale
 
