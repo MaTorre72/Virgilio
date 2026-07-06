@@ -35,7 +35,7 @@ Questa e` la distinzione da usare prima di aprire un task o una branch.
 
 | Profilo | Moduli canonici | Snapshot / supporto | Nota |
 |---|---|---|---|
-| Google-only | `apps_script/src/*.gs`, `apps_script/src/virgilio.html` | `apps_script/clasp/*.js`, `apps_script/clasp/virgilio.html`, `apps_script/clasp/appsscript.json` | la sorgente canonica e` in `apps_script/src`; `clasp` e` solo mirror di sincronizzazione |
+| Google-only | `apps_script/src/*.gs`, `apps_script/src/virgilio.html`, `apps_script/src/appsscript.json` | `.clasp.json`, `clasp` CLI | la sorgente canonica e` in `apps_script/src`; `clasp` sincronizza direttamente quella cartella |
 | Local connector | `local_connector/src/virgilio_connector/*.py` | `local_connector/tests/`, `local_connector/tests/fixtures/`, `local_connector/scripts/` | resta locale, offline e testabile senza servizi reali |
 
 ## Lessico ufficiale

@@ -2,7 +2,7 @@
 
 ## Ambito
 
-Questo workflow vale solo per il profilo Google-only, cioe` per `apps_script/src` e `apps_script/clasp`.
+Questo workflow vale solo per il profilo Google-only, cioe` per il progetto Apps Script in `apps_script/src`.
 Se il task tocca `local_connector`, non usare `clasp` e resta nel flusso locale.
 
 ## Prerequisiti
@@ -46,16 +46,16 @@ clasp login
 
 - Identificare la cartella Apps Script nel repository.
 - La sorgente canonica vive in `apps_script/src`.
-- La snapshot gestita da `clasp` vive in `apps_script/clasp`.
-- Verificare se esiste `.clasp.json`.
-- Se manca `.clasp.json`, prima ottenere lo `scriptId` dal progetto reale e poi collegare la cartella.
+- `appsscript.json` vive in `apps_script/src`.
+- `.clasp.json` vive nella root del repo e punta a `apps_script/src`.
+- Non esiste una cartella mirror separata.
+- Se manca `.clasp.json`, prima ottenere lo `scriptId` dal progetto reale e poi crearla alla root del repo.
 - Non creare `.clasp.json` senza autorizzazione esplicita quando serve salvare il collegamento.
 - Non committare `.clasprc.json`.
 
 Comandi essenziali:
 
 ```powershell
-clasp clone <SCRIPT_ID> apps_script
 clasp pull
 clasp status
 ```
