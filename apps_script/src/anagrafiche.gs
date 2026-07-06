@@ -28,11 +28,11 @@ const ANAGRAFICA_TABS = {
 
 // Dati default Team — verificare e correggere le email dopo inizializzazione
 const _TEAM_DEFAULT = [
-  { nome: 'Marco',     email: 'marco@sigmapiu.it',     ruolo: 'Tecnico' },
-  { nome: 'Giulia',    email: 'giulia@sigmapiu.it',    ruolo: 'Tecnico' },
-  { nome: 'Francesco', email: 'francesco@sigmapiu.it', ruolo: 'Tecnico' },
-  { nome: 'Sara',      email: 'sara@sigmapiu.it',      ruolo: 'Tecnico' },
-  { nome: 'Luca',      email: 'luca@sigmapiu.it',      ruolo: 'Tecnico' },
+  { nome: 'Tecnico 1',     email: 'account.1@example.invalid',     ruolo: 'Tecnico' },
+  { nome: 'Tecnico 2',    email: 'account.2@example.invalid',    ruolo: 'Tecnico' },
+  { nome: 'Tecnico 3', email: 'account.3@example.invalid', ruolo: 'Tecnico' },
+  { nome: 'Tecnico 4',      email: 'account.4@example.invalid',      ruolo: 'Tecnico' },
+  { nome: 'Tecnico 5',      email: 'account.5@example.invalid',      ruolo: 'Tecnico' },
 ];
 
 // Vocabolario pratiche — specchio di CONFIG.TIPI_PRATICA con descrizioni

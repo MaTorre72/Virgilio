@@ -34,13 +34,13 @@ def write_config(tmp_path: Path) -> Path:
     tmp_path.mkdir(parents=True, exist_ok=True)
     path = tmp_path / "accounts.yaml"
     path.write_text("""accounts:
-  - account_alias: marco_sigmapiu
-    email: marco@example.invalid
+  - account_alias: account_1
+    email: account.1@example.invalid
     provider_hint: gmail_workspace
     imap_host: imap.gmail.com
     imap_port: 993
-    username_env: VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME
-    password_env: VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD
+    username_env: VIRGILIO_IMAP_ACCOUNT_1_USERNAME
+    password_env: VIRGILIO_IMAP_ACCOUNT_1_PASSWORD
     input_folder: Virgilio/da-traghettare
     done_folder: Virgilio/traghettate
     error_folder: Virgilio/errore
@@ -168,16 +168,16 @@ class FakeAckMailbox:
 
 def test_loads_multi_account_yaml_without_secret_values(tmp_path):
     accounts = load_multi_account_config(write_config(tmp_path))
-    assert [account.account_alias for account in accounts] == ["marco_sigmapiu", "disabled_box"]
-    assert accounts[0].email == "marco@example.invalid"
+    assert [account.account_alias for account in accounts] == ["account_1", "disabled_box"]
+    assert accounts[0].email == "account.1@example.invalid"
     assert accounts[0].max_messages == 7
-    assert accounts[0].password_env == "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD"
+    assert accounts[0].password_env == "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD"
 
 
 def test_scaffold_local_config_is_valid_and_secret_free(tmp_path):
     config_path = tmp_path / "accounts.local.yaml"
     content = scaffold_local_config(
-        email="marco.rossi@example.com",
+        email="account.1@example.com",
         staging_dir=tmp_path / "staging",
     )
     config_path.write_text(content, encoding="utf-8")
@@ -185,8 +185,8 @@ def test_scaffold_local_config_is_valid_and_secret_free(tmp_path):
     accounts = load_multi_account_config(config_path)
     storage = load_storage_config(config_path)
     assert load_rules(config_path).default_action == "include"
-    assert accounts[0].account_alias == "marco_rossi"
-    assert accounts[0].username_env == "VIRGILIO_IMAP_MARCO_ROSSI_USERNAME"
+    assert accounts[0].account_alias == "account_1"
+    assert accounts[0].username_env == "VIRGILIO_IMAP_ACCOUNT_1_USERNAME"
     assert storage.staging_dir == tmp_path / "staging"
     assert "password-app-o-token" in content
     assert "TOP_SECRET" not in content
@@ -223,13 +223,13 @@ def test_rejects_duplicate_alias(tmp_path):
 
 def test_missing_env_vars_fail_closed_without_network(tmp_path):
     account = LocalImapAccount(
-        account_alias="marco_sigmapiu",
-        email="marco@example.invalid",
+        account_alias="account_1",
+        email="account.1@example.invalid",
         provider_hint="gmail_workspace",
         imap_host="imap.gmail.com",
         imap_port=993,
-        username_env="VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME",
-        password_env="VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD",
+        username_env="VIRGILIO_IMAP_ACCOUNT_1_USERNAME",
+        password_env="VIRGILIO_IMAP_ACCOUNT_1_PASSWORD",
         input_folder="Virgilio/da-traghettare",
         done_folder="Virgilio/traghettate",
         error_folder="Virgilio/errore",
@@ -242,7 +242,7 @@ def test_missing_env_vars_fail_closed_without_network(tmp_path):
         mailbox_factory=lambda *_: calls.append("network"),
     ).scan(dry_run=True)
     assert result[0].status == "error"
-    assert "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME" in result[0].error
+    assert "VIRGILIO_IMAP_ACCOUNT_1_USERNAME" in result[0].error
     assert calls == []
 
 
@@ -253,13 +253,13 @@ def test_dry_run_scans_enabled_accounts_without_writing_state(tmp_path):
         accounts,
         paths=paths,
         environ={
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+            "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
         },
         mailbox_factory=lambda config, root: FakeMailbox(config, root),
     ).scan(dry_run=True)
     assert [(item.account_alias, item.status, item.messages_seen) for item in result] == [
-        ("marco_sigmapiu", "ok", 2),
+        ("account_1", "ok", 2),
         ("disabled_box", "disabled", 0),
     ]
     assert paths.state_db.is_file()
@@ -274,8 +274,8 @@ def test_non_dry_run_records_account_alias_separately(tmp_path):
         accounts,
         paths=paths,
         environ={
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+            "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
         },
         mailbox_factory=lambda config, root: FakeMailbox(config, root),
     ).scan(dry_run=False)
@@ -284,10 +284,10 @@ def test_non_dry_run_records_account_alias_separately(tmp_path):
         runs = db.execute("SELECT account_alias,messages_seen,attachments_seen,status FROM runs").fetchall()
         messages = db.execute("SELECT account_alias,message_uid,mailbox FROM messages ORDER BY message_uid").fetchall()
         attachments = db.execute("SELECT COUNT(*) FROM attachments").fetchone()[0]
-    assert runs == [("marco_sigmapiu", 2, 0, "completed")]
+    assert runs == [("account_1", 2, 0, "completed")]
     assert messages == [
-        ("marco_sigmapiu", "41", "Virgilio/da-traghettare"),
-        ("marco_sigmapiu", "42", "Virgilio/da-traghettare"),
+        ("account_1", "41", "Virgilio/da-traghettare"),
+        ("account_1", "42", "Virgilio/da-traghettare"),
     ]
     assert attachments == 0
 
@@ -300,8 +300,8 @@ def process(tmp_path, *, dry_run=False, scanner=None):
         accounts,
         paths=paths,
         environ={
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+            "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
         },
         mailbox_factory=lambda config, root: FakeProcessMailbox(config, root),
         scanner=scanner,
@@ -312,7 +312,7 @@ def process(tmp_path, *, dry_run=False, scanner=None):
 def test_process_dry_run_lists_candidate_attachments_without_files_or_db(tmp_path):
     result, paths = process(tmp_path, dry_run=True)
     assert len(result) == 2
-    assert result[0].account_alias == "marco_sigmapiu"
+    assert result[0].account_alias == "account_1"
     assert result[0].original_filename == "report.pdf"
     assert result[0].quarantine_status == "quarantined_unverified"
     assert result[0].saved is False
@@ -328,7 +328,7 @@ def test_process_writes_quarantine_manifest_and_sqlite_per_account(tmp_path):
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["schema_version"] == "1.0"
     assert manifest["connector_type"] == "local_imap"
-    assert manifest["account_alias"] == "marco_sigmapiu"
+    assert manifest["account_alias"] == "account_1"
     assert manifest["source_email"] == "user@example.invalid"
     assert manifest["source_sender"] == "sender@example.invalid"
     assert manifest["source_mailbox"] == "Virgilio/da-traghettare"
@@ -347,14 +347,14 @@ def test_process_writes_quarantine_manifest_and_sqlite_per_account(tmp_path):
     assert manifest["fingerprint"] == result[0].fingerprint
     assert manifest["audit_trail"][-1]["action"] == "manifest_created"
     assert all(item["machine_id"] for item in manifest["audit_trail"])
-    assert len(list((paths.root / "accounts" / "marco_sigmapiu" / "quarantine" / "ready").rglob("*.pdf"))) == 2
+    assert len(list((paths.root / "accounts" / "account_1" / "quarantine" / "ready").rglob("*.pdf"))) == 2
     with sqlite3.connect(paths.state_db) as db:
         assert db.execute("SELECT fingerprint FROM attachments").fetchone()[0] == result[0].fingerprint
         rows = db.execute("""SELECT a.account_alias,a.attachment_id,a.source_email,
             a.status,a.manifest_path,m.message_uid,m.message_id,m.subject
             FROM attachments a JOIN messages m ON m.id=a.message_id
             ORDER BY m.message_uid""").fetchall()
-    assert rows[0][0] == "marco_sigmapiu"
+    assert rows[0][0] == "account_1"
     assert rows[0][2] == "user@example.invalid"
     assert rows[0][3] == "ready_for_caronte"
     assert rows[0][4] == result[0].manifest_path
@@ -368,8 +368,8 @@ def test_process_falls_back_to_config_email_when_username_is_not_an_email(tmp_pa
         accounts,
         paths=paths,
         environ={
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "imap-user",
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+            "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "imap-user",
+            "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
         },
         mailbox_factory=lambda config, root: FakeProcessMailbox(config, root),
         scanner=FakeScanner(ScanVerdict.CLEAN),
@@ -377,7 +377,7 @@ def test_process_falls_back_to_config_email_when_username_is_not_an_email(tmp_pa
     exported = next(item for item in result if item.manifest_path)
     manifest_path = paths.root / exported.manifest_path
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["source_email"] == "marco@example.invalid"
+    assert manifest["source_email"] == "account.1@example.invalid"
 
 
 def test_process_is_idempotent_for_same_attachment_id_and_sha(tmp_path):
@@ -406,7 +406,7 @@ def test_process_detects_attachment_id_sha_conflict(tmp_path):
 def test_process_maps_scanner_verdicts_prudently(tmp_path):
     infected, paths = process(tmp_path, scanner=FakeScanner(ScanVerdict.INFECTED))
     assert infected[0].quarantine_status == "rejected_malware"
-    assert len(list((paths.root / "accounts" / "marco_sigmapiu" / "quarantine" / "rejected").rglob("*.pdf"))) == 2
+    assert len(list((paths.root / "accounts" / "account_1" / "quarantine" / "rejected").rglob("*.pdf"))) == 2
     failed, _ = process(tmp_path / "failed", scanner=FailingScanner())
     assert failed[0].quarantine_status == "scan_failed"
     assert failed[0].scan_result == "failed"
@@ -477,7 +477,7 @@ def test_storage_real_copy_manifest_hash_and_sqlite(tmp_path):
     manifest = json.loads(staged_manifest.read_text(encoding="utf-8"))
     assert manifest["storage_adapter"] == "local_filesystem"
     assert manifest["staged_filename"] == staged_file.name
-    assert manifest["account_alias"] == "marco_sigmapiu"
+    assert manifest["account_alias"] == "account_1"
     assert manifest["source_mailbox"] == "Virgilio/da-traghettare"
     assert manifest["status_reason"] == "fake clean"
     forbidden = {"password", "token", "file_bytes", "base64", "content", "raw"}
@@ -573,8 +573,8 @@ def complete(paths, accounts, *, dry_run=False, mailbox_factory=None):
         accounts,
         paths=paths,
         environ={
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+            "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
         },
         mailbox_factory=mailbox_factory or (lambda account: FakeAckMailbox(account)),
     ).complete(dry_run=dry_run)
@@ -585,8 +585,8 @@ def controlled_ack(paths, accounts, *, dry_run=False, mailbox_factory=None):
         accounts,
         paths=paths,
         environ={
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+            "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
         },
         mailbox_factory=mailbox_factory or (lambda account: FakeAckMailbox(account)),
     ).run(dry_run=dry_run)
@@ -652,15 +652,15 @@ def test_completion_real_ack_updates_sqlite_and_report(tmp_path):
     assert result[0].status == "completed"
     assert result[0].report_path
     assert FakeAckMailbox.instances[0].calls == [
-        ("input_contains_uid", "marco_sigmapiu", "41"),
-        ("add_done_label_only", "marco_sigmapiu", "Virgilio/traghettate", "41"),
+        ("input_contains_uid", "account_1", "41"),
+        ("add_done_label_only", "account_1", "Virgilio/traghettate", "41"),
     ]
     all_calls = [str(call).upper() for inst in FakeAckMailbox.instances for call in inst.calls]
     for forbidden in ("EXPUNGE", "STORE", "DELETE", "MOVE", "SEEN"):
         assert not any(forbidden in call for call in all_calls)
     report = json.loads((paths.root / result[0].report_path).read_text(encoding="utf-8"))
     assert report["messages_completed"] == 2
-    assert report["results"][0]["account_alias"] == "marco_sigmapiu"
+    assert report["results"][0]["account_alias"] == "account_1"
     assert report["results"][0]["staged_attachments"]
     assert "password" not in json.dumps(report).lower()
     assert "base64" not in json.dumps(report).lower()
@@ -764,20 +764,20 @@ def test_completion_ack_failure_does_not_block_other_account(tmp_path):
             status,relative_path,reason,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (message_id, "second_box", "second-222-99-1", "second@example.invalid", 1,
              "x.pdf", "x.pdf", "application/pdf", 1, "a" * 64, "staged_storage",
-             "accounts/marco_sigmapiu/quarantine/ready/41/001-report.pdf", "test", "now"))
+             "accounts/account_1/quarantine/ready/41/001-report.pdf", "test", "now"))
         db.commit()
     second = LocalImapAccount(
         account_alias="second_box", email="second@example.invalid",
         provider_hint="generic", imap_host="imap.example.invalid", imap_port=993,
-        username_env="VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME",
-        password_env="VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD",
+        username_env="VIRGILIO_IMAP_ACCOUNT_1_USERNAME",
+        password_env="VIRGILIO_IMAP_ACCOUNT_1_PASSWORD",
         input_folder="INBOX", done_folder="done", error_folder="error",
         ack_enabled=True, ack_strategy="add_done_label_only",
     )
     results = complete(paths, (accounts[0], second),
-        mailbox_factory=lambda account: FakeAckMailbox(account, fail=account.account_alias == "marco_sigmapiu"))
+        mailbox_factory=lambda account: FakeAckMailbox(account, fail=account.account_alias == "account_1"))
     statuses = {item.account_alias: item.status for item in results}
-    assert statuses["marco_sigmapiu"] == "ack_failed"
+    assert statuses["account_1"] == "ack_failed"
     assert statuses["second_box"] == "completed"
 
 
@@ -828,17 +828,17 @@ def test_controlled_ack_real_run_blocks_on_candidate_conflict(tmp_path):
             FROM attachments ORDER BY id LIMIT 1""").fetchone()
     with sqlite3.connect(paths.state_db) as db:
         db.execute("""INSERT INTO runs(started_at,dry_run,status,messages_seen,attachments_seen,account_alias)
-            VALUES('now',0,'completed',1,1,'marco_sigmapiu')""")
+            VALUES('now',0,'completed',1,1,'account_1')""")
         run_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
         db.execute("""INSERT INTO messages(run_id,account_alias,mailbox,uidvalidity,message_uid,
             message_id,subject,sender,message_date) VALUES(?,?,?,?,?,?,?,?,?)""",
-            (run_id, "marco_sigmapiu", "Virgilio/da-traghettare", "123", "77",
+            (run_id, "account_1", "Virgilio/da-traghettare", "123", "77",
              "<dup@example.invalid>", "Dup", "sender@example.invalid", "2026-06-25T10:00:00+00:00"))
         message_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
         db.execute("""INSERT INTO attachments(message_id,account_alias,attachment_id,source_email,
             ordinal,original_filename,sanitized_filename,declared_mime_type,size_bytes,sha256,
             status,relative_path,reason,fingerprint,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (message_id, "marco_sigmapiu", "dup-1", "user@example.invalid", 1, "dup.pdf", "dup.pdf",
+            (message_id, "account_1", "dup-1", "user@example.invalid", 1, "dup.pdf", "dup.pdf",
              "application/pdf", 1, "b" * 64, "staged_storage",
              base[2], "dup", base[0], "now"))
         db.commit()
@@ -1074,8 +1074,8 @@ def test_doctor_ready_with_scanner_warning(tmp_path):
         paths=LocalDataPaths(tmp_path / ".local_data"),
         scanner=FakeUnavailableScanner(),
         environ={
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
-            "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+            "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
         },
         mailbox_factory=lambda config: FakeDoctorMailbox(config),
     ).run()
@@ -1178,8 +1178,8 @@ def test_doctor_cli_human_output_shows_actions(tmp_path, monkeypatch, capsys):
     staging = tmp_path / "staging"
     staging.mkdir()
     config = doctor_config(tmp_path, staging)
-    monkeypatch.setenv("VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME", "user@example.invalid")
-    monkeypatch.setenv("VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD", "secret")
+    monkeypatch.setenv("VIRGILIO_IMAP_ACCOUNT_1_USERNAME", "user@example.invalid")
+    monkeypatch.setenv("VIRGILIO_IMAP_ACCOUNT_1_PASSWORD", "secret")
     monkeypatch.setattr(sys, "argv", [
         "virgilio", "doctor", "--config", str(config), "--human",
     ])

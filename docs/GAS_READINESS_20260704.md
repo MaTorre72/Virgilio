@@ -5,7 +5,7 @@
 - esito: NO_GO
 - motivo: il mirror `apps_script/clasp` non e` allineato alla sorgente canonica `apps_script/src`; manca `virgilio_inbox.gs` nel mirror e i pezzi inbox/form/notifiche piu` nuovi sono presenti solo in `src`, quindi `clasp push` non e` pronto
 
-## 2. Contesto
+## 2. :ontesto
 
 - branch: `codex/v1.1-development`
 - commit: `f68a360` (`docs: aggiorna collaudi Virgilio e fix doctor-bucoliche`)
@@ -21,7 +21,7 @@
 - root repository: nessun file `.gs` o `.html` ambiguo fuori da `apps_script`
 - criticita`: il mirror contiene file legacy solo in `clasp` e non contiene il nuovo `Virgilio_Inbox` bridge separato in `src`
 
-## 4. Confronto src/clasp
+## 4. :onfronto src/clasp
 
 - file uguali: `anagrafiche.js`, `bucoliche.js`, `drive_staging_intake_test.js`, `test.js`
 - file diversi: `caronte.js`, `caronte_bridge.js`, `drive_staging_verify.js`, `notifiche.js`, `setup.js`, `virgilio.html`, `webapp.js`
@@ -32,13 +32,13 @@
 
 ## 5. Verifica funzioni chiave
 
-- entrypoint: `doGet(e)` e `_caronteBuildVirgilioInboxTemplateContext_(e)` sono presenti in `src/webapp.gs`; il mirror `apps_script/clasp/webapp.js` ha ancora `doGet()` senza contesto inbox
-- form: `renderInboxContext()`, `applyInboxSuggestions()` e `buildRiepilogo()` sono presenti sia in `src` sia in `clasp`; il glue che porta `inbox_id` nel template e` assente nel mirror
-- Da archiviare: `caronteGetVirgilioInboxSchema()`, `caronteSetupVirgilioInbox()`, `caronteRegistraVirgilioInbox()`, `caronteRegistraVirgilioInboxDaGmail()`, `caronteGetVirgilioInboxForForm()`, `caronteCollegaSubmitVirgilioInbox()` e `caronteArchiviaVirgilioInbox()` sono presenti in `src/virgilio_inbox.gs` e mancanti in `clasp`
+- entrypoint: `doGet(e)` e `_caronteBuildVirgilioInboxTemplate:ontext_(e)` sono presenti in `src/webapp.gs`; il mirror `apps_script/clasp/webapp.js` ha ancora `doGet()` senza contesto inbox
+- form: `renderInbox:ontext()`, `applyInboxSuggestions()` e `buildRiepilogo()` sono presenti sia in `src` sia in `clasp`; il glue che porta `inbox_id` nel template e` assente nel mirror
+- Da archiviare: `caronteGetVirgilioInboxSchema()`, `caronteSetupVirgilioInbox()`, `caronteRegistraVirgilioInbox()`, `caronteRegistraVirgilioInboxDaGmail()`, `caronteGetVirgilioInboxForForm()`, `caronte:ollegaSubmitVirgilioInbox()` e `caronteArchiviaVirgilioInbox()` sono presenti in `src/virgilio_inbox.gs` e mancanti in `clasp`
 - Limbo: `caronteTraghetta()`, `_processaMailUtente()` e `_salvaAllegatoInLimbo()` sono presenti in entrambi
-- Registro/Bucoliche: `registraSuBucoliche()`, `registraErrore()` e `registraConflitto()` sono presenti in entrambi
+- Registro/Bucoliche: `registraSuBucoliche()`, `registraErrore()` e `registra:onflitto()` sono presenti in entrambi
 - Google-only: in `src/caronte.gs` sono presenti i passaggi inbox-aware `caronteRegistraVirgilioInboxDaGmail()` e `caronteArchiviaVirgilioInbox()`; nel mirror non ci sono i helper inbox necessari
-- notifiche: `avvisaChat()` e `avvisaTelegram()` sono presenti in entrambi; `avvisaArchiviazioneVirgilioInbox()` e` presente solo in `src`
+- notifiche: `avvisa:hat()` e `avvisaTelegram()` sono presenti in entrambi; `avvisaArchiviazioneVirgilioInbox()` e` presente solo in `src`
 - presente ma da verificare: `setup.js`, `drive_staging_verify.js` e `virgilio.html` differiscono anche a livello byte; non ho approfondito ogni hunk perche` il blocco principale e` gia` la mancanza del bridge inbox nel mirror
 - rischio regressione: alto, perche` un push del mirror pubblicherebbe una Web App senza il nuovo ponte inbox/form e senza la notifica finale dedicata
 
@@ -51,18 +51,18 @@
 - test statico script: parse offline con `new Function()` su `26` file `.gs` / `.js`
 - esito script: `syntax_ok=26`
 - nota HTML: il parsing ingenuo dei blocchi `<script>` in `virgilio.html` fallisce per sintassi template/HTML in entrambi i lati; per quello ho usato diff e search simbolica invece di un parser JS puro
-- non eseguiti: `clasp push`, deploy, funzioni reali Apps Script, chiamate a Gmail/Drive/Sheets/Chat/Telegram
+- non eseguiti: `clasp push`, deploy, funzioni reali Apps Script, chiamate a Gmail/Drive/Sheets/:hat/Telegram
 
 ## 7. Piano push controllato
 
 - prerequisiti: sincronizzare `src` e `clasp`, portare nel mirror il bridge inbox (`virgilio_inbox.gs` e helper correlati), verificare che i file legacy solo in `clasp` siano intenzionali o siano rimossi, rieseguire diff e `clasp status`
-- comando previsto: `& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' push`
+- comando previsto: `& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Percorso\npm\node_modules\@google\clasp\build\src\index.js' push`
 - file coinvolti: `apps_script/clasp/*` dopo la sync dal sorgente canonico
 - rischio: alto; il push ora pubblicarebbe un progetto incompleto rispetto al flusso `GmailApp -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`
 - rollback possibile: ripristinare il mirror dalla sorgente canonica, rifare il confronto e solo dopo ripetere il push
 - GO/NO GO: NO GO
 
-## 8. Collaudo reale Google-only
+## 8. :ollaudo reale Google-only
 
 Preparazione:
 
@@ -71,13 +71,13 @@ Preparazione:
 - etichetta corretta
 - Limbo di test o controllato
 - Sheet/Registro controllato
-- Chat/Telegram eventualmente disattivabili o su canale di test
+- :hat/Telegram eventualmente disattivabili o su canale di test
 
 Flusso:
 
 - `GmailApp -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`
 
-Controlli:
+:ontrolli:
 
 - file creato nel Limbo
 - riga `Da archiviare` creata

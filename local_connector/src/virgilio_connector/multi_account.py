@@ -238,8 +238,8 @@ def load_multi_account_config(path: str | Path) -> tuple[LocalImapAccount, ...]:
     Supported shape:
 
     accounts:
-      - account_alias: marco_sigmapiu
-        email: marco@example.invalid
+      - account_alias: account_1
+        email: account.1@example.invalid
         ...
     """
     raw_accounts, _ = _parse_config_yaml(Path(path))

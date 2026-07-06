@@ -1,11 +1,11 @@
 accounts:
-  - account_alias: marco_sigmapiu
-    email: marco@example.invalid
+  - account_alias: account_1
+    email: account.1@example.invalid
     provider_hint: gmail_workspace
     imap_host: imap.gmail.com
     imap_port: 993
-    username_env: VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME
-    password_env: VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD
+    username_env: VIRGILIO_IMAP_ACCOUNT_1_USERNAME
+    password_env: VIRGILIO_IMAP_ACCOUNT_1_PASSWORD
     input_folder: Virgilio/da-traghettare
     done_folder: Virgilio/traghettate
     error_folder: Virgilio/errore

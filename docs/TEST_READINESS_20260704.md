@@ -33,7 +33,7 @@
 - `clasp push` e qualsiasi deploy/sync Apps Script non sono stati eseguiti
 - non e` stata toccata una mailbox non di test
 
-## 5. Comandi pronti per Marco
+## 5. Comandi pronti
 
 ### Caricamento env locale
 
@@ -46,7 +46,7 @@ Se lanci i comandi dal repo root, ricorda che questi valori di `local_connector\
 ### Collaudi locali
 
 ```powershell
-cd C:\Users\Marco\Documents\Virgilio
+cd "$env:USERPROFILE\Documents\Virgilio"
 $env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
 local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config local_connector\accounts.local.yaml --human
 local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --dry-run --human
@@ -59,7 +59,7 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --confi
 ### Smoke consigliato
 
 ```powershell
-cd C:\Users\Marco\Documents\Virgilio
+cd "$env:USERPROFILE\Documents\Virgilio"
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1
 ```
 
@@ -68,8 +68,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_conn
 ```powershell
 & 'C:\Program Files (x86)\nodejs\node.exe' -v
 & 'C:\Program Files (x86)\nodejs\npm.cmd' -v
-& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' --version
-& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' status
+& 'C:\Program Files (x86)\nodejs\node.exe' '$env:APPDATA\npm\node_modules\@google\clasp\build\src\index.js' --version
+& 'C:\Program Files (x86)\nodejs\node.exe' '$env:APPDATA\npm\node_modules\@google\clasp\build\src\index.js' status
 ```
 
 ## 6. Criteri per il prossimo passaggio

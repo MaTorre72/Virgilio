@@ -438,7 +438,7 @@ function testNotificheArchiviazioneInbox() {
     sito: 'Sito Demo',
     pratica: 'AIA',
     anno: '2026',
-    tecnici: ['Marco', 'Sara'],
+    tecnici: ['Tecnico 1', 'Tecnico 2'],
     note: 'nota <urgente>',
     urlCartella: 'https://drive.google.com/drive/folders/folder-pratica',
     urlCorrispondenza: 'https://drive.google.com/drive/folders/folder-corrispondenza',

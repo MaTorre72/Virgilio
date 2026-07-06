@@ -87,7 +87,7 @@ Conseguenza pratica:
 | `anagrafiche.gs` | `_leggiTipiPratica` | Legge il vocabolario pratiche | spreadsheet | array oggetti | `SpreadsheetApp` | Si | Specchio del form |
 | `anagrafiche.gs` | `_getFoglioAnagrafica` | Helper tab lookup | spreadsheet, nome tab | sheet | `SpreadsheetApp` | Si | Errore se tab mancante |
 | `anagrafiche.gs` | `_assicuraTabClientiSiti` | Crea intestazione tab clienti/siti | spreadsheet | tab pronto | `SpreadsheetApp` | Si | Header: cliente, sito, attivo, data_inserimento |
-| `anagrafiche.gs` | `_assicuraTabTeam` | Crea intestazione e righe default team | spreadsheet | tab pronto | `SpreadsheetApp` | Si | Popola default Marco, Giulia, Francesco, Sara, Luca |
+| `anagrafiche.gs` | `_assicuraTabTeam` | Crea intestazione e righe default team | spreadsheet | tab pronto | `SpreadsheetApp` | Si | Popola default tecnici generici |
 | `anagrafiche.gs` | `_assicuraTabTipiPratica` | Crea intestazione e vocabolario pratiche | spreadsheet | tab pronto | `SpreadsheetApp` | Si | Include AUA, AIA, VIA, EoW, TR, bonifica, emissioni, rifiuti, sottoprodotti, PEI, PEE, reportAIA, assistenza |
 | `anagrafiche.gs` | `_formattaIntestazioneAnagrafica` | Formatta header anagrafico | sheet, numero colonne | stile | `SpreadsheetApp` | Si | Riutilizzabile |
 | `notifiche.gs` | `avvisaTeam` | Orchestratore notifiche post-creazione pratica | dati pratica + url | Chat + Telegram | `avvisaChat`, `avvisaTelegram`, builder messaggi | Si | Nessun canale blocca il flusso |

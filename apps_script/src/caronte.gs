@@ -46,7 +46,7 @@ const CONFIG = {
 
   // Utenti Gmail da monitorare
   UTENTI: [
-    'marco@sigmapiu.it',
+    'account.1@example.invalid',
     // 'nnnnnnnnnnnnn@sigmapiu.it',
     // 'nnnnnnnnnnnnn@sigmapiu.it',
   ],

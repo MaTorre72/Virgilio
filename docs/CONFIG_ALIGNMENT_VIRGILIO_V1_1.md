@@ -42,7 +42,7 @@
 - staging locale: `VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED` e `VIRGILIO_LOCAL_DRIVE_STAGING_DIR`
 - Bucoliche: `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`
 - autenticazione Google: `VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON`, `VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH`, `VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH`
-- account multi-mailbox: `VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME`, `VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD`
+- account multi-mailbox: `VIRGILIO_IMAP_ACCOUNT_1_USERNAME`, `VIRGILIO_IMAP_ACCOUNT_1_PASSWORD`
 
 ## 4. Mappa GAS
 
@@ -84,7 +84,7 @@
 
 ```powershell
 $ErrorActionPreference = 'Stop'
-Set-Location 'C:\Users\Marco\Documents\Virgilio'
+Set-Location "$env:USERPROFILE\Documents\Virgilio"
 
 $branch = git branch --show-current
 if ($branch -ne 'codex/v1.1-development') {

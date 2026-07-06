@@ -375,8 +375,8 @@ def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
                 accounts,
                 paths=paths,
                 environ={
-                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
-                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+                    "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+                    "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
                 },
                 mailbox_factory=lambda account, root: IsolatedScanMailbox(account, root),
             ),
@@ -384,8 +384,8 @@ def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
                 accounts,
                 paths=paths,
                 environ={
-                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
-                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+                    "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+                    "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
                 },
                 mailbox_factory=lambda account, root: IsolatedProcessMailbox(account, root),
                 scanner=FakeScanner(ScanVerdict.CLEAN),
@@ -399,8 +399,8 @@ def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
                 accounts,
                 paths=paths,
                 environ={
-                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_USERNAME": "user@example.invalid",
-                    "VIRGILIO_IMAP_MARCO_SIGMAPIU_PASSWORD": "secret",
+                    "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+                    "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
                 },
                 mailbox_factory=lambda account: IsolatedAckMailbox(account),
             ),

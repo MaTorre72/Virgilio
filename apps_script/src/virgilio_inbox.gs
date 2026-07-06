@@ -1085,7 +1085,7 @@ function testVirgilioInboxSchema() {
     pratica: 'AIA',
     anno: '2026',
     note: 'nota utente',
-    tecnici: ['Marco', 'Sara'],
+    tecnici: ['Tecnico 1', 'Tecnico 2'],
     submitted_at: '2026-07-01 20:00:00',
   });
   _driveStagingAssert_(linkedEntry.status === 'in_lavorazione', 'submit cambia stato inbox');
@@ -1106,16 +1106,16 @@ function testVirgilioInboxSchema() {
   const gmailDraft = caronteBuildVirgilioInboxDraftFromGmail({
     created_at: '2026-07-03T10:00:00Z',
     command_id: 'gmail_staging',
-    account_alias: 'marco@sigmapiu.it',
-    source_email: 'marco@sigmapiu.it',
+    account_alias: 'account_1',
+    source_email: 'account.1@example.invalid',
     source_message_id: 'msg-gmail-123',
     source_message_uid: 'thread-gmail-123',
     attachment_index: 0,
     original_filename: 'analisi.pdf',
     staged_filename: '2026-07-03_cliente_msg-gmail-123_analisi.pdf',
     source_subject: 'Documento da archiviare',
-    source_sender: 'Mario Rossi <mario@example.com>',
-    source_mailbox: 'marco@sigmapiu.it',
+    source_sender: 'Sender Demo <sender@example.com>',
+    source_mailbox: 'account.1@example.invalid',
     source_message_date: '2026-07-03 10:00:00',
     note: 'salvato dal polling Gmail',
   }, {

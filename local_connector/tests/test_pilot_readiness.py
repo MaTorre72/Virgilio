@@ -698,7 +698,7 @@ def test_init_config_cli_writes_valid_template(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", [
         "virgilio", "init-config",
         "--output", str(output),
-        "--email", "marco.rossi@example.com",
+        "--email", "account.1@example.com",
         "--staging-dir", str(tmp_path / "staging"),
     ])
     assert main() == 0
@@ -706,7 +706,7 @@ def test_init_config_cli_writes_valid_template(tmp_path, monkeypatch, capsys):
     assert payload["status"] == "written"
     assert output.is_file()
     assert load_storage_config(output).staging_dir == tmp_path / "staging"
-    assert load_multi_account_config(output)[0].account_alias == "marco_rossi"
+    assert load_multi_account_config(output)[0].account_alias == "account_1"
 
 
 def test_init_config_cli_dry_run_does_not_write(tmp_path, monkeypatch, capsys):

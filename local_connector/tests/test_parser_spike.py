@@ -51,7 +51,7 @@ def _write_docx(path: Path) -> None:
     <w:p><w:r><w:t>Decision Approved</w:t></w:r></w:p>
     <w:tbl>
       <w:tr><w:tc><w:p><w:r><w:t>Owner</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Task</w:t></w:r></w:p></w:tc></w:tr>
-      <w:tr><w:tc><w:p><w:r><w:t>Marco</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Follow up</w:t></w:r></w:p></w:tc></w:tr>
+      <w:tr><w:tc><w:p><w:r><w:t>Tecnico 1</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>Follow up</w:t></w:r></w:p></w:tc></w:tr>
     </w:tbl>
   </w:body>
 </w:document>"""
