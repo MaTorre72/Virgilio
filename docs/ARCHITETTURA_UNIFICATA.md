@@ -9,7 +9,7 @@ README, AGENTS e backlog rimandano qui quando serve allineare il modello comune.
 
 ## Flusso unico
 
-Acquisizione -> Limbo -> Da archiviare -> Form -> Pratica finale -> Registro
+Acquisizione -> Quarantena locale eventuale -> Limbo Drive unico -> Da archiviare -> Form -> Pratica finale -> Registro
 
 ## Profili operativi
 
@@ -20,7 +20,7 @@ Dopo il collaudo, il profilo da usare resta quello coerente con la superficie de
 
 - Ingresso tecnico: `GmailApp`.
 - E` mono-account: usa una sola casella alla volta.
-- Usa il Limbo condiviso come prima area operativa visibile in Google Drive.
+- Usa il Limbo Drive condiviso unico come prima area operativa visibile in Google Drive.
 - Crea una riga in `Da archiviare` quando il documento e` pronto per la decisione umana.
 - E` il profilo da usare quando il task resta dentro Google Workspace, Apps Script e `clasp`.
 - Rimane il profilo semplice per chi lavora solo in Google Workspace.
@@ -29,7 +29,7 @@ Dopo il collaudo, il profilo da usare resta quello coerente con la superficie de
 
 - Ingresso tecnico: `IMAP locale`.
 - Puo` leggere una o piu` caselle, inclusa una casella Google Workspace via IMAP.
-- Passa prima da `Quarantena`, poi da `Scan`, poi nel Limbo.
+- Passa prima da `Quarantena locale`, poi da `Scan`, poi nel Limbo Drive unico.
 - Produce gli stessi oggetti operativi del profilo Google-only.
 - E` il profilo da usare quando il task deve restare offline, usare fixture e verifiche locali.
 - Rimane il profilo piu` sicuro per piu` caselle, piu` utenti e per la scansione prima del Limbo.
@@ -44,7 +44,7 @@ Dopo il collaudo, il profilo da usare resta quello coerente con la superficie de
 ## Lessico ufficiale
 
 - Quarantena: cartella locale non condivisa, prima della scansione.
-- Limbo: cartella Google Drive condivisa dei documenti acquisiti ma non ancora archiviati.
+- Limbo: unica cartella Google Drive condivisa dei documenti acquisiti ma non ancora archiviati.
 - Da archiviare: coda operativa umana dei documenti nel Limbo.
 - Registro: unico registro di audit.
 - Form: interfaccia umana Virgilio.

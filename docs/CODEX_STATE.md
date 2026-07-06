@@ -5,8 +5,8 @@
 - Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`
 - Task 0.0: chiuso
 - Ultimo task chiuso noto: `V114-T01 - Architettura operativa post-collaudo`
-- Task corrente consigliato: `V114-T02 - Flusso unico e cartelle`
-- Massimo due successivi: `V114-T03 - Modi operativi supportati`; `V114-T04 - Configurazione multi-account neutra`
+- Task corrente consigliato: `V114-T03 - Modi operativi supportati`
+- Massimo due successivi: `V114-T04 - Configurazione multi-account neutra`; `V114-T05 - Secrets hardening locale`
 - Blocchi aperti: nessuno noto; backlog v1.1.4 aperto
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline

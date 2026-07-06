@@ -27,7 +27,7 @@ Dopo il collaudo, vale la stessa regola: Google-only per Apps Script e Google Wo
 
 ## Stato architetturale
 
-Virgilio ha due ingressi tecnici e un solo flusso operativo: Google-only e Local connector confluiscono entrambi in `Limbo -> Da archiviare -> Form -> Pratica finale -> Registro`. Nella UX la coda si chiama `Da archiviare`; `Virgilio_Inbox` resta il nome tecnico del tab. Google-only resta mono-account; Local connector puo` essere multi-casella e leggere anche una casella Google Workspace via IMAP. La sorgente canonica Apps Script vive in `apps_script/src` e `clasp` sincronizza direttamente quella cartella; il local connector resta separato, locale e testabile senza servizi reali.
+Virgilio ha due ingressi tecnici e un solo flusso operativo: Acquisizione -> Quarantena locale eventuale -> Limbo Drive unico -> Da archiviare -> Form -> Pratica finale -> Registro. Nella UX la coda si chiama `Da archiviare`; `Virgilio_Inbox` resta il nome tecnico del tab. Google-only resta mono-account; Local connector puo` essere multi-casella e leggere anche una casella Google Workspace via IMAP. La sorgente canonica Apps Script vive in `apps_script/src` e `clasp` sincronizza direttamente quella cartella; il local connector resta separato, locale e testabile senza servizi reali.
 Il riferimento condiviso per lessico e flusso e` [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md).
 
 ## Componenti
