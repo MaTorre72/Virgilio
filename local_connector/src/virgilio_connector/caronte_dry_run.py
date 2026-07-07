@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
 from uuid import uuid4
@@ -17,6 +16,7 @@ from .models import (
     CONNECTOR_TYPE,
     REQUESTED_ACTION,
 )
+from .time_utils import rome_isoformat
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,7 +96,7 @@ def _load_commands(path: Path, config: CaronteDryRunConfig) -> tuple[CaronteComm
             ) for row in rows)
             commands.append(CaronteCommand(
                 schema_version=SCHEMA_VERSION, command_id=command_id,
-                created_at=datetime.now(timezone.utc).isoformat(),
+                created_at=rome_isoformat(),
                 connector_id=config.connector_id, connector_type=CONNECTOR_TYPE,
                 account_alias=config.account_alias, provider_hint=config.provider_hint,
                 mailbox=str(message["mailbox"]),

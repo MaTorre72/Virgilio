@@ -7,13 +7,13 @@ credentials, authentication tokens, or full request/response payloads.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from pathlib import Path
 import sqlite3
 from typing import Iterator
 
 from .models import QuarantineStatus, require_sha256
 from .quarantine import InvalidTransition, can_transition
+from .time_utils import rome_isoformat
 from .state_models import (
     AttachmentRecord,
     CommandAttemptRecord,
@@ -166,7 +166,7 @@ class StateStore:
             return result == "ok"
 
     def register_message(self, message: NewMessage) -> MessageRecord:
-        now = _utc_now()
+        now = _rome_now()
         identity = (
             message.account_alias,
             message.mailbox,
@@ -259,7 +259,7 @@ class StateStore:
                     raise StateConflictError(
                         "cannot acknowledge without an attachment confirmed in Limbo Drive"
                     )
-            now = _utc_now()
+            now = _rome_now()
             acknowledged_at = now if target is MessageStatus.ACKNOWLEDGED else current.acknowledged_at
             connection.execute(
                 """
@@ -290,7 +290,7 @@ class StateStore:
 
     def add_attachment(self, attachment: NewAttachment) -> AttachmentRecord:
         require_sha256(attachment.sha256)
-        now = _utc_now()
+        now = _rome_now()
         with self._transaction(write=True) as connection:
             self._get_message_in(connection, attachment.message_row_id)
             existing = connection.execute(
@@ -395,7 +395,7 @@ class StateStore:
                 raise StateConflictError(
                     "drive_file_id may be set only when transitioning to uploaded_to_limbo"
                 )
-            now = _utc_now()
+            now = _rome_now()
             connection.execute(
                 """
                 UPDATE attachments
@@ -452,7 +452,7 @@ class StateStore:
                     (command_id,),
                 ).fetchone()[0]
             )
-            now = _utc_now()
+            now = _rome_now()
             cursor = connection.execute(
                 """
                 INSERT INTO command_attempts (
@@ -491,7 +491,7 @@ class StateStore:
                 if succeeded
                 else CommandAttemptStatus.FAILED
             )
-            now = _utc_now()
+            now = _rome_now()
             connection.execute(
                 """
                 UPDATE command_attempts
@@ -690,5 +690,5 @@ def _event_from_row(row: sqlite3.Row) -> StateEvent:
     )
 
 
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+def _rome_now() -> str:
+    return rome_isoformat()

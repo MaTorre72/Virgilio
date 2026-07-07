@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+
+from .time_utils import rome_isoformat
 
 from .models import QuarantineStatus
 
@@ -46,7 +47,7 @@ class QuarantineRecord:
         return cls(
             local_temp_id=local_temp_id,
             status=QuarantineStatus.DOWNLOADED,
-            updated_at=_utc_now(),
+            updated_at=_rome_now(),
             reason="attachment bytes stored locally",
         )
 
@@ -64,7 +65,7 @@ class QuarantineRecord:
         return replace(
             self,
             status=target,
-            updated_at=updated_at or _utc_now(),
+            updated_at=updated_at or _rome_now(),
             reason=reason,
         )
 
@@ -73,5 +74,5 @@ def can_transition(source: QuarantineStatus, target: QuarantineStatus) -> bool:
     return target in _ALLOWED_TRANSITIONS[source]
 
 
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+def _rome_now() -> str:
+    return rome_isoformat()

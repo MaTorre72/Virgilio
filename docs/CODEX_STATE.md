@@ -4,11 +4,11 @@
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V114-T07 - Office attachments policy`
-- Task corrente consigliato: `V114-T08 - Timestamp Europe/Rome only`
-- Massimo due successivi: `V114-T09 - GAS setup e trigger Caronte`; `V114-T10 - Setup CLI ready-to-run`
+- Ultimo task chiuso noto: `V114-T08 - Timestamp Europe/Rome only`
+- Task corrente consigliato: `V114-T09 - GAS setup e trigger Caronte`
+- Massimo due successivi: `V114-T10 - Setup CLI ready-to-run`; `V114-T11 - GUI installazione locale fase 1`
 - Blocchi aperti: nessuno noto; backlog v1.1.4 aperto
-- Ultimo smoke locale: `scripts/dev/smoke_local_connector.ps1` -> `OK` (`297 passed in 30.14s`)
+- Ultimo smoke locale: `scripts/dev/smoke_local_connector.ps1` -> `OK` (`297 passed in 30.13s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

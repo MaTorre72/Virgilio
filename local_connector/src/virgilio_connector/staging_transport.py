@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -13,6 +12,7 @@ import sqlite3
 from typing import Callable
 
 from .readonly_state import ReadonlyStateStore
+from .time_utils import rome_isoformat
 
 
 MANIFEST_SCHEMA_VERSION = "1.0"
@@ -193,7 +193,7 @@ class LocalDriveStagingTransport:
             "source_message_id": row["resolved_source_message_id"],
             "source_message_uid": row["resolved_source_message_uid"],
             "account_alias": self.config.account_alias,
-            "staged_at": datetime.now(timezone.utc).isoformat(),
+            "staged_at": rome_isoformat(),
             "dry_run": False,
             "note": SYNC_NOT_VERIFIED_NOTE,
         }

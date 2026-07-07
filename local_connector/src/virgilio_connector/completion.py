@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sqlite3
@@ -15,6 +14,7 @@ from .imap_readonly import ImapCompletionMailbox
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountConfigError
 from .readonly_state import ReadonlyStateStore, ensure_state_db
+from .time_utils import rome_isoformat, rome_timestamp
 from .traceability import LocalConflictChecker, central_event_rows, load_machine_id
 
 
@@ -315,10 +315,9 @@ class LocalCompletionRunner:
     def _write_report(self, results: Sequence[CompletionResult]) -> str:
         reports = self.paths.root / "reports"
         reports.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        path = reports / f"completion_report_{timestamp}.json"
+        path = reports / f"completion_report_{rome_timestamp()}.json"
         payload = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": rome_isoformat(),
             "messages_candidates": len(results),
             "messages_completed": sum(1 for item in results if item.status in {"completed", "already_completed", "already_acked"}),
             "messages_skipped": sum(1 for item in results if item.status == "completion_skipped"),

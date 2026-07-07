@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 import hashlib
 import json
 import os
@@ -17,6 +16,7 @@ from .local_paths import LocalDataPaths
 from .policy import AttachmentPolicy, PolicyDecision
 from .ports import MessageReference
 from .readonly_state import ReadonlyStateStore, ensure_state_db
+from .time_utils import rome_isoformat
 from .scanner import LocalScanner, ScanVerdict, UnconfiguredScanner
 from .traceability import RuleSet, audit_entry, global_fingerprint, load_machine_id
 
@@ -558,7 +558,7 @@ class MultiAccountImapProcessor:
             "policy_included": included,
             "policy_rule": rule_name,
             "status_reason": reason,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": rome_isoformat(),
             "fingerprint": fingerprint,
             "audit_trail": [
                 audit_entry(machine_id, "attachment_quarantined", status,

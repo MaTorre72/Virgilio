@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 import json
 import os
 from pathlib import Path
@@ -14,6 +14,7 @@ from urllib.parse import quote
 
 from .readonly_state import ReadonlyStateStore, ensure_state_db
 from .traceability import central_event_rows
+from .time_utils import ROME_TZ, rome_isoformat, rome_min
 
 
 EVENT_COLUMNS = (
@@ -299,7 +300,7 @@ class BucolicheAppendOnlyAdapter:
     def _record(self, event_id: str, target: str, result: str,
                 error_type: str | None = None) -> None:
         ReadonlyStateStore(self.state_db).initialize()
-        now = datetime.now(timezone.utc).isoformat() if result == "exported" else None
+        now = rome_isoformat() if result == "exported" else None
         with closing(sqlite3.connect(self.state_db)) as db:
             db.execute("""INSERT INTO local_export_status(event_id,target_adapter,exported_at,
                 export_result,error_type) VALUES(?,?,?,?,?) ON CONFLICT(event_id,target_adapter)
@@ -309,7 +310,7 @@ class BucolicheAppendOnlyAdapter:
 
 
 def _event_row(row: Mapping[str, object]) -> dict:
-    exported_at = datetime.now(timezone.utc).isoformat()
+    exported_at = rome_isoformat()
     return {column: (exported_at if column == "exported_at" else row.get(column, ""))
             for column in EVENT_COLUMNS}
 
@@ -361,22 +362,22 @@ def _event_sort_key(row: Mapping[str, object]) -> tuple[datetime, str]:
 def _parse_timestamp(value: object) -> datetime:
     text = str(value or "").strip()
     if not text:
-        return datetime.min.replace(tzinfo=timezone.utc)
+        return rome_min()
     normalized = text.replace("Z", "+00:00")
     try:
         parsed = datetime.fromisoformat(normalized)
     except ValueError:
-        return datetime.min.replace(tzinfo=timezone.utc)
+        return rome_min()
     if parsed.tzinfo is None:
-        return parsed.astimezone()
-    return parsed
+        return parsed.replace(tzinfo=ROME_TZ)
+    return parsed.astimezone(ROME_TZ)
 
 
 def _to_local_timestamp(value: object) -> str:
     parsed = _parse_timestamp(value)
-    if parsed == datetime.min.replace(tzinfo=timezone.utc):
+    if parsed == rome_min():
         return ""
-    return parsed.astimezone().isoformat()
+    return parsed.astimezone(ROME_TZ).isoformat()
 
 
 def _resolved_global_state(row: Mapping[str, object]) -> str:

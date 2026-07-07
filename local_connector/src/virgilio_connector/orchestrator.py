@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 import hashlib
 import mimetypes
 from pathlib import Path
@@ -17,6 +16,7 @@ from .policy import AttachmentPolicy, PolicyDecision
 from .ports import AntivirusPort, CarontePort, MailboxPort, MessageReference
 from .state_db import StateStore
 from .state_models import MessageStatus, NewAttachment, NewMessage
+from .time_utils import rome_isoformat
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,7 +96,7 @@ class ConnectorOrchestrator:
         command_id = f"cmd-{uuid4()}"
         command = CaronteCommand(
             schema_version="1.0", command_id=command_id,
-            created_at=datetime.now(timezone.utc).isoformat(), connector_id=self.config.connector_id,
+            created_at=rome_isoformat(), connector_id=self.config.connector_id,
             connector_type="local_imap", account_alias=self.config.account_alias,
             provider_hint=self.config.provider_hint, mailbox=ref.mailbox,
             mailbox_uidvalidity=ref.uidvalidity, message_uid=ref.message_uid,

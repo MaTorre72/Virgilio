@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from pathlib import Path
 import json
 import sqlite3
+
+from .time_utils import rome_isoformat
 
 
 ATTACHMENT_STATES = (
@@ -421,7 +422,7 @@ class ReadonlyStateStore:
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return rome_isoformat()
 
 
 def ensure_state_db(local_data_dir: str | Path) -> tuple[Path, tuple[str, ...]]:

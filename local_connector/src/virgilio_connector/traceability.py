@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
 import csv
 import hashlib
 import json
@@ -12,9 +11,11 @@ import sqlite3
 from contextlib import closing
 import uuid
 
+from .time_utils import rome_isoformat, rome_timestamp
+
 
 REGISTRO_COLUMNS = (
-    "registro_id", "timestamp_utc", "ingresso", "fase", "oggetto",
+    "registro_id", "timestamp", "ingresso", "fase", "oggetto",
     "esito", "nota", "correlazioni_tecniche",
 )
 
@@ -146,7 +147,7 @@ def _make_rule(raw: dict[str, object]) -> ImapRule:
 
 def audit_entry(machine_id: str, action: str, status: str, account_alias: str,
                 entity_type: str, entity_id: str, details: dict | None = None) -> dict:
-    return {"ts": datetime.now(timezone.utc).isoformat(), "actor": "caronte_locale",
+    return {"ts": rome_isoformat(), "actor": "caronte_locale",
             "machine_id": machine_id, "action": action, "status": status,
             "account_alias": account_alias, "entity_type": entity_type,
             "entity_id": entity_id, "details": details or {}}
@@ -189,7 +190,7 @@ def export_central_events(state_db: Path, local_root: Path, format_name: str) ->
     rows = central_event_rows(state_db)
 
     out = local_root / "exports"; out.mkdir(parents=True, exist_ok=True)
-    target = out / f"central_events_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.{format_name}"
+    target = out / f"central_events_{rome_timestamp()}.{format_name}"
     if format_name == "jsonl":
         target.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
     elif format_name == "csv":
@@ -204,7 +205,7 @@ def export_registro_events(state_db: Path, local_root: Path, format_name: str) -
     rows = registro_event_rows(state_db)
 
     out = local_root / "exports"; out.mkdir(parents=True, exist_ok=True)
-    target = out / f"registro_events_{datetime.now(timezone.utc):%Y%m%d_%H%M%S}.{format_name}"
+    target = out / f"registro_events_{rome_timestamp()}.{format_name}"
     if format_name == "jsonl":
         target.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
     elif format_name == "csv":
@@ -264,7 +265,7 @@ def registro_event_rows(state_db: Path) -> list[dict]:
 def _registro_row(row: dict) -> dict:
     return {
         "registro_id": row["event_id"],
-        "timestamp_utc": row.get("created_at", ""),
+        "timestamp": row.get("created_at", ""),
         "ingresso": "Local connector",
         "fase": _registro_phase(row),
         "oggetto": _registro_object(row),

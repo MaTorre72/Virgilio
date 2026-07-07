@@ -924,7 +924,7 @@ function _virgilioInboxEntryToRow_(entry) {
 
 function _virgilioInboxGenerateId_(now, customFactory) {
   if (typeof customFactory === 'function') return customFactory();
-  const prefix = Utilities.formatDate(now || new Date(), 'UTC', "yyyyMMddHHmmss");
+  const prefix = Utilities.formatDate(now || new Date(), 'Europe/Rome', "yyyyMMddHHmmss");
   return `inbox-${prefix}-${Utilities.getUuid()}`;
 }
 

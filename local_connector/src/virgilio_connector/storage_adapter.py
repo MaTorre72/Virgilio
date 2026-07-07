@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -14,6 +13,7 @@ from .files import sanitize_filename, sha256_file
 from .multi_account import LocalStorageConfig
 from .readonly_state import ReadonlyStateStore, ensure_state_db
 from .traceability import audit_entry, load_machine_id
+from .time_utils import rome_isoformat
 
 
 class StorageAdapterError(RuntimeError):
@@ -155,7 +155,7 @@ class LocalFilesystemStorageAdapter:
             staged_manifest.update({
                 "staged_filename": staged_name,
                 "storage_adapter": self.config.adapter,
-                "staged_at": datetime.now(timezone.utc).isoformat(),
+                "staged_at": rome_isoformat(),
                 "note": "File staged by local filesystem adapter; no IMAP ack performed.",
             })
             staged_manifest.setdefault("audit_trail", []).append(audit_entry(

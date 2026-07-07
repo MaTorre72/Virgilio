@@ -4,6 +4,7 @@ from pathlib import Path
 import sqlite3
 import sys
 from contextlib import closing
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -557,11 +558,12 @@ def test_refresh_bucoliche_state_exposes_local_timestamp_and_state_paths(tmp_pat
              "f" * 64, "attachment_staged", "ok", '{"step":"staged"}'))
         conn.commit()
     row = adapter(db, FakeSheets(), enabled=False).refresh_state(dry_run=True).preview[0]
-    expected = datetime.fromisoformat("2026-06-30T10:00:00+00:00").astimezone()
+    rome = ZoneInfo("Europe/Rome")
+    expected = datetime.fromisoformat("2026-06-30T10:00:00+00:00").astimezone(rome)
     actual = datetime.fromisoformat(row["last_event_at"])
     assert actual.tzinfo is not None
     assert actual.utcoffset() == expected.utcoffset()
-    assert actual.astimezone().replace(microsecond=0) == expected.replace(microsecond=0)
+    assert actual.astimezone(rome).replace(microsecond=0) == expected.replace(microsecond=0)
     assert row["staged_filename"] == "doc-final.pdf"
     assert row["staged_path"] == "C:/tmp/doc-final.pdf"
     assert row["manifest_path"] == "C:/tmp/doc-final.json"

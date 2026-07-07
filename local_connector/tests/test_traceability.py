@@ -102,7 +102,7 @@ def test_registro_export_maps_local_connector_rows_to_unified_schema(tmp_path):
     assert target.name.startswith("registro_events_")
     payload = json.loads(target.read_text(encoding="utf-8").splitlines()[0])
     assert set(payload) == {
-        "registro_id", "timestamp_utc", "ingresso", "fase", "oggetto", "esito",
+        "registro_id", "timestamp", "ingresso", "fase", "oggetto", "esito",
         "nota", "correlazioni_tecniche",
     }
     assert payload["ingresso"] == "Local connector"

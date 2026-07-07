@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
 import json
 from pathlib import Path
 from time import perf_counter
@@ -14,6 +13,7 @@ from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountImapProcessor, MultiAccountReadonlyScanner
 from .storage_adapter import LocalFilesystemStorageAdapter
 from .readonly_state import ensure_state_db
+from .time_utils import rome_isoformat, rome_timestamp
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,7 +63,7 @@ class LocalPipelineRunner:
         status = ("completed_with_errors" if errors else
                   "completed_with_warnings" if warnings else "completed")
         report = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": rome_isoformat(),
             "config": str(self.config_path) if self.config_path else None,
             "accounts": [item.account_alias for item in self.accounts if item.enabled],
             "messages_found": sum(getattr(item, "messages_seen", 0) for item in scan),
@@ -101,7 +101,7 @@ class LocalPipelineRunner:
     def _write_report(self, payload: dict[str, object]) -> str:
         reports = self.paths.root / "reports"
         reports.mkdir(parents=True, exist_ok=True)
-        name = datetime.now(timezone.utc).strftime("pipeline_report_%Y%m%d_%H%M%S.json")
+        name = f"pipeline_report_{rome_timestamp()}.json"
         path = reports / name
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return path.relative_to(self.paths.root).as_posix()

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -23,6 +22,7 @@ from .traceability import load_rules
 from .traceability import central_event_rows
 from .traceability import LocalConflictChecker
 from .readonly_state import ensure_state_db
+from .time_utils import rome_isoformat, rome_timestamp
 
 
 @dataclass(frozen=True, slots=True)
@@ -448,7 +448,7 @@ class PilotRunV11Runner:
         self.ack_factory = ack_factory
 
     def run(self, *, dry_run: bool) -> PilotRunV11Result:
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = rome_isoformat()
         warnings: list[str] = []
         errors: list[str] = []
         doctor_status = "NOT_RUN"
@@ -678,7 +678,7 @@ class PilotRunV11Runner:
     def _write_report(self, result: PilotRunV11Result) -> str:
         reports = self.paths.root / "reports"
         reports.mkdir(parents=True, exist_ok=True)
-        name = datetime.now(timezone.utc).strftime("pilot_run_v11_%Y%m%d_%H%M%S.json")
+        name = f"pilot_run_v11_{rome_timestamp()}.json"
         path = reports / name
         path.write_text(json.dumps(asdict(result), ensure_ascii=False, indent=2), encoding="utf-8")
         return path.relative_to(self.paths.root).as_posix()
