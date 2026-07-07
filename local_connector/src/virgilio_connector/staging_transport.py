@@ -41,7 +41,6 @@ class NoReadyFilesError(StagingTransportError):
 class LocalDriveStagingConfig:
     enabled: bool
     staging_dir: Path | None
-    account_alias: str = "gmail-test"
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,7 +69,7 @@ class LocalDriveStagingTransport:
         staging_dir = self._validate_configuration()
         rows = self._load_ready_rows()
         if not rows:
-            raise NoReadyFilesError("latest completed run has no ready_for_caronte files")
+            raise NoReadyFilesError("no ready_for_caronte files are available")
         results = []
         store = ReadonlyStateStore(self.state_db)
         if not dry_run:
@@ -110,7 +109,7 @@ class LocalDriveStagingTransport:
         if not self.config.enabled:
             raise StagingDisabledError("local Drive staging is disabled")
         if self.config.staging_dir is None or not str(self.config.staging_dir).strip():
-            raise StagingDirectoryError("VIRGILIO_LOCAL_DRIVE_STAGING_DIR is not configured")
+            raise StagingDirectoryError("VIRGILIO_LIMBO_LOCAL_SYNC_DIR is not configured")
         if not self.config.staging_dir.is_absolute():
             raise StagingDirectoryError("local Drive staging directory must be an absolute path")
         directory = self.config.staging_dir.resolve()
@@ -129,18 +128,15 @@ class LocalDriveStagingTransport:
         with sqlite3.connect(uri, uri=True) as db:
             db.row_factory = sqlite3.Row
             db.execute("PRAGMA query_only=ON")
-            run = db.execute("""SELECT id FROM runs WHERE status='completed'
-                ORDER BY id DESC LIMIT 1""").fetchone()
-            if run is None:
-                return ()
             return tuple(db.execute("""SELECT a.*,
+                COALESCE(a.account_alias,m.account_alias,'unknown') AS resolved_account_alias,
                 COALESCE(a.source_message_id,m.message_id) AS resolved_source_message_id,
                 COALESCE(a.source_message_uid,m.message_uid) AS resolved_source_message_uid,
                 m.uidvalidity
                 FROM attachments a JOIN messages m ON m.id=a.message_id
-                WHERE m.run_id=? AND a.status='ready_for_caronte'
-                  AND a.relative_path IS NOT NULL ORDER BY a.id""",
-                (int(run["id"]),)).fetchall())
+                JOIN runs r ON r.id=m.run_id
+                WHERE r.status='completed' AND a.status='ready_for_caronte'
+                  AND a.relative_path IS NOT NULL ORDER BY a.id""").fetchall())
 
     def _source_path(self, relative_path: str) -> Path:
         source = (self.local_data_root / relative_path).resolve()
@@ -192,7 +188,7 @@ class LocalDriveStagingTransport:
             "quarantine_status": "ready_for_caronte",
             "source_message_id": row["resolved_source_message_id"],
             "source_message_uid": row["resolved_source_message_uid"],
-            "account_alias": self.config.account_alias,
+            "account_alias": row["resolved_account_alias"],
             "staged_at": rome_isoformat(),
             "dry_run": False,
             "note": SYNC_NOT_VERIFIED_NOTE,

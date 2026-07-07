@@ -4,7 +4,7 @@
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V114-T09 - GAS setup e trigger Caronte`
+- Ultimo task chiuso noto: `V114-T02-bis - Pulizia configurazione extra post-allineamento`
 - Task corrente consigliato: `V114-T10 - Setup CLI ready-to-run`
 - Massimo due successivi: `V114-T11 - GUI installazione locale fase 1`; `V114-T12 - Reset locale sicuro`
 - Blocchi aperti: nessuno noto; backlog v1.1.4 aperto

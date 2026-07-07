@@ -13,10 +13,24 @@ accounts:
     max_messages: 25
     ack_enabled: false
     ack_strategy: add_done_label_only
+  - account_alias: account_2
+    email: account.2@example.invalid
+    provider_hint: generic_imap
+    imap_host: imap.example.invalid
+    imap_port: 993
+    username_env: VIRGILIO_IMAP_ACCOUNT_2_USERNAME
+    password_env: VIRGILIO_IMAP_ACCOUNT_2_PASSWORD
+    input_folder: INBOX
+    done_folder: done
+    error_folder: error
+    enabled: false
+    max_messages: 25
+    ack_enabled: false
+    ack_strategy: no_ack_manual
 
 storage:
   adapter: local_filesystem
-  staging_dir: 'C:\Percorso\Virgilio\Limbo'
+  staging_dir: 'C:\Percorso\Drive Desktop\Virgilio Limbo'
   use_account_subfolders: true
   copy_manifest: true
   overwrite: false

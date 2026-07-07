@@ -421,14 +421,13 @@ def main() -> int:
         enabled_text = os.environ.get("VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED", "false")
         if enabled_text.lower() not in {"true", "false"}:
             parser.exit(2, "error: VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED must be true or false\n")
-        staging_text = os.environ.get("VIRGILIO_LOCAL_DRIVE_STAGING_DIR", "").strip()
+        staging_text = os.environ.get("VIRGILIO_LIMBO_LOCAL_SYNC_DIR", "").strip()
         local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
         transport = LocalDriveStagingTransport(
             state_db=local_root / "state.db", local_data_root=local_root,
             config=LocalDriveStagingConfig(
                 enabled=enabled_text.lower() == "true",
                 staging_dir=Path(staging_text) if staging_text else None,
-                account_alias=os.environ.get("VIRGILIO_ACCOUNT_ALIAS", "gmail-test"),
             ),
         )
         try:

@@ -371,7 +371,7 @@ function _virgilioInboxResolveSheetName_(sheetName) {
     _virgilioInboxStringOrEmpty_(props.getProperty(VIRGILIO_INBOX_SHEET_PROPERTY)) ||
     VIRGILIO_INBOX_DEFAULT_SHEET;
   const bucolicheTab = typeof CONFIG !== 'undefined' && CONFIG
-    ? _virgilioInboxStringOrEmpty_(CONFIG.BUCOLICHE_TAB)
+    ? _virgilioInboxStringOrEmpty_(CONFIG.BUCOLICHE_EVENTS_SHEET)
     : '';
   if (!value) throw new Error('Nome tab Virgilio_Inbox obbligatorio.');
   if (value === bucolicheTab) {

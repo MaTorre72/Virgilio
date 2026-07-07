@@ -27,7 +27,9 @@ const CONFIG = {
   // ── ID Drive/Sheets ──
   // Tutti letti da PropertiesService, niente hardcode.
   BUCOLICHE_ID: _PROPS.getProperty('VIRGILIO_BUCOLICHE_SPREADSHEET_ID') || '',
-  BUCOLICHE_TAB: _PROPS.getProperty('VIRGILIO_BUCOLICHE_TAB') || 'bucoliche',
+  BUCOLICHE_EVENTS_SHEET: 'Bucoliche_Eventi',
+  BUCOLICHE_STATE_SHEET: 'Bucoliche_Stato',
+  BUCOLICHE_CONFLICTS_SHEET: 'Bucoliche_Conflitti',
   EMPIREO_ID: _PROPS.getProperty('VIRGILIO_EMPIREO_ID') || '',
   ADAMO_ID: _PROPS.getProperty('VIRGILIO_ADAMO_ID') || '',
   LIMBO_ID: _PROPS.getProperty('VIRGILIO_LIMBO_ID') || '',
@@ -1426,4 +1428,3 @@ function _verificaRateLimit() {
   // Registra timestamp corrente, valido per 60 secondi
   cache.put(chiave, adesso.toString(), 60);
 }
-

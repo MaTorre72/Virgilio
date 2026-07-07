@@ -51,7 +51,7 @@ def fixture(tmp_path: Path, *, status="ready_for_caronte", enabled=True,
         kwargs["writable_check"] = writable_check
     transport = LocalDriveStagingTransport(
         state_db=paths.state_db, local_data_root=paths.root,
-        config=LocalDriveStagingConfig(enabled, staging, "account-test"), **kwargs)
+        config=LocalDriveStagingConfig(enabled, staging), **kwargs)
     return transport, paths, staging, source, attachment_id
 
 
@@ -118,7 +118,7 @@ def test_ready_file_and_manifest_are_copied_with_verified_hash(tmp_path):
     assert manifest["staged_filename"] == result.staged_filename
     assert manifest["sha256"] == DIGEST
     assert manifest["source_message_uid"] == "42"
-    assert manifest["account_alias"] == "account-test"
+    assert manifest["account_alias"] == "default"
     assert manifest["dry_run"] is False
     assert "sync cloud non verificata" in manifest["note"]
     assert source.exists(), "quarantine source must never be deleted"
@@ -159,6 +159,39 @@ def test_hash_mismatch_marks_staging_failed_without_deleting_source(tmp_path):
         status = db.execute("SELECT status FROM attachments WHERE id=?",
                             (attachment_row_id,)).fetchone()[0]
     assert status == "staging_failed"
+
+
+def test_stage_ready_files_uses_each_attachment_account_alias_and_all_completed_runs(tmp_path):
+    transport, paths, staging, _, _ = fixture(tmp_path)
+    source_dir = paths.root / "accounts" / "account_2" / "quarantine" / "ready" / "222-99"
+    source_dir.mkdir(parents=True)
+    source = source_dir / "001-second.pdf"
+    source.write_bytes(PAYLOAD)
+    store = ReadonlyStateStore(paths.state_db)
+    run_id = store.start_run(account_alias="account_2")
+    message_id = store.add_message(run_id, MessageReference(
+        "INBOX", "222", "99", "<second@example.invalid>",
+        "Synthetic second", "sender@example.invalid", "2026-06-23T10:05:00+02:00"),
+        account_alias="account_2")
+    store.add_attachment(
+        message_id, ordinal=1, original_filename="second.pdf",
+        sanitized_filename="second.pdf", declared_mime_type="application/pdf",
+        size_bytes=len(PAYLOAD), sha256=DIGEST, status="ready_for_caronte",
+        relative_path=source.relative_to(paths.root).as_posix(), duplicate_of_id=None,
+        reason="synthetic", scanner_engine="windows_defender", scan_result="clean",
+        account_alias="account_2", attachment_id="account_2-222-99-1")
+    store.complete_run(run_id, messages_seen=1, attachments_seen=1)
+
+    results = transport.stage_ready_files(dry_run=False)
+    assert len(results) == 2
+    manifests = {}
+    for result in results:
+        manifest = json.loads((staging / result.manifest_filename).read_text(encoding="utf-8"))
+        manifests[manifest["account_alias"]] = manifest
+
+    assert set(manifests) == {"default", "account_2"}
+    assert manifests["default"]["source_message_uid"] == "42"
+    assert manifests["account_2"]["source_message_uid"] == "99"
 
 
 def test_module_has_no_network_caronte_or_gmail_dependency():

@@ -1,6 +1,6 @@
 # Next Codex Tasks
 
-Stato operativo corrente: backlog v1.1.4 attivo; primo task eseguibile `V114-T10 - Setup CLI ready-to-run`.
+Stato operativo corrente: backlog v1.1.4 attivo; extra `V114-T02-bis` chiuso; primo task eseguibile regolare `V114-T10 - Setup CLI ready-to-run`.
 
 ## Prossimo task
 

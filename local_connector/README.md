@@ -99,8 +99,11 @@ ripetuti; nessuna fixture contiene email, indirizzi o documenti reali.
 ### Configurazione `.env`
 
 Copiare `.env.example` in `.env` e sostituire i soli valori locali. `.env`,
-`.local_data/`, database, log e file temporanei sono esclusi da Git. Non usare
-credenziali della casella principale: predisporre un account e messaggi fittizi.
+`.local_data/`, database, log e file temporanei sono esclusi da Git. Il file
+esempio principale documenta la configurazione multi-account v1.1; il probe
+read-only qui sotto resta solo diagnostico/legacy e, se usato, richiede anche
+le variabili locali `VIRGILIO_IMAP_*` non versionate. Non usare credenziali
+della casella principale: predisporre un account e messaggi fittizi.
 
 ### Dry-run
 
@@ -348,11 +351,13 @@ una cartella Limbo nel filesystem sincronizzato e configurare `.env`:
 
 ```dotenv
 VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED=true
-VIRGILIO_LOCAL_DRIVE_STAGING_DIR=C:\percorso\Drive Desktop\Virgilio Limbo
+VIRGILIO_LIMBO_LOCAL_SYNC_DIR=C:\percorso\Drive Desktop\Virgilio Limbo
 ```
 
-Il percorso reale resta esclusivamente in `.env`, gia' ignorato da Git. Prima
-eseguire sempre:
+`VIRGILIO_LIMBO_ID` resta l'ID della cartella Drive condivisa lato cloud;
+`VIRGILIO_LIMBO_LOCAL_SYNC_DIR` e' soltanto il percorso Drive Desktop della
+stessa cartella Limbo sul PC locale. Il percorso reale resta esclusivamente in
+`.env`, gia' ignorato da Git. Prima eseguire sempre:
 
 ```powershell
 python -m virgilio_connector stage-ready-files --dry-run

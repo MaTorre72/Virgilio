@@ -102,11 +102,6 @@ function caronteStatoConfigurazione() {
       hint: "Impostare l'ID del workbook condiviso nelle Script Properties.",
     },
     {
-      chiave: 'VIRGILIO_BUCOLICHE_TAB',
-      etichetta: 'Tab Bucoliche',
-      hint: "Tenere il tab canonico o riallinearne uno solo in modo esplicito.",
-    },
-    {
       chiave: 'VIRGILIO_INBOX_SPREADSHEET_ID',
       etichetta: 'Spreadsheet Inbox',
       hint: "Impostare l'ID del workbook della coda Virgilio_Inbox.",

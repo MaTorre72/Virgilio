@@ -2,6 +2,7 @@
 
 Registro avanzamento storico spostato fuori dal backlog attivo.
 
+- 2026-07-07 18:03 +02:00 - Completato V114-T02-bis: esempi e codice di configurazione non espongono piu` il doppione single-account negli esempi principali, `stage-ready-files` usa `VIRGILIO_LIMBO_LOCAL_SYNC_DIR` e l`account_alias` per-riga, e il legacy Apps Script Bucoliche converge sul tab `Bucoliche_Eventi`; backlog/state/next tasks riallineati su V114-T10.
 - 2026-07-07 08:38 +02:00 - Completato V114-T08: tutti i timestamp operativi del local connector e il seed Apps Script inbox sono stati riallineati su `Europe/Rome`, il Registro locale ora espone `timestamp` invece di `timestamp_utc`, i test mirati e lo smoke locale sono verdi, e state/next tasks/backlog sono riallineati su V114-T09.
 - 2026-07-07 13:25 +02:00 - Completato V114-T09: `docs/CLASP_WORKFLOW.md` ora esplicita la sequenza manuale Caronte (credenziali -> verifica configurazione -> trigger -> stato -> stop -> test minimo) distinta dal flusso di produzione; state, next tasks e backlog riallineati su V114-T10.
 - 2026-07-06 22:35 +02:00 - Completato V114-T06: `apps_script/src/setup.gs` ora accetta credenziali a runtime o via Script Properties senza placeholder nel sorgente; i hint di stato puntano alla configurazione esplicita; parse in-memory di `setup.gs` e `py_compile` di `local_connector/src/virgilio_connector/__main__.py` verdi; state, next tasks e backlog riallineati su V114-T07.
