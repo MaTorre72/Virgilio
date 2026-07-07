@@ -128,6 +128,8 @@ class LocalStorageConfig:
             raise MultiAccountConfigError(f"unsupported storage adapter: {self.adapter}")
         if self.staging_dir is None or not str(self.staging_dir).strip():
             raise MultiAccountConfigError("storage.staging_dir is required")
+        if not self.staging_dir.is_absolute():
+            raise MultiAccountConfigError("storage.staging_dir must be an absolute path")
         if self.overwrite:
             raise MultiAccountConfigError("storage overwrite must remain false in this phase")
         if not self.copy_manifest:
@@ -185,6 +187,8 @@ def scaffold_local_config(*, email: str, staging_dir: Path, account_alias: str |
         raise MultiAccountConfigError("email is required")
     if not 1 <= int(imap_port) <= 65535:
         raise MultiAccountConfigError("imap_port must be between 1 and 65535")
+    if not staging_dir.is_absolute():
+        raise MultiAccountConfigError("storage.staging_dir must be an absolute path")
     defaults = _PROVIDER_DEFAULTS[provider_hint]
     username_env = _env_name(alias, "USERNAME")
     password_env = _env_name(alias, "PASSWORD")

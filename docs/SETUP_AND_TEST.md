@@ -34,6 +34,7 @@ Per creare uno scheletro locale valido senza segreti nel file:
 local_connector\.venv\Scripts\python.exe -m virgilio_connector init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
 ```
 
+`--staging-dir` deve essere un path assoluto, per esempio `C:\Virgilio\staging`; i path relativi vengono rifiutati dal CLI.
 Il comando genera un `accounts.local.yaml` con account, storage, Bucoliche e rules minime;
 le credenziali restano solo come nomi di variabili d'ambiente da valorizzare localmente.
 

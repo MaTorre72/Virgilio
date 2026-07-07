@@ -725,6 +725,23 @@ def test_init_config_cli_dry_run_does_not_write(tmp_path, monkeypatch, capsys):
     assert not output.exists()
 
 
+def test_init_config_cli_rejects_relative_staging_dir(tmp_path, monkeypatch, capsys):
+    from virgilio_connector.__main__ import main
+    output = tmp_path / "accounts.local.yaml"
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio", "init-config",
+        "--output", str(output),
+        "--email", "box@example.com",
+        "--staging-dir", "staging",
+    ])
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 2
+    captured = capsys.readouterr()
+    assert "absolute path" in captured.err
+    assert not output.exists()
+
+
 def test_console_script_registers_virgilio_entrypoint():
     data = tomllib.loads((Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8"))
     assert data["project"]["scripts"]["virgilio"] == "virgilio_connector.__main__:main"

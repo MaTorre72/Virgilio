@@ -193,6 +193,14 @@ def test_scaffold_local_config_is_valid_and_secret_free(tmp_path):
     assert "client_secret.json" in content
 
 
+def test_scaffold_local_config_requires_absolute_staging_dir():
+    with pytest.raises(MultiAccountConfigError, match="absolute path"):
+        scaffold_local_config(
+            email="account.1@example.com",
+            staging_dir=Path("staging"),
+        )
+
+
 def test_rejects_duplicate_alias(tmp_path):
     path = tmp_path / "bad.yaml"
     path.write_text("""accounts:
@@ -432,6 +440,8 @@ def stage(paths, staging_dir, *, dry_run=False, use_account_subfolders=True):
 def test_storage_config_validation(tmp_path):
     with pytest.raises(MultiAccountConfigError, match="staging_dir"):
         LocalStorageConfig("local_filesystem", None)
+    with pytest.raises(MultiAccountConfigError, match="absolute path"):
+        LocalStorageConfig("local_filesystem", Path("relative"))
     with pytest.raises(MultiAccountConfigError, match="unsupported"):
         LocalStorageConfig("ftp", tmp_path)
     staging = tmp_path / "staging"

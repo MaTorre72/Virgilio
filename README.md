@@ -118,6 +118,7 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --confi
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
+`--staging-dir` deve essere un path assoluto, per esempio `C:\Virgilio\staging`; i path relativi vengono rifiutati dal CLI.
 - `init-config` prepara il profilo locale.
 - `doctor` controlla la configurazione.
 - `pilot` mostra il flusso senza effetti operativi.
