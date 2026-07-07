@@ -74,6 +74,18 @@ clasp status
 - Esaminare il diff locale prima di editare.
 - Non sovrascrivere codice live senza confronto.
 
+## Sequenza setup Caronte
+
+Per le attivita` su `apps_script/src` usare sempre questa sequenza manuale, distinta dal flusso di produzione (`doPost()` / `caronteTraghetta()`):
+
+1. Impostare le Script Properties con `caronteSetupCredenziali(...)`.
+2. Verificare i segreti con `caronteStatoCredenziali()`.
+3. Verificare la configurazione con `caronteStatoConfigurazione()`.
+4. Creare il trigger con `caronteSetupTrigger()`.
+5. Controllare lo stato con `caronteStatoTrigger()`.
+6. Mettere in pausa con `caronteStopTrigger()` quando serve.
+7. Eseguire il test minimo con `caronteTest()`; usare `caronteTestFinale()` solo per un collaudo completo.
+
 ## Prima di ogni `clasp push`
 
 - Mostrare file modificati.
