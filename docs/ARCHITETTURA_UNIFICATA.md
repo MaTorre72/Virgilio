@@ -31,6 +31,7 @@ Dopo il collaudo, il profilo da usare resta quello coerente con la superficie de
 - Puo` leggere una o piu` caselle, inclusa una casella Google Workspace via IMAP.
 - Gli esempi di configurazione mostrano almeno due account generici con alias neutri.
 - Passa prima da `Quarantena locale`, poi da `Scan`, poi nel Limbo Drive unico.
+- Gli allegati Office (`.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx`) entrano solo con scansione obbligatoria; macro-enabled, archivi compressi ed eseguibili restano bloccati.
 - Produce gli stessi oggetti operativi del profilo Google-only.
 - E` il profilo da usare quando il task deve restare offline, usare fixture e verifiche locali.
 - Rimane il profilo piu` sicuro per piu` caselle, piu` utenti e per la scansione prima del Limbo.

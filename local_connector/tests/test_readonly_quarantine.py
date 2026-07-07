@@ -57,23 +57,28 @@ def run(tmp_path, attachments, *, dry_run=False, max_bytes=1024, scanner=None):
     ("report.pdf", "application/pdf"),
     ("photo.jpg", "image/jpeg"),
     ("scan.png", "image/png"),
+    ("document.doc", "application/msword"),
+    ("document.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+    ("sheet.xls", "application/vnd.ms-excel"),
+    ("sheet.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    ("slides.ppt", "application/vnd.ms-powerpoint"),
+    ("slides.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
 ])
-def test_allowed_pdf_and_images_are_quarantined(tmp_path, filename, mime):
+def test_allowed_pdf_images_and_office_documents_are_quarantined(tmp_path, filename, mime):
     result, paths, _ = run(tmp_path, [attachment(filename, mime=mime)])
     assert result[0].decision == "quarantined_unverified"
     assert result[0].saved is True
     assert len(list(paths.incoming.rglob(f"*{filename}"))) == 1
 
 
-@pytest.mark.parametrize("filename", ["archive.zip", "payload.exe", "macro.docm"])
+@pytest.mark.parametrize("filename", [
+    "archive.zip",
+    "payload.exe",
+    "macro.docm",
+    "macro.xlsm",
+    "macro.pptm",
+])
 def test_forbidden_extensions_are_not_saved(tmp_path, filename):
-    result, paths, _ = run(tmp_path, [attachment(filename)])
-    assert result[0].decision == "rejected_by_extension"
-    assert not list(paths.incoming.rglob("*.*"))
-
-
-@pytest.mark.parametrize("filename", ["document.docx", "sheet.xlsx", "slides.pptx"])
-def test_office_without_macros_is_not_automatically_allowed(tmp_path, filename):
     result, paths, _ = run(tmp_path, [attachment(filename)])
     assert result[0].decision == "rejected_by_extension"
     assert not list(paths.incoming.rglob("*.*"))

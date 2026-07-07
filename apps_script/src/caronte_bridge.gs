@@ -372,7 +372,7 @@ function _caronteInboxManifestSample_() {
     note: 'sync cloud non verificata',
     status_reason: 'fake clean',
     scan_result: 'clean',
-    policy_rule: 'solo-pdf',
+    policy_rule: 'scan_obbligatoria',
   };
 }
 

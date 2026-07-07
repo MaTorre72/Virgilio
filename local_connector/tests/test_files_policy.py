@@ -47,11 +47,28 @@ class AttachmentPolicyTests(unittest.TestCase):
             PolicyDecision.DENY,
         )
 
-    def test_office_file_requires_review_until_decided(self) -> None:
-        self.assertEqual(
-            self.policy.evaluate_filename("report.docx").decision,
-            PolicyDecision.REVIEW,
-        )
+    def test_office_files_are_provisionally_allowed(self) -> None:
+        for filename in (
+            "report.doc",
+            "report.docx",
+            "sheet.xls",
+            "sheet.xlsx",
+            "slides.ppt",
+            "slides.pptx",
+        ):
+            with self.subTest(filename=filename):
+                self.assertEqual(
+                    self.policy.evaluate_filename(filename).decision,
+                    PolicyDecision.ALLOW,
+                )
+
+    def test_macro_enabled_office_files_are_denied(self) -> None:
+        for filename in ("report.docm", "sheet.xlsm", "slides.pptm"):
+            with self.subTest(filename=filename):
+                self.assertEqual(
+                    self.policy.evaluate_filename(filename).decision,
+                    PolicyDecision.DENY,
+                )
 
 
 if __name__ == "__main__":

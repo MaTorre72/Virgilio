@@ -13,13 +13,13 @@ class OrchestratorTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         root = Path(self.temp.name)
-        self.document = root / "document.pdf"
-        self.document.write_bytes(b"synthetic pdf")
+        self.document = root / "document.docx"
+        self.document.write_bytes(b"synthetic office document")
         self.message = MessageReference("Virgilio/da-traghettare", "100", "42",
             "<test@example.invalid>", "Synthetic", "sender@example.invalid",
             "2026-06-23T10:00:00+02:00")
         self.mailbox = InMemoryMailbox((self.message,), {"42": (
-            AttachmentReference("att-1", "document.pdf", self.document),)})
+            AttachmentReference("att-1", "document.docx", self.document),)})
         self.caronte = InMemoryCaronte()
         self.store = StateStore(root / "state.db")
         self.store.initialize()

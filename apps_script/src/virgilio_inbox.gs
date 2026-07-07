@@ -1047,7 +1047,7 @@ function testVirgilioInboxSchema() {
     }),
     { inboxIdFactory: () => 'inbox-fixed-3' }
   );
-  _driveStagingAssert_(updated.updated && rows[1][21] === 'note=nota aggiornata; status_reason=fake clean; source_mailbox=Virgilio/da-traghettare; source_message_date=2026-06-25T10:00:00+00:00; scan_result=clean; policy_rule=solo-pdf',
+  _driveStagingAssert_(updated.updated && rows[1][21] === 'note=nota aggiornata; status_reason=fake clean; source_mailbox=Virgilio/da-traghettare; source_message_date=2026-06-25T10:00:00+00:00; scan_result=clean; policy_rule=scan_obbligatoria',
     'update stesso record');
 
   let conflict = false;

@@ -8,7 +8,10 @@ from pathlib import Path
 
 
 DEFAULT_ALLOWED_EXTENSIONS = frozenset(
-    {".pdf", ".jpg", ".jpeg", ".png", ".txt", ".csv", ".xml", ".p7m"}
+    {
+        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+        ".jpg", ".jpeg", ".png", ".txt", ".csv", ".xml", ".p7m",
+    }
 )
 DEFAULT_DENIED_EXTENSIONS = frozenset(
     {
