@@ -2,6 +2,7 @@
 
 Registro avanzamento storico spostato fuori dal backlog attivo.
 
+- 2026-07-08 07:26 +02:00 - Completato V114-T11 senza toccare il codice: la GUI locale era gia` un wrapper controllato della CLI con test dedicati; `pytest local_connector` e smoke locale sono verdi, e state/next tasks/backlog sono riallineati su V114-T12.
 - 2026-07-07 23:25 +02:00 - Completato V114-T10: `init-config` e `LocalStorageConfig` rifiutano `storage.staging_dir` relativi, README e setup/test chiariscono il path assoluto richiesto, i test mirati passano e lo smoke locale e` verde; state, next tasks e backlog riallineati su V114-T11.
 - 2026-07-07 18:03 +02:00 - Completato V114-T02-bis: esempi e codice di configurazione non espongono piu` il doppione single-account negli esempi principali, `stage-ready-files` usa `VIRGILIO_LIMBO_LOCAL_SYNC_DIR` e l`account_alias` per-riga, e il legacy Apps Script Bucoliche converge sul tab `Bucoliche_Eventi`; backlog/state/next tasks riallineati su V114-T10.
 - 2026-07-07 08:38 +02:00 - Completato V114-T08: tutti i timestamp operativi del local connector e il seed Apps Script inbox sono stati riallineati su `Europe/Rome`, il Registro locale ora espone `timestamp` invece di `timestamp_utc`, i test mirati e lo smoke locale sono verdi, e state/next tasks/backlog sono riallineati su V114-T09.
