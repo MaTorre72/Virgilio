@@ -135,6 +135,15 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --confi
 
 `pilot-run` senza `--dry-run` va usato solo su configurazioni di test gia' verificate.
 
+Per ripulire lo stato locale senza perdere una copia automatica:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector reset-local-state --backup --confirm
+```
+
+Il comando crea un backup sibling di `.local_data`, poi ricrea il layout base e preserva `machine_id` quando presente. Senza `--backup` e `--confirm` il reset non parte.
+
 Per verificare lo snapshot Apps Script locale senza deploy:
 
 ```powershell

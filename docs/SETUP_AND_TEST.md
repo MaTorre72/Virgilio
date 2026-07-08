@@ -90,6 +90,15 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --confi
 Questi restano controlli locali. `pilot-run` senza `--dry-run` non e` un test automatico.
 Nel checkout verificato sono stati eseguiti anche `doctor-bucoliche --human`, `pilot-preview --human`, `setup-bucoliche-test-sheet --dry-run` e due `pilot-run --human` consecutivi sul mailbox di test.
 
+## Reset locale sicuro
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector reset-local-state --backup --confirm
+```
+
+Il comando crea un backup automatico della cartella locale accanto allo stato corrente, poi ricrea il layout base e preserva `machine_id` quando presente. Senza `--backup` e `--confirm` non esegue cancellazioni.
+
 ## Test Apps Script
 
 Eseguire solo test puri o mockabili dall'editor Apps Script. I test che richiedono Drive, Gmail, Bucoliche o deployment reale vanno trattati come collaudi manuali separati.

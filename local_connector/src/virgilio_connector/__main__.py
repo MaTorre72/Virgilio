@@ -42,6 +42,7 @@ from .da_archiviare_intake import (
 )
 from .doctor import LocalDoctor
 from .local_paths import LocalDataPaths
+from .reset_local_state import ResetLocalStateError, reset_local_state
 from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
                               LiteLLMGatewayConfig, LiteLLMGatewayError,
                               LiteLLMRequest)
@@ -151,6 +152,17 @@ def _doctor_human_summary(result) -> list[str]:
         lines.append(f"Azione consigliata: {fix}")
     if result.suggested_next_commands:
         lines.append(f"Prossimo comando: {result.suggested_next_commands[0]}")
+    return lines
+
+
+def _reset_local_state_human_summary(result) -> list[str]:
+    lines = [
+        f"Reset locale: {result.status}",
+        f"Root locale: {result.local_root}",
+        f"Backup automatico: {result.backup_path or 'nessuno'}",
+        f"Machine ID preservato: {'sì' if result.machine_id_preserved else 'no'}",
+        f"Messaggio: {result.message}",
+    ]
     return lines
 
 
@@ -402,6 +414,10 @@ def main() -> int:
     init_config.add_argument("--enable-bucoliche", action="store_true")
     init_config.add_argument("--dry-run", action="store_true")
     init_config.add_argument("--force", action="store_true")
+    reset_local_state_cmd = commands.add_parser("reset-local-state")
+    reset_local_state_cmd.add_argument("--backup", action="store_true")
+    reset_local_state_cmd.add_argument("--confirm", action="store_true")
+    reset_local_state_cmd.add_argument("--human", action="store_true")
     gui = commands.add_parser("gui")
     gui.add_argument("--config", type=Path)
     args = parser.parse_args()
@@ -953,6 +969,17 @@ def main() -> int:
                 f"virgilio pilot --config {args.output} --human",
             ],
         }, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "reset-local-state":
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        try:
+            result = reset_local_state(local_root, backup=args.backup, confirm=args.confirm)
+        except (ResetLocalStateError, OSError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(_reset_local_state_human_summary(result))
+        else:
+            print(result.to_json())
         return 0
     if args.command == "gui":
         from .gui import launch_gui
