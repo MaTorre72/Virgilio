@@ -116,6 +116,18 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-t
 - `install-windows-task --dry-run` mostra il task `Virgilio Local Watch` senza registrarlo.
 - Solo dopo il dry-run puoi usare `install-windows-task --force` per l'avvio automatico su Windows 11.
 
+Per usare Caronte locale senza imparare i comandi, avviare la GUI:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector gui --config $config
+```
+
+La GUI organizza le azioni in tab: Stato, Setup iniziale, Account mail,
+Bucoliche, Avvio, Monitoraggio, Manutenzione, Automazione Win11 e Diagnostica
+avanzata. Ogni pulsante esegue un comando CLI gia` disponibile; le funzioni senza
+comando stabile restano visibili ma disabilitate con una causa esplicita.
+
 ## Troubleshooting rapido
 
 - Se `doctor` segnala `storage.staging_dir`, usa un path assoluto gia` esistente come `C:\Virgilio\staging`.

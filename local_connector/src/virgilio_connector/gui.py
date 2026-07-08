@@ -1,11 +1,18 @@
-"""Minimal local tkinter wrapper around the existing Virgilio CLI."""
+"""Local tkinter wrapper around the existing Virgilio CLI."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
+import re
 import subprocess
 import sys
+
+
+SENSITIVE_RE = re.compile(
+    r"(?i)(password|token|secret|authorization|api[_-]?key)(['\"]?\s*[:=]\s*['\"]?)([^'\"\s,;]+)"
+)
 
 
 @dataclass(frozen=True)
@@ -17,35 +24,149 @@ class GuiCommandSpec:
     output_path: Path | None = None
     email: str = ""
     staging_dir: Path | None = None
+    provider: str = "gmail_workspace"
+    account_alias: str = ""
+    imap_host: str = ""
+    imap_port: int = 993
+    input_folder: str = ""
+    done_folder: str = ""
+    error_folder: str = ""
+    enable_bucoliche: bool = False
+    force: bool = False
+    interval_seconds: int = 300
+    max_cycles: int = 0
+    format_name: str = "jsonl"
+    python_exe: Path | None = None
+    task_name: str = "Virgilio Local Watch"
+    backup: bool = False
+    confirm: bool = False
+
+
+@dataclass(frozen=True)
+class GuiAction:
+    key: str
+    label: str
+    tab: str
+    summary: str
+    command: str | None
+    needs_config: bool = True
+    dry_run: bool = False
+    allow_dry_run_toggle: bool = False
+    human: bool = False
+    destructive: bool = False
+    unavailable_reason: str = ""
+
+    @property
+    def available(self) -> bool:
+        return self.command is not None and not self.unavailable_reason
+
+
+def _config_args(spec: GuiCommandSpec) -> list[str]:
+    if spec.config_path is None:
+        raise ValueError("Seleziona prima il file di configurazione.")
+    return ["--config", str(spec.config_path)]
+
+
+def _add_common_runtime_flags(args: list[str], spec: GuiCommandSpec, *,
+                              dry_run: bool = False, human: bool = False) -> list[str]:
+    if dry_run or spec.dry_run:
+        args.append("--dry-run")
+    if human or spec.human:
+        args.append("--human")
+    return args
 
 
 def build_cli_args(spec: GuiCommandSpec) -> list[str]:
-    """Translate a GUI action into the existing CLI arguments."""
+    """Translate a GUI action into existing CLI arguments."""
 
-    if spec.command in {"doctor", "pilot"}:
-        if spec.config_path is None:
-            raise ValueError("config_path is required")
-        args = [spec.command, "--config", str(spec.config_path)]
-        if spec.command == "pilot" and spec.human:
-            args.append("--human")
+    config_commands = {
+        "doctor", "pilot", "pilot-run", "run-local-pipeline", "watch",
+        "doctor-bucoliche", "pilot-preview", "pilot-check", "pilot-run-safe",
+        "check-local-conflicts", "export-to-bucoliche", "refresh-bucoliche-state",
+        "scan-imap-accounts", "process-imap-accounts", "stage-ready-attachments",
+        "complete-staged-messages", "ack-completed-messages",
+    }
+    if spec.command in config_commands:
+        args = [spec.command, *_config_args(spec)]
+        if spec.command in {
+            "pilot", "pilot-run", "run-local-pipeline", "watch",
+            "doctor", "doctor-bucoliche", "pilot-preview", "pilot-run-safe",
+        }:
+            _add_common_runtime_flags(args, spec)
+        elif spec.command in {
+            "export-to-bucoliche", "refresh-bucoliche-state", "scan-imap-accounts",
+            "process-imap-accounts", "stage-ready-attachments",
+            "complete-staged-messages", "ack-completed-messages",
+        } and spec.dry_run:
+            args.append("--dry-run")
+        if spec.command == "watch":
+            args.extend(["--interval-seconds", str(spec.interval_seconds)])
+            if spec.max_cycles:
+                args.extend(["--max-cycles", str(spec.max_cycles)])
         return args
+
+    if spec.command in {"export-central-events", "export-registro-events"}:
+        if spec.format_name not in {"jsonl", "csv"}:
+            raise ValueError("Formato export non valido.")
+        return [spec.command, *_config_args(spec), "--format", spec.format_name]
+
     if spec.command == "init-config":
         if spec.output_path is None:
-            raise ValueError("output_path is required")
+            raise ValueError("Scegli dove salvare il file di configurazione.")
         if not spec.email.strip():
-            raise ValueError("email is required")
+            raise ValueError("Inserisci l'email dell'account.")
         if spec.staging_dir is None:
-            raise ValueError("staging_dir is required")
+            raise ValueError("Seleziona la cartella staging.")
         args = [
             "init-config",
             "--output", str(spec.output_path),
             "--email", spec.email.strip(),
             "--staging-dir", str(spec.staging_dir),
+            "--provider", spec.provider,
+            "--imap-port", str(spec.imap_port),
         ]
+        optional_pairs = (
+            ("--account-alias", spec.account_alias),
+            ("--imap-host", spec.imap_host),
+            ("--input-folder", spec.input_folder),
+            ("--done-folder", spec.done_folder),
+            ("--error-folder", spec.error_folder),
+        )
+        for flag, value in optional_pairs:
+            if value.strip():
+                args.extend([flag, value.strip()])
+        if spec.enable_bucoliche:
+            args.append("--enable-bucoliche")
         if spec.dry_run:
             args.append("--dry-run")
+        if spec.force:
+            args.append("--force")
         return args
-    raise ValueError(f"unsupported GUI command: {spec.command}")
+
+    if spec.command == "install-windows-task":
+        args = [spec.command, *_config_args(spec)]
+        if spec.python_exe is not None:
+            args.extend(["--python-exe", str(spec.python_exe)])
+        if spec.task_name.strip():
+            args.extend(["--task-name", spec.task_name.strip()])
+        args.extend(["--interval-seconds", str(spec.interval_seconds)])
+        if spec.dry_run:
+            args.append("--dry-run")
+        if spec.force:
+            args.append("--force")
+        return args
+
+    if spec.command == "reset-local-state":
+        args = ["reset-local-state"]
+        if spec.backup:
+            args.append("--backup")
+        if spec.confirm:
+            args.append("--confirm")
+        if spec.human:
+            args.append("--human")
+        return args
+
+    raise ValueError(f"Azione GUI non supportata: {spec.command}")
 
 
 def run_cli_command(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -57,8 +178,129 @@ def run_cli_command(args: list[str]) -> subprocess.CompletedProcess[str]:
     )
 
 
+def sanitize_output(text: str) -> str:
+    """Keep GUI output readable without exposing obvious secret values."""
+
+    return SENSITIVE_RE.sub(r"\1\2<redacted>", text)
+
+
+def gui_tabs() -> tuple[str, ...]:
+    return (
+        "Stato",
+        "Setup iniziale",
+        "Account mail",
+        "Bucoliche",
+        "Avvio",
+        "Monitoraggio",
+        "Manutenzione",
+        "Automazione Win11",
+        "Diagnostica avanzata",
+    )
+
+
+def gui_actions() -> tuple[GuiAction, ...]:
+    return (
+        GuiAction("status-doctor", "Controlla stato locale", "Stato",
+                  "Verifica configurazione, account, storage, scanner e DB locale.", "doctor",
+                  human=True),
+        GuiAction("status-preview", "Mostra preview operativa", "Stato",
+                  "Mostra stato sintetico del pilota e prossime azioni.", "pilot-preview",
+                  human=True),
+        GuiAction("status-task", "Stato attivita Win11", "Stato",
+                  "Manca una CLI stabile per interrogare Utilita di Pianificazione.",
+                  None, unavailable_reason="CLI mancante: status-windows-task"),
+        GuiAction("setup-init", "Crea configurazione", "Setup iniziale",
+                  "Genera o simula un file config senza segreti in chiaro.", "init-config",
+                  needs_config=False, allow_dry_run_toggle=True),
+        GuiAction("setup-doctor", "Test configurazione", "Setup iniziale",
+                  "Esegue il doctor generale sul file selezionato.", "doctor", human=True),
+        GuiAction("setup-limbo", "Verifica Limbo e cartelle", "Setup iniziale",
+                  "Coperto dal doctor: storage, staging e cartelle tecniche locali.", "doctor",
+                  human=True),
+        GuiAction("mail-list", "Visualizza account", "Account mail",
+                  "Il doctor riepiloga account configurati e variabili richieste.", "doctor",
+                  human=True),
+        GuiAction("mail-edit", "Aggiungi o modifica account", "Account mail",
+                  "Manca una CLI stabile per modificare account esistenti.",
+                  None, unavailable_reason="CLI mancante: account set/enable/disable"),
+        GuiAction("mail-test", "Test IMAP", "Account mail",
+                  "Il doctor valida host, porta, username e accesso IMAP senza stampare password.",
+                  "doctor", human=True),
+        GuiAction("bucoliche-doctor", "Verifica Bucoliche", "Bucoliche",
+                  "Controlla configurazione e tab Bucoliche consolidate.", "doctor-bucoliche",
+                  human=True),
+        GuiAction("bucoliche-state", "Verifica stato Bucoliche", "Bucoliche",
+                  "Simula il refresh di Bucoliche_Stato senza dati reali.", "refresh-bucoliche-state",
+                  dry_run=True),
+        GuiAction("bucoliche-export", "Test export Bucoliche", "Bucoliche",
+                  "Simula l'append verso Bucoliche_Eventi.", "export-to-bucoliche",
+                  dry_run=True),
+        GuiAction("start-once", "Scansione manuale", "Avvio",
+                  "Esegue un ciclo controllato della pipeline locale.", "run-local-pipeline",
+                  human=True, allow_dry_run_toggle=True),
+        GuiAction("start-watch-once", "Prova monitoraggio", "Avvio",
+                  "Esegue watch per un solo ciclo, utile come prova non bloccante.", "watch",
+                  human=True, allow_dry_run_toggle=True),
+        GuiAction("start-watch", "Avvia monitoraggio continuo", "Avvio",
+                  "Avvia watch continuo tramite CLI esistente.", "watch", human=True,
+                  allow_dry_run_toggle=True),
+        GuiAction("stop-watch", "Ferma monitoraggio continuo", "Avvio",
+                  "Manca un comando stabile per fermare un processo watch avviato dalla GUI.",
+                  None, unavailable_reason="CLI mancante: stop-watch"),
+        GuiAction("monitor-pilot", "Report ultimo ciclo", "Monitoraggio",
+                  "Esegue il pilot completo in dry-run e mostra messaggi utente.", "pilot-run",
+                  dry_run=True, human=True),
+        GuiAction("monitor-conflicts", "Controlla conflitti", "Monitoraggio",
+                  "Legge lo stato locale e segnala conflitti recenti.", "check-local-conflicts"),
+        GuiAction("monitor-export", "Export diagnostico Registro", "Monitoraggio",
+                  "Esporta eventi Registro locali in formato jsonl.", "export-registro-events"),
+        GuiAction("maintenance-reset", "Reset locale con backup", "Manutenzione",
+                  "Esegue reset locale solo con backup e conferma esplicita.", "reset-local-state",
+                  needs_config=False, destructive=True),
+        GuiAction("maintenance-backup", "Backup stato locale", "Manutenzione",
+                  "Manca una CLI backup-only separata dal reset sicuro.",
+                  None, needs_config=False, unavailable_reason="CLI mancante: backup-local-state"),
+        GuiAction("maintenance-config-export", "Export config senza segreti", "Manutenzione",
+                  "Manca una CLI stabile di export configurazione.",
+                  None, unavailable_reason="CLI mancante: export-config"),
+        GuiAction("maintenance-config-import", "Import configurazione", "Manutenzione",
+                  "Manca una CLI stabile di import configurazione.",
+                  None, unavailable_reason="CLI mancante: import-config"),
+        GuiAction("maintenance-db", "Verifica integrita DB", "Manutenzione",
+                  "Manca una CLI dedicata per PRAGMA integrity_check sul DB locale.",
+                  None, unavailable_reason="CLI mancante: check-state-db"),
+        GuiAction("maintenance-quarantine", "Pulizia Quarantena locale", "Manutenzione",
+                  "Manca una CLI stabile per pulizia controllata della Quarantena.",
+                  None, unavailable_reason="CLI mancante: clean-local-quarantine"),
+        GuiAction("win11-plan", "Verifica piano task", "Automazione Win11",
+                  "Simula la registrazione del task Win11 senza crearla.", "install-windows-task",
+                  dry_run=True),
+        GuiAction("win11-install", "Installa task Win11", "Automazione Win11",
+                  "Registra l'avvio automatico via Utilita di Pianificazione.", "install-windows-task",
+                  destructive=True),
+        GuiAction("win11-remove", "Rimuovi task Win11", "Automazione Win11",
+                  "Manca una CLI stabile per rimuovere il task pianificato.",
+                  None, unavailable_reason="CLI mancante: uninstall-windows-task"),
+        GuiAction("win11-status", "Leggi stato task Win11", "Automazione Win11",
+                  "Manca una CLI stabile per stato, prossima esecuzione e ultimo esito.",
+                  None, unavailable_reason="CLI mancante: status-windows-task"),
+        GuiAction("diag-doctor", "Doctor avanzato", "Diagnostica avanzata",
+                  "Esegue doctor in formato umano.", "doctor", human=True),
+        GuiAction("diag-pilot-safe", "Smoke pilota mirato", "Diagnostica avanzata",
+                  "Esegue i gate pilot-check, pipeline dry-run ed export Bucoliche dry-run.",
+                  "pilot-run-safe", human=True),
+        GuiAction("diag-central", "Export eventi centrali", "Diagnostica avanzata",
+                  "Esporta eventi locali senza segreti.", "export-central-events"),
+    )
+
+
+def gui_actions_by_tab() -> dict[str, tuple[GuiAction, ...]]:
+    actions = gui_actions()
+    return {tab: tuple(action for action in actions if action.tab == tab) for tab in gui_tabs()}
+
+
 class VirgilioGuiApp:
-    """Small operator GUI that delegates execution to the CLI entrypoint."""
+    """Operator GUI that delegates execution to the CLI entrypoint."""
 
     def __init__(self, root, *, command_runner=run_cli_command, initial_config: Path | None = None):
         import tkinter as tk
@@ -69,20 +311,32 @@ class VirgilioGuiApp:
         self.root = root
         self.command_runner = command_runner
 
-        root.title("Virgilio Local Connector")
-        root.minsize(780, 520)
+        root.title("Virgilio Caronte locale")
+        root.minsize(980, 680)
 
-        self.command_var = tk.StringVar(value="doctor")
         self.config_var = tk.StringVar(value=str(initial_config) if initial_config else "")
         self.output_var = tk.StringVar(value="")
         self.email_var = tk.StringVar(value="")
         self.staging_var = tk.StringVar(value="")
+        self.provider_var = tk.StringVar(value="gmail_workspace")
+        self.alias_var = tk.StringVar(value="")
+        self.imap_host_var = tk.StringVar(value="")
+        self.imap_port_var = tk.IntVar(value=993)
+        self.input_folder_var = tk.StringVar(value="")
+        self.done_folder_var = tk.StringVar(value="")
+        self.error_folder_var = tk.StringVar(value="")
+        self.enable_bucoliche_var = tk.BooleanVar(value=False)
         self.dry_run_var = tk.BooleanVar(value=True)
-        self.human_var = tk.BooleanVar(value=True)
+        self.force_var = tk.BooleanVar(value=False)
+        self.interval_var = tk.IntVar(value=300)
+        self.max_cycles_var = tk.IntVar(value=1)
+        self.format_var = tk.StringVar(value="jsonl")
+        self.python_var = tk.StringVar(value=sys.executable)
+        self.task_name_var = tk.StringVar(value="Virgilio Local Watch")
+        self.confirm_reset_var = tk.BooleanVar(value=False)
         self.status_var = tk.StringVar(value="Pronto")
 
         self._build_layout()
-        self._sync_form()
 
     def _build_layout(self) -> None:
         from tkinter import filedialog
@@ -91,67 +345,130 @@ class VirgilioGuiApp:
         root = self.root
         ttk = self._ttk
 
-        frame = ttk.Frame(root, padding=12)
-        frame.grid(sticky="nsew")
+        shell = ttk.Frame(root, padding=12)
+        shell.grid(sticky="nsew")
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        frame.rowconfigure(7, weight=1)
+        shell.columnconfigure(0, weight=1)
+        shell.rowconfigure(2, weight=1)
+        shell.rowconfigure(3, weight=1)
 
-        ttk.Label(frame, text="Comando").grid(row=0, column=0, sticky="w", pady=(0, 8))
-        command_box = ttk.Combobox(
-            frame,
-            textvariable=self.command_var,
-            values=("doctor", "pilot", "init-config"),
-            state="readonly",
-        )
-        command_box.grid(row=0, column=1, sticky="ew", padx=(8, 0), pady=(0, 8))
-        command_box.bind("<<ComboboxSelected>>", lambda _event: self._sync_form())
+        self._build_common_panel(shell)
+        self._build_options_panel(shell)
 
-        ttk.Label(frame, text="Config YAML").grid(row=1, column=0, sticky="w", pady=4)
-        self.config_entry = ttk.Entry(frame, textvariable=self.config_var)
-        self.config_entry.grid(row=1, column=1, sticky="ew", padx=(8, 0), pady=4)
-        ttk.Button(frame, text="Sfoglia...", command=self._browse_config).grid(
-            row=1, column=2, sticky="ew", padx=(8, 0), pady=4
-        )
+        notebook = ttk.Notebook(shell)
+        notebook.grid(row=2, column=0, sticky="nsew", pady=(8, 8))
+        for tab, actions in gui_actions_by_tab().items():
+            frame = ttk.Frame(notebook, padding=10)
+            notebook.add(frame, text=tab)
+            self._build_tab(frame, actions)
 
-        ttk.Label(frame, text="Output config").grid(row=2, column=0, sticky="w", pady=4)
-        self.output_entry = ttk.Entry(frame, textvariable=self.output_var)
-        self.output_entry.grid(row=2, column=1, sticky="ew", padx=(8, 0), pady=4)
-        ttk.Button(frame, text="Salva come...", command=self._browse_output).grid(
-            row=2, column=2, sticky="ew", padx=(8, 0), pady=4
-        )
-
-        ttk.Label(frame, text="Email account").grid(row=3, column=0, sticky="w", pady=4)
-        self.email_entry = ttk.Entry(frame, textvariable=self.email_var)
-        self.email_entry.grid(row=3, column=1, sticky="ew", padx=(8, 0), pady=4)
-
-        ttk.Label(frame, text="Cartella staging").grid(row=4, column=0, sticky="w", pady=4)
-        self.staging_entry = ttk.Entry(frame, textvariable=self.staging_var)
-        self.staging_entry.grid(row=4, column=1, sticky="ew", padx=(8, 0), pady=4)
-        ttk.Button(frame, text="Cartella...", command=self._browse_staging).grid(
-            row=4, column=2, sticky="ew", padx=(8, 0), pady=4
-        )
-
-        self.dry_run_check = ttk.Checkbutton(frame, text="Dry-run", variable=self.dry_run_var)
-        self.dry_run_check.grid(row=5, column=0, sticky="w", pady=(8, 4))
-        self.human_check = ttk.Checkbutton(frame, text="Output umano", variable=self.human_var)
-        self.human_check.grid(row=5, column=1, sticky="w", padx=(8, 0), pady=(8, 4))
-
-        button_row = ttk.Frame(frame)
-        button_row.grid(row=6, column=0, columnspan=3, sticky="ew", pady=(8, 8))
-        button_row.columnconfigure(0, weight=1)
-        ttk.Label(button_row, textvariable=self.status_var).grid(row=0, column=0, sticky="w")
-        ttk.Button(button_row, text="Esegui", command=self.run_selected_command).grid(
+        output_frame = ttk.Frame(shell)
+        output_frame.grid(row=3, column=0, sticky="nsew")
+        output_frame.columnconfigure(0, weight=1)
+        output_frame.rowconfigure(1, weight=1)
+        ttk.Label(output_frame, textvariable=self.status_var).grid(row=0, column=0, sticky="w")
+        ttk.Button(output_frame, text="Copia report", command=self._copy_output).grid(
             row=0, column=1, sticky="e"
         )
+        self.output_text = self._tk.Text(output_frame, wrap="word", height=12)
+        self.output_text.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(4, 0))
 
-        self.output_text = self._tk.Text(frame, wrap="word", height=18)
-        self.output_text.grid(row=7, column=0, columnspan=3, sticky="nsew", pady=(4, 0))
+    def _build_common_panel(self, parent) -> None:
+        ttk = self._ttk
+        panel = ttk.LabelFrame(parent, text="Configurazione locale", padding=10)
+        panel.grid(row=0, column=0, sticky="ew")
+        panel.columnconfigure(1, weight=1)
+
+        ttk.Label(panel, text="Config YAML").grid(row=0, column=0, sticky="w", pady=3)
+        ttk.Entry(panel, textvariable=self.config_var).grid(row=0, column=1, sticky="ew", padx=8, pady=3)
+        ttk.Button(panel, text="Sfoglia...", command=self._browse_config).grid(row=0, column=2, pady=3)
+
+        ttk.Label(panel, text="Python").grid(row=1, column=0, sticky="w", pady=3)
+        ttk.Entry(panel, textvariable=self.python_var).grid(row=1, column=1, sticky="ew", padx=8, pady=3)
+        ttk.Button(panel, text="Sfoglia...", command=self._browse_python).grid(row=1, column=2, pady=3)
+
+    def _build_options_panel(self, parent) -> None:
+        ttk = self._ttk
+        panel = ttk.LabelFrame(parent, text="Parametri azioni", padding=10)
+        panel.grid(row=1, column=0, sticky="ew", pady=(8, 0))
+        for column in (1, 3, 5):
+            panel.columnconfigure(column, weight=1)
+
+        ttk.Label(panel, text="Output config").grid(row=0, column=0, sticky="w", pady=3)
+        ttk.Entry(panel, textvariable=self.output_var).grid(row=0, column=1, sticky="ew", padx=8, pady=3)
+        ttk.Button(panel, text="Salva come...", command=self._browse_output).grid(row=0, column=2, pady=3)
+        ttk.Label(panel, text="Email").grid(row=0, column=3, sticky="w", padx=(12, 0), pady=3)
+        ttk.Entry(panel, textvariable=self.email_var).grid(row=0, column=4, sticky="ew", padx=8, pady=3)
+        ttk.Button(panel, text="Staging...", command=self._browse_staging).grid(row=0, column=5, pady=3)
+
+        ttk.Label(panel, text="Cartella staging").grid(row=1, column=0, sticky="w", pady=3)
+        ttk.Entry(panel, textvariable=self.staging_var).grid(row=1, column=1, sticky="ew", padx=8, pady=3)
+        ttk.Label(panel, text="Alias").grid(row=1, column=3, sticky="w", padx=(12, 0), pady=3)
+        ttk.Entry(panel, textvariable=self.alias_var).grid(row=1, column=4, sticky="ew", padx=8, pady=3)
+
+        ttk.Label(panel, text="Host IMAP").grid(row=2, column=0, sticky="w", pady=3)
+        ttk.Entry(panel, textvariable=self.imap_host_var).grid(row=2, column=1, sticky="ew", padx=8, pady=3)
+        ttk.Label(panel, text="Porta").grid(row=2, column=3, sticky="w", padx=(12, 0), pady=3)
+        ttk.Spinbox(panel, from_=1, to=65535, textvariable=self.imap_port_var, width=8).grid(
+            row=2, column=4, sticky="w", padx=8, pady=3
+        )
+
+        ttk.Label(panel, text="Input").grid(row=3, column=0, sticky="w", pady=3)
+        ttk.Entry(panel, textvariable=self.input_folder_var).grid(row=3, column=1, sticky="ew", padx=8, pady=3)
+        ttk.Label(panel, text="Completate").grid(row=3, column=3, sticky="w", padx=(12, 0), pady=3)
+        ttk.Entry(panel, textvariable=self.done_folder_var).grid(row=3, column=4, sticky="ew", padx=8, pady=3)
+        ttk.Label(panel, text="Errore").grid(row=4, column=0, sticky="w", pady=3)
+        ttk.Entry(panel, textvariable=self.error_folder_var).grid(row=4, column=1, sticky="ew", padx=8, pady=3)
+        ttk.Checkbutton(panel, text="Dry-run", variable=self.dry_run_var).grid(
+            row=4, column=3, sticky="w", padx=(12, 0), pady=3
+        )
+        ttk.Checkbutton(panel, text="Bucoliche in config", variable=self.enable_bucoliche_var).grid(
+            row=4, column=4, sticky="w", padx=8, pady=3
+        )
+        ttk.Checkbutton(panel, text="Conferma reset", variable=self.confirm_reset_var).grid(
+            row=4, column=5, sticky="w", padx=(12, 0), pady=3
+        )
+
+        ttk.Label(panel, text="Intervallo sec.").grid(row=5, column=0, sticky="w", pady=3)
+        ttk.Spinbox(panel, from_=1, to=86400, textvariable=self.interval_var, width=8).grid(
+            row=5, column=1, sticky="w", padx=8, pady=3
+        )
+        ttk.Label(panel, text="Cicli max").grid(row=5, column=3, sticky="w", padx=(12, 0), pady=3)
+        ttk.Spinbox(panel, from_=0, to=999, textvariable=self.max_cycles_var, width=8).grid(
+            row=5, column=4, sticky="w", padx=8, pady=3
+        )
+        ttk.Checkbutton(panel, text="Sovrascrivi se previsto", variable=self.force_var).grid(
+            row=5, column=5, sticky="w", padx=(12, 0), pady=3
+        )
+
+    def _build_tab(self, frame, actions: tuple[GuiAction, ...]) -> None:
+        ttk = self._ttk
+        frame.columnconfigure(1, weight=1)
+        for row, action in enumerate(actions):
+            ttk.Button(
+                frame,
+                text=action.label,
+                command=lambda item=action: self.run_action(item),
+                state=("normal" if action.available else "disabled"),
+                width=28,
+            ).grid(row=row, column=0, sticky="ew", pady=3)
+            text = action.summary
+            if not action.available:
+                text = f"{text} ({action.unavailable_reason})"
+            ttk.Label(frame, text=text, wraplength=620, justify="left").grid(
+                row=row, column=1, sticky="w", padx=(10, 0), pady=3
+            )
 
     def _set_output(self, text: str) -> None:
         self.output_text.delete("1.0", "end")
-        self.output_text.insert("1.0", text.strip() or "(nessun output)")
+        self.output_text.insert("1.0", sanitize_output(text).strip() or "(nessun output)")
+
+    def _copy_output(self) -> None:
+        text = sanitize_output(self.output_text.get("1.0", "end")).strip()
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+        self.status_var.set("Report copiato negli appunti")
 
     def _browse_config(self) -> None:
         path = self._filedialog.askopenfilename(
@@ -175,50 +492,95 @@ class VirgilioGuiApp:
         if path:
             self.staging_var.set(path)
 
-    def _set_state(self, widget, enabled: bool) -> None:
-        widget.configure(state=("normal" if enabled else "disabled"))
+    def _browse_python(self) -> None:
+        path = self._filedialog.askopenfilename(
+            title="Seleziona python.exe",
+            filetypes=[("Python", "python.exe"), ("Tutti i file", "*.*")],
+        )
+        if path:
+            self.python_var.set(path)
 
-    def _sync_form(self) -> None:
-        init_mode = self.command_var.get() == "init-config"
-        runtime_mode = self.command_var.get() in {"doctor", "pilot"}
+    def _spec_for_action(self, action: GuiAction) -> GuiCommandSpec:
+        config_text = self.config_var.get().strip()
+        output_text = self.output_var.get().strip()
+        staging_text = self.staging_var.get().strip()
+        python_text = self.python_var.get().strip()
+        max_cycles = self.max_cycles_var.get()
+        if action.key == "start-watch-once":
+            max_cycles = 1
+        if action.key == "start-watch":
+            max_cycles = 0
+        dry_run = action.dry_run or (action.allow_dry_run_toggle and self.dry_run_var.get())
+        if action.key in {"win11-install", "maintenance-reset"}:
+            dry_run = False
+        return GuiCommandSpec(
+            command=action.command or "",
+            config_path=Path(config_text) if config_text else None,
+            dry_run=dry_run,
+            human=action.human,
+            output_path=Path(output_text) if output_text else None,
+            email=self.email_var.get(),
+            staging_dir=Path(staging_text) if staging_text else None,
+            provider=self.provider_var.get(),
+            account_alias=self.alias_var.get(),
+            imap_host=self.imap_host_var.get(),
+            imap_port=self.imap_port_var.get(),
+            input_folder=self.input_folder_var.get(),
+            done_folder=self.done_folder_var.get(),
+            error_folder=self.error_folder_var.get(),
+            enable_bucoliche=self.enable_bucoliche_var.get(),
+            force=self.force_var.get(),
+            interval_seconds=self.interval_var.get(),
+            max_cycles=max_cycles,
+            format_name=self.format_var.get(),
+            python_exe=Path(python_text) if python_text else None,
+            task_name=self.task_name_var.get(),
+            backup=action.key == "maintenance-reset",
+            confirm=self.confirm_reset_var.get(),
+        )
 
-        self._set_state(self.config_entry, runtime_mode)
-        self._set_state(self.output_entry, init_mode)
-        self._set_state(self.email_entry, init_mode)
-        self._set_state(self.staging_entry, init_mode)
-        self._set_state(self.dry_run_check, init_mode)
-        self._set_state(self.human_check, self.command_var.get() == "pilot")
-
-    def run_selected_command(self) -> None:
+    def run_action(self, action: GuiAction) -> None:
+        if not action.available:
+            self.status_var.set("Azione non disponibile")
+            self._set_output(action.unavailable_reason)
+            return
+        if action.destructive and not self._confirm(action):
+            self.status_var.set("Azione annullata")
+            return
         try:
-            spec = GuiCommandSpec(
-                command=self.command_var.get(),
-                config_path=Path(self.config_var.get()) if self.config_var.get().strip() else None,
-                dry_run=self.dry_run_var.get(),
-                human=self.human_var.get(),
-                output_path=Path(self.output_var.get()) if self.output_var.get().strip() else None,
-                email=self.email_var.get(),
-                staging_dir=Path(self.staging_var.get()) if self.staging_var.get().strip() else None,
-            )
-            args = build_cli_args(spec)
+            args = build_cli_args(self._spec_for_action(action))
         except ValueError as exc:
             self.status_var.set("Input non valido")
             self._set_output(f"Errore: {exc}")
             return
 
-        self.status_var.set(f"Esecuzione: {' '.join(args)}")
+        self.status_var.set(f"Esecuzione: {action.label}")
         self.root.update_idletasks()
         completed = self.command_runner(args)
         output = completed.stdout.strip()
         error = completed.stderr.strip()
         combined = output if not error else f"{output}\n\n{error}".strip()
         self._set_output(combined)
-        self.status_var.set(f"Exit code: {completed.returncode}")
+        self.status_var.set(f"{action.label}: completato con codice {completed.returncode}")
+
+    def _confirm(self, action: GuiAction) -> bool:
+        from tkinter import messagebox
+
+        if action.key == "maintenance-reset" and not self.confirm_reset_var.get():
+            self._set_output("Per il reset seleziona prima 'Conferma reset'.")
+            return False
+        return messagebox.askyesno(
+            "Conferma azione",
+            f"Eseguire '{action.label}'? L'azione puo modificare lo stato locale.",
+        )
 
 
 def launch_gui(*, config_path: Path | None = None) -> int:
     import tkinter as tk
 
+    if os.environ.get("DISPLAY") == "" and os.name != "nt":
+        print("GUI non disponibile: ambiente grafico assente.")
+        return 2
     root = tk.Tk()
     VirgilioGuiApp(root, initial_config=config_path)
     root.mainloop()

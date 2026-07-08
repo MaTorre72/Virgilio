@@ -2,14 +2,14 @@
 
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
-- Milestone attiva: nessuna nota; `v1.1.4 - Rifinitura collaudo, setup e hardening` chiusa
+- Milestone attiva: nessuna nota; `v1.1.4 - Rifinitura collaudo, setup e hardening` chiusa con task finale aggiuntivo `V114-T17`
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V114-T16 - Documentazione utente finale`
+- Ultimo task chiuso noto: `V114-T17 - GUI completa Caronte locale`
 - Task corrente consigliato: nessuno noto
 - Massimo due successivi: nessun prossimo task operativo noto
-- Blocchi aperti: nessuno noto; backlog v1.1.4 chiuso
-- Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-task15-full-rerun local_connector` -> `OK` (`306 passed in 39.86s`)
-- Ultimo smoke locale: `PYTEST_ADDOPTS="-o addopts='' --basetemp %TEMP%\virgilio-pytest-task15-smoke" scripts/dev/smoke_local_connector.ps1` -> `OK` (`306 passed in 39.79s`)
+- Blocchi aperti: nessuno noto; lacune CLI residue documentate nella GUI come azioni non disponibili
+- Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-v114-t17-full local_connector` -> `OK` (`310 passed in 26.36s`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`310 passed in 31.06s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

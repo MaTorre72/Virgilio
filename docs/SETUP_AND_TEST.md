@@ -118,6 +118,33 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-t
 Questi restano controlli locali. `pilot-run` senza `--dry-run` non e` un test automatico.
 Nel checkout verificato sono stati eseguiti anche `doctor-bucoliche --human`, `pilot-preview --human`, `setup-bucoliche-test-sheet --dry-run` e due `pilot-run --human` consecutivi sul mailbox di test.
 
+## GUI Caronte locale
+
+Per l'uso ordinario da interfaccia grafica:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector gui --config $config
+```
+
+La GUI e` organizzata in tab: Stato, Setup iniziale, Account mail, Bucoliche,
+Avvio, Monitoraggio, Manutenzione, Automazione Win11 e Diagnostica avanzata.
+Ogni pulsante disponibile costruisce argomenti per un comando CLI gia` esistente
+e mostra output mascherando valori chiaramente sensibili come password, token e
+secret. Le azioni distruttive, come `reset-local-state`, richiedono conferma.
+
+Azioni intenzionalmente disabilitate perche` manca una CLI stabile:
+
+- modifica account esistenti, enable/disable account;
+- stop esplicito di un watch avviato dalla GUI;
+- backup locale separato dal reset con backup;
+- export/import configurazione senza segreti;
+- verifica integrita` DB dedicata;
+- pulizia controllata della Quarantena locale;
+- rimozione task Win11;
+- lettura stato, prossima esecuzione e ultimo esito del task Win11.
+
 ## Reset locale sicuro
 
 ```powershell
