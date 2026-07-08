@@ -115,6 +115,7 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config l
 local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot --config local_connector\accounts.local.yaml --human
 local_connector\.venv\Scripts\python.exe -m virgilio_connector run-local-pipeline --config local_connector\accounts.local.yaml --dry-run --human
 local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --dry-run --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --dry-run
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
@@ -123,8 +124,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_conn
 - `doctor` controlla la configurazione.
 - `pilot` mostra il flusso senza effetti operativi.
 - `run-local-pipeline --dry-run` e `pilot-run --dry-run` restano test controllati.
+- `install-windows-task` prepara o registra l'avvio automatico locale con Utilita` di Pianificazione su Windows 11.
 - Lo smoke locale resta la verifica finale minima.
 - Sul mailbox di test sono stati verificati anche `doctor-bucoliche --human`, `pilot-preview --human`, `setup-bucoliche-test-sheet --dry-run` e due `pilot-run --human` consecutivi per confermare l'idempotenza.
+
+Per attivare l'avvio automatico dopo il dry-run:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --force
+```
+
+Il comando registra un task utente `ONLOGON` chiamato `Virgilio Local Watch`, avvia `watch` in finestra nascosta e resta limitato al profilo locale corrente; non installa servizi Windows e non richiede deploy Google.
 
 Collaudi reali:
 

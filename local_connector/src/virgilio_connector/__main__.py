@@ -73,6 +73,11 @@ from .traceability import (
     load_machine_id,
     load_rules,
 )
+from .windows_task import (
+    WindowsTaskError,
+    build_windows_watch_task,
+    register_windows_watch_task,
+)
 
 
 def _load_env_file(path: Path) -> None:
@@ -437,6 +442,13 @@ def main() -> int:
     init_config.add_argument("--enable-bucoliche", action="store_true")
     init_config.add_argument("--dry-run", action="store_true")
     init_config.add_argument("--force", action="store_true")
+    install_windows_task = commands.add_parser("install-windows-task")
+    install_windows_task.add_argument("--config", type=Path, required=True)
+    install_windows_task.add_argument("--python-exe", type=Path, default=Path(sys.executable))
+    install_windows_task.add_argument("--task-name", default="Virgilio Local Watch")
+    install_windows_task.add_argument("--interval-seconds", type=int, default=300)
+    install_windows_task.add_argument("--dry-run", action="store_true")
+    install_windows_task.add_argument("--force", action="store_true")
     reset_local_state_cmd = commands.add_parser("reset-local-state")
     reset_local_state_cmd.add_argument("--backup", action="store_true")
     reset_local_state_cmd.add_argument("--confirm", action="store_true")
@@ -1006,6 +1018,27 @@ def main() -> int:
                 f"virgilio pilot --config {args.output} --human",
             ],
         }, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "install-windows-task":
+        try:
+            plan = build_windows_watch_task(
+                config_path=args.config,
+                python_exe=args.python_exe,
+                repo_root=Path.cwd(),
+                interval_seconds=args.interval_seconds,
+                task_name=args.task_name,
+                force=args.force,
+            )
+        except WindowsTaskError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.dry_run:
+            print(json.dumps(plan.to_payload(status="dry_run"), ensure_ascii=False, separators=(",", ":")))
+            return 0
+        try:
+            payload = register_windows_watch_task(plan)
+        except WindowsTaskError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
         return 0
     if args.command == "reset-local-state":
         local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))

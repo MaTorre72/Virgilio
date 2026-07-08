@@ -85,6 +85,7 @@ Dopo aver valorizzato le env IMAP richieste nella sessione PowerShell corrente:
 $env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
 local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config local_connector\accounts.local.yaml --human
 local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --dry-run --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --dry-run
 ```
 
 Questi restano controlli locali. `pilot-run` senza `--dry-run` non e` un test automatico.
@@ -98,6 +99,24 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector reset-local-state
 ```
 
 Il comando crea un backup automatico della cartella locale accanto allo stato corrente, poi ricrea il layout base e preserva `machine_id` quando presente. Senza `--backup` e `--confirm` non esegue cancellazioni.
+
+## Avvio automatico su Windows 11
+
+Per verificare prima il task pianificato senza registrarlo:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --dry-run
+```
+
+Per creare davvero il task locale:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --force
+```
+
+Il task usa Utilita` di Pianificazione con trigger `ONLOGON`, finestra PowerShell nascosta e comando `watch` sul checkout locale corrente. Non crea servizi residenti separati, non esegue installazioni silenziose e richiede path assoluti gia` presenti sul PC.
 
 ## Test Apps Script
 

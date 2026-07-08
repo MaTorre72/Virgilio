@@ -11,7 +11,7 @@ Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Qui restano solo task attivi o 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,
 mantenendo task piccoli, seriali, verificabili e doc-first.
 
-Nota operativa: il primo task eseguibile regolare resta `V114-T10 - Setup CLI ready-to-run`.
+Nota operativa: il primo task eseguibile regolare resta `V114-T16 - Documentazione utente finale`.
 
 | ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
 |---|---|---|---|---|---|---|
@@ -29,5 +29,5 @@ Nota operativa: il primo task eseguibile regolare resta `V114-T10 - Setup CLI re
 | V114-T12 | DONE | P3 | Reset locale sicuro | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | esiste `reset-local-state --backup --confirm`, con backup automatico, conferma esplicita e messaggi chiari | priorita` bassa; backup obbligatorio; nessuna cancellazione implicita |
 | V114-T13 | DONE | P3 | Migrazione installazione locale | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | export/import configurazione funzionano senza segreti in chiaro e supportano cambio PC o cartelle | priorita` bassa; nessun segreto in chiaro; nessun dato personale |
 | V114-T14 | DONE | P2 | Avvio Caronte locale | `local_connector/`, CLI utente finale, `README.md` | esiste `virgilio watch` o `virgilio local-watch` che avvia il connettore e resta in attesa controllando la mail con polling controllato | un solo comando utente finale; niente GUI nuova; niente polling fuori controllo |
-| V114-T15 | TODO | P3 | Installazione automatica Win11 | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | esiste un comando per l'esecuzione automatica su Windows 11 tramite Utilita di Pianificazione | solo Windows 11; niente servizi residenti; niente installazioni silenziose ambigue |
+| V114-T15 | DONE | P3 | Installazione automatica Win11 | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | esiste un comando per l'esecuzione automatica su Windows 11 tramite Utilita di Pianificazione | solo Windows 11; niente servizi residenti; niente installazioni silenziose ambigue |
 | V114-T16 | TODO | P2 | Documentazione utente finale | `README.md`, `docs/SETUP_AND_TEST.md`, `docs/CLASP_WORKFLOW.md` | installazione minima, primo avvio, test, uso quotidiano e troubleshooting sono spiegati in modo operativo | niente segreti, niente termini macchina superflui, niente nuove procedure non testate |

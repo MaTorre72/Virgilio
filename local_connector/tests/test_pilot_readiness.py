@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tomllib
 import pytest
@@ -783,6 +784,70 @@ def test_init_config_cli_rejects_relative_staging_dir(tmp_path, monkeypatch, cap
     captured = capsys.readouterr()
     assert "absolute path" in captured.err
     assert not output.exists()
+
+
+def test_install_windows_task_cli_dry_run_outputs_task_scheduler_payload(tmp_path, monkeypatch, capsys):
+    from virgilio_connector.__main__ import main
+
+    config = tmp_path / "accounts.local.yaml"
+    config.write_text("accounts: []\n", encoding="utf-8")
+    python_exe = tmp_path / "python.exe"
+    python_exe.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio", "install-windows-task",
+        "--config", str(config),
+        "--python-exe", str(python_exe),
+        "--task-name", "Virgilio Test Watch",
+        "--interval-seconds", "600",
+        "--dry-run",
+    ])
+    assert main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "dry_run"
+    assert payload["task_name"] == "Virgilio Test Watch"
+    assert payload["trigger"] == "ONLOGON"
+    assert "--interval-seconds 600" in payload["task_action"]
+    assert "schtasks" in payload["create_command"]
+
+
+def test_install_windows_task_cli_registers_task(tmp_path, monkeypatch, capsys):
+    import virgilio_connector.windows_task as windows_task
+    from virgilio_connector.__main__ import main
+
+    config = tmp_path / "accounts.local.yaml"
+    config.write_text("accounts: []\n", encoding="utf-8")
+    python_exe = tmp_path / "python.exe"
+    python_exe.write_text("", encoding="utf-8")
+    seen = {}
+
+    def fake_run(args, **kwargs):
+        seen["args"] = args
+        seen["kwargs"] = kwargs
+        return subprocess.CompletedProcess(
+            args=args,
+            returncode=0,
+            stdout="SUCCESS: The scheduled task has successfully been created.",
+            stderr="",
+        )
+
+    monkeypatch.setattr(windows_task.subprocess, "run", fake_run)
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio", "install-windows-task",
+        "--config", str(config),
+        "--python-exe", str(python_exe),
+        "--task-name", "Virgilio Test Watch",
+        "--force",
+    ])
+    assert main() == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "created"
+    assert payload["task_name"] == "Virgilio Test Watch"
+    assert seen["args"][:4] == ["schtasks", "/create", "/tn", "Virgilio Test Watch"]
+    assert "/f" in seen["args"]
+    assert seen["kwargs"]["capture_output"] is True
+    assert seen["kwargs"]["text"] is True
+    assert seen["kwargs"]["check"] is False
 
 
 def test_console_script_registers_virgilio_entrypoint():
