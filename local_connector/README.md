@@ -258,6 +258,17 @@ e include `human_summary`, una sintesi testuale leggibile con esito, contatori,
 warning/errori e prossima azione consigliata.
 Non chiama Apps Script, Bucoliche o notifiche.
 
+### Avvio continuo locale
+
+```powershell
+virgilio watch --config accounts.local.yaml --human
+virgilio local-watch --config accounts.local.yaml --human
+```
+
+`watch` riusa `run-local-pipeline` in un loop controllato, con `--interval-seconds`
+per regolare la pausa tra i cicli e `--max-cycles` per prove o diagnosi.
+`--dry-run` resta disponibile.
+
 ### Doctor locale
 
 Prima di un pilota reale:

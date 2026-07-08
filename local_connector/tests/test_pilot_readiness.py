@@ -444,7 +444,8 @@ def test_cli_commands_exist_and_missing_config_blocked(tmp_path, monkeypatch, ca
 
 def test_new_cli_commands_are_registered(tmp_path, monkeypatch):
     from virgilio_connector.__main__ import main
-    for command in ("setup-bucoliche-test-sheet", "pilot-preview", "google-oauth-login"):
+    for command in ("setup-bucoliche-test-sheet", "pilot-preview", "google-oauth-login",
+                    "watch", "local-watch"):
         monkeypatch.setattr(sys, "argv", ["virgilio_connector", command,
                                           "--config", str(tmp_path / "missing.yaml")])
         with pytest.raises(SystemExit) as exc:
@@ -690,6 +691,48 @@ def test_pilot_run_cli_human_output_is_essential(tmp_path, monkeypatch, capsys):
     assert "Pipeline: OK (completed_with_warnings)" in text
     assert "Bucoliche: eventi nuovi 2 / gia esportati 5" in text
     assert "Esito finale: READY_DRY_RUN" in text
+
+
+def test_watch_cli_runs_controlled_cycles(tmp_path, monkeypatch, capsys):
+    import virgilio_connector.__main__ as cli
+
+    @dataclass
+    class FakePipelineResult:
+        report_path: str | None = None
+        dry_run: bool = False
+        status: str = "completed"
+        errors: tuple[str, ...] = ()
+        warnings: tuple[str, ...] = ()
+        human_summary: tuple[str, ...] = ("Pipeline locale pronta.",)
+
+    class FakeRunner:
+        def __init__(self):
+            self.cycles = 0
+
+        def run(self, *, dry_run):
+            self.cycles += 1
+            return FakePipelineResult(
+                dry_run=dry_run,
+                human_summary=(f"Simulazione ciclo {self.cycles}",),
+            )
+
+    runner = FakeRunner()
+    sleep_calls = []
+    monkeypatch.setattr(cli, "_build_local_pipeline_runner_from_config", lambda config: runner)
+    monkeypatch.setattr(cli, "sleep", lambda seconds: sleep_calls.append(seconds))
+    monkeypatch.setattr(sys, "argv", ["virgilio", "watch", "--config",
+                                      str(tmp_path / "accounts.yaml"), "--dry-run",
+                                      "--human", "--interval-seconds", "7",
+                                      "--max-cycles", "2"])
+
+    assert cli.main() == 0
+    text = capsys.readouterr().out
+    assert "Ciclo watch #1" in text
+    assert "Ciclo watch #2" in text
+    assert "Simulazione ciclo 1" in text
+    assert "Simulazione ciclo 2" in text
+    assert runner.cycles == 2
+    assert sleep_calls == [7]
 
 
 def test_init_config_cli_writes_valid_template(tmp_path, monkeypatch, capsys):

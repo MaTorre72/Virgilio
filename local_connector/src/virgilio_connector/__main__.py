@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import sqlite3
 import sys
+from time import sleep
 
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
 from .bucoliche import (BucolicheAppendOnlyAdapter, BucolicheError,
@@ -230,6 +231,18 @@ def _build_local_pipeline_runner(accounts, storage_config, paths, config_path):
     )
 
 
+def _build_local_pipeline_runner_from_config(config_path: Path) -> LocalPipelineRunner:
+    local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+    accounts = load_multi_account_config(config_path)
+    storage_config = load_storage_config(config_path)
+    paths = LocalDataPaths(local_root)
+    return _build_local_pipeline_runner(accounts, storage_config, paths, config_path)
+
+
+def _watch_human_summary(result, *, cycle: int) -> list[str]:
+    return [f"Ciclo watch #{cycle}", *result.human_summary]
+
+
 def _record_da_archiviare_intake_event(local_root: Path, payload: dict[str, object],
                                        *, result: DaArchiviareIntakeResponse | None = None,
                                        error: str | None = None) -> None:
@@ -359,6 +372,16 @@ def main() -> int:
     pipeline.add_argument("--config", type=Path, required=True)
     pipeline.add_argument("--dry-run", action="store_true")
     pipeline.add_argument("--human", action="store_true")
+    watch = commands.add_parser(
+        "watch",
+        aliases=("local-watch",),
+        help="Mantiene attiva la pipeline locale con polling controllato",
+    )
+    watch.add_argument("--config", type=Path, required=True)
+    watch.add_argument("--dry-run", action="store_true")
+    watch.add_argument("--human", action="store_true")
+    watch.add_argument("--interval-seconds", type=int, default=300)
+    watch.add_argument("--max-cycles", type=int, default=0)
     doctor = commands.add_parser("doctor")
     doctor.add_argument("--config", type=Path, required=True)
     doctor.add_argument("--human", action="store_true")
@@ -671,32 +694,46 @@ def main() -> int:
         }, ensure_ascii=False, separators=(",", ":")))
         return 0 if result.status in {"dry_run", "completed"} else 1
     if args.command == "run-local-pipeline":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
         try:
-            accounts = load_multi_account_config(args.config)
-            storage_config = load_storage_config(args.config)
-            paths = LocalDataPaths(local_root)
-            result = LocalPipelineRunner(
-                accounts, paths=paths, config_path=args.config,
-                scanner_factory=lambda: MultiAccountReadonlyScanner(accounts, paths=paths),
-                processor_factory=lambda: MultiAccountImapProcessor(
-                    accounts, paths=paths,
-                    scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
-                    rules=load_rules(args.config),
-                    max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
-                ),
-                storage_factory=lambda: LocalFilesystemStorageAdapter(
-                    state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
-                ),
-                completion_factory=lambda: LocalCompletionRunner(accounts, paths=paths),
-            ).run(dry_run=args.dry_run)
-        except (MultiAccountConfigError, ValueError) as exc:
+            result = _build_local_pipeline_runner_from_config(args.config).run(dry_run=args.dry_run)
+        except (FileNotFoundError, MultiAccountConfigError, ValueError) as exc:
             parser.exit(2, f"error: {exc}\n")
         if args.human:
             _print_human(result.human_summary)
         else:
             print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.status in {"completed", "completed_with_warnings"} else 1
+    if args.command in {"watch", "local-watch"}:
+        if args.interval_seconds <= 0:
+            parser.exit(2, "error: --interval-seconds must be greater than 0\n")
+        if args.max_cycles < 0:
+            parser.exit(2, "error: --max-cycles must be 0 or greater\n")
+        try:
+            runner = _build_local_pipeline_runner_from_config(args.config)
+        except (FileNotFoundError, MultiAccountConfigError, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        cycle = 0
+        try:
+            while True:
+                cycle += 1
+                result = runner.run(dry_run=args.dry_run)
+                if args.human:
+                    if cycle > 1:
+                        print()
+                    _print_human(_watch_human_summary(result, cycle=cycle))
+                else:
+                    print(json.dumps({
+                        "cycle": cycle,
+                        **asdict(result),
+                    }, ensure_ascii=False, separators=(",", ":")))
+                if args.max_cycles and cycle >= args.max_cycles:
+                    return 0
+                sleep(args.interval_seconds)
+        except KeyboardInterrupt:
+            if args.human:
+                print()
+                _print_human([f"Watch interrotto dopo {cycle} ciclo{'i' if cycle != 1 else ''}."])
+            return 130
     if args.command == "doctor":
         local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
         try:
