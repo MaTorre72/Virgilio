@@ -73,6 +73,57 @@ local_connector\.venv\Scripts\python.exe -m pip install -e .\local_connector
 
 Offline questo comando richiede `setuptools` gia` presente nel venv locale. Se `setuptools.build_meta` manca, per test e smoke resta piu` robusto usare `PYTHONPATH=local_connector\src` e il comando smoke ufficiale.
 
+## Avvio rapido locale
+
+Sequenza minima per partire senza Gmail reale, Drive reale o deploy Google:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
+$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
+
+local_connector\.venv\Scripts\python.exe -m virgilio_connector init-config --output local_connector\accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
+local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config $config --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot --config $config --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config $config --dry-run --human
+```
+
+Ordine operativo:
+
+- `init-config` crea il file locale senza scrivere segreti.
+- `doctor` controlla env, storage e prerequisiti.
+- `pilot` mostra il percorso completo senza effetti operativi.
+- `pilot-run --dry-run` prova la sequenza controllata fino all'export simulato.
+- Lo smoke locale resta il gate finale prima di qualunque collaudo reale.
+
+## Uso quotidiano locale
+
+Per il lavoro giornaliero sul profilo locale:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
+$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
+
+local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config $config --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-preview --config $config --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector watch --config $config --dry-run --human --max-cycles 1
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --dry-run
+```
+
+- `pilot-preview` riassume account, eventi esportabili e conflitti senza eseguire la pipeline.
+- `watch --dry-run --max-cycles 1` verifica il loop operativo locale in un solo ciclo.
+- `install-windows-task --dry-run` mostra il task `Virgilio Local Watch` senza registrarlo.
+- Solo dopo il dry-run puoi usare `install-windows-task --force` per l'avvio automatico su Windows 11.
+
+## Troubleshooting rapido
+
+- Se `doctor` segnala `storage.staging_dir`, usa un path assoluto gia` esistente come `C:\Virgilio\staging`.
+- Se `init-config` rifiuta `--staging-dir`, il path non e` assoluto: correggilo prima di proseguire.
+- Se `pip install -e .\local_connector` fallisce offline, continua con `PYTHONPATH=local_connector\src` e smoke ufficiale.
+- Se `clasp` non e` nel PATH, usa i percorsi completi documentati sotto invece di inventare alias o copiare token.
+- Se devi azzerare il solo stato locale, usa `reset-local-state --backup --confirm`; non cancellare `.local_data` a mano.
+
 ## Documentazione principale
 
 - [Architettura](docs/ARCHITECTURE.md)
@@ -115,7 +166,9 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config l
 local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot --config local_connector\accounts.local.yaml --human
 local_connector\.venv\Scripts\python.exe -m virgilio_connector run-local-pipeline --config local_connector\accounts.local.yaml --dry-run --human
 local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --dry-run --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --dry-run
+$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
+$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --dry-run
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
@@ -132,7 +185,9 @@ Per attivare l'avvio automatico dopo il dry-run:
 
 ```powershell
 $env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --force
+$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
+$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --force
 ```
 
 Il comando registra un task utente `ONLOGON` chiamato `Virgilio Local Watch`, avvia `watch` in finestra nascosta e resta limitato al profilo locale corrente; non installa servizi Windows e non richiede deploy Google.
@@ -162,4 +217,4 @@ Per verificare lo snapshot Apps Script locale senza deploy:
 & 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' status
 ```
 
-`clasp status` conferma il mirror `apps_script\clasp` e non richiede deploy.
+`clasp status` conferma l'allineamento locale del progetto in `apps_script/src` e non richiede deploy.

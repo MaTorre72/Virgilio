@@ -1,9 +1,9 @@
 # Next Codex Tasks
 
-Stato operativo corrente: backlog v1.1.4 attivo; `V114-T15 - Installazione automatica Win11` chiuso; primo task eseguibile regolare `V114-T16 - Documentazione utente finale`.
+Stato operativo corrente: milestone v1.1.4 chiusa; `V114-T16 - Documentazione utente finale` chiuso; nessun prossimo task operativo noto.
 
 ## Prossimo task
 
-- `V114-T16 - Documentazione utente finale`
+- Nessun prossimo task operativo noto.
 
 La sequenza completa resta in `docs/DEV_BACKLOG.md`.

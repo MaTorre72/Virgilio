@@ -2,12 +2,12 @@
 
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
-- Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`
+- Milestone attiva: nessuna nota; `v1.1.4 - Rifinitura collaudo, setup e hardening` chiusa
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V114-T15 - Installazione automatica Win11`
-- Task corrente consigliato: `V114-T16 - Documentazione utente finale`
-- Massimo due successivi: nessuno noto oltre `V114-T16`
-- Blocchi aperti: nessuno noto; backlog v1.1.4 aperto
+- Ultimo task chiuso noto: `V114-T16 - Documentazione utente finale`
+- Task corrente consigliato: nessuno noto
+- Massimo due successivi: nessun prossimo task operativo noto
+- Blocchi aperti: nessuno noto; backlog v1.1.4 chiuso
 - Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-task15-full-rerun local_connector` -> `OK` (`306 passed in 39.86s`)
 - Ultimo smoke locale: `PYTEST_ADDOPTS="-o addopts='' --basetemp %TEMP%\virgilio-pytest-task15-smoke" scripts/dev/smoke_local_connector.ps1` -> `OK` (`306 passed in 39.79s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati

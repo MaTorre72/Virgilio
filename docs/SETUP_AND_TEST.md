@@ -38,6 +38,29 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector init-config --out
 Il comando genera un `accounts.local.yaml` con account, storage, Bucoliche e rules minime;
 le credenziali restano solo come nomi di variabili d'ambiente da valorizzare localmente.
 
+## Primo avvio consigliato
+
+Sequenza minima gia` coerente con il CLI attuale:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
+$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
+
+local_connector\.venv\Scripts\python.exe -m virgilio_connector init-config --output local_connector\accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
+local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config $config --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot --config $config --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config $config --dry-run --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --dry-run
+```
+
+L'ordine corretto e`:
+
+- `doctor` prima di ogni dry-run operativo;
+- `pilot` per la vista sintetica del flusso;
+- `pilot-run --dry-run` per la prova completa senza effetti;
+- `install-windows-task --dry-run` solo dopo che la configurazione locale e` gia` valida.
+
 ## Test Python
 
 ```powershell
@@ -83,9 +106,13 @@ Dopo aver valorizzato le env IMAP richieste nella sessione PowerShell corrente:
 
 ```powershell
 $env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config local_connector\accounts.local.yaml --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --dry-run --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --dry-run
+$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
+$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config $config --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-preview --config $config --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config $config --dry-run --human
+local_connector\.venv\Scripts\python.exe -m virgilio_connector watch --config $config --dry-run --human --max-cycles 1
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --dry-run
 ```
 
 Questi restano controlli locali. `pilot-run` senza `--dry-run` non e` un test automatico.
@@ -106,17 +133,29 @@ Per verificare prima il task pianificato senza registrarlo:
 
 ```powershell
 $env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --dry-run
+$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
+$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --dry-run
 ```
 
 Per creare davvero il task locale:
 
 ```powershell
 $env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config C:\Users\Marco\Documents\Virgilio\local_connector\accounts.local.yaml --python-exe C:\Users\Marco\Documents\Virgilio\local_connector\.venv\Scripts\python.exe --force
+$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
+$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
+local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --force
 ```
 
 Il task usa Utilita` di Pianificazione con trigger `ONLOGON`, finestra PowerShell nascosta e comando `watch` sul checkout locale corrente. Non crea servizi residenti separati, non esegue installazioni silenziose e richiede path assoluti gia` presenti sul PC.
+
+## Troubleshooting operativo
+
+- Se `doctor` blocca su IMAP, correggi prima le env richieste: non passare a `pilot-run`.
+- Se `storage.staging_dir` non esiste, crealo o correggilo nel file config; il CLI non usa fallback impliciti.
+- Se `install-windows-task` fallisce su `config_path` o `python_exe`, passa path risolti con `Resolve-Path` come negli esempi sopra.
+- Se `watch` serve solo come verifica, usa `--dry-run --max-cycles 1` per evitare loop lunghi.
+- Se `clasp` non e` nel PATH, usa `node.exe` piu` il path completo di `@google\clasp\build\src\index.js`; evita installazioni globali improvvisate durante il collaudo.
 
 ## Test Apps Script
 

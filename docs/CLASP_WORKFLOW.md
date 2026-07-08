@@ -9,7 +9,7 @@ Se il task tocca `local_connector`, non usare `clasp` e resta nel flusso locale.
 
 - Node.js installato in locale.
 - npm disponibile.
-- `clasp` installato e accessibile da shell.
+- `clasp` disponibile via PATH oppure richiamabile con `node.exe` sul path locale del pacchetto gia` presente.
 
 ## Controllo minimo
 
@@ -26,8 +26,11 @@ clasp status
 Se `clasp` manca:
 
 ```powershell
-npm install -g @google/clasp
+& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' --version
+& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' status
 ```
+
+Questa e` la forma gia` verificata nel workspace quando `clasp.cmd` non risolve dal PATH.
 
 ## Login iniziale
 
@@ -123,3 +126,10 @@ clasp push
 ## Regola finale
 
 `clasp push` non si esegue di default. Si esegue solo quando il task lo prevede o quando l'utente lo chiede chiaramente.
+
+## Troubleshooting minimo
+
+- Se `clasp --version` fallisce ma Node.js c'e`, usa il richiamo con `node.exe` e il path completo del pacchetto.
+- Se `clasp status` mostra un progetto inatteso, fermati prima di qualunque pull o push.
+- Se branch o `git status --short` non sono puliti, non fare `clasp pull` finche` il tree non e` compreso.
+- Se mancano login o permessi, fermati e chiedi l'accesso corretto; non aggirare il problema con file credenziali locali.
