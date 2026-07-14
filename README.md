@@ -127,6 +127,9 @@ La GUI organizza le azioni in tab: Stato, Setup iniziale, Account mail,
 Bucoliche, Avvio, Monitoraggio, Manutenzione, Automazione Win11 e Diagnostica
 avanzata. Ogni pulsante esegue un comando CLI gia` disponibile; le funzioni senza
 comando stabile restano visibili ma disabilitate con una causa esplicita.
+Nel tab Setup iniziale, `Apri procedura guidata` accompagna attraverso Cartelle,
+Caselle, Registro condiviso e verifica finale. La procedura e` riapribile, accetta
+anche una seconda casella e non richiede di modificare YAML o file di valori locali.
 
 ## Troubleshooting rapido
 

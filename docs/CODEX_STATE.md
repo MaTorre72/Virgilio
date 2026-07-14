@@ -4,12 +4,12 @@
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`, riaperta dopo collaudo UX negativo
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V114-T17.1 - Modello unico configurazione GUI`
-- Task corrente consigliato: `V114-T17.2 - Wizard primo avvio`
-- Massimo due successivi: `V114-T17.3 - Gestione multi-account completa`; `V114-T17.4 - Gestione sicura credenziali`
+- Ultimo task chiuso noto: `V114-T17.2 - Wizard primo avvio`
+- Task corrente consigliato: `V114-T17.3 - Gestione multi-account completa`
+- Massimo due successivi: `V114-T17.4 - Gestione sicura credenziali`; `V114-T17.5 - Avvio e arresto non bloccanti`
 - Blocchi aperti: `V114-T17 - GUI completa Caronte locale` e` `IN_PROGRESS`; collaudo UX non superato. La GUI corrente e` un prototipo tecnico CLI-driven, non una GUI completa per l'utente finale.
-- Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-v114-t171-full local_connector -q` -> `OK` (`315 passed in 26.00s`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`315 passed in 33.71s`)
+- Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-v114-t172-full2 local_connector -q` -> `OK` (`319 passed in 18.40s`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`319 passed in 31.31s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

@@ -4,10 +4,10 @@ Stato operativo corrente: milestone v1.1.4 riaperta; `V114-T17 - GUI completa Ca
 
 ## Prossimo task
 
-- `V114-T17.2 - Wizard primo avvio`.
+- `V114-T17.3 - Gestione multi-account completa`.
 
-Esito atteso: guidare Cartelle -> Caselle -> Registro condiviso -> Verifica finale usando i servizi di configurazione applicativi, senza richiedere YAML, file locali o termini tecnici all'utente.
+Esito atteso: elenco, aggiunta, modifica, abilita/disabilita, rimozione e test read-only separato per almeno due caselle, usando i servizi applicativi condivisi.
 
-Successivi: `V114-T17.3 - Gestione multi-account completa`, poi `V114-T17.4 - Gestione sicura credenziali`.
+Successivi: `V114-T17.4 - Gestione sicura credenziali`, poi `V114-T17.5 - Avvio e arresto non bloccanti`.
 
 La sequenza completa resta in `docs/DEV_BACKLOG.md`.

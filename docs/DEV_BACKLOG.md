@@ -12,7 +12,7 @@ Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura
 mantenendo task piccoli, seriali, verificabili e doc-first.
 
 Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
-`V114-T17` e` riaperto e il prossimo task univoco e` `V114-T17.1`.
+`V114-T17` e` riaperto e il prossimo task univoco e` `V114-T17.3`.
 
 | ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
 |---|---|---|---|---|---|---|
@@ -34,7 +34,7 @@ Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
 | V114-T16 | DONE | P2 | Documentazione utente finale | `README.md`, `docs/SETUP_AND_TEST.md`, `docs/CLASP_WORKFLOW.md` | installazione minima, primo avvio, test, uso quotidiano e troubleshooting sono spiegati in modo operativo | niente segreti, niente termini macchina superflui, niente nuove procedure non testate |
 | V114-T17 | IN_PROGRESS | P1 | GUI completa Caronte locale - Collaudo UX non superato | `local_connector/`, documentazione GUI | un utente medio completa setup, gestione di almeno due caselle, prova, avvio, arresto, attivita`, automazione Windows e manutenzione senza terminale o editing manuale di YAML/`.env` | task ombrello; chiudere solo dopo `V114-T17.1`...`V114-T17.10`; condividere servizi con la CLI; no GUI web o logica duplicata |
 | V114-T17.1 | DONE | P0 | Modello unico configurazione GUI | servizi configurazione, YAML, valori locali, test | API applicative indipendenti dalla GUI leggono, validano e scrivono il modello unico; una sola fonte autorevole per dato; aggiornamenti coerenti e recuperabili | primo task; niente segreti nel YAML/log; nessuna modifica manuale richiesta all'utente |
-| V114-T17.2 | TODO | P0 | Wizard primo avvio | GUI setup, servizi di T17.1 | procedura Cartelle -> Caselle -> Registro condiviso -> Verifica finale, riapribile e guidata | dipende da T17.1; niente termini tecnici nella vista ordinaria |
+| V114-T17.2 | DONE | P0 | Wizard primo avvio | GUI setup, servizi di T17.1 | procedura Cartelle -> Caselle -> Registro condiviso -> Verifica finale, riapribile e guidata | dipende da T17.1; niente termini tecnici nella vista ordinaria |
 | V114-T17.3 | TODO | P0 | Gestione multi-account completa | servizi account e GUI | elenco, aggiunta, modifica, abilita/disabilita, rimozione e test read-only separato per almeno due caselle | dipende da T17.2; account e server distinti; niente servizi reali nei test |
 | V114-T17.4 | TODO | P0 | Gestione sicura credenziali | archivio locale e GUI account | password mascherate, mostra/nascondi, persistenza locale, nomi stabili e redazione log | dipende da T17.3; nessun segreto versionato o nel sorgente |
 | V114-T17.5 | TODO | P0 | Avvio e arresto non bloccanti | runner/worker e GUI | controllo singolo, continuo e stop funzionano senza blocchi, doppi avvii o processi orfani | dipende da T17.4; riusare servizi applicativi; niente `subprocess.run` continuo nel thread GUI |

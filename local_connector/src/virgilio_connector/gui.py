@@ -9,6 +9,9 @@ import re
 import subprocess
 import sys
 
+from .gui_config import GuiConfigService
+from .gui_wizard import FirstRunWizard, WizardAccount
+
 
 SENSITIVE_RE = re.compile(
     r"(?i)(password|token|secret|authorization|api[_-]?key)(['\"]?\s*[:=]\s*['\"]?)([^'\"\s,;]+)"
@@ -445,6 +448,15 @@ class VirgilioGuiApp:
     def _build_tab(self, frame, actions: tuple[GuiAction, ...]) -> None:
         ttk = self._ttk
         frame.columnconfigure(1, weight=1)
+        if actions and actions[0].tab == "Setup iniziale":
+            ttk.Button(frame, text="Apri procedura guidata", command=self._open_first_run_wizard,
+                       width=28).grid(row=0, column=0, sticky="ew", pady=3)
+            ttk.Label(frame, text="Guida Cartelle, Caselle, Registro condiviso e verifica finale.",
+                      wraplength=620, justify="left").grid(
+                          row=0, column=1, sticky="w", padx=(10, 0), pady=3)
+            row_offset = 1
+        else:
+            row_offset = 0
         for row, action in enumerate(actions):
             ttk.Button(
                 frame,
@@ -452,13 +464,71 @@ class VirgilioGuiApp:
                 command=lambda item=action: self.run_action(item),
                 state=("normal" if action.available else "disabled"),
                 width=28,
-            ).grid(row=row, column=0, sticky="ew", pady=3)
+            ).grid(row=row + row_offset, column=0, sticky="ew", pady=3)
             text = action.summary
             if not action.available:
                 text = f"{text} ({action.unavailable_reason})"
             ttk.Label(frame, text=text, wraplength=620, justify="left").grid(
-                row=row, column=1, sticky="w", padx=(10, 0), pady=3
+                row=row + row_offset, column=1, sticky="w", padx=(10, 0), pady=3
             )
+
+    def _open_first_run_wizard(self) -> None:
+        config_text = self.config_var.get().strip()
+        if not config_text:
+            config_text = str(Path.cwd() / "accounts.local.yaml")
+            self.config_var.set(config_text)
+        service = GuiConfigService(Path(config_text), Path(config_text).with_name(".env.local"))
+        wizard = FirstRunWizard(service)
+        existing = wizard.draft.accounts
+        window = self._tk.Toplevel(self.root)
+        window.title("Primo avvio Caronte locale")
+        window.transient(self.root)
+        fields = self._ttk.Frame(window, padding=14)
+        fields.grid(sticky="nsew")
+        limbo = self._tk.StringVar(value=str(wizard.draft.staging_dir or self.staging_var.get()))
+        alias = self._tk.StringVar(value=existing[0].alias if existing else "account_1")
+        email = self._tk.StringVar(value=existing[0].email if existing else self.email_var.get())
+        second_email = self._tk.StringVar(value=existing[1].email if len(existing) > 1 else "")
+        bucoliche = self._tk.BooleanVar(value=wizard.draft.bucoliche_enabled)
+        status = self._tk.StringVar(value="Passo 1 di 4 - Cartelle")
+        labels = (("Cartella Limbo", limbo), ("Nome prima casella", alias),
+                  ("Email prima casella", email), ("Email seconda casella (facoltativa)", second_email))
+        for row, (text, variable) in enumerate(labels):
+            self._ttk.Label(fields, text=text).grid(row=row, column=0, sticky="w", pady=4)
+            self._ttk.Entry(fields, textvariable=variable, width=54).grid(
+                row=row, column=1, sticky="ew", padx=8, pady=4)
+        self._ttk.Checkbutton(fields, text="Uso anche il Registro condiviso Bucoliche",
+                              variable=bucoliche).grid(row=4, column=0, columnspan=2, sticky="w")
+        self._ttk.Label(fields, textvariable=status, wraplength=560).grid(
+            row=5, column=0, columnspan=2, sticky="w", pady=(10, 4))
+
+        def collect() -> None:
+            wizard.set_folders(Path(limbo.get().strip()))
+            accounts = [WizardAccount(alias.get().strip(), email.get().strip())]
+            if second_email.get().strip():
+                accounts.append(WizardAccount("account_2", second_email.get().strip()))
+            wizard.set_accounts(tuple(accounts))
+            wizard.set_bucoliche(bucoliche.get())
+
+        def go_next() -> None:
+            try:
+                collect()
+                if wizard.step_index == 3:
+                    wizard.save()
+                    self.staging_var.set(limbo.get().strip())
+                    status.set("Configurazione salvata. Puoi riaprire la procedura quando vuoi.")
+                    return
+                wizard.next()
+                status.set(f"Passo {wizard.step_index + 1} di 4 - {wizard.step}")
+            except (ValueError, OSError) as exc:
+                status.set(f"Da completare: {sanitize_output(str(exc))}")
+
+        def go_back() -> None:
+            wizard.back()
+            status.set(f"Passo {wizard.step_index + 1} di 4 - {wizard.step}")
+
+        self._ttk.Button(fields, text="Indietro", command=go_back).grid(row=6, column=0, sticky="w")
+        self._ttk.Button(fields, text="Avanti / Salva", command=go_next).grid(row=6, column=1, sticky="e")
 
     def _set_output(self, text: str) -> None:
         self.output_text.delete("1.0", "end")
