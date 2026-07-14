@@ -118,7 +118,7 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-t
 Questi restano controlli locali. `pilot-run` senza `--dry-run` non e` un test automatico.
 Nel checkout verificato sono stati eseguiti anche `doctor-bucoliche --human`, `pilot-preview --human`, `setup-bucoliche-test-sheet --dry-run` e due `pilot-run --human` consecutivi sul mailbox di test.
 
-## GUI Caronte locale
+## GUI Caronte locale: prototipo tecnico
 
 Per l'uso ordinario da interfaccia grafica:
 
@@ -128,7 +128,12 @@ $config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
 local_connector\.venv\Scripts\python.exe -m virgilio_connector gui --config $config
 ```
 
-La GUI e` organizzata in tab: Stato, Setup iniziale, Account mail, Bucoliche,
+La GUI corrente non ha superato il collaudo UX del 2026-07-14 e non e` ancora
+un percorso completo per l'utente finale. Per configurare da zero piu` caselle,
+salvare credenziali e arrestare il monitoraggio restano necessarie superfici da
+implementare secondo `docs/GUI_UX_REQUIREMENTS.md`.
+
+Il prototipo e` organizzato in tab: Stato, Setup iniziale, Account mail, Bucoliche,
 Avvio, Monitoraggio, Manutenzione, Automazione Win11 e Diagnostica avanzata.
 Ogni pulsante disponibile costruisce argomenti per un comando CLI gia` esistente
 e mostra output mascherando valori chiaramente sensibili come password, token e

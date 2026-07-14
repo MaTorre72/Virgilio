@@ -710,7 +710,7 @@ Ordine consigliato: `init-config`, `doctor`, `pilot`, poi dry-run completi prima
 di ogni esecuzione reale. I comandi Google/Bucoliche restano di test e il gateway
 LiteLLM resta solo mock locale.
 
-### GUI completa locale
+### GUI locale: prototipo tecnico
 
 Per un operatore che preferisce usare Caronte locale da interfaccia grafica,
 senza imparare i comandi ordinari:
@@ -720,7 +720,13 @@ virgilio gui
 virgilio gui --config accounts.local.yaml
 ```
 
-La GUI `tkinter` resta un wrapper controllato della CLI. Le tab disponibili sono:
+La GUI `tkinter` attuale resta un wrapper controllato della CLI e non ha superato
+il collaudo UX del 2026-07-14. Non e` ancora una GUI completa per l'utente finale:
+il setup multi-account, la gestione delle credenziali e l'arresto del monitoraggio
+richiedono ancora superfici mancanti. I requisiti di riprogettazione sono in
+[`../docs/GUI_UX_REQUIREMENTS.md`](../docs/GUI_UX_REQUIREMENTS.md).
+
+Le tab tecniche attualmente disponibili sono:
 Stato, Setup iniziale, Account mail, Bucoliche, Avvio, Monitoraggio,
 Manutenzione, Automazione Win11 e Diagnostica avanzata. I pulsanti eseguono solo
 comandi gia` presenti, tra cui `init-config`, `doctor`, `pilot-preview`,
@@ -728,7 +734,7 @@ comandi gia` presenti, tra cui `init-config`, `doctor`, `pilot-preview`,
 `refresh-bucoliche-state`, `export-to-bucoliche`, `reset-local-state` e
 `install-windows-task`.
 
-Le azioni che non hanno ancora una CLI stabile restano visibili ma disabilitate:
+Nel prototipo corrente le azioni che non hanno ancora una CLI stabile restano visibili ma disabilitate:
 modifica account esistenti, stop esplicito del watch avviato dalla GUI, backup
 senza reset, export/import configurazione, verifica integrita` DB dedicata,
 pulizia controllata della Quarantena, rimozione task Win11 e lettura stato task

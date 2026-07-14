@@ -18,6 +18,11 @@ Riferimento architetturale condiviso: `docs/ARCHITETTURA_UNIFICATA.md`.
 - Non sostituire Apps Script con Python.
 - Non eseguire `clasp push` salvo task esplicito.
 - Se il working tree e` sporco per cause non spiegate, fermarsi.
+- Progettare la GUI a partire dalle attivita` dell'utente finale, non dall'elenco dei comandi CLI.
+- Una corrispondenza uno-a-uno tra pulsanti GUI e comandi CLI non costituisce una GUI completa.
+- GUI e CLI devono condividere servizi applicativi, senza duplicare la logica operativa.
+- La GUI puo` richiamare direttamente servizi interni quando un sottoprocesso CLI compromette UX,
+  reattivita` o controllo del processo.
 
 ## Workflow
 - Verificare branch e `git status --short` prima di modificare.
