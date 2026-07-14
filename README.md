@@ -130,6 +130,8 @@ comando stabile restano visibili ma disabilitate con una causa esplicita.
 Nel tab Setup iniziale, `Apri procedura guidata` accompagna attraverso Cartelle,
 Caselle, Registro condiviso e verifica finale. La procedura e` riapribile, accetta
 anche una seconda casella e non richiede di modificare YAML o file di valori locali.
+Nel tab Account mail, `Gestisci caselle` consente elenco, aggiunta, modifica,
+abilitazione/disabilitazione, rimozione e prova IMAP read-only della singola casella.
 
 ## Troubleshooting rapido
 

@@ -123,7 +123,6 @@ def test_gui_registry_has_required_tabs_and_disabled_missing_cli_actions():
         for action in tab_actions
         if not action.available
     }
-    assert unavailable["mail-edit"] == "CLI mancante: account set/enable/disable"
     assert unavailable["win11-status"] == "CLI mancante: status-windows-task"
     assert unavailable["maintenance-backup"] == "CLI mancante: backup-local-state"
 

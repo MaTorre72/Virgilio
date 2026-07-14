@@ -10,6 +10,7 @@ import subprocess
 import sys
 
 from .gui_config import GuiConfigService
+from .gui_accounts import AccountDraft, AccountManager
 from .gui_wizard import FirstRunWizard, WizardAccount
 
 
@@ -223,9 +224,6 @@ def gui_actions() -> tuple[GuiAction, ...]:
         GuiAction("mail-list", "Visualizza account", "Account mail",
                   "Il doctor riepiloga account configurati e variabili richieste.", "doctor",
                   human=True),
-        GuiAction("mail-edit", "Aggiungi o modifica account", "Account mail",
-                  "Manca una CLI stabile per modificare account esistenti.",
-                  None, unavailable_reason="CLI mancante: account set/enable/disable"),
         GuiAction("mail-test", "Test IMAP", "Account mail",
                   "Il doctor valida host, porta, username e accesso IMAP senza stampare password.",
                   "doctor", human=True),
@@ -455,6 +453,12 @@ class VirgilioGuiApp:
                       wraplength=620, justify="left").grid(
                           row=0, column=1, sticky="w", padx=(10, 0), pady=3)
             row_offset = 1
+        elif actions and actions[0].tab == "Account mail":
+            ttk.Button(frame, text="Gestisci caselle", command=self._open_account_manager,
+                       width=28).grid(row=0, column=0, sticky="ew", pady=3)
+            ttk.Label(frame, text="Gestione completa delle caselle senza modificare file manualmente.",
+                      wraplength=620, justify="left").grid(row=0, column=1, sticky="w", padx=(10, 0))
+            row_offset = 1
         else:
             row_offset = 0
         for row, action in enumerate(actions):
@@ -471,6 +475,114 @@ class VirgilioGuiApp:
             ttk.Label(frame, text=text, wraplength=620, justify="left").grid(
                 row=row + row_offset, column=1, sticky="w", padx=(10, 0), pady=3
             )
+
+    def _open_account_manager(self) -> None:
+        config_text = self.config_var.get().strip()
+        if not config_text:
+            self._set_output("Seleziona prima il file di configurazione.")
+            return
+        manager = AccountManager(GuiConfigService(
+            Path(config_text), Path(config_text).with_name(".env.local")
+        ))
+        window = self._tk.Toplevel(self.root)
+        window.title("Caselle mail")
+        frame = self._ttk.Frame(window, padding=12)
+        frame.grid(sticky="nsew")
+        tree = self._ttk.Treeview(frame, columns=("email", "server", "stato"), show="tree headings", height=7)
+        tree.heading("#0", text="Nome")
+        for key, title in (("email", "Email"), ("server", "Server"), ("stato", "Stato")):
+            tree.heading(key, text=title)
+        tree.grid(row=0, column=0, columnspan=5, sticky="nsew")
+        fields = {name: self._tk.StringVar() for name in (
+            "alias", "email", "username", "password", "provider", "host", "port",
+            "input", "done", "error")}
+        enabled = self._tk.BooleanVar(value=True)
+        current_alias = self._tk.StringVar(value="")
+        labels = (("Nome", "alias"), ("Email", "email"), ("Utente", "username"),
+                  ("Password", "password"), ("Provider", "provider"), ("Server IMAP", "host"),
+                  ("Porta", "port"), ("Cartella in ingresso", "input"),
+                  ("Cartella completate", "done"), ("Cartella errori", "error"))
+        for index, (label, key) in enumerate(labels):
+            row, pair = divmod(index, 2)
+            column = pair * 2
+            self._ttk.Label(frame, text=label).grid(row=row + 1, column=column, sticky="w", pady=3)
+            self._ttk.Entry(frame, textvariable=fields[key], show=("*" if key == "password" else "")).grid(
+                row=row + 1, column=column + 1, sticky="ew", padx=6, pady=3)
+        self._ttk.Checkbutton(frame, text="Casella attiva", variable=enabled).grid(row=6, column=0, sticky="w")
+
+        def refresh() -> None:
+            tree.delete(*tree.get_children())
+            for item in manager.list_accounts():
+                tree.insert("", "end", iid=item.account_alias, text=item.account_alias,
+                            values=(item.email, f"{item.imap_host}:{item.imap_port}",
+                                    "Attiva" if item.enabled else "Disattivata"))
+
+        def load_selected(_event=None) -> None:
+            selection = tree.selection()
+            if not selection:
+                return
+            draft = manager.get(selection[0])
+            current_alias.set(draft.alias)
+            values = (draft.alias, draft.email, draft.username, draft.password, draft.provider,
+                      draft.imap_host, str(draft.imap_port), draft.input_folder,
+                      draft.done_folder, draft.error_folder)
+            for key, value in zip(fields, values):
+                fields[key].set(value)
+            enabled.set(draft.enabled)
+
+        def save() -> None:
+            try:
+                draft = AccountDraft(fields["alias"].get(), fields["email"].get(),
+                    fields["username"].get(), fields["password"].get(), fields["provider"].get(),
+                    fields["host"].get(), int(fields["port"].get()), fields["input"].get(),
+                    fields["done"].get(), fields["error"].get(), enabled.get())
+                manager.save(draft, previous_alias=current_alias.get() or None)
+                current_alias.set(draft.alias)
+                refresh()
+                self.status_var.set("Casella salvata")
+            except (ValueError, OSError) as exc:
+                self._set_output(f"Casella non salvata: {exc}")
+
+        def new() -> None:
+            current_alias.set("")
+            defaults = AccountDraft("", "")
+            values = (defaults.alias, defaults.email, defaults.username, defaults.password,
+                      defaults.provider, defaults.imap_host, str(defaults.imap_port),
+                      defaults.input_folder, defaults.done_folder, defaults.error_folder)
+            for key, value in zip(fields, values): fields[key].set(value)
+            enabled.set(True)
+
+        def toggle() -> None:
+            try:
+                if current_alias.get():
+                    manager.set_enabled(current_alias.get(), not enabled.get())
+                    load_selected()
+                    refresh()
+            except (ValueError, OSError) as exc:
+                self._set_output(f"Stato casella non aggiornato: {exc}")
+
+        def remove() -> None:
+            try:
+                if current_alias.get() and self._confirm(GuiAction(
+                        "remove", "Rimuovi casella", "Account mail", "", "x", destructive=True)):
+                    manager.remove(current_alias.get())
+                    new()
+                    refresh()
+            except (ValueError, OSError) as exc:
+                self._set_output(f"Casella non rimossa: {exc}")
+
+        def test() -> None:
+            if current_alias.get():
+                try:
+                    self._set_output(manager.test_connection(current_alias.get()).message)
+                except (ValueError, OSError) as exc:
+                    self._set_output(f"Test non riuscito: {exc}")
+
+        tree.bind("<<TreeviewSelect>>", load_selected)
+        for column, (text, command) in enumerate((("Nuova", new), ("Salva", save),
+                ("Abilita / disabilita", toggle), ("Prova read-only", test), ("Rimuovi", remove))):
+            self._ttk.Button(frame, text=text, command=command).grid(row=7, column=column, padx=3, pady=(8, 0))
+        refresh()
 
     def _open_first_run_wizard(self) -> None:
         config_text = self.config_var.get().strip()

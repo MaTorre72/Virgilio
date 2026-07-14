@@ -4,10 +4,10 @@ Stato operativo corrente: milestone v1.1.4 riaperta; `V114-T17 - GUI completa Ca
 
 ## Prossimo task
 
-- `V114-T17.3 - Gestione multi-account completa`.
+- `V114-T17.4 - Gestione sicura credenziali`.
 
-Esito atteso: elenco, aggiunta, modifica, abilita/disabilita, rimozione e test read-only separato per almeno due caselle, usando i servizi applicativi condivisi.
+Esito atteso: password mascherate, mostra/nascondi, persistenza locale, nomi stabili e redazione log, senza segreti nel YAML o nel repository.
 
-Successivi: `V114-T17.4 - Gestione sicura credenziali`, poi `V114-T17.5 - Avvio e arresto non bloccanti`.
+Successivi: `V114-T17.5 - Avvio e arresto non bloccanti`, poi `V114-T17.6 - Home operativa`.
 
 La sequenza completa resta in `docs/DEV_BACKLOG.md`.

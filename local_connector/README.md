@@ -722,7 +722,7 @@ virgilio gui --config accounts.local.yaml
 
 La GUI `tkinter` attuale resta un wrapper controllato della CLI e non ha superato
 il collaudo UX del 2026-07-14. Non e` ancora una GUI completa per l'utente finale:
-il setup multi-account, la gestione delle credenziali e l'arresto del monitoraggio
+la gestione completa delle credenziali e l'arresto del monitoraggio
 richiedono ancora superfici mancanti. I requisiti di riprogettazione sono in
 [`../docs/GUI_UX_REQUIREMENTS.md`](../docs/GUI_UX_REQUIREMENTS.md).
 
@@ -734,8 +734,13 @@ comandi gia` presenti, tra cui `init-config`, `doctor`, `pilot-preview`,
 `refresh-bucoliche-state`, `export-to-bucoliche`, `reset-local-state` e
 `install-windows-task`.
 
+Il tab Account mail espone `Gestisci caselle`: l'operatore puo` elencare, aggiungere,
+modificare, abilitare/disabilitare e rimuovere account distinti, oltre a provare
+separatamente il collegamento IMAP read-only. Gmail propone i valori iniziali noti;
+un provider generico mantiene server, porta e cartelle personalizzabili.
+
 Nel prototipo corrente le azioni che non hanno ancora una CLI stabile restano visibili ma disabilitate:
-modifica account esistenti, stop esplicito del watch avviato dalla GUI, backup
+stop esplicito del watch avviato dalla GUI, backup
 senza reset, export/import configurazione, verifica integrita` DB dedicata,
 pulizia controllata della Quarantena, rimozione task Win11 e lettura stato task
 Win11. Per queste azioni la GUI non implementa scorciatoie parallele e non salva
