@@ -4,12 +4,12 @@
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`, riaperta dopo collaudo UX negativo
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V114-T17.6 - Home operativa`
-- Task corrente consigliato: `V114-T17.7 - Vista Attivita leggibile`
-- Massimo due successivi: `V114-T17.8 - Impostazioni contestuali`; `V114-T17.9 - Automazione Windows completa`
+- Ultimo task chiuso noto: `V114-T17.7 - Vista Attivita leggibile`
+- Task corrente consigliato: `V114-T17.8 - Impostazioni contestuali`
+- Massimo due successivi: `V114-T17.9 - Automazione Windows completa`; `V114-T17.10 - Collaudo utente finale`
 - Blocchi aperti: `V114-T17 - GUI completa Caronte locale` e` `IN_PROGRESS`; collaudo UX non superato. La GUI corrente e` un prototipo tecnico CLI-driven, non una GUI completa per l'utente finale.
-- Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-v114-t176-full local_connector -q` -> `OK` (`334 passed in 24.20s`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`334 passed in 27.14s`)
+- Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-v114-t177-full-final local_connector -q` -> `OK` (`339 passed in 23.95s`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`339 passed in 26.61s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

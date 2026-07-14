@@ -15,6 +15,7 @@ from .gui_accounts import AccountDraft, AccountManager
 from .gui_wizard import FirstRunWizard, WizardAccount
 from .gui_runner import ManagedCliRunner
 from .gui_home import HomeSnapshot, format_home_time, ROME
+from .gui_activity import ActivityFilters, filter_activities, load_activities, parse_day
 
 
 SENSITIVE_RE = re.compile(
@@ -344,6 +345,12 @@ class VirgilioGuiApp:
         self.home = HomeSnapshot()
         self.home_vars = {key: tk.StringVar(value="") for key in (
             "state", "accounts", "checks", "completed", "problems", "last", "next", "problem")}
+        self.activity_rows = ()
+        self.activity_account_var = tk.StringVar(value="Tutte")
+        self.activity_outcome_var = tk.StringVar(value="Tutti")
+        self.activity_day_var = tk.StringVar(value="")
+        self.activity_error_var = tk.StringVar(value="Tutti")
+        self.activity_count_var = tk.StringVar(value="Nessuna attivita locale")
 
         self._build_layout()
         root.protocol("WM_DELETE_WINDOW", self._close)
@@ -374,6 +381,8 @@ class VirgilioGuiApp:
             notebook.add(frame, text=tab)
             if tab == "Stato":
                 self._build_home(frame)
+            elif tab == "Monitoraggio":
+                self._build_activity(frame, actions)
             else:
                 self._build_tab(frame, actions)
 
@@ -514,6 +523,104 @@ class VirgilioGuiApp:
             action = primary[key]
             ttk.Button(frame, text=action.label, command=lambda item=action: self.run_action(item),
                        width=28).grid(row=5, column=column, sticky="ew", padx=4, pady=(12, 0))
+
+    def _build_activity(self, frame, actions: tuple[GuiAction, ...]) -> None:
+        ttk = self._ttk
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
+        filters = ttk.LabelFrame(frame, text="Filtra attivita", padding=8)
+        filters.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        labels = (("Casella", self.activity_account_var), ("Esito", self.activity_outcome_var),
+                  ("Data (gg/mm/aaaa)", self.activity_day_var),
+                  ("Errori", self.activity_error_var))
+        for column, (label, variable) in enumerate(labels):
+            ttk.Label(filters, text=label).grid(row=0, column=column * 2, sticky="w", padx=(0, 4))
+            if column == 0:
+                self.activity_account_combo = ttk.Combobox(
+                    filters, textvariable=variable, values=("Tutte",), state="readonly", width=16)
+                widget = self.activity_account_combo
+            elif column == 1:
+                widget = ttk.Combobox(filters, textvariable=variable,
+                                      values=("Tutti", "Riuscito", "Completato", "In attesa",
+                                              "Ignorato", "Problema"), state="readonly", width=14)
+            elif column == 3:
+                widget = ttk.Combobox(filters, textvariable=variable,
+                                      values=("Tutti", "Solo errori", "Senza errori"),
+                                      state="readonly", width=14)
+            else:
+                widget = ttk.Entry(filters, textvariable=variable, width=14)
+            widget.grid(row=0, column=column * 2 + 1, sticky="w", padx=(0, 10))
+            if column != 2:
+                widget.bind("<<ComboboxSelected>>", lambda _event: self._render_activity())
+        ttk.Button(filters, text="Applica data", command=self._render_activity).grid(row=0, column=8, padx=3)
+        ttk.Button(filters, text="Aggiorna", command=self._refresh_activity).grid(row=0, column=9, padx=3)
+
+        columns = ("data", "casella", "messaggio", "allegato", "azione", "esito", "problema")
+        table = ttk.Frame(frame)
+        table.grid(row=1, column=0, sticky="nsew")
+        table.columnconfigure(0, weight=1)
+        table.rowconfigure(0, weight=1)
+        self.activity_tree = ttk.Treeview(table, columns=columns, show="headings", height=11)
+        headings = ("Data e ora", "Casella", "Messaggio", "Allegato", "Azione", "Esito", "Problema")
+        widths = (135, 100, 180, 130, 145, 90, 240)
+        for key, heading, width in zip(columns, headings, widths):
+            self.activity_tree.heading(key, text=heading)
+            self.activity_tree.column(
+                key, width=width, minwidth=70, stretch=(key in {"messaggio", "problema"}))
+        vertical = ttk.Scrollbar(table, orient="vertical", command=self.activity_tree.yview)
+        horizontal = ttk.Scrollbar(table, orient="horizontal", command=self.activity_tree.xview)
+        self.activity_tree.configure(yscrollcommand=vertical.set, xscrollcommand=horizontal.set)
+        self.activity_tree.grid(row=0, column=0, sticky="nsew")
+        vertical.grid(row=0, column=1, sticky="ns")
+        horizontal.grid(row=1, column=0, sticky="ew")
+        ttk.Label(frame, textvariable=self.activity_count_var).grid(row=2, column=0, sticky="w", pady=(4, 8))
+
+        actions_frame = ttk.Frame(frame)
+        actions_frame.grid(row=3, column=0, sticky="ew")
+        for column, action in enumerate(actions):
+            ttk.Button(actions_frame, text=action.label,
+                       command=lambda item=action: self.run_action(item),
+                       state=("normal" if action.available else "disabled")).grid(
+                           row=0, column=column, padx=(0, 6), sticky="w")
+        self._refresh_activity()
+
+    def _refresh_activity(self) -> None:
+        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        redact = sanitize_output
+        config_text = self.config_var.get().strip()
+        if config_text:
+            service = GuiConfigService(Path(config_text), Path(config_text).with_name(".env.local"))
+            redact = lambda value: sanitize_output(service.redact(value))
+        try:
+            self.activity_rows = load_activities(local_root / "state.db", redact=redact)
+            accounts = tuple(sorted({row.account for row in self.activity_rows}))
+            self.activity_account_combo.configure(values=("Tutte", *accounts))
+            if self.activity_account_var.get() not in ("Tutte", *accounts):
+                self.activity_account_var.set("Tutte")
+            self._render_activity()
+        except (OSError, ValueError) as exc:
+            self.activity_rows = ()
+            self.activity_count_var.set(f"Attivita non disponibili: {sanitize_output(str(exc))}")
+
+    def _render_activity(self) -> None:
+        try:
+            day = parse_day(self.activity_day_var.get())
+        except ValueError:
+            self.activity_count_var.set("Data non valida: usa gg/mm/aaaa.")
+            return
+        error_values = {"Tutti": "all", "Solo errori": "only", "Senza errori": "without"}
+        rows = filter_activities(self.activity_rows, ActivityFilters(
+            account="" if self.activity_account_var.get() == "Tutte" else self.activity_account_var.get(),
+            outcome="" if self.activity_outcome_var.get() == "Tutti" else self.activity_outcome_var.get(),
+            day=day, errors=error_values.get(self.activity_error_var.get(), "all"),
+        ))
+        self.activity_tree.delete(*self.activity_tree.get_children())
+        for index, row in enumerate(rows):
+            self.activity_tree.insert("", "end", iid=f"activity-{index}", values=(
+                row.occurred_text, row.account, row.message, row.attachment,
+                row.action, row.outcome, row.problem or "-"))
+        self.activity_count_var.set(
+            f"{len(rows)} attivita mostrate" if rows else "Nessuna attivita per i filtri selezionati")
 
     def _refresh_home_config(self) -> None:
         config_text = self.config_var.get().strip()
@@ -737,6 +844,9 @@ class VirgilioGuiApp:
         )
         if path:
             self.config_var.set(path)
+            self._refresh_home_config()
+            self._render_home()
+            self._refresh_activity()
 
     def _browse_output(self) -> None:
         path = self._filedialog.asksaveasfilename(
@@ -836,6 +946,8 @@ class VirgilioGuiApp:
             self.home = self.home.apply(event, now=datetime.now(ROME),
                                         interval_seconds=self.interval_var.get())
             self._render_home()
+            if event.kind in {"completed", "stopped", "error"}:
+                self._refresh_activity()
 
     def _poll_runner(self) -> None:
         self._poll_runner_events()

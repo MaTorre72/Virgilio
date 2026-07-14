@@ -4,10 +4,11 @@ Stato operativo corrente: milestone v1.1.4 riaperta; `V114-T17 - GUI completa Ca
 
 ## Prossimo task
 
-- `V114-T17.7 - Vista Attivita leggibile`.
+- `V114-T17.8 - Impostazioni contestuali`.
 
-Esito atteso: eventi locali leggibili e filtrabili per casella, esito, data ed errore.
+Esito atteso: il pannello globale `Parametri azioni` e` rimosso e ogni campo appare
+solo nel contesto in cui serve, con i dettagli tecnici confinati alla diagnostica.
 
-Successivi: `V114-T17.8 - Impostazioni contestuali`, poi `V114-T17.9 - Automazione Windows completa`.
+Successivi: `V114-T17.9 - Automazione Windows completa`, poi `V114-T17.10 - Collaudo utente finale`.
 
 La sequenza completa resta in `docs/DEV_BACKLOG.md`.

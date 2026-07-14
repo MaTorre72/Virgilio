@@ -722,7 +722,7 @@ virgilio gui --config accounts.local.yaml
 
 La GUI `tkinter` attuale resta un wrapper controllato della CLI e non ha superato
 il collaudo UX del 2026-07-14. Non e` ancora una GUI completa per l'utente finale:
-la gestione completa delle credenziali e l'arresto del monitoraggio
+impostazioni contestuali, automazione Windows completa e collaudo finale
 richiedono ancora superfici mancanti. I requisiti di riprogettazione sono in
 [`../docs/GUI_UX_REQUIREMENTS.md`](../docs/GUI_UX_REQUIREMENTS.md).
 
@@ -742,9 +742,15 @@ Le password sono mascherate per default, visibili solo su scelta esplicita e sal
 nel file locale ignorato `.env.local`, con nomi deterministici per casella. Non entrano
 nel file YAML, negli export o nei messaggi diagnostici mostrati dalla GUI.
 
+La Home mostra stato, caselle attive, contatori e tempi dell'ultimo/prossimo
+controllo; scansione manuale, monitoraggio continuo e stop restano reattivi. Il
+tab Monitoraggio mostra le attivita` locali in Europe/Rome con data e ora,
+casella, messaggio, allegato, azione, esito e problema. I filtri per casella,
+esito, data ed errori sono combinabili; i problemi rimandano a un controllo
+azionabile senza esporre JSON, schema SQLite, segreti o path locali.
+
 Nel prototipo corrente le azioni che non hanno ancora una CLI stabile restano visibili ma disabilitate:
-stop esplicito del watch avviato dalla GUI, backup
-senza reset, export/import configurazione, verifica integrita` DB dedicata,
+backup senza reset, export/import configurazione, verifica integrita` DB dedicata,
 pulizia controllata della Quarantena, rimozione task Win11 e lettura stato task
 Win11. Per queste azioni la GUI non implementa scorciatoie parallele e non salva
 segreti.
