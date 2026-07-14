@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from virgilio_connector.gui_config import GuiConfigService, LocalCredentials
+from virgilio_connector.gui_config import GuiConfigService, GuiRuntimeSettings, LocalCredentials
 from virgilio_connector.multi_account import MultiAccountConfigError, scaffold_local_config
 
 
@@ -18,6 +18,32 @@ def service_with_one_account(tmp_path: Path) -> GuiConfigService:
                            "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD=secret-one\n"
                            "UNRELATED=value\n", encoding="utf-8")
     return GuiConfigService(yaml_path, values_path)
+
+
+def test_runtime_settings_round_trip_preserves_credentials(tmp_path):
+    service = service_with_one_account(tmp_path)
+    settings = GuiRuntimeSettings(
+        local_data_dir=(tmp_path / "local-data").resolve(),
+        scanner="defender",
+        interval_seconds=120,
+        task_name="Caronte test",
+    )
+
+    service.save_runtime_settings(settings)
+
+    assert service.load_runtime_settings() == settings
+    values = service.local_values_path.read_text(encoding="utf-8")
+    assert "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD=secret-one" in values
+
+
+@pytest.mark.parametrize("settings", [
+    GuiRuntimeSettings(local_data_dir=Path("relative")),
+    GuiRuntimeSettings(scanner="unknown"),
+    GuiRuntimeSettings(interval_seconds=0),
+])
+def test_runtime_settings_reject_invalid_values(settings):
+    with pytest.raises(MultiAccountConfigError):
+        settings.validate()
 
 
 def test_round_trip_crud_multi_account_keeps_secrets_local(tmp_path):

@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-14 - Completato V114-T17.8: rimosso il pannello globale `Parametri azioni`; Setup, Bucoliche, Avvio, Manutenzione e Automazione mostrano solo le rispettive impostazioni, mentre Python, formato export e cicli di prova restano nella Diagnostica avanzata. Cartella dati locali, scanner, intervallo e nome dell'avvio automatico sono validati e persistiti atomicamente nel file locale ignorato senza alterare le credenziali; Limbo e Bucoliche riusano il servizio del wizard. Test mirati (`29 passed`), suite local connector e smoke (`344 passed`) verdi; prossimo task V114-T17.9.
+
 - 2026-07-14 - Completato V114-T17.7: il tab Monitoraggio proietta gli eventi locali in una tabella Europe/Rome con data/ora, casella, messaggio, allegato, azione, esito e problema; filtri combinabili coprono casella, esito, data ed errori, i problemi sono azionabili e la vista non espone JSON, path tecnici o segreti; test mirati (`21 passed`), suite local connector e smoke (`339 passed`) verdi; prossimo task V114-T17.8.
 
 - 2026-07-14 - Completato V114-T17.6: la Home GUI mostra stato coerente col worker, caselle attive, controlli, completamenti, problemi e ultima/prossima verifica in Europe/Rome; scansione manuale, avvio continuo e stop sono le tre azioni primarie, senza output CLI grezzo; test sintetici, suite local connector e smoke verdi (`334 passed`); prossimo task V114-T17.7.

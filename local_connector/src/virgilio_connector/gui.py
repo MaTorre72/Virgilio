@@ -10,7 +10,7 @@ import subprocess
 import sys
 from datetime import datetime
 
-from .gui_config import GuiConfigService
+from .gui_config import GuiConfigService, GuiRuntimeSettings
 from .gui_accounts import AccountDraft, AccountManager
 from .gui_wizard import FirstRunWizard, WizardAccount
 from .gui_runner import ManagedCliRunner
@@ -124,7 +124,7 @@ def build_cli_args(spec: GuiCommandSpec) -> list[str]:
         if not spec.email.strip():
             raise ValueError("Inserisci l'email dell'account.")
         if spec.staging_dir is None:
-            raise ValueError("Seleziona la cartella staging.")
+            raise ValueError("Seleziona la Cartella Limbo.")
         args = [
             "init-config",
             "--output", str(spec.output_path),
@@ -223,7 +223,7 @@ def gui_actions() -> tuple[GuiAction, ...]:
         GuiAction("setup-doctor", "Test configurazione", "Setup iniziale",
                   "Esegue il doctor generale sul file selezionato.", "doctor", human=True),
         GuiAction("setup-limbo", "Verifica Limbo e cartelle", "Setup iniziale",
-                  "Coperto dal doctor: storage, staging e cartelle tecniche locali.", "doctor",
+                  "Controlla la Cartella Limbo e le cartelle locali necessarie.", "doctor",
                   human=True),
         GuiAction("mail-list", "Visualizza account", "Account mail",
                   "Il doctor riepiloga account configurati e variabili richieste.", "doctor",
@@ -303,6 +303,22 @@ def gui_actions_by_tab() -> dict[str, tuple[GuiAction, ...]]:
     return {tab: tuple(action for action in actions if action.tab == tab) for tab in gui_tabs()}
 
 
+def gui_context_fields() -> dict[str, tuple[str, ...]]:
+    """Declare which settings may be visible in each GUI area."""
+
+    return {
+        "Stato": (),
+        "Setup iniziale": ("profile", "init_output", "init_email", "local_data", "limbo", "scanner"),
+        "Account mail": (),
+        "Bucoliche": ("shared_register",),
+        "Avvio": ("interval", "safe_test"),
+        "Monitoraggio": (),
+        "Manutenzione": ("confirm_reset",),
+        "Automazione Win11": ("interval", "task_name"),
+        "Diagnostica avanzata": ("python", "format", "max_cycles"),
+    }
+
+
 class VirgilioGuiApp:
     """Operator GUI that delegates execution to the CLI entrypoint."""
 
@@ -325,6 +341,8 @@ class VirgilioGuiApp:
         self.output_var = tk.StringVar(value="")
         self.email_var = tk.StringVar(value="")
         self.staging_var = tk.StringVar(value="")
+        self.local_data_var = tk.StringVar(value="")
+        self.scanner_var = tk.StringVar(value="auto")
         self.provider_var = tk.StringVar(value="gmail_workspace")
         self.alias_var = tk.StringVar(value="")
         self.imap_host_var = tk.StringVar(value="")
@@ -368,29 +386,27 @@ class VirgilioGuiApp:
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
         shell.columnconfigure(0, weight=1)
-        shell.rowconfigure(2, weight=1)
-        shell.rowconfigure(3, weight=1)
-
-        self._build_common_panel(shell)
-        self._build_options_panel(shell)
+        shell.rowconfigure(0, weight=1)
+        shell.rowconfigure(1, weight=1)
 
         notebook = ttk.Notebook(shell)
-        notebook.grid(row=2, column=0, sticky="nsew", pady=(8, 8))
+        notebook.grid(row=0, column=0, sticky="nsew", pady=(0, 8))
         for tab, actions in gui_actions_by_tab().items():
             frame = ttk.Frame(notebook, padding=10)
             notebook.add(frame, text=tab)
+            self._build_context_panel(frame, tab)
             if tab == "Stato":
                 self._build_home(frame)
             elif tab == "Monitoraggio":
                 self._build_activity(frame, actions)
             else:
-                self._build_tab(frame, actions)
+                self._build_tab(frame, actions, row_offset=(1 if gui_context_fields()[tab] else 0))
 
         self._refresh_home_config()
         self._render_home()
 
         output_frame = ttk.Frame(shell)
-        output_frame.grid(row=3, column=0, sticky="nsew")
+        output_frame.grid(row=1, column=0, sticky="nsew")
         output_frame.columnconfigure(0, weight=1)
         output_frame.rowconfigure(1, weight=1)
         ttk.Label(output_frame, textvariable=self.status_var).grid(row=0, column=0, sticky="w")
@@ -400,92 +416,95 @@ class VirgilioGuiApp:
         self.output_text = self._tk.Text(output_frame, wrap="word", height=12)
         self.output_text.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(4, 0))
 
-    def _build_common_panel(self, parent) -> None:
+    def _build_context_panel(self, parent, tab: str) -> None:
         ttk = self._ttk
-        panel = ttk.LabelFrame(parent, text="Configurazione locale", padding=10)
-        panel.grid(row=0, column=0, sticky="ew")
+        fields = gui_context_fields()[tab]
+        if not fields:
+            return
+        panel = ttk.LabelFrame(parent, text="Impostazioni di questa area", padding=10)
+        panel.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 8))
         panel.columnconfigure(1, weight=1)
+        row = 0
 
-        ttk.Label(panel, text="Config YAML").grid(row=0, column=0, sticky="w", pady=3)
-        ttk.Entry(panel, textvariable=self.config_var).grid(row=0, column=1, sticky="ew", padx=8, pady=3)
-        ttk.Button(panel, text="Sfoglia...", command=self._browse_config).grid(row=0, column=2, pady=3)
+        def entry(label, variable, browse=None):
+            nonlocal row
+            ttk.Label(panel, text=label).grid(row=row, column=0, sticky="w", pady=3)
+            ttk.Entry(panel, textvariable=variable).grid(row=row, column=1, sticky="ew", padx=8, pady=3)
+            if browse:
+                ttk.Button(panel, text="Sfoglia...", command=browse).grid(row=row, column=2, pady=3)
+            row += 1
 
-        ttk.Label(panel, text="Python").grid(row=1, column=0, sticky="w", pady=3)
-        ttk.Entry(panel, textvariable=self.python_var).grid(row=1, column=1, sticky="ew", padx=8, pady=3)
-        ttk.Button(panel, text="Sfoglia...", command=self._browse_python).grid(row=1, column=2, pady=3)
+        if "profile" in fields:
+            entry("Profilo locale", self.config_var, self._browse_config)
+        if "init_output" in fields:
+            entry("Nuovo profilo", self.output_var, self._browse_output)
+        if "init_email" in fields:
+            entry("Email prima casella", self.email_var)
+        if "local_data" in fields:
+            entry("Cartella dati locali", self.local_data_var, self._browse_local_data)
+        if "limbo" in fields:
+            entry("Cartella Limbo", self.staging_var, self._browse_staging)
+        if "scanner" in fields:
+            ttk.Label(panel, text="Controllo antivirus").grid(row=row, column=0, sticky="w", pady=3)
+            ttk.Combobox(panel, textvariable=self.scanner_var,
+                         values=("auto", "defender", "disabled"), state="readonly").grid(
+                             row=row, column=1, sticky="w", padx=8, pady=3)
+            row += 1
+        if "shared_register" in fields:
+            ttk.Checkbutton(panel, text="Usa il Registro condiviso Bucoliche",
+                            variable=self.enable_bucoliche_var).grid(
+                                row=row, column=0, columnspan=2, sticky="w")
+            row += 1
+        if "interval" in fields:
+            ttk.Label(panel, text="Controlla ogni (secondi)").grid(row=row, column=0, sticky="w", pady=3)
+            ttk.Spinbox(panel, from_=1, to=86400, textvariable=self.interval_var, width=8).grid(
+                row=row, column=1, sticky="w", padx=8, pady=3)
+            row += 1
+        if "safe_test" in fields:
+            ttk.Checkbutton(panel, text="Prova senza modifiche", variable=self.dry_run_var).grid(
+                row=row, column=0, columnspan=2, sticky="w")
+            row += 1
+        if "confirm_reset" in fields:
+            ttk.Checkbutton(panel, text="Ho compreso: crea backup e azzera lo stato locale",
+                            variable=self.confirm_reset_var).grid(
+                                row=row, column=0, columnspan=2, sticky="w")
+            row += 1
+        if "task_name" in fields:
+            entry("Nome avvio automatico", self.task_name_var)
+        if "python" in fields:
+            entry("Eseguibile Python", self.python_var, self._browse_python)
+        if "format" in fields:
+            ttk.Label(panel, text="Formato export tecnico").grid(row=row, column=0, sticky="w", pady=3)
+            ttk.Combobox(panel, textvariable=self.format_var, values=("jsonl", "csv"),
+                         state="readonly").grid(row=row, column=1, sticky="w", padx=8, pady=3)
+            row += 1
+        if "max_cycles" in fields:
+            ttk.Label(panel, text="Cicli massimi di prova").grid(row=row, column=0, sticky="w", pady=3)
+            ttk.Spinbox(panel, from_=0, to=999, textvariable=self.max_cycles_var, width=8).grid(
+                row=row, column=1, sticky="w", padx=8, pady=3)
+            row += 1
+        if tab in {"Setup iniziale", "Bucoliche", "Avvio", "Automazione Win11"}:
+            ttk.Button(panel, text="Salva impostazioni",
+                       command=lambda area=tab: self._save_context_settings(area)).grid(
+                           row=row, column=1, sticky="e", padx=8, pady=(6, 0))
 
-    def _build_options_panel(self, parent) -> None:
-        ttk = self._ttk
-        panel = ttk.LabelFrame(parent, text="Parametri azioni", padding=10)
-        panel.grid(row=1, column=0, sticky="ew", pady=(8, 0))
-        for column in (1, 3, 5):
-            panel.columnconfigure(column, weight=1)
-
-        ttk.Label(panel, text="Output config").grid(row=0, column=0, sticky="w", pady=3)
-        ttk.Entry(panel, textvariable=self.output_var).grid(row=0, column=1, sticky="ew", padx=8, pady=3)
-        ttk.Button(panel, text="Salva come...", command=self._browse_output).grid(row=0, column=2, pady=3)
-        ttk.Label(panel, text="Email").grid(row=0, column=3, sticky="w", padx=(12, 0), pady=3)
-        ttk.Entry(panel, textvariable=self.email_var).grid(row=0, column=4, sticky="ew", padx=8, pady=3)
-        ttk.Button(panel, text="Staging...", command=self._browse_staging).grid(row=0, column=5, pady=3)
-
-        ttk.Label(panel, text="Cartella staging").grid(row=1, column=0, sticky="w", pady=3)
-        ttk.Entry(panel, textvariable=self.staging_var).grid(row=1, column=1, sticky="ew", padx=8, pady=3)
-        ttk.Label(panel, text="Alias").grid(row=1, column=3, sticky="w", padx=(12, 0), pady=3)
-        ttk.Entry(panel, textvariable=self.alias_var).grid(row=1, column=4, sticky="ew", padx=8, pady=3)
-
-        ttk.Label(panel, text="Host IMAP").grid(row=2, column=0, sticky="w", pady=3)
-        ttk.Entry(panel, textvariable=self.imap_host_var).grid(row=2, column=1, sticky="ew", padx=8, pady=3)
-        ttk.Label(panel, text="Porta").grid(row=2, column=3, sticky="w", padx=(12, 0), pady=3)
-        ttk.Spinbox(panel, from_=1, to=65535, textvariable=self.imap_port_var, width=8).grid(
-            row=2, column=4, sticky="w", padx=8, pady=3
-        )
-
-        ttk.Label(panel, text="Input").grid(row=3, column=0, sticky="w", pady=3)
-        ttk.Entry(panel, textvariable=self.input_folder_var).grid(row=3, column=1, sticky="ew", padx=8, pady=3)
-        ttk.Label(panel, text="Completate").grid(row=3, column=3, sticky="w", padx=(12, 0), pady=3)
-        ttk.Entry(panel, textvariable=self.done_folder_var).grid(row=3, column=4, sticky="ew", padx=8, pady=3)
-        ttk.Label(panel, text="Errore").grid(row=4, column=0, sticky="w", pady=3)
-        ttk.Entry(panel, textvariable=self.error_folder_var).grid(row=4, column=1, sticky="ew", padx=8, pady=3)
-        ttk.Checkbutton(panel, text="Dry-run", variable=self.dry_run_var).grid(
-            row=4, column=3, sticky="w", padx=(12, 0), pady=3
-        )
-        ttk.Checkbutton(panel, text="Bucoliche in config", variable=self.enable_bucoliche_var).grid(
-            row=4, column=4, sticky="w", padx=8, pady=3
-        )
-        ttk.Checkbutton(panel, text="Conferma reset", variable=self.confirm_reset_var).grid(
-            row=4, column=5, sticky="w", padx=(12, 0), pady=3
-        )
-
-        ttk.Label(panel, text="Intervallo sec.").grid(row=5, column=0, sticky="w", pady=3)
-        ttk.Spinbox(panel, from_=1, to=86400, textvariable=self.interval_var, width=8).grid(
-            row=5, column=1, sticky="w", padx=8, pady=3
-        )
-        ttk.Label(panel, text="Cicli max").grid(row=5, column=3, sticky="w", padx=(12, 0), pady=3)
-        ttk.Spinbox(panel, from_=0, to=999, textvariable=self.max_cycles_var, width=8).grid(
-            row=5, column=4, sticky="w", padx=8, pady=3
-        )
-        ttk.Checkbutton(panel, text="Sovrascrivi se previsto", variable=self.force_var).grid(
-            row=5, column=5, sticky="w", padx=(12, 0), pady=3
-        )
-
-    def _build_tab(self, frame, actions: tuple[GuiAction, ...]) -> None:
+    def _build_tab(self, frame, actions: tuple[GuiAction, ...], *, row_offset: int = 0) -> None:
         ttk = self._ttk
         frame.columnconfigure(1, weight=1)
         if actions and actions[0].tab == "Setup iniziale":
             ttk.Button(frame, text="Apri procedura guidata", command=self._open_first_run_wizard,
-                       width=28).grid(row=0, column=0, sticky="ew", pady=3)
+                       width=28).grid(row=row_offset, column=0, sticky="ew", pady=3)
             ttk.Label(frame, text="Guida Cartelle, Caselle, Registro condiviso e verifica finale.",
                       wraplength=620, justify="left").grid(
-                          row=0, column=1, sticky="w", padx=(10, 0), pady=3)
-            row_offset = 1
+                          row=row_offset, column=1, sticky="w", padx=(10, 0), pady=3)
+            row_offset += 1
         elif actions and actions[0].tab == "Account mail":
             ttk.Button(frame, text="Gestisci caselle", command=self._open_account_manager,
-                       width=28).grid(row=0, column=0, sticky="ew", pady=3)
+                       width=28).grid(row=row_offset, column=0, sticky="ew", pady=3)
             ttk.Label(frame, text="Gestione completa delle caselle senza modificare file manualmente.",
-                      wraplength=620, justify="left").grid(row=0, column=1, sticky="w", padx=(10, 0))
-            row_offset = 1
-        else:
-            row_offset = 0
+                      wraplength=620, justify="left").grid(
+                          row=row_offset, column=1, sticky="w", padx=(10, 0))
+            row_offset += 1
         for row, action in enumerate(actions):
             ttk.Button(
                 frame,
@@ -628,8 +647,20 @@ class VirgilioGuiApp:
             self.home = HomeSnapshot()
             return
         try:
-            model = GuiConfigService(Path(config_text), Path(config_text).with_name(".env.local")).load()
+            service = GuiConfigService(Path(config_text), Path(config_text).with_name(".env.local"))
+            model = service.load()
             self.home = self.home.with_accounts(sum(account.enabled for account in model.accounts))
+            if not self.staging_var.get().strip():
+                self.staging_var.set(str(model.storage.staging_dir))
+            settings = service.load_runtime_settings()
+            if settings.local_data_dir is not None:
+                self.local_data_var.set(str(settings.local_data_dir))
+                os.environ["VIRGILIO_LOCAL_DATA_DIR"] = str(settings.local_data_dir)
+            self.scanner_var.set(settings.scanner)
+            self.interval_var.set(settings.interval_seconds)
+            self.task_name_var.set(settings.task_name)
+            self.enable_bucoliche_var.set(FirstRunWizard(service).draft.bucoliche_enabled)
+            os.environ["VIRGILIO_SCANNER"] = settings.scanner
         except (OSError, ValueError) as exc:
             self.home = HomeSnapshot(problem=f"Configurazione non pronta: {sanitize_output(str(exc))}")
 
@@ -858,9 +889,14 @@ class VirgilioGuiApp:
             self.output_var.set(path)
 
     def _browse_staging(self) -> None:
-        path = self._filedialog.askdirectory(title="Seleziona cartella staging")
+        path = self._filedialog.askdirectory(title="Seleziona Cartella Limbo")
         if path:
             self.staging_var.set(path)
+
+    def _browse_local_data(self) -> None:
+        path = self._filedialog.askdirectory(title="Seleziona cartella dati locali")
+        if path:
+            self.local_data_var.set(path)
 
     def _browse_python(self) -> None:
         path = self._filedialog.askopenfilename(
@@ -899,7 +935,7 @@ class VirgilioGuiApp:
             done_folder=self.done_folder_var.get(),
             error_folder=self.error_folder_var.get(),
             enable_bucoliche=self.enable_bucoliche_var.get(),
-            force=self.force_var.get(),
+            force=(action.key == "win11-install" or self.force_var.get()),
             interval_seconds=self.interval_var.get(),
             max_cycles=max_cycles,
             format_name=self.format_var.get(),
@@ -924,6 +960,7 @@ class VirgilioGuiApp:
             self._poll_runner_events()
             return
         try:
+            self._persist_runtime_settings()
             args = build_cli_args(self._spec_for_action(action))
         except ValueError as exc:
             self.status_var.set("Input non valido")
@@ -933,6 +970,43 @@ class VirgilioGuiApp:
         self.status_var.set(f"Avvio: {action.label}")
         if not self.managed_runner.start(args):
             self._poll_runner_events()
+
+    def _persist_runtime_settings(self) -> None:
+        config_text = self.config_var.get().strip()
+        local_data_text = self.local_data_var.get().strip()
+        settings = GuiRuntimeSettings(
+            local_data_dir=Path(local_data_text) if local_data_text else None,
+            scanner=self.scanner_var.get(),
+            interval_seconds=self.interval_var.get(),
+            task_name=self.task_name_var.get(),
+        )
+        settings.validate()
+        if config_text:
+            GuiConfigService(
+                Path(config_text), Path(config_text).with_name(".env.local")
+            ).save_runtime_settings(settings)
+        if settings.local_data_dir is not None:
+            os.environ["VIRGILIO_LOCAL_DATA_DIR"] = str(settings.local_data_dir)
+        os.environ["VIRGILIO_SCANNER"] = settings.scanner
+
+    def _save_context_settings(self, tab: str) -> None:
+        try:
+            self._persist_runtime_settings()
+            config_text = self.config_var.get().strip()
+            if tab in {"Setup iniziale", "Bucoliche"} and config_text:
+                service = GuiConfigService(
+                    Path(config_text), Path(config_text).with_name(".env.local")
+                )
+                wizard = FirstRunWizard(service)
+                limbo_text = self.staging_var.get().strip()
+                if limbo_text:
+                    wizard.set_folders(Path(limbo_text))
+                wizard.set_bucoliche(self.enable_bucoliche_var.get())
+                wizard.save()
+            self.status_var.set("Impostazioni salvate")
+        except (OSError, ValueError) as exc:
+            self.status_var.set("Impostazioni non salvate")
+            self._set_output(f"Correggi le impostazioni: {exc}")
 
     def _poll_runner_events(self) -> None:
         for event in self.managed_runner.drain_events():

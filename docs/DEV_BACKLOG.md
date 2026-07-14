@@ -12,7 +12,7 @@ Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura
 mantenendo task piccoli, seriali, verificabili e doc-first.
 
 Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
-`V114-T17` e` riaperto e il prossimo task univoco e` `V114-T17.8`.
+`V114-T17` e` riaperto e il prossimo task univoco e` `V114-T17.9`.
 
 | ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
 |---|---|---|---|---|---|---|
@@ -40,7 +40,7 @@ Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
 | V114-T17.5 | DONE | P0 | Avvio e arresto non bloccanti | runner/worker e GUI | controllo singolo, continuo e stop funzionano senza blocchi, doppi avvii o processi orfani | dipende da T17.4; riusare servizi applicativi; niente `subprocess.run` continuo nel thread GUI |
 | V114-T17.6 | DONE | P1 | Home operativa | stato e metriche GUI | stato, contatori, ultima/prossima verifica e tre azioni primarie sono leggibili | dipende da T17.5; niente output CLI grezzo |
 | V114-T17.7 | DONE | P1 | Vista Attivita` leggibile | eventi locali e GUI | tabella Europe/Rome filtrabile per casella, esito, data ed errore, con messaggi comprensibili | dipende da T17.6; niente JSON ordinario o segreti |
-| V114-T17.8 | TODO | P1 | Impostazioni contestuali | GUI impostazioni | rimosso il pannello globale `Parametri azioni`; ogni campo appare solo nel proprio contesto | dipende da T17.7; dettagli tecnici solo in diagnostica avanzata |
+| V114-T17.8 | DONE | P1 | Impostazioni contestuali | GUI impostazioni | rimosso il pannello globale `Parametri azioni`; ogni campo appare solo nel proprio contesto | dipende da T17.7; dettagli tecnici solo in diagnostica avanzata |
 | V114-T17.9 | TODO | P1 | Automazione Windows completa | servizi Task Scheduler e GUI | installazione, stato, ultimo esito e rimozione sono gestibili senza terminale | dipende da T17.8; Windows 11, CLI-first condivisa, niente servizi residenti |
 | V114-T17.10 | TODO | P0 | Collaudo utente finale | intero percorso GUI | da zero: due caselle, persistenza, prova sicura, avvio/stop, attivita`, automazione e manutenzione senza terminale | dipende da T17.9; collaudo manuale obbligatorio; nessun account o dato reale nei test automatici |
 

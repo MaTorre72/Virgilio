@@ -722,8 +722,8 @@ virgilio gui --config accounts.local.yaml
 
 La GUI `tkinter` attuale resta un wrapper controllato della CLI e non ha superato
 il collaudo UX del 2026-07-14. Non e` ancora una GUI completa per l'utente finale:
-impostazioni contestuali, automazione Windows completa e collaudo finale
-richiedono ancora superfici mancanti. I requisiti di riprogettazione sono in
+automazione Windows completa e collaudo finale richiedono ancora superfici mancanti.
+I requisiti di riprogettazione sono in
 [`../docs/GUI_UX_REQUIREMENTS.md`](../docs/GUI_UX_REQUIREMENTS.md).
 
 Le tab tecniche attualmente disponibili sono:
@@ -748,6 +748,13 @@ tab Monitoraggio mostra le attivita` locali in Europe/Rome con data e ora,
 casella, messaggio, allegato, azione, esito e problema. I filtri per casella,
 esito, data ed errori sono combinabili; i problemi rimandano a un controllo
 azionabile senza esporre JSON, schema SQLite, segreti o path locali.
+
+Le impostazioni non sono piu` raccolte in un pannello globale: profilo, cartelle e
+scanner sono nel Setup; Bucoliche, intervallo di avvio, conferma manutenzione e
+avvio Windows hanno pannelli dedicati. I dettagli Python, formato export e cicli di
+prova restano confinati alla Diagnostica avanzata. Cartella dati locali, scanner,
+intervallo e nome dell'avvio automatico persistono nel file locale ignorato; Limbo
+e abilitazione Bucoliche riusano il servizio di configurazione della procedura guidata.
 
 Nel prototipo corrente le azioni che non hanno ancora una CLI stabile restano visibili ma disabilitate:
 backup senza reset, export/import configurazione, verifica integrita` DB dedicata,

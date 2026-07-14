@@ -26,6 +26,26 @@ class LocalCredentials:
 
 
 @dataclass(frozen=True, slots=True)
+class GuiRuntimeSettings:
+    """Small local-only preferences shared by GUI-triggered CLI commands."""
+
+    local_data_dir: Path | None = None
+    scanner: str = "auto"
+    interval_seconds: int = 300
+    task_name: str = "Virgilio Local Watch"
+
+    def validate(self) -> None:
+        if self.local_data_dir is not None and not self.local_data_dir.is_absolute():
+            raise MultiAccountConfigError("la cartella dati locali deve essere assoluta")
+        if self.scanner not in {"auto", "defender", "disabled"}:
+            raise MultiAccountConfigError("scanner non valido")
+        if not 1 <= self.interval_seconds <= 86400:
+            raise MultiAccountConfigError("l'intervallo deve essere tra 1 e 86400 secondi")
+        if not self.task_name.strip():
+            raise MultiAccountConfigError("il nome dell'avvio automatico e obbligatorio")
+
+
+@dataclass(frozen=True, slots=True)
 class GuiConfigModel:
     accounts: tuple[LocalImapAccount, ...]
     storage: LocalStorageConfig
@@ -120,6 +140,31 @@ class GuiConfigService:
                    if key.startswith("VIRGILIO_IMAP_") and value]
         return redact_values(text, (*secrets, *extra_values))
 
+    def load_runtime_settings(self) -> GuiRuntimeSettings:
+        values = _read_local_values(self.local_values_path)
+        local_data = values.get("VIRGILIO_LOCAL_DATA_DIR", "").strip()
+        settings = GuiRuntimeSettings(
+            local_data_dir=Path(local_data) if local_data else None,
+            scanner=values.get("VIRGILIO_SCANNER", "auto").strip() or "auto",
+            interval_seconds=int(values.get("VIRGILIO_WATCH_INTERVAL_SECONDS", "300")),
+            task_name=values.get("VIRGILIO_WINDOWS_TASK_NAME", "Virgilio Local Watch"),
+        )
+        settings.validate()
+        return settings
+
+    def save_runtime_settings(self, settings: GuiRuntimeSettings) -> None:
+        settings.validate()
+        values = _read_local_values(self.local_values_path)
+        if settings.local_data_dir is None:
+            values.pop("VIRGILIO_LOCAL_DATA_DIR", None)
+        else:
+            values["VIRGILIO_LOCAL_DATA_DIR"] = str(settings.local_data_dir)
+        values["VIRGILIO_SCANNER"] = settings.scanner
+        values["VIRGILIO_WATCH_INTERVAL_SECONDS"] = str(settings.interval_seconds)
+        values["VIRGILIO_WINDOWS_TASK_NAME"] = settings.task_name.strip()
+        text = "".join(f"{key}={_env_escape(value)}\n" for key, value in sorted(values.items()))
+        _atomic_text_write(self.local_values_path, text, restricted=True)
+
     @staticmethod
     def new_account(*, account_alias: str, email: str, provider_hint: str,
                     imap_host: str, imap_port: int, input_folder: str,
@@ -206,6 +251,22 @@ def _atomic_pair_write(first: Path, first_text: str, second: Path, second_text: 
     finally:
         for path in temporary:
             path.unlink(missing_ok=True)
+
+
+def _atomic_text_write(path: Path, text: str, *, restricted: bool = False) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    os.close(fd)
+    temporary = Path(name)
+    try:
+        temporary.write_text(text, encoding="utf-8")
+        if restricted:
+            os.chmod(temporary, 0o600)
+        temporary.replace(path)
+        if restricted:
+            os.chmod(path, 0o600)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _yaml_scalar(value: object) -> str:

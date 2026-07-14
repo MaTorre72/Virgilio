@@ -8,6 +8,7 @@ from virgilio_connector.gui import (
     GuiCommandSpec,
     build_cli_args,
     gui_actions_by_tab,
+    gui_context_fields,
     gui_tabs,
     run_cli_command,
     sanitize_output,
@@ -125,6 +126,29 @@ def test_gui_registry_has_required_tabs_and_disabled_missing_cli_actions():
     }
     assert unavailable["win11-status"] == "CLI mancante: status-windows-task"
     assert unavailable["maintenance-backup"] == "CLI mancante: backup-local-state"
+
+
+def test_gui_settings_are_contextual_and_technical_fields_are_isolated():
+    fields = gui_context_fields()
+    assert fields["Stato"] == ()
+    assert fields["Setup iniziale"] == (
+        "profile", "init_output", "init_email", "local_data", "limbo", "scanner",
+    )
+    assert fields["Bucoliche"] == ("shared_register",)
+    assert fields["Avvio"] == ("interval", "safe_test")
+    assert fields["Manutenzione"] == ("confirm_reset",)
+    assert fields["Automazione Win11"] == ("interval", "task_name")
+    assert fields["Diagnostica avanzata"] == ("python", "format", "max_cycles")
+    ordinary = {
+        field for tab, tab_fields in fields.items()
+        if tab != "Diagnostica avanzata" for field in tab_fields
+    }
+    assert ordinary.isdisjoint({"python", "format", "max_cycles"})
+    ordinary_text = " ".join(
+        f"{action.label} {action.summary}" for tab, actions in gui_actions_by_tab().items()
+        if tab != "Diagnostica avanzata" for action in actions
+    ).lower()
+    assert "staging" not in ordinary_text
 
 
 def test_sanitize_output_redacts_obvious_secret_values():
