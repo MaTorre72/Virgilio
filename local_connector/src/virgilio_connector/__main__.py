@@ -76,7 +76,9 @@ from .traceability import (
 from .windows_task import (
     WindowsTaskError,
     build_windows_watch_task,
+    query_windows_watch_task,
     register_windows_watch_task,
+    unregister_windows_watch_task,
 )
 
 
@@ -170,6 +172,29 @@ def _reset_local_state_human_summary(result) -> list[str]:
         f"Messaggio: {result.message}",
     ]
     return lines
+
+
+def _windows_task_human_summary(payload: dict[str, object]) -> list[str]:
+    task_name = payload["task_name"]
+    if payload["status"] == "not_installed":
+        return [f"Avvio automatico '{task_name}': non installato"]
+    if payload["status"] == "removed":
+        return [f"Avvio automatico '{task_name}': rimosso"]
+    if payload["status"] in {"created", "dry_run"}:
+        label = "piano verificato" if payload["status"] == "dry_run" else "installato"
+        return [f"Avvio automatico '{task_name}': {label}",
+                f"Controllo ogni {payload['interval_seconds']} secondi"]
+    last_result = payload.get("last_result")
+    result_text = "mai eseguito" if last_result is None else (
+        "completato correttamente (0)" if last_result == 0 else f"codice {last_result}"
+    )
+    return [
+        f"Avvio automatico '{task_name}': installato",
+        f"Stato: {payload.get('state') or 'non disponibile'}",
+        f"Ultima esecuzione: {payload.get('last_run_time') or 'mai eseguito'}",
+        f"Ultimo esito: {result_text}",
+        f"Prossima esecuzione: {payload.get('next_run_time') or 'al prossimo accesso a Windows'}",
+    ]
 
 
 def _bucoliche_doctor_human_summary(result) -> list[str]:
@@ -449,6 +474,14 @@ def main() -> int:
     install_windows_task.add_argument("--interval-seconds", type=int, default=300)
     install_windows_task.add_argument("--dry-run", action="store_true")
     install_windows_task.add_argument("--force", action="store_true")
+    install_windows_task.add_argument("--human", action="store_true")
+    status_windows_task = commands.add_parser("status-windows-task")
+    status_windows_task.add_argument("--task-name", default="Virgilio Local Watch")
+    status_windows_task.add_argument("--human", action="store_true")
+    uninstall_windows_task = commands.add_parser("uninstall-windows-task")
+    uninstall_windows_task.add_argument("--task-name", default="Virgilio Local Watch")
+    uninstall_windows_task.add_argument("--confirm", action="store_true")
+    uninstall_windows_task.add_argument("--human", action="store_true")
     reset_local_state_cmd = commands.add_parser("reset-local-state")
     reset_local_state_cmd.add_argument("--backup", action="store_true")
     reset_local_state_cmd.add_argument("--confirm", action="store_true")
@@ -1032,13 +1065,42 @@ def main() -> int:
         except WindowsTaskError as exc:
             parser.exit(2, f"error: {exc}\n")
         if args.dry_run:
-            print(json.dumps(plan.to_payload(status="dry_run"), ensure_ascii=False, separators=(",", ":")))
+            payload = plan.to_payload(status="dry_run")
+            if args.human:
+                _print_human(_windows_task_human_summary(payload))
+            else:
+                print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
             return 0
         try:
             payload = register_windows_watch_task(plan)
         except WindowsTaskError as exc:
             parser.exit(2, f"error: {exc}\n")
-        print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        if args.human:
+            _print_human(_windows_task_human_summary(payload))
+        else:
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "status-windows-task":
+        try:
+            payload = query_windows_watch_task(args.task_name).to_payload()
+        except WindowsTaskError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(_windows_task_human_summary(payload))
+        else:
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "uninstall-windows-task":
+        if not args.confirm:
+            parser.exit(2, "error: uninstall-windows-task requires --confirm\n")
+        try:
+            payload = unregister_windows_watch_task(args.task_name)
+        except WindowsTaskError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(_windows_task_human_summary(payload))
+        else:
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
         return 0
     if args.command == "reset-local-state":
         local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))

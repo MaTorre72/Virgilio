@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -42,8 +43,43 @@ class WindowsTaskRegistrationPlan:
         return payload
 
 
+@dataclass(frozen=True)
+class WindowsTaskStatus:
+    task_name: str
+    installed: bool
+    state: str = ""
+    last_run_time: str = ""
+    next_run_time: str = ""
+    last_result: int | None = None
+
+    def to_payload(self) -> dict[str, object]:
+        return {
+            "status": "installed" if self.installed else "not_installed",
+            "task_name": self.task_name,
+            "installed": self.installed,
+            "state": self.state,
+            "last_run_time": self.last_run_time,
+            "next_run_time": self.next_run_time,
+            "last_result": self.last_result,
+        }
+
+
 def _quote_powershell(value: str) -> str:
     return value.replace("'", "''")
+
+
+def _task_name(value: str) -> str:
+    value = value.strip()
+    if not value:
+        raise WindowsTaskError("task_name must not be empty")
+    if "\r" in value or "\n" in value:
+        raise WindowsTaskError("task_name must be a single line")
+    return value
+
+
+def _powershell_executable() -> Path:
+    return (Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" /
+            "WindowsPowerShell" / "v1.0" / "powershell.exe")
 
 
 def _resolve_existing_path(path: Path, *, label: str) -> Path:
@@ -66,8 +102,7 @@ def build_windows_watch_task(
         raise WindowsTaskError("Windows Task Scheduler is supported only on Windows")
     if interval_seconds <= 0:
         raise WindowsTaskError("interval_seconds must be greater than 0")
-    if not task_name.strip():
-        raise WindowsTaskError("task_name must not be empty")
+    task_name = _task_name(task_name)
 
     resolved_config = _resolve_existing_path(config_path, label="config_path")
     resolved_python = _resolve_existing_path(python_exe, label="python_exe")
@@ -79,7 +114,7 @@ def build_windows_watch_task(
     if not pythonpath.is_dir():
         raise WindowsTaskError(f"pythonpath not found: {pythonpath}")
 
-    powershell_exe = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
+    powershell_exe = _powershell_executable()
     powershell_script = (
         f"$env:PYTHONPATH='{_quote_powershell(str(pythonpath))}'; "
         f"Set-Location -LiteralPath '{_quote_powershell(str(resolved_repo_root))}'; "
@@ -121,3 +156,68 @@ def register_windows_watch_task(plan: WindowsTaskRegistrationPlan) -> dict[str, 
         message = stderr or stdout or f"schtasks exited with code {completed.returncode}"
         raise WindowsTaskError(message)
     return plan.to_payload(status="created", stdout=stdout, stderr=stderr)
+
+
+def query_windows_watch_task(task_name: str) -> WindowsTaskStatus:
+    """Read Task Scheduler state through stable PowerShell object properties."""
+
+    if os.name != "nt":
+        raise WindowsTaskError("Windows Task Scheduler is supported only on Windows")
+    task_name = _task_name(task_name)
+    quoted_name = _quote_powershell(task_name)
+    script = (
+        f"$task = Get-ScheduledTask -TaskName '{quoted_name}' -ErrorAction SilentlyContinue; "
+        "if ($null -eq $task) { "
+        f"[pscustomobject]@{{task_name='{quoted_name}';installed=$false}} | ConvertTo-Json -Compress; "
+        "exit 0 }; "
+        "$info = $task | Get-ScheduledTaskInfo; "
+        "[pscustomobject]@{task_name=$task.TaskName;installed=$true;state=[string]$task.State;"
+        "last_run_time=if($info.LastRunTime.Year -gt 1900){$info.LastRunTime.ToString('o')}else{''};"
+        "next_run_time=if($info.NextRunTime.Year -gt 1900){$info.NextRunTime.ToString('o')}else{''};"
+        "last_result=[int]$info.LastTaskResult} | ConvertTo-Json -Compress"
+    )
+    args = [str(_powershell_executable()), "-NoProfile", "-NonInteractive", "-Command", script]
+    completed = subprocess.run(args, capture_output=True, text=True, check=False)
+    stdout = completed.stdout.strip()
+    stderr = completed.stderr.strip()
+    if completed.returncode != 0:
+        raise WindowsTaskError(stderr or stdout or
+                               f"PowerShell exited with code {completed.returncode}")
+    try:
+        payload = json.loads(stdout)
+        installed = bool(payload["installed"])
+    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise WindowsTaskError("unexpected Task Scheduler status response") from exc
+    last_result = payload.get("last_result")
+    return WindowsTaskStatus(
+        task_name=str(payload.get("task_name") or task_name),
+        installed=installed,
+        state=str(payload.get("state") or ""),
+        last_run_time=str(payload.get("last_run_time") or ""),
+        next_run_time=str(payload.get("next_run_time") or ""),
+        last_result=int(last_result) if last_result is not None else None,
+    )
+
+
+def unregister_windows_watch_task(task_name: str) -> dict[str, object]:
+    """Remove the user task; repeated removal is a successful no-op."""
+
+    task_name = _task_name(task_name)
+    current = query_windows_watch_task(task_name)
+    if not current.installed:
+        return {"status": "not_installed", "task_name": task_name, "removed": False}
+    args = ["schtasks", "/delete", "/tn", task_name, "/f"]
+    completed = subprocess.run(args, capture_output=True, text=True, check=False)
+    stdout = completed.stdout.strip()
+    stderr = completed.stderr.strip()
+    if completed.returncode != 0:
+        raise WindowsTaskError(stderr or stdout or
+                               f"schtasks exited with code {completed.returncode}")
+    payload: dict[str, object] = {
+        "status": "removed", "task_name": task_name, "removed": True,
+    }
+    if stdout:
+        payload["stdout"] = stdout
+    if stderr:
+        payload["stderr"] = stderr
+    return payload

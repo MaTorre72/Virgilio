@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-14 - Completato V114-T17.9: aggiunti servizi e CLI condivisi `status-windows-task` e `uninstall-windows-task` per leggere stato, ultima esecuzione e ultimo esito e per rimuovere in modo confermato e idempotente il task Windows; il tab Automazione Win11 abilita piano, installazione, stato e rimozione con messaggi leggibili e senza scelta manuale di Python. Test mirati (`57 passed`), query locale read-only, suite local connector e smoke (`351 passed`) verdi; prossimo task V114-T17.10.
+
 - 2026-07-14 - Completato V114-T17.8: rimosso il pannello globale `Parametri azioni`; Setup, Bucoliche, Avvio, Manutenzione e Automazione mostrano solo le rispettive impostazioni, mentre Python, formato export e cicli di prova restano nella Diagnostica avanzata. Cartella dati locali, scanner, intervallo e nome dell'avvio automatico sono validati e persistiti atomicamente nel file locale ignorato senza alterare le credenziali; Limbo e Bucoliche riusano il servizio del wizard. Test mirati (`29 passed`), suite local connector e smoke (`344 passed`) verdi; prossimo task V114-T17.9.
 
 - 2026-07-14 - Completato V114-T17.7: il tab Monitoraggio proietta gli eventi locali in una tabella Europe/Rome con data/ora, casella, messaggio, allegato, azione, esito e problema; filtri combinabili coprono casella, esito, data ed errori, i problemi sono azionabili e la vista non espone JSON, path tecnici o segreti; test mirati (`21 passed`), suite local connector e smoke (`339 passed`) verdi; prossimo task V114-T17.8.

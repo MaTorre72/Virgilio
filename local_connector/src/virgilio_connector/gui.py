@@ -162,6 +162,18 @@ def build_cli_args(spec: GuiCommandSpec) -> list[str]:
             args.append("--dry-run")
         if spec.force:
             args.append("--force")
+        if spec.human:
+            args.append("--human")
+        return args
+
+    if spec.command in {"status-windows-task", "uninstall-windows-task"}:
+        args = [spec.command]
+        if spec.task_name.strip():
+            args.extend(["--task-name", spec.task_name.strip()])
+        if spec.command == "uninstall-windows-task" and spec.confirm:
+            args.append("--confirm")
+        if spec.human:
+            args.append("--human")
         return args
 
     if spec.command == "reset-local-state":
@@ -215,8 +227,8 @@ def gui_actions() -> tuple[GuiAction, ...]:
                   "Mostra stato sintetico del pilota e prossime azioni.", "pilot-preview",
                   human=True),
         GuiAction("status-task", "Stato attivita Win11", "Stato",
-                  "Manca una CLI stabile per interrogare Utilita di Pianificazione.",
-                  None, unavailable_reason="CLI mancante: status-windows-task"),
+                  "Mostra stato e ultimo esito dell'avvio automatico Windows.",
+                  "status-windows-task", needs_config=False, human=True),
         GuiAction("setup-init", "Crea configurazione", "Setup iniziale",
                   "Genera o simula un file config senza segreti in chiaro.", "init-config",
                   needs_config=False, allow_dry_run_toggle=True),
@@ -278,16 +290,16 @@ def gui_actions() -> tuple[GuiAction, ...]:
                   None, unavailable_reason="CLI mancante: clean-local-quarantine"),
         GuiAction("win11-plan", "Verifica piano task", "Automazione Win11",
                   "Simula la registrazione del task Win11 senza crearla.", "install-windows-task",
-                  dry_run=True),
+                  dry_run=True, human=True),
         GuiAction("win11-install", "Installa task Win11", "Automazione Win11",
                   "Registra l'avvio automatico via Utilita di Pianificazione.", "install-windows-task",
-                  destructive=True),
+                  destructive=True, human=True),
         GuiAction("win11-remove", "Rimuovi task Win11", "Automazione Win11",
-                  "Manca una CLI stabile per rimuovere il task pianificato.",
-                  None, unavailable_reason="CLI mancante: uninstall-windows-task"),
+                  "Rimuove l'avvio automatico solo dopo conferma esplicita.",
+                  "uninstall-windows-task", needs_config=False, human=True, destructive=True),
         GuiAction("win11-status", "Leggi stato task Win11", "Automazione Win11",
-                  "Manca una CLI stabile per stato, prossima esecuzione e ultimo esito.",
-                  None, unavailable_reason="CLI mancante: status-windows-task"),
+                  "Mostra installazione, stato, ultima esecuzione e ultimo esito.",
+                  "status-windows-task", needs_config=False, human=True),
         GuiAction("diag-doctor", "Doctor avanzato", "Diagnostica avanzata",
                   "Esegue doctor in formato umano.", "doctor", human=True),
         GuiAction("diag-pilot-safe", "Smoke pilota mirato", "Diagnostica avanzata",
@@ -942,7 +954,7 @@ class VirgilioGuiApp:
             python_exe=Path(python_text) if python_text else None,
             task_name=self.task_name_var.get(),
             backup=action.key == "maintenance-reset",
-            confirm=self.confirm_reset_var.get(),
+            confirm=(self.confirm_reset_var.get() or action.key == "win11-remove"),
         )
 
     def run_action(self, action: GuiAction) -> None:

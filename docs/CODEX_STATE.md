@@ -4,12 +4,12 @@
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`, riaperta dopo collaudo UX negativo
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V114-T17.8 - Impostazioni contestuali`
-- Task corrente consigliato: `V114-T17.9 - Automazione Windows completa`
-- Massimo due successivi: `V114-T17.10 - Collaudo utente finale`
-- Blocchi aperti: `V114-T17 - GUI completa Caronte locale` e` `IN_PROGRESS`; collaudo UX non superato. La GUI corrente e` un prototipo tecnico CLI-driven, non una GUI completa per l'utente finale.
-- Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-v114-t178-full local_connector -q` -> `OK` (`344 passed in 35.15s`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`344 passed in 31.56s`)
+- Ultimo task chiuso noto: `V114-T17.9 - Automazione Windows completa`
+- Task corrente consigliato: `V114-T17.10 - Collaudo utente finale`
+- Massimo due successivi: nessuno; `V114-T17.10` chiude l'ombrello solo con collaudo positivo
+- Blocchi aperti: `V114-T17 - GUI completa Caronte locale` resta `IN_PROGRESS` fino al collaudo manuale obbligatorio di `V114-T17.10` su profilo di test controllato.
+- Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-v114-t179-full local_connector -q` -> `OK` (`351 passed in 30.67s`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`351 passed in 34.98s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

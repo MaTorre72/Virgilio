@@ -95,6 +95,15 @@ def test_build_cli_args_for_maintenance_and_windows_task():
         "--interval-seconds", "120",
         "--dry-run",
     ]
+    assert build_cli_args(GuiCommandSpec(
+        command="status-windows-task", task_name="Virgilio Test Watch", human=True,
+    )) == ["status-windows-task", "--task-name", "Virgilio Test Watch", "--human"]
+    assert build_cli_args(GuiCommandSpec(
+        command="uninstall-windows-task", task_name="Virgilio Test Watch",
+        confirm=True, human=True,
+    )) == [
+        "uninstall-windows-task", "--task-name", "Virgilio Test Watch", "--confirm", "--human",
+    ]
 
 
 def test_build_cli_args_rejects_missing_required_values():
@@ -104,7 +113,7 @@ def test_build_cli_args_rejects_missing_required_values():
         build_cli_args(GuiCommandSpec(command="init-config"))
 
 
-def test_gui_registry_has_required_tabs_and_disabled_missing_cli_actions():
+def test_gui_registry_has_required_tabs_and_windows_task_actions():
     assert gui_tabs() == (
         "Stato",
         "Setup iniziale",
@@ -124,7 +133,7 @@ def test_gui_registry_has_required_tabs_and_disabled_missing_cli_actions():
         for action in tab_actions
         if not action.available
     }
-    assert unavailable["win11-status"] == "CLI mancante: status-windows-task"
+    assert all(action.available for action in actions["Automazione Win11"])
     assert unavailable["maintenance-backup"] == "CLI mancante: backup-local-state"
 
 

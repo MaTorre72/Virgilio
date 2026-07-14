@@ -115,6 +115,8 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-t
 - `watch --dry-run --max-cycles 1` verifica il loop operativo locale in un solo ciclo.
 - `install-windows-task --dry-run` mostra il task `Virgilio Local Watch` senza registrarlo.
 - Solo dopo il dry-run puoi usare `install-windows-task --force` per l'avvio automatico su Windows 11.
+- `status-windows-task --human` mostra stato, ultima esecuzione e ultimo esito senza modifiche.
+- `uninstall-windows-task --confirm --human` rimuove l'avvio automatico con conferma esplicita.
 
 Per usare Caronte locale senza imparare i comandi, avviare la GUI:
 
@@ -136,6 +138,9 @@ Nel tab Avvio, scansione singola e monitoraggio continuo lavorano in background:
 la finestra resta reattiva, un secondo avvio viene rifiutato e `Ferma monitoraggio
 continuo` arresta il processo posseduto dalla GUI. Anche la chiusura della finestra
 ferma il processo prima di uscire.
+Nel tab Automazione Win11 puoi verificare il piano, installare l'avvio automatico,
+leggerne stato e ultimo esito e rimuoverlo con conferma. La GUI usa automaticamente
+il proprio runtime Python e non richiede di selezionare un eseguibile.
 
 ## Troubleshooting rapido
 
