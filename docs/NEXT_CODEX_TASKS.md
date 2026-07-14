@@ -4,10 +4,10 @@ Stato operativo corrente: milestone v1.1.4 riaperta; `V114-T17 - GUI completa Ca
 
 ## Prossimo task
 
-- `V114-T17.1 - Modello unico configurazione GUI`.
+- `V114-T17.2 - Wizard primo avvio`.
 
-Esito atteso: introdurre API applicative indipendenti dalla GUI per leggere, validare e scrivere in modo coordinato configurazione strutturale e valori locali, con una sola fonte autorevole per ogni dato e senza modificare ancora il flusso operativo.
+Esito atteso: guidare Cartelle -> Caselle -> Registro condiviso -> Verifica finale usando i servizi di configurazione applicativi, senza richiedere YAML, file locali o termini tecnici all'utente.
 
-Successivi: `V114-T17.2 - Wizard primo avvio`, poi `V114-T17.3 - Gestione multi-account completa`.
+Successivi: `V114-T17.3 - Gestione multi-account completa`, poi `V114-T17.4 - Gestione sicura credenziali`.
 
 La sequenza completa resta in `docs/DEV_BACKLOG.md`.
