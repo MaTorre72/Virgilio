@@ -502,13 +502,26 @@ class VirgilioGuiApp:
                   ("Password", "password"), ("Provider", "provider"), ("Server IMAP", "host"),
                   ("Porta", "port"), ("Cartella in ingresso", "input"),
                   ("Cartella completate", "done"), ("Cartella errori", "error"))
+        password_entry = None
         for index, (label, key) in enumerate(labels):
             row, pair = divmod(index, 2)
             column = pair * 2
             self._ttk.Label(frame, text=label).grid(row=row + 1, column=column, sticky="w", pady=3)
-            self._ttk.Entry(frame, textvariable=fields[key], show=("*" if key == "password" else "")).grid(
-                row=row + 1, column=column + 1, sticky="ew", padx=6, pady=3)
+            entry = self._ttk.Entry(frame, textvariable=fields[key],
+                                    show=("*" if key == "password" else ""))
+            entry.grid(row=row + 1, column=column + 1, sticky="ew", padx=6, pady=3)
+            if key == "password":
+                password_entry = entry
         self._ttk.Checkbutton(frame, text="Casella attiva", variable=enabled).grid(row=6, column=0, sticky="w")
+        password_visible = self._tk.BooleanVar(value=False)
+
+        def toggle_password_visibility() -> None:
+            password_entry.configure(show="" if password_visible.get() else "*")
+
+        self._ttk.Checkbutton(
+            frame, text="Mostra password", variable=password_visible,
+            command=toggle_password_visibility,
+        ).grid(row=6, column=1, sticky="w")
 
         def refresh() -> None:
             tree.delete(*tree.get_children())
@@ -541,7 +554,10 @@ class VirgilioGuiApp:
                 refresh()
                 self.status_var.set("Casella salvata")
             except (ValueError, OSError) as exc:
-                self._set_output(f"Casella non salvata: {exc}")
+                self._set_output(manager.service.redact(
+                    f"Casella non salvata: {exc}",
+                    (fields["username"].get(), fields["password"].get()),
+                ))
 
         def new() -> None:
             current_alias.set("")
@@ -559,7 +575,7 @@ class VirgilioGuiApp:
                     load_selected()
                     refresh()
             except (ValueError, OSError) as exc:
-                self._set_output(f"Stato casella non aggiornato: {exc}")
+                self._set_output(manager.service.redact(f"Stato casella non aggiornato: {exc}"))
 
         def remove() -> None:
             try:
@@ -569,14 +585,14 @@ class VirgilioGuiApp:
                     new()
                     refresh()
             except (ValueError, OSError) as exc:
-                self._set_output(f"Casella non rimossa: {exc}")
+                self._set_output(manager.service.redact(f"Casella non rimossa: {exc}"))
 
         def test() -> None:
             if current_alias.get():
                 try:
                     self._set_output(manager.test_connection(current_alias.get()).message)
                 except (ValueError, OSError) as exc:
-                    self._set_output(f"Test non riuscito: {exc}")
+                    self._set_output(manager.service.redact(f"Test non riuscito: {exc}"))
 
         tree.bind("<<TreeviewSelect>>", load_selected)
         for column, (text, command) in enumerate((("Nuova", new), ("Salva", save),

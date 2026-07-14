@@ -738,6 +738,9 @@ Il tab Account mail espone `Gestisci caselle`: l'operatore puo` elencare, aggiun
 modificare, abilitare/disabilitare e rimuovere account distinti, oltre a provare
 separatamente il collegamento IMAP read-only. Gmail propone i valori iniziali noti;
 un provider generico mantiene server, porta e cartelle personalizzabili.
+Le password sono mascherate per default, visibili solo su scelta esplicita e salvate
+nel file locale ignorato `.env.local`, con nomi deterministici per casella. Non entrano
+nel file YAML, negli export o nei messaggi diagnostici mostrati dalla GUI.
 
 Nel prototipo corrente le azioni che non hanno ancora una CLI stabile restano visibili ma disabilitate:
 stop esplicito del watch avviato dalla GUI, backup

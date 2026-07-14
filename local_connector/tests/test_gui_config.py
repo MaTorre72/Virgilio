@@ -1,4 +1,5 @@
 from dataclasses import replace
+import os
 from pathlib import Path
 
 import pytest
@@ -97,3 +98,50 @@ def test_error_messages_do_not_expose_credentials(tmp_path):
     with pytest.raises(MultiAccountConfigError) as error:
         replace(model.accounts[0], username_env="bad")
     assert "secret-one" not in str(error.value)
+
+
+def test_local_credentials_are_reopened_redacted_and_written_privately(tmp_path):
+    service = service_with_one_account(tmp_path)
+    model = service.load()
+    service.save(replace(model, credentials={
+        "account_1": LocalCredentials("user1@example.invalid", "new-secret-value")
+    }))
+
+    assert service.load().credentials["account_1"].password == "new-secret-value"
+    assert "new-secret-value" not in service.yaml_path.read_text(encoding="utf-8")
+    assert service.redact("failure for new-secret-value") == "failure for <redacted>"
+    assert service.redact("draft-secret failed", ("draft-secret",)) == "<redacted> failed"
+    if os.name != "nt":
+        assert service.local_values_path.stat().st_mode & 0o077 == 0
+
+
+def test_local_credentials_write_failure_is_redacted_and_restores_files(tmp_path, monkeypatch):
+    service = service_with_one_account(tmp_path)
+    before = service.local_values_path.read_bytes()
+
+    def fail_chmod(path, mode):
+        raise OSError("synthetic permission failure containing secret-one")
+
+    monkeypatch.setattr("virgilio_connector.gui_config.os.chmod", fail_chmod)
+    with pytest.raises(MultiAccountConfigError) as error:
+        service.save(service.load())
+
+    assert "secret-one" not in str(error.value)
+    assert service.local_values_path.read_bytes() == before
+
+
+def test_deterministic_env_names_reject_normalization_collisions(tmp_path):
+    service = service_with_one_account(tmp_path)
+    model = service.load()
+    first = service.new_account(
+        account_alias="legal-mail", email="one@example.invalid", provider_hint="generic_imap",
+        imap_host="imap.example.invalid", imap_port=993, input_folder="INBOX",
+        done_folder="done", error_folder="error",
+    )
+    second = service.new_account(
+        account_alias="legal_mail", email="two@example.invalid", provider_hint="generic_imap",
+        imap_host="imap.example.invalid", imap_port=993, input_folder="INBOX",
+        done_folder="done", error_folder="error",
+    )
+    with pytest.raises(MultiAccountConfigError, match="environment variable names"):
+        model.create_account(first).create_account(second)

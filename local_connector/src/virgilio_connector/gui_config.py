@@ -113,6 +113,13 @@ class GuiConfigService:
         local_text = "".join(f"{key}={_env_escape(value)}\n" for key, value in sorted(retained.items()))
         _atomic_pair_write(self.yaml_path, yaml_text, self.local_values_path, local_text)
 
+    def redact(self, text: str, extra_values: Sequence[str] = ()) -> str:
+        """Remove locally stored credential values from user-visible diagnostics."""
+        values = _read_local_values(self.local_values_path)
+        secrets = [value for key, value in values.items()
+                   if key.startswith("VIRGILIO_IMAP_") and value]
+        return redact_values(text, (*secrets, *extra_values))
+
     @staticmethod
     def new_account(*, account_alias: str, email: str, provider_hint: str,
                     imap_host: str, imap_port: int, input_folder: str,
@@ -183,9 +190,12 @@ def _atomic_pair_write(first: Path, first_text: str, second: Path, second_text: 
             os.close(fd)
             temp = Path(name)
             temp.write_text(content, encoding="utf-8")
+            if path == second:
+                os.chmod(temp, 0o600)
             temporary.append(temp)
         temporary[0].replace(first)
         temporary[1].replace(second)
+        os.chmod(second, 0o600)
     except Exception as exc:
         for path, content in originals.items():
             if content is None:
@@ -213,3 +223,12 @@ def _env_escape(value: str) -> str:
 
 def _env_unescape(value: str) -> str:
     return value.replace("\\n", "\n").replace("\\\\", "\\")
+
+
+def redact_values(text: str, values: Sequence[str]) -> str:
+    """Redact exact non-empty local values without including them in errors or logs."""
+    redacted = str(text)
+    for value in sorted(set(values), key=len, reverse=True):
+        if value:
+            redacted = redacted.replace(value, "<redacted>")
+    return redacted
