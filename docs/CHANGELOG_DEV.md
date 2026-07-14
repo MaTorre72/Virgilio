@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-14 - Completato V114-T17.6: la Home GUI mostra stato coerente col worker, caselle attive, controlli, completamenti, problemi e ultima/prossima verifica in Europe/Rome; scansione manuale, avvio continuo e stop sono le tre azioni primarie, senza output CLI grezzo; test sintetici, suite local connector e smoke verdi (`334 passed`); prossimo task V114-T17.7.
+
 - 2026-07-14 - Completato V114-T17.5: la GUI esegue scansione singola e `watch` continuo tramite un processo gestito in background, con coda eventi, stati attivo/fermo/errore, rifiuto del doppio avvio e arresto deterministico anche alla chiusura; test fake coprono completamento, restart, stop, kill di fallback, errore e race in avvio; state, next tasks e backlog avanzati su V114-T17.6.
 
 Registro avanzamento storico spostato fuori dal backlog attivo.

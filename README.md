@@ -193,6 +193,11 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-t
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
+La GUI locale (`virgilio gui`) apre una Home operativa senza output CLI grezzo:
+mostra stato di Caronte, caselle attive, controlli completati, problemi e orari
+dell'ultima/prossima verifica in `Europe/Rome`. Le tre azioni quotidiane sono
+scansione manuale, avvio del monitoraggio continuo e arresto controllato.
+
 `--staging-dir` deve essere un path assoluto, per esempio `C:\Virgilio\staging`; i path relativi vengono rifiutati dal CLI.
 - `init-config` prepara il profilo locale.
 - `doctor` controlla la configurazione.

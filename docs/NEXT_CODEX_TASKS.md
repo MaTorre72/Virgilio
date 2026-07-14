@@ -4,10 +4,10 @@ Stato operativo corrente: milestone v1.1.4 riaperta; `V114-T17 - GUI completa Ca
 
 ## Prossimo task
 
-- `V114-T17.6 - Home operativa`.
+- `V114-T17.7 - Vista Attivita leggibile`.
 
-Esito atteso: stato, contatori, ultima/prossima verifica e tre azioni primarie sono leggibili.
+Esito atteso: eventi locali leggibili e filtrabili per casella, esito, data ed errore.
 
-Successivi: `V114-T17.7 - Vista Attivita leggibile`, poi `V114-T17.8 - Impostazioni contestuali`.
+Successivi: `V114-T17.8 - Impostazioni contestuali`, poi `V114-T17.9 - Automazione Windows completa`.
 
 La sequenza completa resta in `docs/DEV_BACKLOG.md`.

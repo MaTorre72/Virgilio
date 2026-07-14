@@ -8,11 +8,13 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from datetime import datetime
 
 from .gui_config import GuiConfigService
 from .gui_accounts import AccountDraft, AccountManager
 from .gui_wizard import FirstRunWizard, WizardAccount
 from .gui_runner import ManagedCliRunner
+from .gui_home import HomeSnapshot, format_home_time, ROME
 
 
 SENSITIVE_RE = re.compile(
@@ -339,6 +341,9 @@ class VirgilioGuiApp:
         self.task_name_var = tk.StringVar(value="Virgilio Local Watch")
         self.confirm_reset_var = tk.BooleanVar(value=False)
         self.status_var = tk.StringVar(value="Pronto")
+        self.home = HomeSnapshot()
+        self.home_vars = {key: tk.StringVar(value="") for key in (
+            "state", "accounts", "checks", "completed", "problems", "last", "next", "problem")}
 
         self._build_layout()
         root.protocol("WM_DELETE_WINDOW", self._close)
@@ -367,7 +372,13 @@ class VirgilioGuiApp:
         for tab, actions in gui_actions_by_tab().items():
             frame = ttk.Frame(notebook, padding=10)
             notebook.add(frame, text=tab)
-            self._build_tab(frame, actions)
+            if tab == "Stato":
+                self._build_home(frame)
+            else:
+                self._build_tab(frame, actions)
+
+        self._refresh_home_config()
+        self._render_home()
 
         output_frame = ttk.Frame(shell)
         output_frame.grid(row=3, column=0, sticky="nsew")
@@ -480,6 +491,52 @@ class VirgilioGuiApp:
             ttk.Label(frame, text=text, wraplength=620, justify="left").grid(
                 row=row + row_offset, column=1, sticky="w", padx=(10, 0), pady=3
             )
+
+    def _build_home(self, frame) -> None:
+        ttk = self._ttk
+        frame.columnconfigure((0, 1, 2, 3), weight=1)
+        ttk.Label(frame, textvariable=self.home_vars["state"],
+                  font=("TkDefaultFont", 16, "bold")).grid(
+                      row=0, column=0, columnspan=4, sticky="w", pady=(0, 12))
+        cards = (("Caselle attive", "accounts"), ("Controlli", "checks"),
+                 ("Completati", "completed"), ("Problemi", "problems"))
+        for index, (label, key) in enumerate(cards):
+            box = ttk.LabelFrame(frame, text=label, padding=10)
+            box.grid(row=1, column=index, sticky="nsew", padx=4, pady=4)
+            ttk.Label(box, textvariable=self.home_vars[key],
+                      font=("TkDefaultFont", 14, "bold")).grid()
+        ttk.Label(frame, textvariable=self.home_vars["last"]).grid(row=3, column=0, sticky="w", pady=6)
+        ttk.Label(frame, textvariable=self.home_vars["next"]).grid(row=3, column=1, sticky="w", pady=6)
+        ttk.Label(frame, textvariable=self.home_vars["problem"], wraplength=760).grid(
+            row=4, column=0, columnspan=4, sticky="w", pady=6)
+        primary = {action.key: action for action in gui_actions()}
+        for column, key in enumerate(("start-once", "start-watch", "stop-watch")):
+            action = primary[key]
+            ttk.Button(frame, text=action.label, command=lambda item=action: self.run_action(item),
+                       width=28).grid(row=5, column=column, sticky="ew", padx=4, pady=(12, 0))
+
+    def _refresh_home_config(self) -> None:
+        config_text = self.config_var.get().strip()
+        if not config_text:
+            self.home = HomeSnapshot()
+            return
+        try:
+            model = GuiConfigService(Path(config_text), Path(config_text).with_name(".env.local")).load()
+            self.home = self.home.with_accounts(sum(account.enabled for account in model.accounts))
+        except (OSError, ValueError) as exc:
+            self.home = HomeSnapshot(problem=f"Configurazione non pronta: {sanitize_output(str(exc))}")
+
+    def _render_home(self) -> None:
+        values = {
+            "state": self.home.state, "accounts": str(self.home.active_accounts),
+            "checks": str(self.home.checks), "completed": str(self.home.completed),
+            "problems": str(self.home.problems),
+            "last": f"Ultima verifica: {format_home_time(self.home.last_check)}",
+            "next": f"Prossima verifica: {format_home_time(self.home.next_check)}",
+            "problem": self.home.problem or "Nessun problema rilevato.",
+        }
+        for key, value in values.items():
+            self.home_vars[key].set(value)
 
     def _open_account_manager(self) -> None:
         config_text = self.config_var.get().strip()
@@ -743,6 +800,8 @@ class VirgilioGuiApp:
         )
 
     def run_action(self, action: GuiAction) -> None:
+        self._refresh_home_config()
+        self._render_home()
         if not action.available:
             self.status_var.set("Azione non disponibile")
             self._set_output(action.unavailable_reason)
@@ -774,6 +833,9 @@ class VirgilioGuiApp:
                 "stopped": "Caronte fermo", "error": "Errore Caronte",
             }
             self.status_var.set(labels.get(event.state, event.state))
+            self.home = self.home.apply(event, now=datetime.now(ROME),
+                                        interval_seconds=self.interval_var.get())
+            self._render_home()
 
     def _poll_runner(self) -> None:
         self._poll_runner_events()
