@@ -12,6 +12,7 @@ import sys
 from .gui_config import GuiConfigService
 from .gui_accounts import AccountDraft, AccountManager
 from .gui_wizard import FirstRunWizard, WizardAccount
+from .gui_runner import ManagedCliRunner
 
 
 SENSITIVE_RE = re.compile(
@@ -246,8 +247,7 @@ def gui_actions() -> tuple[GuiAction, ...]:
                   "Avvia watch continuo tramite CLI esistente.", "watch", human=True,
                   allow_dry_run_toggle=True),
         GuiAction("stop-watch", "Ferma monitoraggio continuo", "Avvio",
-                  "Manca un comando stabile per fermare un processo watch avviato dalla GUI.",
-                  None, unavailable_reason="CLI mancante: stop-watch"),
+                  "Ferma in modo controllato il processo watch posseduto dalla GUI.", "watch"),
         GuiAction("monitor-pilot", "Report ultimo ciclo", "Monitoraggio",
                   "Esegue il pilot completo in dry-run e mostra messaggi utente.", "pilot-run",
                   dry_run=True, human=True),
@@ -303,7 +303,9 @@ def gui_actions_by_tab() -> dict[str, tuple[GuiAction, ...]]:
 class VirgilioGuiApp:
     """Operator GUI that delegates execution to the CLI entrypoint."""
 
-    def __init__(self, root, *, command_runner=run_cli_command, initial_config: Path | None = None):
+    def __init__(self, root, *, command_runner=run_cli_command,
+                 managed_runner: ManagedCliRunner | None = None,
+                 initial_config: Path | None = None):
         import tkinter as tk
         from tkinter import ttk
 
@@ -311,6 +313,7 @@ class VirgilioGuiApp:
         self._ttk = ttk
         self.root = root
         self.command_runner = command_runner
+        self.managed_runner = managed_runner or ManagedCliRunner()
 
         root.title("Virgilio Caronte locale")
         root.minsize(980, 680)
@@ -338,6 +341,8 @@ class VirgilioGuiApp:
         self.status_var = tk.StringVar(value="Pronto")
 
         self._build_layout()
+        root.protocol("WM_DELETE_WINDOW", self._close)
+        root.after(100, self._poll_runner)
 
     def _build_layout(self) -> None:
         from tkinter import filedialog
@@ -745,6 +750,10 @@ class VirgilioGuiApp:
         if action.destructive and not self._confirm(action):
             self.status_var.set("Azione annullata")
             return
+        if action.key == "stop-watch":
+            self.managed_runner.stop()
+            self._poll_runner_events()
+            return
         try:
             args = build_cli_args(self._spec_for_action(action))
         except ValueError as exc:
@@ -752,14 +761,27 @@ class VirgilioGuiApp:
             self._set_output(f"Errore: {exc}")
             return
 
-        self.status_var.set(f"Esecuzione: {action.label}")
-        self.root.update_idletasks()
-        completed = self.command_runner(args)
-        output = completed.stdout.strip()
-        error = completed.stderr.strip()
-        combined = output if not error else f"{output}\n\n{error}".strip()
-        self._set_output(combined)
-        self.status_var.set(f"{action.label}: completato con codice {completed.returncode}")
+        self.status_var.set(f"Avvio: {action.label}")
+        if not self.managed_runner.start(args):
+            self._poll_runner_events()
+
+    def _poll_runner_events(self) -> None:
+        for event in self.managed_runner.drain_events():
+            if event.message:
+                self._set_output(event.message)
+            labels = {
+                "running": "Caronte attivo", "stopping": "Arresto in corso",
+                "stopped": "Caronte fermo", "error": "Errore Caronte",
+            }
+            self.status_var.set(labels.get(event.state, event.state))
+
+    def _poll_runner(self) -> None:
+        self._poll_runner_events()
+        self.root.after(100, self._poll_runner)
+
+    def _close(self) -> None:
+        self.managed_runner.close()
+        self.root.destroy()
 
     def _confirm(self, action: GuiAction) -> bool:
         from tkinter import messagebox

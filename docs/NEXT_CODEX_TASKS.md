@@ -4,10 +4,10 @@ Stato operativo corrente: milestone v1.1.4 riaperta; `V114-T17 - GUI completa Ca
 
 ## Prossimo task
 
-- `V114-T17.5 - Avvio e arresto non bloccanti`.
+- `V114-T17.6 - Home operativa`.
 
-Esito atteso: controllo singolo, continuo e stop funzionano senza blocchi, doppi avvii o processi orfani.
+Esito atteso: stato, contatori, ultima/prossima verifica e tre azioni primarie sono leggibili.
 
-Successivi: `V114-T17.6 - Home operativa`, poi `V114-T17.7 - Vista Attivita leggibile`.
+Successivi: `V114-T17.7 - Vista Attivita leggibile`, poi `V114-T17.8 - Impostazioni contestuali`.
 
 La sequenza completa resta in `docs/DEV_BACKLOG.md`.

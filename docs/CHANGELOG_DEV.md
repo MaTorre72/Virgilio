@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-14 - Completato V114-T17.5: la GUI esegue scansione singola e `watch` continuo tramite un processo gestito in background, con coda eventi, stati attivo/fermo/errore, rifiuto del doppio avvio e arresto deterministico anche alla chiusura; test fake coprono completamento, restart, stop, kill di fallback, errore e race in avvio; state, next tasks e backlog avanzati su V114-T17.6.
+
 Registro avanzamento storico spostato fuori dal backlog attivo.
 
 - 2026-07-14 - Completato `V114-T17.4`: la GUI account maschera le password per default e le mostra solo su scelta esplicita; credenziali aggiornabili e rimovibili persistono nel file locale ignorato con scrittura atomica, permessi restrittivi, nomi env deterministici e collisioni rifiutate; YAML e diagnostica GUI restano redatti; test mirati (`20 passed`), suite local connector e smoke (`326 passed`) verdi senza rete o credenziali reali; prossimo task `V114-T17.5`.

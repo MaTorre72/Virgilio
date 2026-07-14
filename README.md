@@ -132,6 +132,10 @@ Caselle, Registro condiviso e verifica finale. La procedura e` riapribile, accet
 anche una seconda casella e non richiede di modificare YAML o file di valori locali.
 Nel tab Account mail, `Gestisci caselle` consente elenco, aggiunta, modifica,
 abilitazione/disabilitazione, rimozione e prova IMAP read-only della singola casella.
+Nel tab Avvio, scansione singola e monitoraggio continuo lavorano in background:
+la finestra resta reattiva, un secondo avvio viene rifiutato e `Ferma monitoraggio
+continuo` arresta il processo posseduto dalla GUI. Anche la chiusura della finestra
+ferma il processo prima di uscire.
 
 ## Troubleshooting rapido
 
