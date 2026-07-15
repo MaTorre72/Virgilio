@@ -15,6 +15,17 @@ from .credentials import (
     CredentialStoreError,
     FakeCredentialStore,
 )
+from .windows_credentials import (
+    CredentialAccessDeniedError,
+    CredentialBackendError,
+    CredentialBackendUnavailableError,
+    NativeWindowsCredentialApi,
+    WindowsCredentialApi,
+    WindowsCredentialApiError,
+    WindowsCredentialStore,
+    create_account_credential_service,
+    credential_error_message,
+)
 
 __all__ = [
     "ConfigurationModel",
@@ -28,4 +39,13 @@ __all__ = [
     "CredentialStore",
     "CredentialStoreError",
     "FakeCredentialStore",
+    "CredentialAccessDeniedError",
+    "CredentialBackendError",
+    "CredentialBackendUnavailableError",
+    "NativeWindowsCredentialApi",
+    "WindowsCredentialApi",
+    "WindowsCredentialApiError",
+    "WindowsCredentialStore",
+    "create_account_credential_service",
+    "credential_error_message",
 ]

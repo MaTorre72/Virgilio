@@ -108,7 +108,7 @@ la decisione; nessuna modifica di codice appartiene a questo gate documentale.
 
 ## GUI-U-E1 — Fondazioni applicative
 
-Stato: `IN_PROGRESS`.
+Stato: `DONE`.
 
 ### GUI-U-E1-T01 — Percorsi applicativi Windows
 
@@ -163,7 +163,7 @@ Condizione di blocco: il modello strutturale richiede ancora il valore della pas
 
 ### GUI-U-E1-T04 — Backend credenziali Windows
 
-Stato: `READY`
+Stato: `DONE`
 Risultato: `CredentialStore` dispone di un adapter Windows sicuro e sostituibile.
 Dipendenza: `GUI-U-E1-T03 = DONE`.
 Componenti ammessi: adapter credenziali Windows, factory del servizio, traduzione errori, test mock/fake.
@@ -172,19 +172,19 @@ Condizione di blocco: il backend scelto richiede segreti versionati, privilegi a
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Esiste un adapter Windows. | Test del contratto con API di sistema mockata. | — | `NOT_RUN` |
-| Il modello conserva solo riferimenti. | Test di persistenza e scansione dei file. | — | `NOT_RUN` |
-| La rimozione dell'account elimina la relativa credenziale. | Test servizio remove con verifica backend. | — | `NOT_RUN` |
-| Gli errori sono traducibili in messaggi utente. | Test delle eccezioni tipizzate e dei messaggi. | — | `NOT_RUN` |
-| I test non usano credenziali reali. | Fixture fake e controllo assenza accessi reali. | — | `NOT_RUN` |
+| Esiste un adapter Windows. | Test del contratto con API di sistema mockata. | `test_windows_adapter_contract_uses_mocked_system_api` verifica CRUD e target `Caronte/` tramite porta mockata. | `MET` |
+| Il modello conserva solo riferimenti. | Test di persistenza e scansione dei file. | Due account strutturali conservano solo riferimenti; quattro valori sintetici sono assenti da YAML e rappresentazioni. | `MET` |
+| La rimozione dell'account elimina la relativa credenziale. | Test servizio remove con verifica backend. | La factory condivisa rimuove dal backend mock sia il riferimento utente sia il riferimento password. | `MET` |
+| Gli errori sono traducibili in messaggi utente. | Test delle eccezioni tipizzate e dei messaggi. | Errori not-found, duplicato e accesso negato sono tipizzati e tradotti in messaggi sicuri senza valori sensibili. | `MET` |
+| I test non usano credenziali reali. | Fixture fake e controllo assenza accessi reali. | Sei casi sintetici usano esclusivamente `MockWindowsCredentialApi`; nessuna API nativa, rete o credenziale reale. | `MET` |
 
 ## GUI-U-E2 — Percorso verticale minimo
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `IN_PROGRESS`.
 
 ### GUI-U-E2-T01 — Nuova shell `user_app`
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `READY`
 Risultato: esiste una shell utente indipendente che apre il primo avvio o la Home.
 Dipendenza: `GUI-U-E1-T04 = DONE`.
 Componenti ammessi: modulo `user_app`, entry point `user-gui`, shell e routing minimo, test UI.
