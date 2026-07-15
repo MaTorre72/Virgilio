@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-15 - Completato `GUI-U-E1-T02`: introdotti il modello strutturale e `ConfigurationService` indipendenti dai toolkit, con porta di persistenza, adapter YAML atomico, mappa campo-fonte e supporto multi-account; `scan-imap-accounts` riusa il servizio condiviso. Test task (`4 passed`), suite local connector e smoke (`363 passed`) verdi. Prossimo task `GUI-U-E1-T03 - Archivio credenziali astratto`.
+
 - 2026-07-15 - Completato `GUI-U-E1-T01`: introdotto `ApplicationPaths` con configurazione in `%APPDATA%\Caronte` e dati in `%LOCALAPPDATA%\Caronte`, override assoluti e root iniettabili; tutti i consumer CLI dei dati locali usano il resolver condiviso senza dipendere da repository o cwd. Test mirati (`9 passed`), suite local connector e smoke (`359 passed`) verdi; il runbook dell'attivita` programmata fissa inoltre la venv corretta per `pytest`. Prossimo task `GUI-U-E1-T02 - Modello unico di configurazione`.
 
 - 2026-07-15 - `GATE U-H1 = PASS` su decisione umana: approvati nomi, mappa dei servizi e percorso verticale minimo; l'implementazione `gui`/`gui_*` e` ora `ABANDONED_LEGACY`, mentre `Caronte Manutenzione` resta applicazione target con una nuova presentazione `maintenance_gui` separata. Architettura, mappa codice, backlog e documentazione operativa vietano il riuso della vecchia presentazione ma mantengono la suite di manutenzione tra i consumer dei servizi condivisi e i target di packaging. Prossimo task `GUI-U-E1-T01 - Percorsi applicativi Windows`; nessun codice applicativo modificato.

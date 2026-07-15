@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
 Stato: `IN_PROGRESS`
-Sotto-epica attiva: `GUI-U-E0`, completata in attesa del gate
-Task corrente: `GUI-U-E1-T02 - Modello unico di configurazione`
+Sotto-epica attiva: `GUI-U-E1 - Fondazioni applicative`
+Task corrente: `GUI-U-E1-T03 - Archivio credenziali astratto`
 
 Obiettivo finale:
 
@@ -129,7 +129,7 @@ Condizione di blocco: manca una policy approvata per directory dati/configurazio
 
 ### GUI-U-E1-T02 — Modello unico di configurazione
 
-Stato: `READY`
+Stato: `DONE`
 Risultato: un modello strutturale unico e indipendente dalla GUI governa la configurazione.
 Dipendenza: `GUI-U-E1-T01 = DONE`.
 Componenti ammessi: servizi configurazione condivisi, adapter di persistenza, CLI compatibile, test sintetici.
@@ -138,15 +138,15 @@ Condizione di blocco: due fonti esistenti non possono essere riconciliate atomic
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Esiste una sola fonte autorevole per ogni dato. | Test di round-trip e mappa campo -> fonte. | — | `NOT_RUN` |
-| Il modello e` indipendente dai widget. | Test import del servizio senza toolkit GUI. | — | `NOT_RUN` |
-| I servizi sono riutilizzabili dalla CLI. | Test CLI mirato sul servizio condiviso. | — | `NOT_RUN` |
-| La scrittura e` atomica. | Test di errore con rollback e file integro. | — | `NOT_RUN` |
-| Sono supportati almeno due account. | Test round-trip con due account distinti. | — | `NOT_RUN` |
+| Esiste una sola fonte autorevole per ogni dato. | Test di round-trip e mappa campo -> fonte. | `test_round_trip_has_one_authoritative_source_and_two_accounts` verifica round-trip e mappa `accounts.*`/`storage.*` verso lo stesso file strutturale. | `MET` |
+| Il modello e` indipendente dai widget. | Test import del servizio senza toolkit GUI. | `test_service_import_does_not_require_a_gui_toolkit` ricarica il modulo rifiutando import Tkinter, PySide e PyQt. | `MET` |
+| I servizi sono riutilizzabili dalla CLI. | Test CLI mirato sul servizio condiviso. | `test_scan_cli_uses_shared_configuration_service` verifica che `scan-imap-accounts` carichi gli account tramite `ConfigurationService`. | `MET` |
+| La scrittura e` atomica. | Test di errore con rollback e file integro. | `test_atomic_write_failure_preserves_existing_file` forza il fallimento del replace e conferma byte invariati. | `MET` |
+| Sono supportati almeno due account. | Test round-trip con due account distinti. | Il round-trip mirato salva e ricarica `account_1` e `account_2`; test task `4 passed`, suite e smoke `363 passed`. | `MET` |
 
 ### GUI-U-E1-T03 — Archivio credenziali astratto
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `READY`
 Risultato: le credenziali sono gestite tramite un contratto astratto separato dal modello strutturale.
 Dipendenza: `GUI-U-E1-T02 = DONE`.
 Componenti ammessi: interfaccia `CredentialStore`, fake store, servizi account, test sintetici.

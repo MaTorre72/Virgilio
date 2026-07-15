@@ -43,6 +43,7 @@ from .da_archiviare_intake import (
 )
 from .doctor import LocalDoctor
 from .application_paths import default_application_paths
+from .application.configuration import ConfigurationService
 from .local_paths import LocalDataPaths
 from .reset_local_state import ResetLocalStateError, reset_local_state
 from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
@@ -675,7 +676,7 @@ def main() -> int:
         return 0
     if args.command == "scan-imap-accounts":
         try:
-            accounts = load_multi_account_config(args.config)
+            accounts = ConfigurationService.for_file(args.config).load().accounts
             results = MultiAccountReadonlyScanner(
                 accounts,
                 paths=LocalDataPaths(_local_data_root()),
