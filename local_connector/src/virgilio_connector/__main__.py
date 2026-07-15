@@ -42,6 +42,7 @@ from .da_archiviare_intake import (
     build_da_archiviare_intake_payload,
 )
 from .doctor import LocalDoctor
+from .application_paths import default_application_paths
 from .local_paths import LocalDataPaths
 from .reset_local_state import ResetLocalStateError, reset_local_state
 from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
@@ -97,8 +98,12 @@ def _prog_name() -> str:
     return "virgilio" if Path(sys.argv[0]).stem.lower() == "virgilio" else "python -m virgilio_connector"
 
 
+def _local_data_root() -> Path:
+    return default_application_paths().data_dir
+
+
 def _load_pilot_components(config_path: Path):
-    local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+    local_root = _local_data_root()
     accounts = load_multi_account_config(config_path)
     storage_config = load_storage_config(config_path)
     bucoliche_config = load_bucoliche_config(config_path)
@@ -262,7 +267,7 @@ def _build_local_pipeline_runner(accounts, storage_config, paths, config_path):
 
 
 def _build_local_pipeline_runner_from_config(config_path: Path) -> LocalPipelineRunner:
-    local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+    local_root = _local_data_root()
     accounts = load_multi_account_config(config_path)
     storage_config = load_storage_config(config_path)
     paths = LocalDataPaths(local_root)
@@ -508,7 +513,7 @@ def main() -> int:
         if enabled_text.lower() not in {"true", "false"}:
             parser.exit(2, "error: VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED must be true or false\n")
         staging_text = os.environ.get("VIRGILIO_LIMBO_LOCAL_SYNC_DIR", "").strip()
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         transport = LocalDriveStagingTransport(
             state_db=local_root / "state.db", local_data_root=local_root,
             config=LocalDriveStagingConfig(
@@ -551,7 +556,7 @@ def main() -> int:
             os.environ.get("VIRGILIO_TOKEN"),
             timeout_seconds=float(os.environ.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15")),
         )
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         payload: dict[str, object] | None = None
         try:
             payload = build_da_archiviare_intake_payload(
@@ -673,7 +678,7 @@ def main() -> int:
             accounts = load_multi_account_config(args.config)
             results = MultiAccountReadonlyScanner(
                 accounts,
-                paths=LocalDataPaths(Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))),
+                paths=LocalDataPaths(_local_data_root()),
             ).scan(dry_run=args.dry_run)
         except MultiAccountConfigError as exc:
             parser.exit(2, f"error: {exc}\n")
@@ -685,7 +690,7 @@ def main() -> int:
             accounts = load_multi_account_config(args.config)
             results = MultiAccountImapProcessor(
                 accounts,
-                paths=LocalDataPaths(Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))),
+                paths=LocalDataPaths(_local_data_root()),
                 scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
                 rules=load_rules(args.config),
                 max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
@@ -696,7 +701,7 @@ def main() -> int:
                          separators=(",", ":")))
         return 0 if all(item.quarantine_status != "error" for item in results) else 1
     if args.command == "stage-ready-attachments":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             # Validate account configuration too; the storage rows are keyed by account_alias.
             load_multi_account_config(args.config)
@@ -713,7 +718,7 @@ def main() -> int:
         return 0 if all(item.status not in {"staging_failed", "staging_conflict"}
                         for item in results) else 1
     if args.command == "complete-staged-messages":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             accounts = load_multi_account_config(args.config)
             results = LocalCompletionRunner(
@@ -726,7 +731,7 @@ def main() -> int:
                          separators=(",", ":")))
         return 0 if all(item.status != "ack_failed" for item in results) else 1
     if args.command == "ack-completed-messages":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             accounts = load_multi_account_config(args.config)
             result = ControlledAckRunner(
@@ -782,7 +787,7 @@ def main() -> int:
                 _print_human([f"Watch interrotto dopo {cycle} ciclo{'i' if cycle != 1 else ''}."])
             return 130
     if args.command == "doctor":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             accounts = load_multi_account_config(args.config)
             storage_config = load_storage_config(args.config)
@@ -808,7 +813,7 @@ def main() -> int:
             print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "check-local-conflicts":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             load_multi_account_config(args.config)
             result = LocalConflictChecker(local_root / "state.db").check()
@@ -817,7 +822,7 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
         return 1 if result["status"] == "CONFLICTS" else 0
     if args.command == "export-central-events":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             load_multi_account_config(args.config)
             target = export_central_events(local_root / "state.db", local_root, args.format)
@@ -826,7 +831,7 @@ def main() -> int:
         print(json.dumps({"path": target.relative_to(local_root).as_posix()}, separators=(",", ":")))
         return 0
     if args.command == "export-registro-events":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             load_multi_account_config(args.config)
             target = export_registro_events(local_root / "state.db", local_root, args.format)
@@ -835,7 +840,7 @@ def main() -> int:
         print(json.dumps({"path": target.relative_to(local_root).as_posix()}, separators=(",", ":")))
         return 0
     if args.command == "export-to-bucoliche":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             load_multi_account_config(args.config)
             result = BucolicheAppendOnlyAdapter(state_db=local_root / "state.db",
@@ -845,7 +850,7 @@ def main() -> int:
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 1 if result.status == "completed_with_errors" else 0
     if args.command == "refresh-bucoliche-state":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             load_multi_account_config(args.config)
             result = BucolicheAppendOnlyAdapter(
@@ -872,7 +877,7 @@ def main() -> int:
             print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "pilot-check":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             result = PilotCheck(load_multi_account_config(args.config),
                 storage=load_storage_config(args.config),
@@ -912,7 +917,7 @@ def main() -> int:
         print(result.to_json())
         return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "pilot-run":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             accounts, storage_config, bucoliche_config, paths = _load_pilot_components(args.config)
             result = PilotRunV11Runner(
@@ -998,7 +1003,7 @@ def main() -> int:
         print(result.to_json())
         return 0 if result.status in {"DRY_RUN", "READY", "READY_WITH_WARNINGS"} else 1
     if args.command == "pilot-preview":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             accounts = load_multi_account_config(args.config)
             storage_config = load_storage_config(args.config)
@@ -1105,7 +1110,7 @@ def main() -> int:
             print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
         return 0
     if args.command == "reset-local-state":
-        local_root = Path(os.environ.get("VIRGILIO_LOCAL_DATA_DIR", ".local_data"))
+        local_root = _local_data_root()
         try:
             result = reset_local_state(local_root, backup=args.backup, confirm=args.confirm)
         except (ResetLocalStateError, OSError) as exc:

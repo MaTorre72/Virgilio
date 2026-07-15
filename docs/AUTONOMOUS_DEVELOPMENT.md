@@ -15,3 +15,9 @@
 ## Regola operativa
 Una run autonoma resta seriale, un task per volta, e si chiude aggiornando
 stato, backlog e commit senza sovrapposizioni.
+
+## Toolchain dell'attivita` programmata
+
+- Eseguire `pytest` con `local_connector\.venv\Scripts\python.exe`.
+- Non usare `.venv\Scripts\python.exe` nella root: quella venv non contiene `pytest`.
+- Lo smoke `scripts\dev\smoke_local_connector.ps1` usa gia` la venv corretta.

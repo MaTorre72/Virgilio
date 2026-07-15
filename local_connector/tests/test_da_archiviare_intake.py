@@ -257,6 +257,7 @@ def test_timeout_has_no_retry(tmp_path):
 
 def test_cli_intake_da_archiviare_uses_env_and_prints_json(tmp_path, monkeypatch, capsys):
     manifest_path = write_manifest(tmp_path)
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(tmp_path / "local-data"))
     monkeypatch.setenv("VIRGILIO_CARONTE_INTAKE_URL", "https://example.invalid/exec")
     monkeypatch.setenv("VIRGILIO_TOKEN", "token-123")
     captured = {}

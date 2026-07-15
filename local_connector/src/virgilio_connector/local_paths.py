@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+
+from .application_paths import default_application_paths
 
 
 @dataclass(frozen=True, slots=True)
 class LocalDataPaths:
-    root: Path = Path(".local_data")
+    root: Path = field(default_factory=lambda: default_application_paths().data_dir)
 
     @property
     def quarantine(self) -> Path:

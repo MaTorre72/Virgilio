@@ -2,7 +2,7 @@
 
 Stato: `IN_PROGRESS`
 Sotto-epica attiva: `GUI-U-E0`, completata in attesa del gate
-Task corrente: `GUI-U-E1-T01 - Percorsi applicativi Windows`
+Task corrente: `GUI-U-E1-T02 - Modello unico di configurazione`
 
 Obiettivo finale:
 
@@ -112,7 +112,7 @@ Stato: `IN_PROGRESS`.
 
 ### GUI-U-E1-T01 — Percorsi applicativi Windows
 
-Stato: `READY`
+Stato: `DONE`
 Risultato: configurazione e dati usano percorsi applicativi Windows indipendenti dal repository.
 Dipendenza: `GATE U-H1 = PASS`.
 Componenti ammessi: servizio percorsi, configurazione, test con filesystem temporaneo, documentazione minima.
@@ -121,15 +121,15 @@ Condizione di blocco: manca una policy approvata per directory dati/configurazio
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Dati e configurazione usano directory applicative definite. | Test unitari sulle risoluzioni Windows. | — | `NOT_RUN` |
-| Nessun percorso del repository e` necessario. | Test di avvio con repository non presente nel path applicativo. | — | `NOT_RUN` |
-| I percorsi sono sostituibili nei test. | Test con root temporanea iniettata. | — | `NOT_RUN` |
-| L'avvio da directory differente funziona. | Test di processo da working directory temporanea. | — | `NOT_RUN` |
-| Esistono test mirati. | Comando e risultato dei test registrati qui. | — | `NOT_RUN` |
+| Dati e configurazione usano directory applicative definite. | Test unitari sulle risoluzioni Windows. | `ApplicationPaths` risolve configurazione in `%APPDATA%\Caronte\config.yaml` e dati in `%LOCALAPPDATA%\Caronte`; test dedicato verde. | `MET` |
+| Nessun percorso del repository e` necessario. | Test di avvio con repository non presente nel path applicativo. | Test da directory estranea conferma che config e dati non discendono dal repository o dalla cwd. | `MET` |
+| I percorsi sono sostituibili nei test. | Test con root temporanea iniettata. | Root config/dati iniettate e create sotto `tmp_path`; i test CLI che scrivono stato impostano una root temporanea. | `MET` |
+| L'avvio da directory differente funziona. | Test di processo da working directory temporanea. | Sottoprocesso Python avviato da cwd temporanea risolve entrambe le directory Windows attese. | `MET` |
+| Esistono test mirati. | Comando e risultato dei test registrati qui. | `pytest ... test_application_paths.py` -> `6 passed`; regressioni mirate -> `9 passed`; suite e smoke -> `359 passed`. | `MET` |
 
 ### GUI-U-E1-T02 — Modello unico di configurazione
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `READY`
 Risultato: un modello strutturale unico e indipendente dalla GUI governa la configurazione.
 Dipendenza: `GUI-U-E1-T01 = DONE`.
 Componenti ammessi: servizi configurazione condivisi, adapter di persistenza, CLI compatibile, test sintetici.

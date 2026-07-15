@@ -1188,6 +1188,7 @@ def test_doctor_cli_human_output_shows_actions(tmp_path, monkeypatch, capsys):
     staging = tmp_path / "staging"
     staging.mkdir()
     config = doctor_config(tmp_path, staging)
+    monkeypatch.setenv("VIRGILIO_LOCAL_DATA_DIR", str(tmp_path / "local-data"))
     monkeypatch.setenv("VIRGILIO_IMAP_ACCOUNT_1_USERNAME", "user@example.invalid")
     monkeypatch.setenv("VIRGILIO_IMAP_ACCOUNT_1_PASSWORD", "secret")
     monkeypatch.setattr(sys, "argv", [
