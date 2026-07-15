@@ -118,29 +118,12 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-t
 - `status-windows-task --human` mostra stato, ultima esecuzione e ultimo esito senza modifiche.
 - `uninstall-windows-task --confirm --human` rimuove l'avvio automatico con conferma esplicita.
 
-Per usare Caronte locale senza imparare i comandi, avviare la GUI:
-
-```powershell
-$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector maintenance-gui --config $config
-```
-
-La GUI organizza le azioni in tab: Stato, Setup iniziale, Account mail,
-Bucoliche, Avvio, Monitoraggio, Manutenzione, Automazione Win11 e Diagnostica
-avanzata. Ogni pulsante esegue un comando CLI gia` disponibile; le funzioni senza
-comando stabile restano visibili ma disabilitate con una causa esplicita.
-Nel tab Setup iniziale, `Apri procedura guidata` accompagna attraverso Cartelle,
-Caselle, Registro condiviso e verifica finale. La procedura e` riapribile, accetta
-anche una seconda casella e non richiede di modificare YAML o file di valori locali.
-Nel tab Account mail, `Gestisci caselle` consente elenco, aggiunta, modifica,
-abilitazione/disabilitazione, rimozione e prova IMAP read-only della singola casella.
-Nel tab Avvio, scansione singola e monitoraggio continuo lavorano in background:
-la finestra resta reattiva, un secondo avvio viene rifiutato e `Ferma monitoraggio
-continuo` arresta il processo posseduto dalla GUI. Anche la chiusura della finestra
-ferma il processo prima di uscire.
-Nel tab Automazione Win11 puoi verificare il piano, installare l'avvio automatico,
-leggerne stato e ultimo esito e rimuoverlo con conferma. La GUI usa automaticamente
-il proprio runtime Python e non richiede di selezionare un eseguibile.
+La precedente implementazione GUI (`gui`, `gui_*`) e` abbandonata e non
+costituisce un percorso supportato. Le applicazioni desktop target sono `Caronte`
+e `Caronte Manutenzione`, entrambe con nuove presentazioni separate dal legacy e
+basate sui servizi condivisi. Finche` i rispettivi entry point non sono separati
+dal codice storico, le verifiche locali restano affidate ai comandi documentati
+sopra.
 
 ## Troubleshooting rapido
 
@@ -198,12 +181,10 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-t
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
-`Caronte Manutenzione` (`virgilio maintenance-gui`) e` lo strumento tecnico locale;
-il precedente comando `virgilio gui` resta solo come alias deprecato. Apre una Home
-operativa senza output CLI grezzo:
-mostra stato di Caronte, caselle attive, controlli completati, problemi e orari
-dell'ultima/prossima verifica in `Europe/Rome`. Le tre azioni quotidiane sono
-scansione manuale, avvio del monitoraggio continuo e arresto controllato.
+`Caronte Manutenzione` resta un'applicazione tecnica target, con comando
+`maintenance-gui` ed eventuale `CaronteManutenzione.exe`. La sua implementazione
+corrente, ancora collegata a `gui`/`gui_*`, e` legacy abbandonato: la nuova
+presentazione dovra` sostituirla senza riusarne widget, tab o controller.
 
 `--staging-dir` deve essere un path assoluto, per esempio `C:\Virgilio\staging`; i path relativi vengono rifiutati dal CLI.
 - `init-config` prepara il profilo locale.

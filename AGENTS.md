@@ -14,10 +14,13 @@ Riferimento architetturale condiviso: `docs/ARCHITETTURA_UNIFICATA.md`.
 - Non inviare byte, base64 o path locali ad Apps Script.
 - Non versionare segreti, token, password, `.env`, `.env.*`, `.local_data/`, `.secrets/`, `_staging/` o `.clasprc.json`.
 - Non introdurre AI, RAG, Docling, LiteLLM, database remoti o server web.
-- Non sono ammesse GUI parallele non autorizzate. La sola nuova GUI autorizzata e`
-  `virgilio_connector.user_app`, sviluppata nell'iniziativa `GUI-U - Caronte Desktop utente`.
-- La GUI esistente resta esclusivamente tecnica: sara` confinata come
-  `virgilio_connector.maintenance_gui` con nome `Caronte Manutenzione`.
+- Non sono ammesse GUI parallele. Le sole presentazioni target sono
+  `virgilio_connector.user_app` per `Caronte` e la nuova presentazione separata
+  di `Caronte Manutenzione` esposta da `virgilio_connector.maintenance_gui`.
+- L'implementazione GUI legacy (`gui`, `gui_*`) e` abbandonata: non deve essere
+  sviluppata, distribuita o importata dalle nuove presentazioni. L'entry point
+  `maintenance_gui` resta target, ma deve cessare di riesportare il legacy quando
+  sara` implementata la nuova suite di manutenzione.
 - Non riscrivere il form.
 - Non sostituire Apps Script con Python.
 - Non eseguire `clasp push` salvo task esplicito.
@@ -25,8 +28,8 @@ Riferimento architetturale condiviso: `docs/ARCHITETTURA_UNIFICATA.md`.
 - Progettare la GUI utente a partire dalle attivita` dell'utente finale, non dall'elenco dei comandi CLI.
 - Non trasformare automaticamente i comandi CLI in pulsanti: una corrispondenza uno-a-uno
   non costituisce una GUI utente completa.
-- GUI utente, CLI e GUI manutenzione devono condividere servizi applicativi, senza duplicare
-  la logica operativa.
+- GUI utente, nuova GUI manutenzione e CLI devono condividere servizi
+  applicativi, senza duplicare la logica operativa.
 - Nella GUI utente non devono comparire termini o dettagli tecnici interni.
 - La GUI puo` richiamare direttamente servizi interni quando un sottoprocesso CLI compromette UX,
   reattivita` o controllo del processo.

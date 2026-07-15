@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-15 - `GATE U-H1 = PASS` su decisione umana: approvati nomi, mappa dei servizi e percorso verticale minimo; l'implementazione `gui`/`gui_*` e` ora `ABANDONED_LEGACY`, mentre `Caronte Manutenzione` resta applicazione target con una nuova presentazione `maintenance_gui` separata. Architettura, mappa codice, backlog e documentazione operativa vietano il riuso della vecchia presentazione ma mantengono la suite di manutenzione tra i consumer dei servizi condivisi e i target di packaging. Prossimo task `GUI-U-E1-T01 - Percorsi applicativi Windows`; nessun codice applicativo modificato.
+
 - 2026-07-15 - Completato `GUI-U-E0-T03`: classificati gli otto moduli GUI esistenti, assegnati servizi condivisi e destinazioni target, delimitate le lacune dei task E1-E3 e confermato che la GUI utente parte dalle attivita` senza trasformare comandi CLI in pulsanti. La scheda `GUI-U-E1-T01` rispetta la Definition of Done; `GATE U-H1` passa a `WAITING_HUMAN_REVIEW` e blocca E1 fino a esito umano esplicito. Nessun codice applicativo modificato.
 
 - 2026-07-15 - Completato `GUI-U-E0-T02`: definita l'architettura target di `Caronte` separando `user_app`, `Caronte Manutenzione`, servizi applicativi condivisi, supervisore in background, dominio/porte, adapter locali, CLI e packaging. Fissati regole di import verificabili, contratti con consumer, responsabilita`, entry point definitive e percorso primo avvio -> due caselle -> Home -> avvio/pausa. Prossimo task `GUI-U-E0-T03 - Mappa del codice riutilizzabile`; nessun codice applicativo modificato.

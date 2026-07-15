@@ -710,57 +710,14 @@ Ordine consigliato: `init-config`, `doctor`, `pilot`, poi dry-run completi prima
 di ogni esecuzione reale. I comandi Google/Bucoliche restano di test e il gateway
 LiteLLM resta solo mock locale.
 
-### GUI locale: prototipo tecnico
+### Presentazione legacy abbandonata
 
-Per un operatore che preferisce usare Caronte locale da interfaccia grafica,
-senza imparare i comandi ordinari:
-
-```powershell
-virgilio gui
-virgilio gui --config accounts.local.yaml
-```
-
-La GUI `tkinter` attuale resta un wrapper controllato della CLI e non ha superato
-il collaudo UX del 2026-07-14. Non e` ancora una GUI completa per l'utente finale:
-automazione Windows completa e collaudo finale richiedono ancora superfici mancanti.
-I requisiti di riprogettazione sono in
-[`../docs/GUI_UX_REQUIREMENTS.md`](../docs/GUI_UX_REQUIREMENTS.md).
-
-Le tab tecniche attualmente disponibili sono:
-Stato, Setup iniziale, Account mail, Bucoliche, Avvio, Monitoraggio,
-Manutenzione, Automazione Win11 e Diagnostica avanzata. I pulsanti eseguono solo
-comandi gia` presenti, tra cui `init-config`, `doctor`, `pilot-preview`,
-`pilot-run`, `run-local-pipeline`, `watch`, `doctor-bucoliche`,
-`refresh-bucoliche-state`, `export-to-bucoliche`, `reset-local-state` e
-`install-windows-task`.
-
-Il tab Account mail espone `Gestisci caselle`: l'operatore puo` elencare, aggiungere,
-modificare, abilitare/disabilitare e rimuovere account distinti, oltre a provare
-separatamente il collegamento IMAP read-only. Gmail propone i valori iniziali noti;
-un provider generico mantiene server, porta e cartelle personalizzabili.
-Le password sono mascherate per default, visibili solo su scelta esplicita e salvate
-nel file locale ignorato `.env.local`, con nomi deterministici per casella. Non entrano
-nel file YAML, negli export o nei messaggi diagnostici mostrati dalla GUI.
-
-La Home mostra stato, caselle attive, contatori e tempi dell'ultimo/prossimo
-controllo; scansione manuale, monitoraggio continuo e stop restano reattivi. Il
-tab Monitoraggio mostra le attivita` locali in Europe/Rome con data e ora,
-casella, messaggio, allegato, azione, esito e problema. I filtri per casella,
-esito, data ed errori sono combinabili; i problemi rimandano a un controllo
-azionabile senza esporre JSON, schema SQLite, segreti o path locali.
-
-Le impostazioni non sono piu` raccolte in un pannello globale: profilo, cartelle e
-scanner sono nel Setup; Bucoliche, intervallo di avvio, conferma manutenzione e
-avvio Windows hanno pannelli dedicati. I dettagli Python, formato export e cicli di
-prova restano confinati alla Diagnostica avanzata. Cartella dati locali, scanner,
-intervallo e nome dell'avvio automatico persistono nel file locale ignorato; Limbo
-e abilitazione Bucoliche riusano il servizio di configurazione della procedura guidata.
-
-Nel prototipo corrente le azioni che non hanno ancora una CLI stabile restano visibili ma disabilitate:
-backup senza reset, export/import configurazione, verifica integrita` DB dedicata,
-pulizia controllata della Quarantena, rimozione task Win11 e lettura stato task
-Win11. Per queste azioni la GUI non implementa scorciatoie parallele e non salva
-segreti.
+La precedente presentazione `tkinter` nei moduli `gui`/`gui_*` e` legacy
+abbandonato: non e` supportata, distribuita, sviluppata o documentata come
+percorso operativo. Restano due applicazioni target: `Caronte` tramite
+`virgilio_connector.user_app` e `Caronte Manutenzione` tramite una nuova
+presentazione `virgilio_connector.maintenance_gui`. Entrambe devono condividere
+i servizi applicativi senza importare widget, tab o controller legacy.
 
 ### Sequenza consigliata primo test reale
 

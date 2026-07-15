@@ -1,8 +1,10 @@
 # Next Codex Tasks
 
-- Task corrente: `GATE U-H1 - Approvazione umana dell'architettura`, stato `WAITING_HUMAN_REVIEW`.
-- Azione necessaria: revisione umana di `docs/GUI_U_ARCHITETTURA.md` e `docs/GUI_U_CODE_MAP.md`, con esito esplicito `PASS` oppure `FAIL` motivato su uno dei quattro ambiti del gate.
-- Successivo dopo `PASS`: `GUI-U-E1-T01 - Percorsi applicativi Windows`.
-- Nessun task operativo di E1 puo` iniziare durante l'attesa.
+- Task corrente: `GUI-U-E1-T01 - Percorsi applicativi Windows`, stato `READY`.
+- Dipendenza soddisfatta: `GATE U-H1 = PASS` su decisione umana del 2026-07-15.
+- Vincolo architetturale: `gui`/`gui_*` sono un'implementazione legacy
+  abbandonata; `Caronte Manutenzione` resta target con una nuova presentazione
+  `maintenance_gui` separata e consumer dei servizi condivisi.
+- Successivo dopo `DONE`: `GUI-U-E1-T02 - Modello di configurazione applicativo`.
 
 Dettagli, dipendenze ed evidenze: `docs/GUI_U_BACKLOG.md`.

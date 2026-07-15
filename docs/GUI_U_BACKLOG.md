@@ -2,7 +2,7 @@
 
 Stato: `IN_PROGRESS`
 Sotto-epica attiva: `GUI-U-E0`, completata in attesa del gate
-Task corrente: `GATE U-H1 - Approvazione umana dell'architettura`
+Task corrente: `GUI-U-E1-T01 - Percorsi applicativi Windows`
 
 Obiettivo finale:
 
@@ -20,12 +20,14 @@ Stati ammessi: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`, `WAITING_FOR_PREVIOUS_T
 
 ## GUI-U-E0 — Separazione dal prototipo tecnico
 
-Stato: `IN_PROGRESS`.
+Stato: `DONE`.
 
 ### GUI-U-E0-T01 — Congelamento GUI tecnica
 
 Stato: `DONE`
-Risultato: la GUI esistente viene identificata esclusivamente come `Caronte Manutenzione`.
+Risultato storico: la GUI esistente e` stata separata dal prodotto. La decisione
+umana di `GATE U-H1` abbandona la sua implementazione `gui`/`gui_*`, ma mantiene
+`Caronte Manutenzione` come applicazione target con una nuova presentazione.
 Dipendenze: nessuna.
 Componenti ammessi: entry point e packaging del local connector, modulo GUI esistente, test mirati, documentazione operativa minima.
 Esclusioni: nuove tab o funzioni, nuova GUI utente, Apps Script, servizi reali.
@@ -42,7 +44,8 @@ Condizione di blocco: il comando o il modulo legacy non possono essere rinominat
 ### GUI-U-E0-T02 — Architettura della nuova applicazione
 
 Stato: `DONE`
-Risultato: sono separati `user_app`, `maintenance_gui`, servizi condivisi, processo in background e packaging.
+Risultato: sono separati `user_app`, nuova `maintenance_gui`, servizi condivisi,
+processo in background e packaging; `gui`/`gui_*` sono fuori dall'architettura target.
 Dipendenza: `GUI-U-E0-T01 = DONE`.
 Componenti ammessi: documentazione architetturale, package layout proposto, entry point e contratti dei servizi.
 Esclusioni: implementazione della shell, modifica dei servizi, packaging eseguibile.
@@ -53,13 +56,14 @@ Condizione di blocco: non e` possibile definire responsabilita` univoche o un pe
 | `user_app` non importa il registro delle vecchie nove tab. | Regola architetturale verificabile e controllo import previsto. | `docs/GUI_U_ARCHITETTURA.md` vieta gli import di `maintenance_gui`, `gui` e `gui_*` e definisce i due controlli automatici sugli import. | `MET` |
 | GUI e CLI condividono servizi applicativi. | Mappa dei servizi con consumer dichiarati. | La tabella dei contratti dichiara operazioni minime e consumer per sette servizi condivisi. | `MET` |
 | Sono definite responsabilita` univoche. | Tabella componenti-responsabilita` senza sovrapposizioni. | La tabella componenti assegna responsabilita` esclusiva e responsabilita` escluse a ogni layer. | `MET` |
-| Sono confermate le entry point definitive. | Elenco coerente con `CODEX_STATE.md` e configurazione package prevista. | La tabella entry point conferma `user_app`, `user-gui`, `Caronte.exe`, `maintenance_gui`, `maintenance-gui` e gli stati rispetto al `pyproject.toml` attuale. | `MET` |
+| Sono confermate le entry point definitive. | Elenco coerente con `CODEX_STATE.md` e configurazione package prevista. | La tabella conferma `user_app`, `user-gui`, `Caronte.exe`, `maintenance_gui`, `maintenance-gui` e l'eventuale `CaronteManutenzione.exe`; solo `gui`/`gui_*` sono legacy abbandonati. | `MET` |
 | E` definito il percorso verticale minimo. | Sequenza primo avvio -> due caselle -> Home -> avvio/pausa. | La sequenza in sei passi copre configurazione assente, Limbo, due caselle, Home, avvio e pausa con arresto controllato. | `MET` |
 
 ### GUI-U-E0-T03 — Mappa del codice riutilizzabile
 
 Stato: `DONE`
-Risultato: ogni modulo esistente e` classificato come riutilizzabile, adattabile, tecnico oppure non importabile nella GUI utente.
+Risultato: ogni modulo esistente e` classificato come riutilizzabile, adattabile,
+legacy abbandonato oppure non importabile nelle nuove presentazioni.
 Dipendenza: `GUI-U-E0-T02 = DONE`.
 Componenti ammessi: sorgenti e test in lettura, mappa documentale dei moduli e dei servizi.
 Esclusioni: refactor, spostamento moduli, modifica di codice o entry point.
@@ -75,7 +79,7 @@ Condizione di blocco: un modulo necessario ha responsabilita` non determinabili 
 
 ### GATE U-H1 — Approvazione umana dell'architettura
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `PASS`.
 
 Il gate puo` passare a `WAITING_HUMAN_REVIEW` solo dopo la chiusura di E0-T01, E0-T02 ed E0-T03. Codex non puo` dichiararlo `PASS`.
 
@@ -95,18 +99,20 @@ Riepilogo per il collaudo umano:
 - `docs/GUI_U_CODE_MAP.md` classifica gli otto moduli GUI, assegna i servizi e
   collega le lacune ai task E1-E3.
 
-Istruzioni: leggere i due documenti e confermare esplicitamente un solo esito:
-`PASS`, oppure `FAIL` indicando quale tra confini prodotto/manutenzione, nomi,
-mappa dei servizi o percorso verticale minimo deve cambiare. Nessun task E1
-parte durante l'attesa.
+Esito umano del 2026-07-15: `PASS` su nomi, mappa dei servizi e percorso
+verticale minimo, con una correzione vincolante sui confini: l'implementazione
+legacy `gui`/`gui_*` e` abbandonata, mentre `Caronte Manutenzione` resta
+un'applicazione target e ricevera` una nuova presentazione separata. La
+documentazione architetturale, la mappa del codice e i task successivi recepiscono
+la decisione; nessuna modifica di codice appartiene a questo gate documentale.
 
 ## GUI-U-E1 — Fondazioni applicative
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `IN_PROGRESS`.
 
 ### GUI-U-E1-T01 — Percorsi applicativi Windows
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `READY`
 Risultato: configurazione e dati usano percorsi applicativi Windows indipendenti dal repository.
 Dipendenza: `GATE U-H1 = PASS`.
 Componenti ammessi: servizio percorsi, configurazione, test con filesystem temporaneo, documentazione minima.
@@ -362,10 +368,11 @@ Condizione di blocco: un'azione non possiede un servizio applicativo stabile e t
 ### GUI-U-E3-T04 — Manutenzione avanzata
 
 Stato: `WAITING_FOR_PREVIOUS_TASKS`
-Risultato: le operazioni di manutenzione sono protette, separate e comprensibili.
+Risultato: `Caronte Manutenzione` espone le operazioni tecniche tramite una nuova
+presentazione protetta, separata dall'implementazione legacy.
 Dipendenza: `GUI-U-E3-T03 = DONE`.
-Componenti ammessi: servizi backup/integrita`/diagnostica/reset, vista avanzata, accesso controllato alla GUI tecnica, test fake.
-Esclusioni: nuove funzioni nella GUI tecnica, cancellazioni non confermate, dati reali.
+Componenti ammessi: `maintenance_gui`, nuova presentazione manutenzione, servizi backup/integrita`/diagnostica/reset, test fake.
+Esclusioni: import o nuove funzioni in `gui`/`gui_*`, cancellazioni non confermate, dati reali.
 Condizione di blocco: un'operazione distruttiva non offre backup, conferma o risultato verificabile.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
@@ -374,7 +381,7 @@ Condizione di blocco: un'operazione distruttiva non offre backup, conferma o ris
 | Esiste la verifica integrita`. | Test su stato valido e corrotto sintetico. | — | `NOT_RUN` |
 | Esiste il report diagnostico. | Test di redazione e contenuti minimi. | — | `NOT_RUN` |
 | Il reset e` protetto. | Test su conferma, annullamento e backup. | — | `NOT_RUN` |
-| L'accesso a `Caronte Manutenzione` e` controllato. | Test UI su avviso e azione esplicita. | — | `NOT_RUN` |
+| `Caronte Manutenzione` usa la nuova presentazione senza import legacy. | Test UI, import e inventario della build. | — | `NOT_RUN` |
 
 ### GUI-U-E3-T05 — Build autonoma
 

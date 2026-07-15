@@ -8,8 +8,9 @@ nuovi servizi applicativi o il packaging Windows. La classificazione puntuale de
 moduli esistenti e` demandata a `GUI-U-E0-T03`.
 
 La GUI utente e` un adapter di presentazione dei casi d'uso di Caronte. Non e` un
-catalogo grafico dei comandi della CLI. La GUI tecnica esistente resta separata e
-identificata esclusivamente come `Caronte Manutenzione`.
+catalogo grafico dei comandi della CLI. L'implementazione GUI legacy (`gui`,
+`gui_*`) e` abbandonata. `Caronte Manutenzione` resta invece un'applicazione
+target, con una nuova presentazione separata che non importa il legacy.
 
 ## Regole di dipendenza
 
@@ -25,12 +26,15 @@ CLI ---------------+             |
 - `virgilio_connector.user_app` non importa `maintenance_gui`, `gui` o alcun
   modulo `gui_*` della GUI tecnica. Non importa neppure il registro delle nove
   vecchie tab o i relativi descrittori di azione.
-- `maintenance_gui` puo` consumare servizi condivisi, ma nessun suo widget,
-  registro o controller e` riutilizzato da `user_app`.
+- la nuova presentazione `maintenance_gui` non importa `gui` o `gui_*`; espone
+  soltanto attivita` tecniche previste tramite servizi applicativi condivisi;
 - i servizi applicativi non importano toolkit grafici, `user_app`,
   `maintenance_gui` o `__main__`;
-- la CLI e le due GUI traducono input/output dei rispettivi canali, senza
+- la CLI e le due nuove presentazioni traducono input/output dei rispettivi
+  canali, senza
   contenere logica operativa duplicata;
+- i moduli legacy `gui` e `gui_*` non sono consumer target dei servizi e non
+  sono importati, avviati o impacchettati dalle nuove presentazioni;
 - il supervisore in background non importa toolkit grafici e pubblica solo
   stato ed eventi tipizzati.
 
@@ -53,8 +57,9 @@ virgilio_connector/
     app.py               # composizione e ciclo della finestra Caronte
     navigation.py        # routing tra primo avvio e Home
     views/               # viste e presenter senza logica operativa
-  maintenance_gui.py     # entry point stabile di Caronte Manutenzione
-  gui.py                 # implementazione tecnica legacy, confinata
+  maintenance_gui.py     # entry point target della nuova Caronte Manutenzione
+  maintenance_views/     # nuova presentazione tecnica separata dal legacy
+  gui.py / gui_*.py      # implementazione legacy abbandonata
   application/
     configuration.py     # configurazione strutturale tramite porta dedicata
     accounts.py          # casi d'uso delle caselle e verifica separata
@@ -69,16 +74,18 @@ virgilio_connector/
 ```
 
 Il packaging e` un consumer esterno del package: costruisce `Caronte.exe`
-puntando all'entry point di `user_app` e, se distribuito, costruisce
-`CaronteManutenzione.exe` puntando all'entry point tecnico. Ricette, icone,
-installer e build degli eseguibili restano fuori da questo task.
+puntando all'entry point di `user_app` e, se previsto, costruisce
+`CaronteManutenzione.exe` dalla nuova presentazione `maintenance_gui`. I moduli
+legacy `gui` e `gui_*` non entrano nelle build. Ricette, icone, installer e build
+restano fuori da questo task.
 
 ## Componenti e responsabilita`
 
 | Componente | Responsabilita` esclusiva | Non possiede |
 | --- | --- | --- |
 | `user_app` | flusso utente, navigazione, widget, testo comprensibile e traduzione degli eventi applicativi | regole operative, persistenza, accesso mail, registro tecnico o nove tab legacy |
-| `maintenance_gui` / `gui` | interfaccia tecnica e strumenti di assistenza gia` esistenti | flusso ordinario del prodotto o viste di `user_app` |
+| `maintenance_gui` / `maintenance_views` | nuova suite tecnica, navigazione e presentazione delle sole attivita` di manutenzione previste | logica operativa, widget legacy o flusso ordinario di `user_app` |
+| `gui` / `gui_*` | nessuna responsabilita` target; implementazione legacy abbandonata | nuove presentazioni, servizi condivisi o packaging |
 | servizi `application` | casi d'uso, validazione, coordinamento delle porte e risultati tipizzati condivisi | widget, parsing di argomenti CLI o dettagli del processo figlio |
 | `background` | ciclo di vita start/stop, esclusione dei doppi avvii, arresto alla chiusura ed eventi di stato | widget, testi tecnici visibili o regole di dominio |
 | dominio e porte | modelli, invarianti e contratti indipendenti dai canali | filesystem, rete o toolkit concreti |
@@ -103,8 +110,8 @@ output CLI grezzo, stack trace o stringhe dipendenti dal toolkit.
 
 Ogni consumer applica la propria presentazione allo stesso risultato. Per
 esempio, un errore di collegamento tipizzato diventa testo azionabile in
-`user_app`, dettaglio tecnico in `maintenance_gui` e output/return code nella
-CLI, senza rieseguire o duplicare la regola operativa.
+`user_app`, dettaglio tecnico nella nuova `maintenance_gui` e output/return code
+nella CLI, senza rieseguire o duplicare la regola operativa.
 
 ## Entry point definitive
 
@@ -113,16 +120,18 @@ CLI, senza rieseguire o duplicare la regola operativa.
 | prodotto desktop | `Caronte` | `virgilio_connector.user_app:launch_user_app` | target da implementare |
 | comando prodotto | `user-gui` | dispatch CLI verso `launch_user_app` | target da aggiungere |
 | eseguibile prodotto | `Caronte.exe` | stesso entry point di `user_app` | packaging futuro |
-| applicazione tecnica | `Caronte Manutenzione` | `virgilio_connector.maintenance_gui:launch_gui` | presente |
-| comando tecnico | `maintenance-gui` | dispatch CLI verso `launch_gui` | presente |
-| alias tecnico | `gui` | stesso dispatch, con deprecazione | compatibilita` temporanea |
-| eseguibile tecnico | `CaronteManutenzione.exe` | entry point di `maintenance_gui` | eventuale packaging futuro |
+| applicazione tecnica | `Caronte Manutenzione` | nuova presentazione `virgilio_connector.maintenance_gui:launch_gui` | target da implementare separando il legacy |
+| comando tecnico | `maintenance-gui` | dispatch CLI verso la nuova `launch_gui` | nome target confermato |
+| eseguibile tecnico | `CaronteManutenzione.exe` | nuova presentazione `maintenance_gui` | eventuale packaging futuro |
 | automazione e assistenza | `virgilio` | `virgilio_connector.__main__:main` | presente |
 
 `local_connector/pyproject.toml` mantiene oggi il solo console script
 `virgilio`. L'aggiunta del subcommand `user-gui` appartiene alla fondazione
-della shell; la creazione degli eseguibili appartiene al packaging. Nessuna di
-queste superfici cambia nome senza decisione umana.
+della shell; la creazione degli eseguibili appartiene al packaging. Il comando
+`maintenance-gui` conserva il nome target, ma dovra` avviare la nuova
+presentazione separata. L'alias `gui` e l'implementazione `gui`/`gui_*` sono
+legacy abbandonato e destinati a rimozione tramite un task separato. Nessuna
+superficie target cambia nome senza decisione umana.
 
 ## Percorso verticale minimo
 

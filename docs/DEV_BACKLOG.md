@@ -5,7 +5,9 @@ Nota: lo storico, i completamenti chiusi e le milestone finite sono stati sposta
 Le fonti operative leggere restano `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md`.
 
 Stati operativi: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. La classificazione speciale
-`CLOSED_AS_TECHNICAL_PROTOTYPE` chiude un prototipo senza dichiararlo idoneo all'utente finale.
+`ABANDONED_LEGACY` identifica un'implementazione storica non supportata, non
+distribuita e non piu` sviluppata, senza chiudere l'eventuale applicazione target
+che la sostituisce.
 
 ## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
 
@@ -13,7 +15,8 @@ Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura
 mantenendo task piccoli, seriali, verificabili e doc-first.
 
 Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
-`V114-T17` e` chiuso come prototipo tecnico e non rappresenta una GUI utente finale accettata.
+`V114-T17` e` classificato `ABANDONED_LEGACY`: la vecchia implementazione non
+rappresenta ne` la GUI utente finale ne` la nuova suite `Caronte Manutenzione`.
 
 | ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
 |---|---|---|---|---|---|---|
@@ -33,7 +36,7 @@ Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
 | V114-T14 | DONE | P2 | Avvio Caronte locale | `local_connector/`, CLI utente finale, `README.md` | esiste `virgilio watch` o `virgilio local-watch` che avvia il connettore e resta in attesa controllando la mail con polling controllato | un solo comando utente finale; niente GUI nuova; niente polling fuori controllo |
 | V114-T15 | DONE | P3 | Installazione automatica Win11 | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | esiste un comando per l'esecuzione automatica su Windows 11 tramite Utilita di Pianificazione | solo Windows 11; niente servizi residenti; niente installazioni silenziose ambigue |
 | V114-T16 | DONE | P2 | Documentazione utente finale | `README.md`, `docs/SETUP_AND_TEST.md`, `docs/CLASP_WORKFLOW.md` | installazione minima, primo avvio, test, uso quotidiano e troubleshooting sono spiegati in modo operativo | niente segreti, niente termini macchina superflui, niente nuove procedure non testate |
-| V114-T17 | CLOSED_AS_TECHNICAL_PROTOTYPE | P1 | GUI tecnica Caronte locale | `local_connector/`, documentazione GUI | il codice prodotto resta disponibile come prototipo tecnico e strumento di assistenza, senza essere dichiarato GUI utente finale | non ampliare come prodotto utente; confinare e rinominare successivamente `Caronte Manutenzione`; nessuna cancellazione in questa run |
+| V114-T17 | ABANDONED_LEGACY | P1 | Implementazione GUI legacy | `local_connector/`, documentazione GUI | `gui`/`gui_*` non sono supportati, distribuiti o sviluppati; `Caronte Manutenzione` resta target con una nuova presentazione | nessun import legacy da `user_app` o `maintenance_gui`; nessun legacy nel packaging |
 | V114-T17.1 | DONE | P0 | Modello unico configurazione GUI | servizi configurazione, YAML, valori locali, test | API applicative indipendenti dalla GUI leggono, validano e scrivono il modello unico; una sola fonte autorevole per dato; aggiornamenti coerenti e recuperabili | primo task; niente segreti nel YAML/log; nessuna modifica manuale richiesta all'utente |
 | V114-T17.2 | DONE | P0 | Wizard primo avvio | GUI setup, servizi di T17.1 | procedura Cartelle -> Caselle -> Registro condiviso -> Verifica finale, riapribile e guidata | dipende da T17.1; niente termini tecnici nella vista ordinaria |
 | V114-T17.3 | DONE | P0 | Gestione multi-account completa | servizi account e GUI | elenco, aggiunta, modifica, abilita/disabilita, rimozione e test read-only separato per almeno due caselle | dipende da T17.2; account e server distinti; niente servizi reali nei test |
@@ -46,15 +49,15 @@ Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
 
 ### Decisione formale su V114-T17
 
-`V114-T17` e` classificato `CLOSED_AS_TECHNICAL_PROTOTYPE`: non rappresenta una GUI
-utente finale accettata. Il codice prodotto resta utile come prototipo tecnico e
-strumento di assistenza, ma non deve piu` essere ampliato come prodotto utente.
-Nelle run successive sara` confinato e rinominato `Caronte Manutenzione`, senza
-cancellare il codice esistente. La nuova GUI utente avra` una entry point indipendente.
+`V114-T17` e` classificato `ABANDONED_LEGACY`: i moduli `gui` e `gui_*` non
+vengono piu` sviluppati, documentati come percorso d'uso, distribuiti o inclusi
+nel packaging. `Caronte Manutenzione` resta invece un'applicazione target: la sua
+entry point `maintenance_gui` dovra` comporre una nuova presentazione separata e
+condividere i servizi applicativi con `user_app` e CLI, senza importare il legacy.
 
 ## Iniziativa GUI-U - Caronte Desktop utente
 
-Fase corrente: `GUI-U-E0 - Separazione dal prototipo tecnico`.
+Fase corrente: `GUI-U-E1 - Fondazioni applicative`.
 
 Nomi definitivi:
 
@@ -63,12 +66,13 @@ Nomi definitivi:
 - comando di sviluppo utente: `user-gui`;
 - eseguibile utente: `Caronte.exe`;
 - applicazione tecnica: `Caronte Manutenzione`;
-- modulo tecnico: `virgilio_connector.maintenance_gui`;
+- entry point tecnica: `virgilio_connector.maintenance_gui`;
 - comando tecnico: `maintenance-gui`;
 - eventuale eseguibile tecnico: `CaronteManutenzione.exe`.
 
-Il comando legacy `gui`, se mantenuto, potra` essere soltanto un alias deprecato di
-`maintenance-gui`.
+Il comando `gui` e i moduli `gui`/`gui_*` appartengono all'implementazione legacy
+abbandonata. `maintenance_gui` mantiene l'identita` target, ma deve essere
+separata dal legacy nella nuova presentazione.
 
 Il backlog operativo, le dipendenze, le prove previste e i tre gate umani sono definiti in
 `docs/GUI_U_BACKLOG.md`. Questo file non ne duplica il contenuto.
