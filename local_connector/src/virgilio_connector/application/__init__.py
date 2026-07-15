@@ -6,10 +6,26 @@ from .configuration import (
     ConfigurationStore,
     YamlConfigurationStore,
 )
+from .credentials import (
+    AccountCredentials,
+    AccountCredentialService,
+    CredentialAlreadyExistsError,
+    CredentialNotFoundError,
+    CredentialStore,
+    CredentialStoreError,
+    FakeCredentialStore,
+)
 
 __all__ = [
     "ConfigurationModel",
     "ConfigurationService",
     "ConfigurationStore",
     "YamlConfigurationStore",
+    "AccountCredentials",
+    "AccountCredentialService",
+    "CredentialAlreadyExistsError",
+    "CredentialNotFoundError",
+    "CredentialStore",
+    "CredentialStoreError",
+    "FakeCredentialStore",
 ]

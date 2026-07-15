@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-15 - Completato `GUI-U-E1-T03`: introdotti il contratto `CredentialStore`, il fake store in memoria e il servizio credenziali account sopra riferimenti strutturali, con CRUD tipizzato, isolamento multi-account e redazione dei valori da YAML, log, rappresentazioni ed errori. Test task (`7 passed`), suite local connector e smoke (`366 passed`) verdi. Prossimo task `GUI-U-E1-T04 - Backend credenziali Windows`.
+
 - 2026-07-15 - Completato `GUI-U-E1-T02`: introdotti il modello strutturale e `ConfigurationService` indipendenti dai toolkit, con porta di persistenza, adapter YAML atomico, mappa campo-fonte e supporto multi-account; `scan-imap-accounts` riusa il servizio condiviso. Test task (`4 passed`), suite local connector e smoke (`363 passed`) verdi. Prossimo task `GUI-U-E1-T03 - Archivio credenziali astratto`.
 
 - 2026-07-15 - Completato `GUI-U-E1-T01`: introdotto `ApplicationPaths` con configurazione in `%APPDATA%\Caronte` e dati in `%LOCALAPPDATA%\Caronte`, override assoluti e root iniettabili; tutti i consumer CLI dei dati locali usano il resolver condiviso senza dipendere da repository o cwd. Test mirati (`9 passed`), suite local connector e smoke (`359 passed`) verdi; il runbook dell'attivita` programmata fissa inoltre la venv corretta per `pytest`. Prossimo task `GUI-U-E1-T02 - Modello unico di configurazione`.

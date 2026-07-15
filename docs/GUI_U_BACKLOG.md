@@ -2,7 +2,7 @@
 
 Stato: `IN_PROGRESS`
 Sotto-epica attiva: `GUI-U-E1 - Fondazioni applicative`
-Task corrente: `GUI-U-E1-T03 - Archivio credenziali astratto`
+Task corrente: `GUI-U-E1-T04 - Backend credenziali Windows`
 
 Obiettivo finale:
 
@@ -146,7 +146,7 @@ Condizione di blocco: due fonti esistenti non possono essere riconciliate atomic
 
 ### GUI-U-E1-T03 — Archivio credenziali astratto
 
-Stato: `READY`
+Stato: `DONE`
 Risultato: le credenziali sono gestite tramite un contratto astratto separato dal modello strutturale.
 Dipendenza: `GUI-U-E1-T02 = DONE`.
 Componenti ammessi: interfaccia `CredentialStore`, fake store, servizi account, test sintetici.
@@ -155,15 +155,15 @@ Condizione di blocco: il modello strutturale richiede ancora il valore della pas
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Esiste `CredentialStore`. | Test del contratto pubblico. | — | `NOT_RUN` |
-| Supporta salva, leggi, aggiorna e cancella. | Test CRUD parametrico. | — | `NOT_RUN` |
-| Esiste un fake store. | Test servizi account senza backend di sistema. | — | `NOT_RUN` |
-| Supporta credenziali distinte per almeno due account. | Test isolamento di due riferimenti. | — | `NOT_RUN` |
-| Nessuna password compare nei file strutturali o nei log. | Scanner mirato su file e output di test. | — | `NOT_RUN` |
+| Esiste `CredentialStore`. | Test del contratto pubblico. | `test_fake_store_implements_public_contract_and_crud` usa il fake attraverso il protocollo pubblico; test task `7 passed`. | `MET` |
+| Supporta salva, leggi, aggiorna e cancella. | Test CRUD parametrico. | Test parametrico sul fake: creazione, lettura, aggiornamento, cancellazione ed errori tipizzati verificati. | `MET` |
+| Esiste un fake store. | Test servizi account senza backend di sistema. | `AccountCredentialService` verificato con `FakeCredentialStore`, senza import o chiamate a backend di sistema. | `MET` |
+| Supporta credenziali distinte per almeno due account. | Test isolamento di due riferimenti. | Due account sintetici conservano valori distinti; modifica del primo e rimozione del secondo restano isolate. | `MET` |
+| Nessuna password compare nei file strutturali o nei log. | Scanner mirato su file e output di test. | Test mirato verifica quattro valori sentinella assenti da YAML strutturale, log, rappresentazioni ed errori; scansione segreti finale verde. | `MET` |
 
 ### GUI-U-E1-T04 — Backend credenziali Windows
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `READY`
 Risultato: `CredentialStore` dispone di un adapter Windows sicuro e sostituibile.
 Dipendenza: `GUI-U-E1-T03 = DONE`.
 Componenti ammessi: adapter credenziali Windows, factory del servizio, traduzione errori, test mock/fake.
