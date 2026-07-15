@@ -6,10 +6,14 @@ from pathlib import Path
 from tkinter import ttk
 from typing import Any
 
+from ..application.account_connection import (
+    AccountConnectionRequest,
+    ReadonlyAccountConnectionService,
+)
 from ..application.configuration import ConfigurationService
 from ..application_paths import default_application_paths
 from .navigation import UserRoute, initial_route
-from .wizard import FirstRunController
+from .wizard import AccountForm, FirstRunController
 
 
 WINDOW_TITLE = "Caronte"
@@ -36,9 +40,11 @@ class UserAppShell:
         configuration: ConfigurationService,
         *,
         ttk_module: Any = ttk,
+        readonly_test: Any | None = None,
     ) -> None:
         self.root = root
         self._ttk = ttk_module
+        self._readonly_test = readonly_test
         self.route = initial_route(configuration)
         self.root.title(WINDOW_TITLE)
         self.root.minsize(720, 480)
@@ -51,7 +57,9 @@ class UserAppShell:
         frame.grid(row=0, column=0, sticky="nsew")
         self.current_frame = frame
         if self.route is UserRoute.FIRST_RUN:
-            self.first_run = FirstRunController(frame, ttk_module=self._ttk)
+            self.first_run = FirstRunController(
+                frame, ttk_module=self._ttk, readonly_test=self._readonly_test
+            )
             return
         heading, description = _VIEW_CONTENT[self.route]
         self._ttk.Label(frame, text=heading).grid(row=0, column=0, sticky="w")
@@ -70,7 +78,21 @@ def launch_user_app(*, config_path: Path | None = None) -> int:
 
     paths = default_application_paths()
     configuration = ConfigurationService.for_file(config_path or paths.configuration_file)
+    connection = ReadonlyAccountConnectionService(paths.data_dir / "connection-check")
     root = Tk()
-    UserAppShell(root, configuration)
+    UserAppShell(
+        root,
+        configuration,
+        readonly_test=lambda form: connection.check(_connection_request(form)),
+    )
     root.mainloop()
     return 0
+
+
+def _connection_request(form: AccountForm) -> AccountConnectionRequest:
+    return AccountConnectionRequest(
+        email=form.email,
+        password=form.password,
+        host=form.host,
+        port=form.port,
+    )

@@ -218,7 +218,7 @@ Condizione di blocco: il toolkit non consente di verificare deterministicamente 
 
 ### GUI-U-E2-T03 — Configurazione semplificata di una casella
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `DONE`
 Risultato: una casella viene configurata con campi ordinari e dettagli tecnici richiudibili.
 Dipendenza: `GUI-U-E2-T02 = DONE`.
 Componenti ammessi: vista account del wizard, servizi account/configurazione/credenziali, fake IMAP, test UI.
@@ -227,11 +227,11 @@ Condizione di blocco: il provider non puo` essere configurato senza mostrare un 
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| I campi iniziali sono nome, email, password e stato attivo. | Test UI sull'inventario dei campi visibili. | — | `NOT_RUN` |
-| Gmail/Workspace precompila host e porta. | Test UI sui default provider. | — | `NOT_RUN` |
-| Le impostazioni avanzate sono richiudibili. | Test apertura/chiusura pannello. | — | `NOT_RUN` |
-| Esiste un test read-only separato. | Test con fake IMAP che rifiuta mutazioni. | — | `NOT_RUN` |
-| Nessun termine tecnico vietato e` visibile. | Test automatico sulle stringhe visibili. | — | `NOT_RUN` |
+| I campi iniziali sono nome, email, password e stato attivo. | Test UI sull'inventario dei campi visibili. | `test_account_step_starts_with_only_ordinary_fields_visible`: inventario iniziale limitato ai quattro campi e password mascherata. | `MET` |
+| Gmail/Workspace precompila host e porta. | Test UI sui default provider. | `test_gmail_workspace_prefills_server_and_port`: default `imap.gmail.com` e porta `993`. | `MET` |
+| Le impostazioni avanzate sono richiudibili. | Test apertura/chiusura pannello. | `test_advanced_account_settings_can_be_opened_and_closed`: pannello inizialmente nascosto, apribile e richiudibile. | `MET` |
+| Esiste un test read-only separato. | Test con fake IMAP che rifiuta mutazioni. | `test_connection_service_uses_only_readonly_listing` e `test_account_connection_check_uses_separate_readonly_port`: servizio/callback separati, unica operazione mailbox `list_pending`, nessuna mutazione. | `MET` |
+| Nessun termine tecnico vietato e` visibile. | Test automatico sulle stringhe visibili. | `test_account_view_has_no_forbidden_technical_terms`: scansione automatica delle label e azioni visibili disgiunta dall'elenco vietato. | `MET` |
 
 ### GUI-U-E2-T04 — Multi-account
 

@@ -8,6 +8,8 @@ from virgilio_connector.user_app import launch_user_app
 from virgilio_connector.user_app.app import USER_VIEWS, WINDOW_TITLE, UserAppShell
 from virgilio_connector.user_app.navigation import UserRoute
 from virgilio_connector.user_app.wizard import (
+    AccountForm,
+    AccountView,
     FirstRunController,
     LimboValidator,
     LimboView,
@@ -43,6 +45,9 @@ class FakeWidget:
     def grid(self, **kwargs):
         self.grid_options = kwargs
 
+    def grid_remove(self):
+        self.grid_options = None
+
     def destroy(self):
         self.destroyed = True
 
@@ -71,11 +76,15 @@ class FakeEntry(FakeWidget):
     def set(self, value):
         self.config["value"] = value
 
+    def insert(self, index, value):
+        self.config["value"] = value
+
 
 class FakeTtk:
     Frame = FakeFrame
     Label = FakeLabel
     Button = FakeButton
+    Checkbutton = FakeButton
     Entry = FakeEntry
 
 
@@ -239,3 +248,84 @@ def test_limbo_validation_stays_on_step_and_shows_local_message():
     assert result.is_valid is False
     assert controller.current_view is limbo
     assert limbo.message.config["text"] == "Scegli la cartella Limbo."
+
+
+def _account_controller(readonly_test=None):
+    controller = FirstRunController(
+        FakeRoot(), ttk_module=FakeTtk, readonly_test=readonly_test
+    )
+    controller.continue_forward()
+    controller.current_view.folder_entry.set("C:\\Limbo")
+    controller.continue_forward()
+    return controller
+
+
+def test_account_step_starts_with_only_ordinary_fields_visible():
+    controller = _account_controller()
+
+    assert controller.step is WizardStep.ACCOUNT
+    assert isinstance(controller.current_view, AccountView)
+    assert controller.current_view.visible_fields() == (
+        "Nome casella", "Email", "Password", "Casella attiva"
+    )
+    assert controller.current_view.password_entry.kwargs["show"] == "*"
+
+
+def test_gmail_workspace_prefills_server_and_port():
+    view = _account_controller().current_view
+
+    assert view.form_value().host == "imap.gmail.com"
+    assert view.form_value().port == 993
+
+
+def test_advanced_account_settings_can_be_opened_and_closed():
+    view = _account_controller().current_view
+
+    assert view.advanced_visible is False
+    assert view.advanced_frame.grid_options is None
+    view.toggle_advanced()
+    assert view.advanced_visible is True
+    assert view.advanced_frame.grid_options is not None
+    view.toggle_advanced()
+    assert view.advanced_visible is False
+    assert view.advanced_frame.grid_options is None
+
+
+def test_account_connection_check_uses_separate_readonly_port():
+    calls = []
+
+    class MutationRejectingFakeImap:
+        def check(self, form: AccountForm) -> str:
+            calls.append(("check", form.email, form.host, form.port))
+            return "Collegamento riuscito."
+
+        def mutate(self):
+            raise AssertionError("mutating operations are forbidden")
+
+    controller = _account_controller(MutationRejectingFakeImap().check)
+    view = controller.current_view
+    view.email_entry.set("account@example.invalid")
+    view.password_entry.set("synthetic-password")
+
+    result = controller.test_account_connection()
+
+    assert result.is_valid is True
+    assert calls == [("check", "account@example.invalid", "imap.gmail.com", 993)]
+    assert view.message.config["text"] == "Collegamento riuscito."
+
+
+def test_account_view_has_no_forbidden_technical_terms():
+    _account_controller()
+    visible = " ".join(
+        widget.kwargs.get("text", "")
+        for widget_type in (FakeLabel, FakeButton)
+        for widget in widget_type.created
+    ).lower()
+    forbidden = {
+        "python", "venv", "cli", "yaml", ".env", "doctor", "pilot",
+        "dry-run", "watch", "staging", "ack", "manifest", "sqlite",
+        "exit code", "account_alias", "username_env", "password_env",
+        "stack trace", "percorso del repository",
+    }
+
+    assert all(term not in visible for term in forbidden)
