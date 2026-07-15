@@ -2,7 +2,7 @@
 
 Stato: `IN_PROGRESS`
 Sotto-epica attiva: `GUI-U-E0`
-Task corrente: `GUI-U-E0-T02 - Architettura della nuova applicazione`
+Task corrente: `GUI-U-E0-T03 - Mappa del codice riutilizzabile`
 
 Obiettivo finale:
 
@@ -41,7 +41,7 @@ Condizione di blocco: il comando o il modulo legacy non possono essere rinominat
 
 ### GUI-U-E0-T02 — Architettura della nuova applicazione
 
-Stato: `TODO`
+Stato: `DONE`
 Risultato: sono separati `user_app`, `maintenance_gui`, servizi condivisi, processo in background e packaging.
 Dipendenza: `GUI-U-E0-T01 = DONE`.
 Componenti ammessi: documentazione architetturale, package layout proposto, entry point e contratti dei servizi.
@@ -50,11 +50,11 @@ Condizione di blocco: non e` possibile definire responsabilita` univoche o un pe
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `user_app` non importa il registro delle vecchie nove tab. | Regola architetturale verificabile e controllo import previsto. | — | `NOT_RUN` |
-| GUI e CLI condividono servizi applicativi. | Mappa dei servizi con consumer dichiarati. | — | `NOT_RUN` |
-| Sono definite responsabilita` univoche. | Tabella componenti-responsabilita` senza sovrapposizioni. | — | `NOT_RUN` |
-| Sono confermate le entry point definitive. | Elenco coerente con `CODEX_STATE.md` e configurazione package prevista. | — | `NOT_RUN` |
-| E` definito il percorso verticale minimo. | Sequenza primo avvio -> due caselle -> Home -> avvio/pausa. | — | `NOT_RUN` |
+| `user_app` non importa il registro delle vecchie nove tab. | Regola architetturale verificabile e controllo import previsto. | `docs/GUI_U_ARCHITETTURA.md` vieta gli import di `maintenance_gui`, `gui` e `gui_*` e definisce i due controlli automatici sugli import. | `MET` |
+| GUI e CLI condividono servizi applicativi. | Mappa dei servizi con consumer dichiarati. | La tabella dei contratti dichiara operazioni minime e consumer per sette servizi condivisi. | `MET` |
+| Sono definite responsabilita` univoche. | Tabella componenti-responsabilita` senza sovrapposizioni. | La tabella componenti assegna responsabilita` esclusiva e responsabilita` escluse a ogni layer. | `MET` |
+| Sono confermate le entry point definitive. | Elenco coerente con `CODEX_STATE.md` e configurazione package prevista. | La tabella entry point conferma `user_app`, `user-gui`, `Caronte.exe`, `maintenance_gui`, `maintenance-gui` e gli stati rispetto al `pyproject.toml` attuale. | `MET` |
+| E` definito il percorso verticale minimo. | Sequenza primo avvio -> due caselle -> Home -> avvio/pausa. | La sequenza in sei passi copre configurazione assente, Limbo, due caselle, Home, avvio e pausa con arresto controllato. | `MET` |
 
 ### GUI-U-E0-T03 — Mappa del codice riutilizzabile
 

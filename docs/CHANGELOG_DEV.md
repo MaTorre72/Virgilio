@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-15 - Completato `GUI-U-E0-T02`: definita l'architettura target di `Caronte` separando `user_app`, `Caronte Manutenzione`, servizi applicativi condivisi, supervisore in background, dominio/porte, adapter locali, CLI e packaging. Fissati regole di import verificabili, contratti con consumer, responsabilita`, entry point definitive e percorso primo avvio -> due caselle -> Home -> avvio/pausa. Prossimo task `GUI-U-E0-T03 - Mappa del codice riutilizzabile`; nessun codice applicativo modificato.
+
 - 2026-07-15 - Completato `GUI-U-E0-T01`: la GUI tecnica e` ora identificata come `Caronte Manutenzione`, avviabile con `maintenance-gui`; `gui` resta un alias deprecato con avviso esplicito. Titolo e avvertenza tecnica sono visibili senza aggiungere tab o funzioni; test mirati (`52 passed`), suite local connector e smoke (`353 passed`) verdi. Prossimo task `GUI-U-E0-T02 - Architettura della nuova applicazione`.
 
 - 2026-07-15 - Completato `GUI-U-B01`: creato `docs/GUI_U_BACKLOG.md` con quattro sotto-epiche, task seriali, dipendenze, prove per criterio e tre gate umani; riscritta la Definition of Done con criteri misurabili e regole anti-loop; ridotti i puntatori operativi. Prossimo task `GUI-U-E0-T01 - Congelamento GUI tecnica`; nessun codice applicativo modificato.
