@@ -235,7 +235,7 @@ Condizione di blocco: il provider non puo` essere configurato senza mostrare un 
 
 ### GUI-U-E2-T04 — Multi-account
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `DONE`
 Risultato: l'utente gestisce almeno due caselle persistenti e indipendenti.
 Dipendenza: `GUI-U-E2-T03 = DONE`.
 Componenti ammessi: tabella caselle, CRUD account, servizi condivisi, fake credential store, test UI.
@@ -244,11 +244,11 @@ Condizione di blocco: il modello o l'archivio credenziali non garantisce isolame
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Esiste la tabella delle caselle. | Test UI su colonne e righe sintetiche. | — | `NOT_RUN` |
-| Sono disponibili aggiunta, modifica e rimozione. | Test UI del ciclo CRUD. | — | `NOT_RUN` |
-| Sono supportati server o provider differenti. | Test con due configurazioni diverse. | — | `NOT_RUN` |
-| Le credenziali sono separate. | Test sui riferimenti e fake store. | — | `NOT_RUN` |
-| I dati persistono dopo chiusura e riapertura. | Test round-trip della shell. | — | `NOT_RUN` |
+| Esiste la tabella delle caselle. | Test UI su colonne e righe sintetiche. | `test_mailbox_table_has_expected_columns_and_two_synthetic_rows`: colonne Nome casella, Email, Provider e Stato con due righe sintetiche. | `MET` |
+| Sono disponibili aggiunta, modifica e rimozione. | Test UI del ciclo CRUD. | `test_account_crud_supports_different_providers_and_separate_credentials`: ciclo aggiunta di due caselle, modifica della prima e rimozione della seconda. | `MET` |
+| Sono supportati server o provider differenti. | Test con due configurazioni diverse. | Lo stesso test persiste una casella Gmail/Workspace e una `custom_imap` con host differente. | `MET` |
+| Le credenziali sono separate. | Test sui riferimenti e fake store. | Lo stesso test verifica riferimenti distinti e due password indipendenti nel fake store. | `MET` |
+| I dati persistono dopo chiusura e riapertura. | Test round-trip della shell. | `test_two_accounts_persist_after_shell_is_closed_and_reopened`: nuova istanza di configurazione e shell ritrova entrambe le caselle e apre Home. | `MET` |
 
 ### GUI-U-E2-T05 — Home minima
 

@@ -6,6 +6,7 @@ from .configuration import (
     ConfigurationStore,
     YamlConfigurationStore,
 )
+from .account_management import AccountManagementService, ManagedAccount
 from .credentials import (
     AccountCredentials,
     AccountCredentialService,
@@ -32,6 +33,8 @@ __all__ = [
     "ConfigurationService",
     "ConfigurationStore",
     "YamlConfigurationStore",
+    "AccountManagementService",
+    "ManagedAccount",
     "AccountCredentials",
     "AccountCredentialService",
     "CredentialAlreadyExistsError",

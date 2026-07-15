@@ -11,6 +11,8 @@ from ..application.account_connection import (
     ReadonlyAccountConnectionService,
 )
 from ..application.configuration import ConfigurationService
+from ..application.account_management import AccountManagementService
+from ..application.windows_credentials import create_account_credential_service
 from ..application_paths import default_application_paths
 from .navigation import UserRoute, initial_route
 from .wizard import AccountForm, FirstRunController
@@ -41,10 +43,12 @@ class UserAppShell:
         *,
         ttk_module: Any = ttk,
         readonly_test: Any | None = None,
+        account_service: AccountManagementService | None = None,
     ) -> None:
         self.root = root
         self._ttk = ttk_module
         self._readonly_test = readonly_test
+        self._account_service = account_service
         self.route = initial_route(configuration)
         self.root.title(WINDOW_TITLE)
         self.root.minsize(720, 480)
@@ -58,7 +62,8 @@ class UserAppShell:
         self.current_frame = frame
         if self.route is UserRoute.FIRST_RUN:
             self.first_run = FirstRunController(
-                frame, ttk_module=self._ttk, readonly_test=self._readonly_test
+                frame, ttk_module=self._ttk, readonly_test=self._readonly_test,
+                account_service=self._account_service,
             )
             return
         heading, description = _VIEW_CONTENT[self.route]
@@ -78,12 +83,16 @@ def launch_user_app(*, config_path: Path | None = None) -> int:
 
     paths = default_application_paths()
     configuration = ConfigurationService.for_file(config_path or paths.configuration_file)
+    account_service = AccountManagementService(
+        configuration, create_account_credential_service()
+    )
     connection = ReadonlyAccountConnectionService(paths.data_dir / "connection-check")
     root = Tk()
     UserAppShell(
         root,
         configuration,
         readonly_test=lambda form: connection.check(_connection_request(form)),
+        account_service=account_service,
     )
     root.mainloop()
     return 0

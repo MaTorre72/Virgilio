@@ -80,12 +80,41 @@ class FakeEntry(FakeWidget):
         self.config["value"] = value
 
 
+class FakeTreeview(FakeWidget):
+    created = []
+
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.headings = {}
+        self.rows = {}
+        self.selected = ()
+
+    def heading(self, column, **kwargs):
+        self.headings[column] = kwargs
+
+    def insert(self, parent, index, *, iid, values):
+        self.rows[iid] = values
+
+    def get_children(self):
+        return tuple(self.rows)
+
+    def delete(self, item):
+        del self.rows[item]
+
+    def selection(self):
+        return self.selected
+
+    def select(self, iid):
+        self.selected = (iid,)
+
+
 class FakeTtk:
     Frame = FakeFrame
     Label = FakeLabel
     Button = FakeButton
     Checkbutton = FakeButton
     Entry = FakeEntry
+    Treeview = FakeTreeview
 
 
 @pytest.fixture(autouse=True)
@@ -94,6 +123,7 @@ def clear_widgets():
     FakeLabel.created.clear()
     FakeButton.created.clear()
     FakeEntry.created.clear()
+    FakeTreeview.created.clear()
 
 
 def build_shell(config_path: Path) -> UserAppShell:

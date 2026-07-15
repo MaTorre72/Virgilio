@@ -5,7 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import PureWindowsPath
+from pathlib import Path
 from typing import Any, Callable
+
+from ..application.account_management import AccountManagementService
 
 
 class WizardStep(str, Enum):
@@ -137,30 +140,46 @@ class AccountView:
         on_back: Callable[[], None],
         on_continue: Callable[[], None],
         on_test: Callable[[], None],
+        on_add: Callable[[], None],
+        on_update: Callable[[], None],
+        on_remove: Callable[[], None],
     ) -> None:
         self._ttk = ttk_module
         self._enabled = True
         self.advanced_visible = False
         self.frame = ttk_module.Frame(parent, padding=32)
-        ttk_module.Label(self.frame, text="Configura la casella").grid(
+        ttk_module.Label(self.frame, text="Configura le caselle").grid(
             row=0, column=0, columnspan=2, sticky="w"
         )
-        self.name_entry = self._field(1, "Nome casella")
+        self.table = ttk_module.Treeview(
+            self.frame,
+            columns=("name", "email", "provider", "status"),
+            show="headings",
+        )
+        for column, heading in (
+            ("name", "Nome casella"),
+            ("email", "Email"),
+            ("provider", "Provider"),
+            ("status", "Stato"),
+        ):
+            self.table.heading(column, text=heading)
+        self.table.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(12, 16))
+        self.name_entry = self._field(2, "Nome casella")
         self.name_entry.insert(0, "Principale")
-        self.email_entry = self._field(2, "Email")
-        self.password_entry = self._field(3, "Password", show="*")
+        self.email_entry = self._field(3, "Email")
+        self.password_entry = self._field(4, "Password", show="*")
         self.enabled_control = ttk_module.Checkbutton(
             self.frame, text="Casella attiva", command=self.toggle_enabled
         )
-        self.enabled_control.grid(row=4, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        self.enabled_control.grid(row=5, column=0, columnspan=2, sticky="w", pady=(12, 0))
         self.advanced_button = ttk_module.Button(
             self.frame,
             text="Mostra impostazioni avanzate",
             command=self.toggle_advanced,
         )
-        self.advanced_button.grid(row=5, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        self.advanced_button.grid(row=6, column=0, columnspan=2, sticky="w", pady=(12, 0))
         self.advanced_frame = ttk_module.Frame(self.frame)
-        self.advanced_frame.grid(row=6, column=0, columnspan=2, sticky="ew")
+        self.advanced_frame.grid(row=7, column=0, columnspan=2, sticky="ew")
         ttk_module.Label(
             self.advanced_frame, text="Server posta in arrivo"
         ).grid(row=0, column=0, sticky="w")
@@ -175,15 +194,20 @@ class AccountView:
         self.port_entry.grid(row=1, column=1, sticky="ew")
         self.advanced_frame.grid_remove()
         self.message = ttk_module.Label(self.frame, text="")
-        self.message.grid(row=7, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        self.message.grid(row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        actions = ttk_module.Frame(self.frame)
+        actions.grid(row=9, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        ttk_module.Button(actions, text="Aggiungi", command=on_add).grid(row=0, column=0)
+        ttk_module.Button(actions, text="Modifica", command=on_update).grid(row=0, column=1)
+        ttk_module.Button(actions, text="Rimuovi", command=on_remove).grid(row=0, column=2)
         ttk_module.Button(
             self.frame, text="Verifica collegamento", command=on_test
-        ).grid(row=8, column=0, sticky="w", pady=(24, 0))
+        ).grid(row=10, column=0, sticky="w", pady=(24, 0))
         ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
-            row=9, column=0, sticky="w", pady=(24, 0)
+            row=11, column=0, sticky="w", pady=(24, 0)
         )
         ttk_module.Button(self.frame, text="Continua", command=on_continue).grid(
-            row=9, column=1, sticky="e", pady=(24, 0)
+            row=11, column=1, sticky="e", pady=(24, 0)
         )
 
     def _field(self, row: int, label: str, **entry_options: Any) -> Any:
@@ -201,7 +225,7 @@ class AccountView:
     def toggle_advanced(self) -> None:
         self.advanced_visible = not self.advanced_visible
         if self.advanced_visible:
-            self.advanced_frame.grid(row=6, column=0, columnspan=2, sticky="ew")
+            self.advanced_frame.grid(row=7, column=0, columnspan=2, sticky="ew")
             self.advanced_button.configure(text="Nascondi impostazioni avanzate")
         else:
             self.advanced_frame.grid_remove()
@@ -224,6 +248,20 @@ class AccountView:
     def show_validation(self, result: ValidationResult) -> None:
         self.message.configure(text=result.message)
 
+    def selected_alias(self) -> str | None:
+        selected = self.table.selection()
+        return selected[0] if selected else None
+
+    def render_accounts(self, accounts: tuple[Any, ...]) -> None:
+        for item in self.table.get_children():
+            self.table.delete(item)
+        for account in accounts:
+            provider = "Gmail / Workspace" if account.host == "imap.gmail.com" else account.host
+            self.table.insert(
+                "", "end", iid=account.alias,
+                values=(account.name, account.email, provider, "Attiva" if account.enabled else "Disattivata"),
+            )
+
 
 class FirstRunController:
     """Replace wizard frames while keeping validation local to each step."""
@@ -234,6 +272,7 @@ class FirstRunController:
         *,
         ttk_module: Any,
         readonly_test: Callable[[AccountForm], str] | None = None,
+        account_service: AccountManagementService | None = None,
     ) -> None:
         self.parent = parent
         self._ttk = ttk_module
@@ -243,6 +282,8 @@ class FirstRunController:
         self._limbo_validator = LimboValidator()
         self._account_validator = AccountValidator()
         self._readonly_test = readonly_test
+        self._account_service = account_service
+        self._limbo_folder = ""
         self._show_welcome()
 
     def continue_forward(self) -> ValidationResult:
@@ -257,11 +298,58 @@ class FirstRunController:
             result = self._limbo_validator.validate(self.current_view.folder_value())
             self.current_view.show_validation(result)
             if result.is_valid:
+                self._limbo_folder = self.current_view.folder_value()
                 self._show_account()
             return result
 
         assert isinstance(self.current_view, AccountView)
         result = self._account_validator.validate(self.current_view.form_value())
+        self.current_view.show_validation(result)
+        return result
+
+    def add_account(self) -> ValidationResult:
+        return self._save_account(update=False)
+
+    def update_account(self) -> ValidationResult:
+        return self._save_account(update=True)
+
+    def remove_account(self) -> ValidationResult:
+        assert isinstance(self.current_view, AccountView)
+        alias = self.current_view.selected_alias()
+        if self._account_service is None or alias is None:
+            result = ValidationResult(False, "Seleziona una casella da rimuovere.")
+        else:
+            self._account_service.remove(alias)
+            self.current_view.render_accounts(self._account_service.list_accounts())
+            result = ValidationResult(True, "Casella rimossa.")
+        self.current_view.show_validation(result)
+        return result
+
+    def _save_account(self, *, update: bool) -> ValidationResult:
+        assert isinstance(self.current_view, AccountView)
+        form = self.current_view.form_value()
+        result = self._account_validator.validate(form)
+        alias = self.current_view.selected_alias() if update else None
+        if result.is_valid and self._account_service is None:
+            result = ValidationResult(False, "Salvataggio non disponibile.")
+        elif result.is_valid and update and alias is None:
+            result = ValidationResult(False, "Seleziona una casella da modificare.")
+        elif result.is_valid and self._account_service is not None:
+            if update:
+                self._account_service.update(
+                    alias, email=form.email, password=form.password, host=form.host,
+                    port=form.port, enabled=form.enabled,
+                )
+                message = "Casella modificata."
+            else:
+                self._account_service.add(
+                    name=form.name, email=form.email, password=form.password,
+                    host=form.host, port=form.port, enabled=form.enabled,
+                    limbo=Path(self._limbo_folder),
+                )
+                message = "Casella aggiunta."
+            self.current_view.render_accounts(self._account_service.list_accounts())
+            result = ValidationResult(True, message)
         self.current_view.show_validation(result)
         return result
 
@@ -317,5 +405,10 @@ class FirstRunController:
             on_back=self.go_back,
             on_continue=self.continue_forward,
             on_test=self.test_account_connection,
+            on_add=self.add_account,
+            on_update=self.update_account,
+            on_remove=self.remove_account,
         )
+        if self._account_service is not None:
+            view.render_accounts(self._account_service.list_accounts())
         self._replace(view, WizardStep.ACCOUNT)
