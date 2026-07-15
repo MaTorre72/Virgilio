@@ -201,7 +201,7 @@ Condizione di blocco: la shell richiede l'import del registro della GUI tecnica 
 
 ### GUI-U-E2-T02 — Wizard con schermate reali
 
-Stato: `READY`
+Stato: `DONE`
 Risultato: il wizard usa schermate sostituite realmente, con navigazione e validazione locale al passo.
 Dipendenza: `GUI-U-E2-T01 = DONE`.
 Componenti ammessi: viste Benvenuto e Limbo, controller navigazione, validatori, test UI.
@@ -210,11 +210,11 @@ Condizione di blocco: il toolkit non consente di verificare deterministicamente 
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Benvenuto e Limbo sono frame distinti. | Test UI su classi/istanze delle viste. | — | `NOT_RUN` |
-| `Continua` sostituisce realmente i widget. | Test visibilita` dopo navigazione avanti. | — | `NOT_RUN` |
-| `Indietro` ripristina il frame precedente. | Test stato e visibilita` dopo ritorno. | — | `NOT_RUN` |
-| Ogni passaggio valida solo i propri dati. | Test unitari dei validatori per passo. | — | `NOT_RUN` |
-| I widget precedenti non restano visibili. | Test automatico sull'albero widget. | — | `NOT_RUN` |
+| Benvenuto e Limbo sono frame distinti. | Test UI su classi/istanze delle viste. | `test_wizard_uses_distinct_welcome_and_limbo_frames`: classi e frame delle due viste sono distinti. | `MET` |
+| `Continua` sostituisce realmente i widget. | Test visibilita` dopo navigazione avanti. | `test_continue_replaces_widgets_and_back_restores_welcome_frame`: il frame Benvenuto viene distrutto passando a Limbo. | `MET` |
+| `Indietro` ripristina il frame precedente. | Test stato e visibilita` dopo ritorno. | Lo stesso test verifica il ritorno a un nuovo frame Benvenuto visibile e lo stato `WELCOME`. | `MET` |
+| Ogni passaggio valida solo i propri dati. | Test unitari dei validatori per passo. | `test_each_step_validator_checks_only_its_own_data`: Benvenuto non richiede dati; Limbo valida solo il percorso inserito. | `MET` |
+| I widget precedenti non restano visibili. | Test automatico sull'albero widget. | Il test avanti/indietro verifica `destroy()` su entrambi i frame sostituiti e un solo frame corrente non distrutto. | `MET` |
 
 ### GUI-U-E2-T03 — Configurazione semplificata di una casella
 

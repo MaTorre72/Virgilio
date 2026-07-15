@@ -9,6 +9,7 @@ from typing import Any
 from ..application.configuration import ConfigurationService
 from ..application_paths import default_application_paths
 from .navigation import UserRoute, initial_route
+from .wizard import FirstRunController
 
 
 WINDOW_TITLE = "Caronte"
@@ -41,12 +42,18 @@ class UserAppShell:
         self.route = initial_route(configuration)
         self.root.title(WINDOW_TITLE)
         self.root.minsize(720, 480)
+        self.current_frame: Any | None = None
+        self.first_run: FirstRunController | None = None
         self._render()
 
     def _render(self) -> None:
-        heading, description = _VIEW_CONTENT[self.route]
         frame = self._ttk.Frame(self.root, padding=32)
         frame.grid(row=0, column=0, sticky="nsew")
+        self.current_frame = frame
+        if self.route is UserRoute.FIRST_RUN:
+            self.first_run = FirstRunController(frame, ttk_module=self._ttk)
+            return
+        heading, description = _VIEW_CONTENT[self.route]
         self._ttk.Label(frame, text=heading).grid(row=0, column=0, sticky="w")
         self._ttk.Label(frame, text=description).grid(
             row=1,

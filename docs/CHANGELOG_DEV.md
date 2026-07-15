@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-15 - Completato `GUI-U-E2-T02`: il primo avvio usa viste Benvenuto e Limbo distinte, sostituisce realmente i frame su avanti/indietro e applica validatori locali per passo senza accedere a rete o filesystem reale. Test task (`9 passed`), suite local connector e smoke (`381 passed`) verdi. Prossimo task `GUI-U-E2-T03 - Configurazione semplificata di una casella`.
+
 - 2026-07-15 - Completato `GUI-U-E2-T01`: aggiunti il package indipendente `user_app`, la shell `Caronte`, il routing minimo tra primo avvio e Home tramite `ConfigurationService` e il comando `user-gui`, senza import o viste della GUI legacy. Test task (`5 passed`), suite local connector e smoke (`377 passed`) verdi. Prossimo task `GUI-U-E2-T02 - Wizard con schermate reali`.
 
 - 2026-07-15 - Completato `GUI-U-E1-T04`: aggiunti l'adapter sostituibile per Windows Credential Manager, la factory del servizio credenziali e la traduzione tipizzata degli errori, senza nuove dipendenze o accessi reali. Test task (`9 passed`), suite local connector e smoke (`372 passed`) verdi; la sotto-epica E1 e` chiusa. Prossimo task `GUI-U-E2-T01 - Nuova shell user_app`.
