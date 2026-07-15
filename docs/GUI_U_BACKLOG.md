@@ -184,7 +184,7 @@ Stato: `IN_PROGRESS`.
 
 ### GUI-U-E2-T01 — Nuova shell `user_app`
 
-Stato: `READY`
+Stato: `DONE`
 Risultato: esiste una shell utente indipendente che apre il primo avvio o la Home.
 Dipendenza: `GUI-U-E1-T04 = DONE`.
 Componenti ammessi: modulo `user_app`, entry point `user-gui`, shell e routing minimo, test UI.
@@ -193,15 +193,15 @@ Condizione di blocco: la shell richiede l'import del registro della GUI tecnica 
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Esiste il comando `user-gui`. | Test CLI su help e dispatch. | — | `NOT_RUN` |
-| La finestra ha titolo `Caronte`. | Test UI sul titolo della root. | — | `NOT_RUN` |
-| Non importa `maintenance_gui`. | Test import e scansione dipendenze. | — | `NOT_RUN` |
-| Non contiene nessuna delle nove vecchie tab. | Test inventario widget/viste. | — | `NOT_RUN` |
-| Configurazione assente porta al primo avvio. | Test UI con directory dati vuota. | — | `NOT_RUN` |
+| Esiste il comando `user-gui`. | Test CLI su help e dispatch. | `test_user_gui_help_and_dispatch`: help espone il comando e il dispatch chiama `launch_user_app` con configurazione iniettata. | `MET` |
+| La finestra ha titolo `Caronte`. | Test UI sul titolo della root. | `test_shell_has_caronte_title_and_routes_missing_configuration_to_first_run`: root con titolo esatto `Caronte`. | `MET` |
+| Non importa `maintenance_gui`. | Test import e scansione dipendenze. | `test_user_app_imports_no_technical_or_legacy_presentation`: AST di tutto `user_app` privo di import `maintenance_gui`, `gui` o `gui_*`. | `MET` |
+| Non contiene nessuna delle nove vecchie tab. | Test inventario widget/viste. | `test_user_view_inventory_excludes_legacy_tabs_and_forbidden_terms`: inventario limitato a `Primo avvio` e `Home`, disgiunto dalle nove tab. | `MET` |
+| Configurazione assente porta al primo avvio. | Test UI con directory dati vuota. | `test_shell_has_caronte_title_and_routes_missing_configuration_to_first_run`: file assente instrada a `UserRoute.FIRST_RUN`; file presente instrada a Home nel test complementare. | `MET` |
 
 ### GUI-U-E2-T02 — Wizard con schermate reali
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `READY`
 Risultato: il wizard usa schermate sostituite realmente, con navigazione e validazione locale al passo.
 Dipendenza: `GUI-U-E2-T01 = DONE`.
 Componenti ammessi: viste Benvenuto e Limbo, controller navigazione, validatori, test UI.

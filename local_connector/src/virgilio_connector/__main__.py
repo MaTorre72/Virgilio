@@ -492,6 +492,8 @@ def main() -> int:
     reset_local_state_cmd.add_argument("--backup", action="store_true")
     reset_local_state_cmd.add_argument("--confirm", action="store_true")
     reset_local_state_cmd.add_argument("--human", action="store_true")
+    user_gui = commands.add_parser("user-gui")
+    user_gui.add_argument("--config", type=Path)
     maintenance_gui = commands.add_parser("maintenance-gui")
     maintenance_gui.add_argument("--config", type=Path)
     legacy_gui = commands.add_parser("gui", help="alias deprecato di maintenance-gui")
@@ -1121,6 +1123,9 @@ def main() -> int:
         else:
             print(result.to_json())
         return 0
+    if args.command == "user-gui":
+        from .user_app import launch_user_app
+        return launch_user_app(config_path=args.config)
     if args.command in {"maintenance-gui", "gui"}:
         if args.command == "gui":
             print(
