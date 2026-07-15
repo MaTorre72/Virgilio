@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-16 - Completato `GUI-U-E2-T05`: la Home utente mostra stato generale, numero di caselle attive e ultimo controllo in Europe/Rome tramite un servizio applicativo indipendente dalle presentazioni; espone soltanto le tre azioni primarie `Controlla ora`, `Avvia` e `Pausa`, senza output tecnico o import legacy. Test task (`26 passed`), suite local connector e smoke (`399 passed`) verdi. Prossimo task `GUI-U-E2-T06 - Avvio, pausa e arresto`.
+
 - 2026-07-16 - Completato `GUI-U-E2-T04`: il wizard gestisce una tabella di caselle persistenti con aggiunta, modifica e rimozione tramite un servizio applicativo condiviso; configurazioni Gmail/Workspace e IMAP personalizzate e relative credenziali restano indipendenti. Test task (`18 passed`), suite local connector e smoke (`391 passed`) verdi; nessun servizio reale usato. Prossimo task `GUI-U-E2-T05 - Home minima`.
 
 - 2026-07-15 - Completato `GUI-U-E2-T03`: il wizard include la configurazione semplificata di una casella con quattro campi ordinari, default Gmail/Workspace, impostazioni avanzate richiudibili e verifica separata tramite servizio read-only iniettato, senza rete reale o termini vietati. Test task (`15 passed`), suite local connector e smoke (`387 passed`) verdi. Prossimo task `GUI-U-E2-T04 - Multi-account`.

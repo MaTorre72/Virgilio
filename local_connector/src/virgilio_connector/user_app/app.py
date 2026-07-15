@@ -10,28 +10,18 @@ from ..application.account_connection import (
     AccountConnectionRequest,
     ReadonlyAccountConnectionService,
 )
-from ..application.configuration import ConfigurationService
 from ..application.account_management import AccountManagementService
+from ..application.configuration import ConfigurationService
+from ..application.home_status import AccountHomeStatusService, HomeStatus, HomeStatusService
 from ..application.windows_credentials import create_account_credential_service
 from ..application_paths import default_application_paths
+from .home import HomeView, StaticHomeStatusService
 from .navigation import UserRoute, initial_route
 from .wizard import AccountForm, FirstRunController
 
 
 WINDOW_TITLE = "Caronte"
 USER_VIEWS = ("Primo avvio", "Home")
-
-_VIEW_CONTENT = {
-    UserRoute.FIRST_RUN: (
-        "Primo avvio",
-        "Configuriamo insieme gli elementi necessari per iniziare.",
-    ),
-    UserRoute.HOME: (
-        "Home",
-        "Caronte e` pronto.",
-    ),
-}
-
 
 class UserAppShell:
     """Own the root window and route to the first user-facing screen."""
@@ -44,6 +34,7 @@ class UserAppShell:
         ttk_module: Any = ttk,
         readonly_test: Any | None = None,
         account_service: AccountManagementService | None = None,
+        home_status: HomeStatusService | None = None,
     ) -> None:
         self.root = root
         self._ttk = ttk_module
@@ -54,6 +45,12 @@ class UserAppShell:
         self.root.minsize(720, 480)
         self.current_frame: Any | None = None
         self.first_run: FirstRunController | None = None
+        self.home: HomeView | None = None
+        self._home_status = home_status or (
+            AccountHomeStatusService(account_service)
+            if account_service is not None
+            else StaticHomeStatusService(HomeStatus("Pronto", 0))
+        )
         self._render()
 
     def _render(self) -> None:
@@ -66,14 +63,7 @@ class UserAppShell:
                 account_service=self._account_service,
             )
             return
-        heading, description = _VIEW_CONTENT[self.route]
-        self._ttk.Label(frame, text=heading).grid(row=0, column=0, sticky="w")
-        self._ttk.Label(frame, text=description).grid(
-            row=1,
-            column=0,
-            sticky="w",
-            pady=(12, 0),
-        )
+        self.home = HomeView(frame, self._home_status, ttk_module=self._ttk)
 
 
 def launch_user_app(*, config_path: Path | None = None) -> int:

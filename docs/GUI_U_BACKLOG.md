@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
 Stato: `IN_PROGRESS`
-Sotto-epica attiva: `GUI-U-E1 - Fondazioni applicative`
-Task corrente: `GUI-U-E1-T04 - Backend credenziali Windows`
+Sotto-epica attiva: `GUI-U-E2 - Percorso verticale minimo`
+Task corrente: `GUI-U-E2-T06 - Avvio, pausa e arresto`
 
 Obiettivo finale:
 
@@ -252,7 +252,7 @@ Condizione di blocco: il modello o l'archivio credenziali non garantisce isolame
 
 ### GUI-U-E2-T05 — Home minima
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `DONE`
 Risultato: la Home mostra stato essenziale e tre azioni comprensibili.
 Dipendenza: `GUI-U-E2-T04 = DONE`.
 Componenti ammessi: vista Home, view model stato, servizi runner fake, test UI.
@@ -261,15 +261,15 @@ Condizione di blocco: lo stato operativo non e` disponibile tramite un servizio 
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| E` visibile lo stato generale. | Test UI sui principali stati sintetici. | — | `NOT_RUN` |
-| E` visibile il numero di caselle attive. | Test view model con due account. | — | `NOT_RUN` |
-| E` visibile l'ultimo controllo. | Test rendering timestamp Europe/Rome. | — | `NOT_RUN` |
-| Esistono `Controlla ora`, `Avvia` e `Pausa`. | Test UI sulle tre azioni. | — | `NOT_RUN` |
-| Non compare JSON o output CLI. | Test automatico sulle stringhe visibili. | — | `NOT_RUN` |
+| E` visibile lo stato generale. | Test UI sui principali stati sintetici. | `test_home_renders_main_general_states` verifica `Pronto`, controllo in corso, pausa e attenzione. | `MET` |
+| E` visibile il numero di caselle attive. | Test view model con due account. | `test_home_status_service_counts_only_active_accounts` conta due caselle attive e ne esclude una disattivata. | `MET` |
+| E` visibile l'ultimo controllo. | Test rendering timestamp Europe/Rome. | `test_home_renders_last_check_in_europe_rome` converte `08:05 UTC` in `10:05` Europe/Rome. | `MET` |
+| Esistono `Controlla ora`, `Avvia` e `Pausa`. | Test UI sulle tre azioni. | `test_home_has_exactly_the_three_primary_actions` verifica le tre azioni e nessun'altra. | `MET` |
+| Non compare JSON o output CLI. | Test automatico sulle stringhe visibili. | `test_home_contains_no_technical_output_or_forbidden_terms` verifica testo visibile e termini vietati. | `MET` |
 
 ### GUI-U-E2-T06 — Avvio, pausa e arresto
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `READY`
 Risultato: controllo singolo e continuo sono non bloccanti e hanno ciclo di vita deterministico.
 Dipendenza: `GUI-U-E2-T05 = DONE`.
 Componenti ammessi: runner/worker condiviso, coda eventi, controller Home, fake lenti, test di concorrenza.
