@@ -122,7 +122,7 @@ Per usare Caronte locale senza imparare i comandi, avviare la GUI:
 
 ```powershell
 $env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector gui --config $config
+local_connector\.venv\Scripts\python.exe -m virgilio_connector maintenance-gui --config $config
 ```
 
 La GUI organizza le azioni in tab: Stato, Setup iniziale, Account mail,
@@ -198,7 +198,9 @@ local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-t
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
-La GUI locale (`virgilio gui`) apre una Home operativa senza output CLI grezzo:
+`Caronte Manutenzione` (`virgilio maintenance-gui`) e` lo strumento tecnico locale;
+il precedente comando `virgilio gui` resta solo come alias deprecato. Apre una Home
+operativa senza output CLI grezzo:
 mostra stato di Caronte, caselle attive, controlli completati, problemi e orari
 dell'ultima/prossima verifica in `Europe/Rome`. Le tre azioni quotidiane sono
 scansione manuale, avvio del monitoraggio continuo e arresto controllato.

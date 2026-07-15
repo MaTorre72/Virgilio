@@ -331,6 +331,12 @@ def gui_context_fields() -> dict[str, tuple[str, ...]]:
     }
 
 
+WINDOW_TITLE = "Caronte Manutenzione"
+TECHNICAL_TOOL_NOTICE = (
+    "Strumento tecnico di manutenzione riservato ad assistenza e diagnostica."
+)
+
+
 class VirgilioGuiApp:
     """Operator GUI that delegates execution to the CLI entrypoint."""
 
@@ -346,8 +352,7 @@ class VirgilioGuiApp:
         self.command_runner = command_runner
         self.managed_runner = managed_runner or ManagedCliRunner()
 
-        root.title("Virgilio Caronte locale")
-        root.minsize(980, 680)
+        self._configure_root_identity()
 
         self.config_var = tk.StringVar(value=str(initial_config) if initial_config else "")
         self.output_var = tk.StringVar(value="")
@@ -386,6 +391,10 @@ class VirgilioGuiApp:
         root.protocol("WM_DELETE_WINDOW", self._close)
         root.after(100, self._poll_runner)
 
+    def _configure_root_identity(self) -> None:
+        self.root.title(WINDOW_TITLE)
+        self.root.minsize(980, 680)
+
     def _build_layout(self) -> None:
         from tkinter import filedialog
 
@@ -398,11 +407,13 @@ class VirgilioGuiApp:
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
         shell.columnconfigure(0, weight=1)
-        shell.rowconfigure(0, weight=1)
         shell.rowconfigure(1, weight=1)
+        shell.rowconfigure(2, weight=1)
+
+        self._build_technical_notice(shell)
 
         notebook = ttk.Notebook(shell)
-        notebook.grid(row=0, column=0, sticky="nsew", pady=(0, 8))
+        notebook.grid(row=1, column=0, sticky="nsew", pady=(8, 8))
         for tab, actions in gui_actions_by_tab().items():
             frame = ttk.Frame(notebook, padding=10)
             notebook.add(frame, text=tab)
@@ -418,7 +429,7 @@ class VirgilioGuiApp:
         self._render_home()
 
         output_frame = ttk.Frame(shell)
-        output_frame.grid(row=1, column=0, sticky="nsew")
+        output_frame.grid(row=2, column=0, sticky="nsew")
         output_frame.columnconfigure(0, weight=1)
         output_frame.rowconfigure(1, weight=1)
         ttk.Label(output_frame, textvariable=self.status_var).grid(row=0, column=0, sticky="w")
@@ -427,6 +438,11 @@ class VirgilioGuiApp:
         )
         self.output_text = self._tk.Text(output_frame, wrap="word", height=12)
         self.output_text.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(4, 0))
+
+    def _build_technical_notice(self, parent) -> None:
+        self._ttk.Label(parent, text=TECHNICAL_TOOL_NOTICE).grid(
+            row=0, column=0, sticky="w"
+        )
 
     def _build_context_panel(self, parent, tab: str) -> None:
         ttk = self._ttk

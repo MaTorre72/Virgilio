@@ -486,8 +486,10 @@ def main() -> int:
     reset_local_state_cmd.add_argument("--backup", action="store_true")
     reset_local_state_cmd.add_argument("--confirm", action="store_true")
     reset_local_state_cmd.add_argument("--human", action="store_true")
-    gui = commands.add_parser("gui")
-    gui.add_argument("--config", type=Path)
+    maintenance_gui = commands.add_parser("maintenance-gui")
+    maintenance_gui.add_argument("--config", type=Path)
+    legacy_gui = commands.add_parser("gui", help="alias deprecato di maintenance-gui")
+    legacy_gui.add_argument("--config", type=Path)
     args = parser.parse_args()
 
     if args.command == "send-caronte-dry-run":
@@ -1113,8 +1115,13 @@ def main() -> int:
         else:
             print(result.to_json())
         return 0
-    if args.command == "gui":
-        from .gui import launch_gui
+    if args.command in {"maintenance-gui", "gui"}:
+        if args.command == "gui":
+            print(
+                "Avviso: 'gui' e` deprecato; usare 'maintenance-gui'.",
+                file=sys.stderr,
+            )
+        from .maintenance_gui import launch_gui
         return launch_gui(config_path=args.config)
     return 2
 

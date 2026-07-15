@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-15 - Completato `GUI-U-E0-T01`: la GUI tecnica e` ora identificata come `Caronte Manutenzione`, avviabile con `maintenance-gui`; `gui` resta un alias deprecato con avviso esplicito. Titolo e avvertenza tecnica sono visibili senza aggiungere tab o funzioni; test mirati (`52 passed`), suite local connector e smoke (`353 passed`) verdi. Prossimo task `GUI-U-E0-T02 - Architettura della nuova applicazione`.
+
 - 2026-07-15 - Completato `GUI-U-B01`: creato `docs/GUI_U_BACKLOG.md` con quattro sotto-epiche, task seriali, dipendenze, prove per criterio e tre gate umani; riscritta la Definition of Done con criteri misurabili e regole anti-loop; ridotti i puntatori operativi. Prossimo task `GUI-U-E0-T01 - Congelamento GUI tecnica`; nessun codice applicativo modificato.
 
 - 2026-07-15 - Chiuso formalmente `V114-T17` come `CLOSED_AS_TECHNICAL_PROTOTYPE`: la GUI esistente resta un prototipo tecnico e strumento di assistenza, non una GUI utente finale, e sara` successivamente confinata come `Caronte Manutenzione`. Aperta l'iniziativa `GUI-U - Caronte Desktop utente`, fissati modulo, comandi ed eseguibili definitivi e impostato come prossimo task documentale `GUI-U-B01 - Backlog operativo e Definition of Done`; nessun codice applicativo modificato.

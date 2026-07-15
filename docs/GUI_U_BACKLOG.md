@@ -2,7 +2,7 @@
 
 Stato: `IN_PROGRESS`
 Sotto-epica attiva: `GUI-U-E0`
-Task corrente: `GUI-U-E0-T01 - Congelamento GUI tecnica`
+Task corrente: `GUI-U-E0-T02 - Architettura della nuova applicazione`
 
 Obiettivo finale:
 
@@ -24,7 +24,7 @@ Stato: `IN_PROGRESS`.
 
 ### GUI-U-E0-T01 — Congelamento GUI tecnica
 
-Stato: `TODO`
+Stato: `DONE`
 Risultato: la GUI esistente viene identificata esclusivamente come `Caronte Manutenzione`.
 Dipendenze: nessuna.
 Componenti ammessi: entry point e packaging del local connector, modulo GUI esistente, test mirati, documentazione operativa minima.
@@ -33,11 +33,11 @@ Condizione di blocco: il comando o il modulo legacy non possono essere rinominat
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Esiste il comando `maintenance-gui`. | Test CLI mirato su help e dispatch. | — | `NOT_RUN` |
-| La finestra ha titolo `Caronte Manutenzione`. | Test UI mirato sul titolo della root. | — | `NOT_RUN` |
-| E` visibile l'avvertenza che si tratta di uno strumento tecnico. | Test UI sulla stringa visibile. | — | `NOT_RUN` |
-| `gui`, se mantenuto, e` un alias deprecato. | Test CLI su alias e avviso di deprecazione. | — | `NOT_RUN` |
-| Non vengono aggiunte tab o funzioni. | Diff circoscritto e test sull'inventario delle tab. | — | `NOT_RUN` |
+| Esiste il comando `maintenance-gui`. | Test CLI mirato su help e dispatch. | Help CLI verificato; dispatch parametrico `maintenance-gui`/`gui` in `test_maintenance_gui_commands_call_launcher` verde. | `MET` |
+| La finestra ha titolo `Caronte Manutenzione`. | Test UI mirato sul titolo della root. | `test_maintenance_gui_identity_and_visible_notice` verifica la chiamata root con titolo esatto. | `MET` |
+| E` visibile l'avvertenza che si tratta di uno strumento tecnico. | Test UI sulla stringa visibile. | Lo stesso test verifica testo e posizionamento della label `Strumento tecnico...`. | `MET` |
+| `gui`, se mantenuto, e` un alias deprecato. | Test CLI su alias e avviso di deprecazione. | Dispatch comune verificato e avviso `deprecato` catturato su stderr solo per `gui`. | `MET` |
+| Non vengono aggiunte tab o funzioni. | Diff circoscritto e test sull'inventario delle tab. | `test_gui_registry_has_required_tabs_and_windows_task_actions` conferma invariato l'inventario di nove tab; diff limitato a identita`, entry point e documentazione. | `MET` |
 
 ### GUI-U-E0-T02 — Architettura della nuova applicazione
 

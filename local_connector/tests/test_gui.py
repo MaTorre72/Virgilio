@@ -6,6 +6,9 @@ import pytest
 
 from virgilio_connector.gui import (
     GuiCommandSpec,
+    TECHNICAL_TOOL_NOTICE,
+    WINDOW_TITLE,
+    VirgilioGuiApp,
     build_cli_args,
     gui_actions_by_tab,
     gui_context_fields,
@@ -13,6 +16,41 @@ from virgilio_connector.gui import (
     run_cli_command,
     sanitize_output,
 )
+from virgilio_connector.maintenance_gui import launch_gui
+
+
+def test_maintenance_gui_identity_and_visible_notice():
+    placed = {}
+    root_calls = {}
+
+    class FakeRoot:
+        def title(self, value):
+            root_calls["title"] = value
+
+        def minsize(self, width, height):
+            root_calls["minsize"] = (width, height)
+
+    class FakeLabel:
+        def __init__(self, parent, *, text):
+            placed["text"] = text
+
+        def grid(self, **kwargs):
+            placed["grid"] = kwargs
+
+    app = object.__new__(VirgilioGuiApp)
+    app._ttk = type("FakeTtk", (), {"Label": FakeLabel})
+    app.root = FakeRoot()
+    app._configure_root_identity()
+    app._build_technical_notice(object())
+
+    assert WINDOW_TITLE == "Caronte Manutenzione"
+    assert root_calls == {"title": WINDOW_TITLE, "minsize": (980, 680)}
+    assert "strumento tecnico" in TECHNICAL_TOOL_NOTICE.lower()
+    assert placed == {
+        "text": TECHNICAL_TOOL_NOTICE,
+        "grid": {"row": 0, "column": 0, "sticky": "w"},
+    }
+    assert callable(launch_gui)
 
 
 def test_build_cli_args_for_doctor_and_pilot():
