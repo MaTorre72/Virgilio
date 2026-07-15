@@ -2,12 +2,15 @@
 
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
-- Milestone attiva: `v1.1.4 - Rifinitura collaudo, setup e hardening`, riaperta dopo collaudo UX negativo
+- Iniziativa attiva: `GUI-U - Caronte Desktop utente`
+- Fase corrente: governance iniziale
 - Task 0.0: chiuso
-- Ultimo task chiuso noto: `V114-T17.9 - Automazione Windows completa`
-- Task corrente consigliato: `V114-T17.10 - Collaudo utente finale`
-- Massimo due successivi: nessuno; `V114-T17.10` chiude l'ombrello solo con collaudo positivo
-- Blocchi aperti: `V114-T17 - GUI completa Caronte locale` resta `IN_PROGRESS` fino al collaudo manuale obbligatorio di `V114-T17.10` su profilo di test controllato.
+- Vecchia GUI: `V114-T17` classificata `CLOSED_AS_TECHNICAL_PROTOTYPE`; resta utile come prototipo tecnico e strumento di assistenza, non come GUI utente finale
+- Task corrente di codice: nessuno
+- Task corrente consigliato: `GUI-U-B01 - Backlog operativo e Definition of Done`
+- Massimo due successivi: nessuno; il backlog dettagliato sara` predisposto in una run separata
+- Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica `Caronte Manutenzione`, modulo `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
+- Blocchi aperti: nessuno; eventuali gate umani della nuova iniziativa richiederanno approvazione umana esplicita
 - Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-v114-t179-full local_connector -q` -> `OK` (`351 passed in 30.67s`)
 - Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`351 passed in 34.98s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati

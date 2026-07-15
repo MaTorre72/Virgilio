@@ -4,7 +4,8 @@ Nota: lo storico, i completamenti chiusi e le milestone finite sono stati sposta
 `docs/DEV_BACKLOG_ARCHIVE.md`; il registro datato e` in `docs/CHANGELOG_DEV.md`.
 Le fonti operative leggere restano `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md`.
 
-Stati: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. Qui restano solo task attivi o bloccati.
+Stati operativi: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. La classificazione speciale
+`CLOSED_AS_TECHNICAL_PROTOTYPE` chiude un prototipo senza dichiararlo idoneo all'utente finale.
 
 ## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
 
@@ -12,7 +13,7 @@ Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura
 mantenendo task piccoli, seriali, verificabili e doc-first.
 
 Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
-`V114-T17` e` riaperto e il prossimo task univoco e` `V114-T17.10`.
+`V114-T17` e` chiuso come prototipo tecnico e non rappresenta una GUI utente finale accettata.
 
 | ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
 |---|---|---|---|---|---|---|
@@ -32,7 +33,7 @@ Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
 | V114-T14 | DONE | P2 | Avvio Caronte locale | `local_connector/`, CLI utente finale, `README.md` | esiste `virgilio watch` o `virgilio local-watch` che avvia il connettore e resta in attesa controllando la mail con polling controllato | un solo comando utente finale; niente GUI nuova; niente polling fuori controllo |
 | V114-T15 | DONE | P3 | Installazione automatica Win11 | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | esiste un comando per l'esecuzione automatica su Windows 11 tramite Utilita di Pianificazione | solo Windows 11; niente servizi residenti; niente installazioni silenziose ambigue |
 | V114-T16 | DONE | P2 | Documentazione utente finale | `README.md`, `docs/SETUP_AND_TEST.md`, `docs/CLASP_WORKFLOW.md` | installazione minima, primo avvio, test, uso quotidiano e troubleshooting sono spiegati in modo operativo | niente segreti, niente termini macchina superflui, niente nuove procedure non testate |
-| V114-T17 | IN_PROGRESS | P1 | GUI completa Caronte locale - Collaudo UX non superato | `local_connector/`, documentazione GUI | un utente medio completa setup, gestione di almeno due caselle, prova, avvio, arresto, attivita`, automazione Windows e manutenzione senza terminale o editing manuale di YAML/`.env` | task ombrello; chiudere solo dopo `V114-T17.1`...`V114-T17.10`; condividere servizi con la CLI; no GUI web o logica duplicata |
+| V114-T17 | CLOSED_AS_TECHNICAL_PROTOTYPE | P1 | GUI tecnica Caronte locale | `local_connector/`, documentazione GUI | il codice prodotto resta disponibile come prototipo tecnico e strumento di assistenza, senza essere dichiarato GUI utente finale | non ampliare come prodotto utente; confinare e rinominare successivamente `Caronte Manutenzione`; nessuna cancellazione in questa run |
 | V114-T17.1 | DONE | P0 | Modello unico configurazione GUI | servizi configurazione, YAML, valori locali, test | API applicative indipendenti dalla GUI leggono, validano e scrivono il modello unico; una sola fonte autorevole per dato; aggiornamenti coerenti e recuperabili | primo task; niente segreti nel YAML/log; nessuna modifica manuale richiesta all'utente |
 | V114-T17.2 | DONE | P0 | Wizard primo avvio | GUI setup, servizi di T17.1 | procedura Cartelle -> Caselle -> Registro condiviso -> Verifica finale, riapribile e guidata | dipende da T17.1; niente termini tecnici nella vista ordinaria |
 | V114-T17.3 | DONE | P0 | Gestione multi-account completa | servizi account e GUI | elenco, aggiunta, modifica, abilita/disabilita, rimozione e test read-only separato per almeno due caselle | dipende da T17.2; account e server distinti; niente servizi reali nei test |
@@ -42,17 +43,36 @@ Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
 | V114-T17.7 | DONE | P1 | Vista Attivita` leggibile | eventi locali e GUI | tabella Europe/Rome filtrabile per casella, esito, data ed errore, con messaggi comprensibili | dipende da T17.6; niente JSON ordinario o segreti |
 | V114-T17.8 | DONE | P1 | Impostazioni contestuali | GUI impostazioni | rimosso il pannello globale `Parametri azioni`; ogni campo appare solo nel proprio contesto | dipende da T17.7; dettagli tecnici solo in diagnostica avanzata |
 | V114-T17.9 | DONE | P1 | Automazione Windows completa | servizi Task Scheduler e GUI | installazione, stato, ultimo esito e rimozione sono gestibili senza terminale | dipende da T17.8; Windows 11, CLI-first condivisa, niente servizi residenti |
-| V114-T17.10 | TODO | P0 | Collaudo utente finale | intero percorso GUI | da zero: due caselle, persistenza, prova sicura, avvio/stop, attivita`, automazione e manutenzione senza terminale | dipende da T17.9; collaudo manuale obbligatorio; nessun account o dato reale nei test automatici |
 
-### Esito collaudo UX V114-T17
+### Decisione formale su V114-T17
 
-Il precedente criterio di completamento verificava la copertura dei comandi CLI,
-non l'usabilita` del percorso finale. Il collaudo manuale ha rilevato un solo set
-di campi account, assenza di password e persistenza coordinata, esposizione di
-YAML/Python/termini tecnici, parametri globali non contestuali, azioni centrali
-disabilitate e monitoraggio sincrono senza arresto. La GUI corrente e` pertanto un
-prototipo tecnico e non deve essere descritta come completa. Requisiti e fonti
-autorevoli sono in `docs/GUI_UX_REQUIREMENTS.md`.
+`V114-T17` e` classificato `CLOSED_AS_TECHNICAL_PROTOTYPE`: non rappresenta una GUI
+utente finale accettata. Il codice prodotto resta utile come prototipo tecnico e
+strumento di assistenza, ma non deve piu` essere ampliato come prodotto utente.
+Nelle run successive sara` confinato e rinominato `Caronte Manutenzione`, senza
+cancellare il codice esistente. La nuova GUI utente avra` una entry point indipendente.
+
+## Iniziativa GUI-U - Caronte Desktop utente
+
+Fase corrente: governance iniziale. Nessun task di codice e` attivo.
+
+Nomi definitivi:
+
+- prodotto utente: `Caronte`;
+- modulo utente: `virgilio_connector.user_app`;
+- comando di sviluppo utente: `user-gui`;
+- eseguibile utente: `Caronte.exe`;
+- applicazione tecnica: `Caronte Manutenzione`;
+- modulo tecnico: `virgilio_connector.maintenance_gui`;
+- comando tecnico: `maintenance-gui`;
+- eventuale eseguibile tecnico: `CaronteManutenzione.exe`.
+
+Il comando legacy `gui`, se mantenuto, potra` essere soltanto un alias deprecato di
+`maintenance-gui`.
+
+| ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
+|---|---|---|---|---|---|---|
+| GUI-U-B01 | TODO | P0 | Backlog operativo e Definition of Done | sola governance documentale | backlog GUI-U dettagliato e Definition of Done con task misurabili, dipendenze, criteri di accettazione e gate umani espliciti | run separata; nessun codice; non iniziare `GUI-U-E0-T01`; Codex non approva gate umani |
 
 ### V114-T17.1 - Modello unico configurazione GUI
 
@@ -143,13 +163,3 @@ autorevoli sono in `docs/GUI_UX_REQUIREMENTS.md`.
 - **Test:** comandi Task Scheduler simulati, parsing stato/errori, idempotenza e conferme distruttive.
 - **Vincoli:** solo Windows 11 e Utilita` di Pianificazione; niente servizio residente o finestra visibile.
 - **Esclusioni:** supporto scheduler di altri sistemi e modifiche al monitoraggio operativo.
-
-### V114-T17.10 - Collaudo utente finale
-
-- **Obiettivo:** dimostrare il percorso completo esclusivamente GUI.
-- **Dipendenze:** V114-T17.9 e tutti i task precedenti.
-- **Ambito:** installazione/configurazione da zero, due caselle, persistenza, prova sicura, start/stop, attivita`, Windows e manutenzione.
-- **Criteri di accettazione:** nessun terminale o editing YAML/`.env`; due account distinti verificabili; riapertura conserva dati; nessun blocco/processo orfano; linguaggio comprensibile.
-- **Test:** suite offline completa piu` checklist manuale su profilo di test controllato; documentare esiti e problemi.
-- **Vincoli:** niente account o dati reali nei test automatici; nessun `clasp push`; chiusura T17 solo con collaudo positivo.
-- **Esclusioni:** nuove funzioni di prodotto oltre il percorso definito.

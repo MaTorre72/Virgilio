@@ -9,20 +9,29 @@ Riferimento architetturale condiviso: `docs/ARCHITETTURA_UNIFICATA.md`.
 ## Regole permanenti
 - Non modificare `main`.
 - Lavorare su `codex/v1.1-development` o su una branch derivata.
-- Un task per run, un commit per task.
+- Un task per run, al massimo un commit per task.
 - Non usare mail, Google o credenziali reali nei test.
 - Non inviare byte, base64 o path locali ad Apps Script.
 - Non versionare segreti, token, password, `.env`, `.env.*`, `.local_data/`, `.secrets/`, `_staging/` o `.clasprc.json`.
-- Non introdurre AI, RAG, Docling, LiteLLM, database remoti, server web o nuove GUI.
+- Non introdurre AI, RAG, Docling, LiteLLM, database remoti o server web.
+- Non sono ammesse GUI parallele non autorizzate. La sola nuova GUI autorizzata e`
+  `virgilio_connector.user_app`, sviluppata nell'iniziativa `GUI-U - Caronte Desktop utente`.
+- La GUI esistente resta esclusivamente tecnica: sara` confinata come
+  `virgilio_connector.maintenance_gui` con nome `Caronte Manutenzione`.
 - Non riscrivere il form.
 - Non sostituire Apps Script con Python.
 - Non eseguire `clasp push` salvo task esplicito.
 - Se il working tree e` sporco per cause non spiegate, fermarsi.
-- Progettare la GUI a partire dalle attivita` dell'utente finale, non dall'elenco dei comandi CLI.
-- Una corrispondenza uno-a-uno tra pulsanti GUI e comandi CLI non costituisce una GUI completa.
-- GUI e CLI devono condividere servizi applicativi, senza duplicare la logica operativa.
+- Progettare la GUI utente a partire dalle attivita` dell'utente finale, non dall'elenco dei comandi CLI.
+- Non trasformare automaticamente i comandi CLI in pulsanti: una corrispondenza uno-a-uno
+  non costituisce una GUI utente completa.
+- GUI utente, CLI e GUI manutenzione devono condividere servizi applicativi, senza duplicare
+  la logica operativa.
+- Nella GUI utente non devono comparire termini o dettagli tecnici interni.
 - La GUI puo` richiamare direttamente servizi interni quando un sottoprocesso CLI compromette UX,
   reattivita` o controllo del processo.
+- Nessun task puo` restare aperto per rifiniture generiche o non misurabili.
+- I gate umani non possono essere approvati autonomamente da Codex.
 
 ## Workflow
 - Verificare branch e `git status --short` prima di modificare.
