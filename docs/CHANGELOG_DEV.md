@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-15 - Completato `GUI-U-B01`: creato `docs/GUI_U_BACKLOG.md` con quattro sotto-epiche, task seriali, dipendenze, prove per criterio e tre gate umani; riscritta la Definition of Done con criteri misurabili e regole anti-loop; ridotti i puntatori operativi. Prossimo task `GUI-U-E0-T01 - Congelamento GUI tecnica`; nessun codice applicativo modificato.
+
 - 2026-07-15 - Chiuso formalmente `V114-T17` come `CLOSED_AS_TECHNICAL_PROTOTYPE`: la GUI esistente resta un prototipo tecnico e strumento di assistenza, non una GUI utente finale, e sara` successivamente confinata come `Caronte Manutenzione`. Aperta l'iniziativa `GUI-U - Caronte Desktop utente`, fissati modulo, comandi ed eseguibili definitivi e impostato come prossimo task documentale `GUI-U-B01 - Backlog operativo e Definition of Done`; nessun codice applicativo modificato.
 
 - 2026-07-14 - Completato V114-T17.9: aggiunti servizi e CLI condivisi `status-windows-task` e `uninstall-windows-task` per leggere stato, ultima esecuzione e ultimo esito e per rimuovere in modo confermato e idempotente il task Windows; il tab Automazione Win11 abilita piano, installazione, stato e rimozione con messaggi leggibili e senza scelta manuale di Python. Test mirati (`57 passed`), query locale read-only, suite local connector e smoke (`351 passed`) verdi; prossimo task V114-T17.10.

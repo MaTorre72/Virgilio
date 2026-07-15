@@ -3,14 +3,15 @@
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Iniziativa attiva: `GUI-U - Caronte Desktop utente`
-- Fase corrente: governance iniziale
+- Fase corrente: `GUI-U-E0 - Separazione dal prototipo tecnico`
 - Task 0.0: chiuso
 - Vecchia GUI: `V114-T17` classificata `CLOSED_AS_TECHNICAL_PROTOTYPE`; resta utile come prototipo tecnico e strumento di assistenza, non come GUI utente finale
-- Task corrente di codice: nessuno
-- Task corrente consigliato: `GUI-U-B01 - Backlog operativo e Definition of Done`
-- Massimo due successivi: nessuno; il backlog dettagliato sara` predisposto in una run separata
+- Task corrente di codice: `GUI-U-E0-T01 - Congelamento GUI tecnica` (non iniziato in questa run)
+- Task corrente consigliato: `GUI-U-E0-T01 - Congelamento GUI tecnica`
+- Massimo due successivi: `GUI-U-E0-T02`, `GUI-U-E0-T03`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica `Caronte Manutenzione`, modulo `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
-- Blocchi aperti: nessuno; eventuali gate umani della nuova iniziativa richiederanno approvazione umana esplicita
+- Gate imminente: `GATE U-H1`, inizialmente `WAITING_FOR_PREVIOUS_TASKS`; Codex non puo` dichiararlo `PASS`
+- Blocchi aperti: nessuno
 - Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-v114-t179-full local_connector -q` -> `OK` (`351 passed in 30.67s`)
 - Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`351 passed in 34.98s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
@@ -20,6 +21,7 @@
 - Ultima normalizzazione config: `apps_script/src/caronte.gs`, `apps_script/src/virgilio_inbox.gs`, `apps_script/src/setup.gs`, `apps_script/src/test.gs`, `apps_script/src/appsscript.json` e `local_connector/.env.example` parlano ora la stessa lingua sugli ID operativi; live GAS non ancora ripubblicato in questa run
 - Archivio GAS: eliminato; nessuna cartella `apps_script/archive` resta nel repository
 - Policy permanente: `AGENTS.md`
-- Leggere sempre: `docs/CODEX_STATE.md`, `docs/NEXT_CODEX_TASKS.md`, `docs/DEFINITION_OF_DONE.md`
-- Leggere on demand: `docs/DEV_BACKLOG.md`, `docs/DEV_BACKLOG_ARCHIVE.md`, `docs/CHANGELOG_DEV.md`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/CLASP_WORKFLOW.md`
+- Lettura obbligatoria per ogni run GUI-U: `AGENTS.md`, `docs/CODEX_STATE.md`, scheda del task corrente in `docs/GUI_U_BACKLOG.md`
+- Leggere `docs/DEFINITION_OF_DONE.md`: all'apertura di una sotto-epica, quando un task viene suddiviso, in caso di dubbio e prima di un gate
+- Leggere on demand: `docs/NEXT_CODEX_TASKS.md`, `docs/DEV_BACKLOG.md`, `docs/DEV_BACKLOG_ARCHIVE.md`, `docs/CHANGELOG_DEV.md`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/CLASP_WORKFLOW.md`
 - Fine run: aggiornare questo file solo se cambia il task corrente o uno dei blocchi

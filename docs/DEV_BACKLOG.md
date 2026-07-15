@@ -54,7 +54,7 @@ cancellare il codice esistente. La nuova GUI utente avra` una entry point indipe
 
 ## Iniziativa GUI-U - Caronte Desktop utente
 
-Fase corrente: governance iniziale. Nessun task di codice e` attivo.
+Fase corrente: `GUI-U-E0 - Separazione dal prototipo tecnico`.
 
 Nomi definitivi:
 
@@ -70,9 +70,12 @@ Nomi definitivi:
 Il comando legacy `gui`, se mantenuto, potra` essere soltanto un alias deprecato di
 `maintenance-gui`.
 
-| ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
-|---|---|---|---|---|---|---|
-| GUI-U-B01 | TODO | P0 | Backlog operativo e Definition of Done | sola governance documentale | backlog GUI-U dettagliato e Definition of Done con task misurabili, dipendenze, criteri di accettazione e gate umani espliciti | run separata; nessun codice; non iniziare `GUI-U-E0-T01`; Codex non approva gate umani |
+Il backlog operativo, le dipendenze, le prove previste e i tre gate umani sono definiti in
+`docs/GUI_U_BACKLOG.md`. Questo file non ne duplica il contenuto.
+
+| ID | Stato | Pri | Obiettivo | Ambito | Esito |
+|---|---|---|---|---|---|
+| GUI-U-B01 | DONE | P0 | Backlog operativo e Definition of Done | sola governance documentale | creato `docs/GUI_U_BACKLOG.md`; riscritta la Definition of Done con criteri misurabili e regole anti-loop |
 
 ### V114-T17.1 - Modello unico configurazione GUI
 
