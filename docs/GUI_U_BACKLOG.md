@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
 Stato: `IN_PROGRESS`
-Sotto-epica attiva: `GUI-U-E0`
-Task corrente: `GUI-U-E0-T03 - Mappa del codice riutilizzabile`
+Sotto-epica attiva: `GUI-U-E0`, completata in attesa del gate
+Task corrente: `GATE U-H1 - Approvazione umana dell'architettura`
 
 Obiettivo finale:
 
@@ -58,7 +58,7 @@ Condizione di blocco: non e` possibile definire responsabilita` univoche o un pe
 
 ### GUI-U-E0-T03 — Mappa del codice riutilizzabile
 
-Stato: `TODO`
+Stato: `DONE`
 Risultato: ogni modulo esistente e` classificato come riutilizzabile, adattabile, tecnico oppure non importabile nella GUI utente.
 Dipendenza: `GUI-U-E0-T02 = DONE`.
 Componenti ammessi: sorgenti e test in lettura, mappa documentale dei moduli e dei servizi.
@@ -67,15 +67,15 @@ Condizione di blocco: un modulo necessario ha responsabilita` non determinabili 
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Tutti i moduli GUI esistenti sono classificati. | Inventario completo confrontato con i file del package. | — | `NOT_RUN` |
-| Ogni servizio necessario ha una destinazione. | Matrice servizio -> condiviso, utente o manutenzione. | — | `NOT_RUN` |
-| Le lacune applicative sono elencate. | Elenco finito associato ai task E1-E3. | — | `NOT_RUN` |
-| Nessun comando CLI viene automaticamente convertito in pulsante. | Revisione della mappa rispetto alle attivita` utente. | — | `NOT_RUN` |
-| Il primo task di fondazione e` definito. | Scheda E1-T01 confermata completa secondo DoD. | — | `NOT_RUN` |
+| Tutti i moduli GUI esistenti sono classificati. | Inventario completo confrontato con i file del package. | `docs/GUI_U_CODE_MAP.md` confronta gli otto file `gui*.py`/`maintenance_gui.py` con i relativi test e assegna a ciascuno una delle quattro categorie. | `MET` |
+| Ogni servizio necessario ha una destinazione. | Matrice servizio -> condiviso, utente o manutenzione. | La matrice assegna percorsi, configurazione, credenziali, account, operazioni, supervisore, attivita`, avvio Windows e manutenzione ai layer target e indica i consumer. | `MET` |
+| Le lacune applicative sono elencate. | Elenco finito associato ai task E1-E3. | La sezione `Lacune applicative finite` copre senza voci generiche tutti e soli i task `GUI-U-E1-T01..T04`, `E2-T01..T06` ed `E3-T01..T06`. | `MET` |
+| Nessun comando CLI viene automaticamente convertito in pulsante. | Revisione della mappa rispetto alle attivita` utente. | La matrice attivita` -> composizione parte da sei attivita` utente ed esclude esplicitamente comandi, argomenti, output e registro delle nove tab. | `MET` |
+| Il primo task di fondazione e` definito. | Scheda E1-T01 confermata completa secondo DoD. | Verificata la scheda `GUI-U-E1-T01`: risultato, cinque criteri binari con prove, dipendenza, componenti, esclusioni e blocco sono presenti; resta vincolata al `PASS` umano. | `MET` |
 
 ### GATE U-H1 — Approvazione umana dell'architettura
 
-Stato iniziale: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `WAITING_HUMAN_REVIEW`.
 
 Il gate puo` passare a `WAITING_HUMAN_REVIEW` solo dopo la chiusura di E0-T01, E0-T02 ed E0-T03. Codex non puo` dichiararlo `PASS`.
 
@@ -87,6 +87,18 @@ La verifica umana riguarda:
 - percorso verticale minimo.
 
 GUI-U-E1 non puo` iniziare prima del `PASS` esplicito.
+
+Riepilogo per il collaudo umano:
+
+- `GUI-U-E0-T01`, `GUI-U-E0-T02` e `GUI-U-E0-T03` sono `DONE`;
+- `docs/GUI_U_ARCHITETTURA.md` fissa confini, nomi, contratti e percorso minimo;
+- `docs/GUI_U_CODE_MAP.md` classifica gli otto moduli GUI, assegna i servizi e
+  collega le lacune ai task E1-E3.
+
+Istruzioni: leggere i due documenti e confermare esplicitamente un solo esito:
+`PASS`, oppure `FAIL` indicando quale tra confini prodotto/manutenzione, nomi,
+mappa dei servizi o percorso verticale minimo deve cambiare. Nessun task E1
+parte durante l'attesa.
 
 ## GUI-U-E1 — Fondazioni applicative
 

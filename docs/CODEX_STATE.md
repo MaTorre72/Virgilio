@@ -3,16 +3,17 @@
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Iniziativa attiva: `GUI-U - Caronte Desktop utente`
-- Fase corrente: `GUI-U-E0 - Separazione dal prototipo tecnico`
+- Fase corrente: `GATE U-H1 - Approvazione umana dell'architettura`
 - Task 0.0: chiuso
 - Vecchia GUI: `V114-T17` classificata `CLOSED_AS_TECHNICAL_PROTOTYPE`; resta utile come prototipo tecnico e strumento di assistenza, non come GUI utente finale
-- Task corrente di codice: nessuno; `GUI-U-E0-T03` e` documentale e di analisi
-- Task corrente consigliato: `GUI-U-E0-T03 - Mappa del codice riutilizzabile`
-- Massimo due successivi: `GATE U-H1`; nessun task di `GUI-U-E1` prima del `PASS` umano
+- Task corrente di codice: nessuno; il gate richiede revisione umana
+- Task corrente consigliato: `GATE U-H1 - Approvazione umana dell'architettura`
+- Massimo due successivi: nessuno prima del `PASS` umano; dopo il `PASS`, `GUI-U-E1-T01`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica `Caronte Manutenzione`, modulo `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
-- Gate imminente: `GATE U-H1`, inizialmente `WAITING_FOR_PREVIOUS_TASKS`; Codex non puo` dichiararlo `PASS`
-- Blocchi aperti: nessuno
+- Gate corrente: `GATE U-H1`, stato `WAITING_HUMAN_REVIEW`; Codex non puo` dichiararlo `PASS`
+- Blocchi aperti: attesa della decisione umana richiesta dal gate
 - Architettura GUI utente: `docs/GUI_U_ARCHITETTURA.md`; separa presentazioni, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging e fissa il percorso verticale minimo
+- Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-gui-e0-t01-full local_connector -q` -> `OK` (`353 passed in 26.92s`)
 - Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`353 passed in 26.15s`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati

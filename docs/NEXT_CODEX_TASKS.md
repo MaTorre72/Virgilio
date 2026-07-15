@@ -1,8 +1,8 @@
 # Next Codex Tasks
 
-- Task corrente: `GUI-U-E0-T03 - Mappa del codice riutilizzabile`.
-- Successivo: `GATE U-H1 - Approvazione umana dell'architettura`.
-- Poi: nessun task operativo prima del `PASS` umano di `GATE U-H1`.
-- Gate imminente: `GATE U-H1 - Approvazione umana dell'architettura`, dopo E0-T01, E0-T02 ed E0-T03.
+- Task corrente: `GATE U-H1 - Approvazione umana dell'architettura`, stato `WAITING_HUMAN_REVIEW`.
+- Azione necessaria: revisione umana di `docs/GUI_U_ARCHITETTURA.md` e `docs/GUI_U_CODE_MAP.md`, con esito esplicito `PASS` oppure `FAIL` motivato su uno dei quattro ambiti del gate.
+- Successivo dopo `PASS`: `GUI-U-E1-T01 - Percorsi applicativi Windows`.
+- Nessun task operativo di E1 puo` iniziare durante l'attesa.
 
 Dettagli, dipendenze ed evidenze: `docs/GUI_U_BACKLOG.md`.
