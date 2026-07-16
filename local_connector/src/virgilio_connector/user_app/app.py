@@ -11,6 +11,7 @@ from ..application.account_connection import (
     ReadonlyAccountConnectionService,
 )
 from ..application.account_management import AccountManagementService
+from ..application.activity import ActivityService
 from ..application.configuration import ConfigurationService
 from ..application.home_status import AccountHomeStatusService, HomeStatus, HomeStatusService
 from ..application.home_control import HomeRunController
@@ -18,12 +19,13 @@ from ..application.operation_runner import ManagedOperationRunner
 from ..application.windows_credentials import create_account_credential_service
 from ..application_paths import default_application_paths
 from .home import HomeView, StaticHomeStatusService
+from .activity import ActivitySource, ActivityView, EmptyActivitySource
 from .navigation import UserRoute, initial_route
 from .wizard import AccountForm, FirstRunController
 
 
 WINDOW_TITLE = "Caronte"
-USER_VIEWS = ("Primo avvio", "Home")
+USER_VIEWS = ("Primo avvio", "Home", "Attivita e problemi")
 
 class UserAppShell:
     """Own the root window and route to the first user-facing screen."""
@@ -38,6 +40,7 @@ class UserAppShell:
         account_service: AccountManagementService | None = None,
         home_status: HomeStatusService | None = None,
         home_control: HomeRunController | None = None,
+        activity_service: ActivitySource | None = None,
     ) -> None:
         self.root = root
         self._ttk = ttk_module
@@ -52,6 +55,8 @@ class UserAppShell:
         self.current_frame: Any | None = None
         self.first_run: FirstRunController | None = None
         self.home: HomeView | None = None
+        self.activity: ActivityView | None = None
+        self._activity_service = activity_service or EmptyActivitySource()
         self._home_status = home_status or (
             AccountHomeStatusService(account_service)
             if account_service is not None
@@ -85,6 +90,14 @@ class UserAppShell:
                 open_existing=open_existing,
             )
             return
+        if self.route is UserRoute.ACTIVITY:
+            self.activity = ActivityView(
+                content,
+                self._activity_service,
+                ttk_module=self._ttk,
+                go_home=self.show_home,
+            )
+            return
         self.home = HomeView(
             content,
             self._home_status,
@@ -93,6 +106,7 @@ class UserAppShell:
             start=self._home_control.start,
             pause=self._home_control.pause,
             open_configuration=self.open_configuration,
+            open_activity=self.show_activity,
         )
 
     def show_home(self) -> None:
@@ -104,6 +118,11 @@ class UserAppShell:
         self.route = UserRoute.FIRST_RUN
         self.home = None
         self._render(open_existing=True)
+
+    def show_activity(self) -> None:
+        self.route = UserRoute.ACTIVITY
+        self.home = None
+        self._render()
 
     def minimize(self) -> None:
         self.root.iconify()
@@ -132,6 +151,7 @@ def launch_user_app(*, config_path: Path | None = None) -> int:
         configuration,
         readonly_test=lambda form: connection.check(_connection_request(form)),
         account_service=account_service,
+        activity_service=ActivityService(paths.data_dir / "state.db"),
     )
     root.mainloop()
     return 0

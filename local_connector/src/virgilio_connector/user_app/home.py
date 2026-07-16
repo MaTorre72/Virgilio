@@ -31,6 +31,7 @@ class HomeView:
         start: Callable[[], None] = lambda: None,
         pause: Callable[[], None] = lambda: None,
         open_configuration: Callable[[], None] = lambda: None,
+        open_activity: Callable[[], None] = lambda: None,
     ) -> None:
         self.frame = ttk_module.Frame(parent)
         self.frame.grid(row=0, column=0, sticky="nsew")
@@ -39,6 +40,9 @@ class HomeView:
         ttk_module.Button(
             self.frame, text="Impostazioni", command=open_configuration
         ).grid(row=5, column=0, sticky="w", pady=(16, 0))
+        ttk_module.Button(
+            self.frame, text="Attivita e problemi", command=open_activity
+        ).grid(row=5, column=1, sticky="w", pady=(16, 0))
 
     def _render(
         self,

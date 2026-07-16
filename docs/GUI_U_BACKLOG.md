@@ -2,7 +2,7 @@
 
 Stato: `IN_PROGRESS`
 Sotto-epica attiva: `GUI-U-E3 - Completamento e distribuzione`
-Task corrente: `GUI-U-E3-T01 - Attivita` e problemi`
+Task corrente: `GUI-U-E3-T02 - Impostazioni essenziali`
 
 Obiettivo finale:
 
@@ -354,7 +354,7 @@ Stato: `IN_PROGRESS`.
 
 ### GUI-U-E3-T01 — Attivita` e problemi
 
-Stato: `TODO`
+Stato: `DONE`
 Risultato: attivita` e problemi sono leggibili e orientati all'azione.
 Dipendenza: `GATE U-H2 = PASS`.
 Componenti ammessi: vista attivita`, proiezione eventi, filtri, dettaglio tecnico separato, test UI.
@@ -363,15 +363,15 @@ Condizione di blocco: gli eventi esistenti non possono essere tradotti senza esp
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Esiste una tabella attivita`. | Test UI su colonne e righe sintetiche. | — | `NOT_RUN` |
-| Esistono filtri essenziali. | Test combinazioni casella, esito e data. | — | `NOT_RUN` |
-| Non compare JSON. | Test sulle stringhe e celle visibili. | — | `NOT_RUN` |
-| Ogni problema contiene un'azione consigliata. | Test su catalogo errori rappresentativo. | — | `NOT_RUN` |
-| I dettagli tecnici sono separati. | Test UI su pannello avanzato chiuso per default. | — | `NOT_RUN` |
+| Esiste una tabella attivita`. | Test UI su colonne e righe sintetiche. | `test_activity_view_has_table_filters_and_no_json`: sei colonne utente e riga sintetica proiettata. | `MET` |
+| Esistono filtri essenziali. | Test combinazioni casella, esito e data. | `test_activity_view_applies_account_outcome_and_date_filters` e test applicativo combinano i tre filtri. | `MET` |
+| Non compare JSON. | Test sulle stringhe e celle visibili. | Test servizio/vista escludono payload, segreti, path e delimitatori JSON dai valori visibili. | `MET` |
+| Ogni problema contiene un'azione consigliata. | Test su catalogo errori rappresentativo. | Errori e conflitti sintetici producono azioni distinte e verificabili. | `MET` |
+| I dettagli tecnici sono separati. | Test UI su pannello avanzato chiuso per default. | Il pannello e` nascosto al primo render e si apre solo su riga selezionata. | `MET` |
 
 ### GUI-U-E3-T02 — Impostazioni essenziali
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `TODO`
 Risultato: le preferenze ordinarie sono modificabili senza esporre parametri tecnici.
 Dipendenza: `GUI-U-E3-T01 = DONE`.
 Componenti ammessi: vista impostazioni, modello configurazione condiviso, servizi avvio/chiusura, test UI.

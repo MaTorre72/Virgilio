@@ -10,6 +10,7 @@ from ..application.configuration import ConfigurationService
 class UserRoute(str, Enum):
     FIRST_RUN = "first_run"
     HOME = "home"
+    ACTIVITY = "activity"
 
 
 def initial_route(configuration: ConfigurationService) -> UserRoute:
