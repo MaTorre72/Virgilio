@@ -32,17 +32,21 @@ class HomeView:
         pause: Callable[[], None] = lambda: None,
         open_configuration: Callable[[], None] = lambda: None,
         open_activity: Callable[[], None] = lambda: None,
+        open_settings: Callable[[], None] = lambda: None,
     ) -> None:
         self.frame = ttk_module.Frame(parent)
         self.frame.grid(row=0, column=0, sticky="nsew")
         self.status = status_service.get_status()
         self._render(ttk_module, check_now, start, pause)
         ttk_module.Button(
-            self.frame, text="Impostazioni", command=open_configuration
+            self.frame, text="Caselle", command=open_configuration
         ).grid(row=5, column=0, sticky="w", pady=(16, 0))
         ttk_module.Button(
             self.frame, text="Attivita e problemi", command=open_activity
         ).grid(row=5, column=1, sticky="w", pady=(16, 0))
+        ttk_module.Button(
+            self.frame, text="Impostazioni", command=open_settings
+        ).grid(row=5, column=2, sticky="w", pady=(16, 0))
 
     def _render(
         self,

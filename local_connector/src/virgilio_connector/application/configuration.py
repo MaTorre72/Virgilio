@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from pathlib import Path
 import re
@@ -20,13 +20,30 @@ from ..multi_account import (
 
 
 @dataclass(frozen=True, slots=True)
+class UserPreferences:
+    """Ordinary user preferences shared by every presentation."""
+
+    interval_seconds: int = 300
+    start_with_windows: bool = False
+    minimize_on_close: bool = False
+
+    def validate(self) -> None:
+        if not 60 <= self.interval_seconds <= 86_400:
+            raise MultiAccountConfigError(
+                "preferences.interval_seconds must be between 60 and 86400"
+            )
+
+
+@dataclass(frozen=True, slots=True)
 class ConfigurationModel:
     """The complete structural configuration used by every consumer."""
 
     accounts: tuple[LocalImapAccount, ...]
     storage: LocalStorageConfig
+    preferences: UserPreferences = field(default_factory=UserPreferences)
 
     def validate(self) -> None:
+        self.preferences.validate()
         if not self.accounts:
             raise MultiAccountConfigError("configuration must contain at least one account")
         aliases = [account.account_alias for account in self.accounts]
@@ -68,6 +85,7 @@ class YamlConfigurationStore:
         model = ConfigurationModel(
             accounts=load_multi_account_config(self.path),
             storage=load_storage_config(self.path),
+            preferences=_load_preferences(self.path),
         )
         model.validate()
         return model
@@ -108,7 +126,11 @@ class ConfigurationService:
     def field_sources(self) -> Mapping[str, Path]:
         """Document the authoritative source for every structural field group."""
 
-        return {"accounts.*": self.store.source, "storage.*": self.store.source}
+        return {
+            "accounts.*": self.store.source,
+            "storage.*": self.store.source,
+            "preferences.*": self.store.source,
+        }
 
 
 def _render_yaml(model: ConfigurationModel, suffix: str) -> str:
@@ -142,6 +164,10 @@ def _render_yaml(model: ConfigurationModel, suffix: str) -> str:
         f"  copy_manifest: {_yaml_scalar(storage.copy_manifest)}",
         f"  overwrite: {_yaml_scalar(storage.overwrite)}",
         f"  create_staging_dir: {_yaml_scalar(storage.create_staging_dir)}",
+        "preferences:",
+        f"  interval_seconds: {_yaml_scalar(model.preferences.interval_seconds)}",
+        f"  start_with_windows: {_yaml_scalar(model.preferences.start_with_windows)}",
+        f"  minimize_on_close: {_yaml_scalar(model.preferences.minimize_on_close)}",
     ))
     return "\n".join(lines) + "\n" + suffix
 
@@ -150,8 +176,43 @@ def _unmanaged_yaml_suffix(path: Path) -> str:
     if not path.exists():
         return ""
     text = path.read_text(encoding="utf-8")
-    match = re.search(r"(?m)^(?!accounts:|storage:)[A-Za-z][A-Za-z0-9_-]*:\s*$", text)
+    match = re.search(
+        r"(?m)^(?!accounts:|storage:|preferences:)[A-Za-z][A-Za-z0-9_-]*:\s*$",
+        text,
+    )
     return text[match.start():] if match else ""
+
+
+def _load_preferences(path: Path) -> UserPreferences:
+    values: dict[str, object] = {}
+    in_preferences = False
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.split("#", 1)[0].rstrip()
+        if not line.strip():
+            continue
+        if not line[:1].isspace() and line.strip().endswith(":"):
+            in_preferences = line.strip() == "preferences:"
+            continue
+        if not in_preferences:
+            continue
+        text = line.strip()
+        if ":" not in text:
+            raise MultiAccountConfigError("invalid preferences entry")
+        key, raw_value = (part.strip() for part in text.split(":", 1))
+        if key == "interval_seconds":
+            try:
+                values[key] = int(raw_value)
+            except ValueError as exc:
+                raise MultiAccountConfigError(
+                    "preferences.interval_seconds must be an integer"
+                ) from exc
+        elif key in {"start_with_windows", "minimize_on_close"}:
+            if raw_value.lower() not in {"true", "false"}:
+                raise MultiAccountConfigError(f"preferences.{key} must be true or false")
+            values[key] = raw_value.lower() == "true"
+    preferences = UserPreferences(**values)
+    preferences.validate()
+    return preferences
 
 
 def _atomic_text_write(path: Path, text: str) -> None:

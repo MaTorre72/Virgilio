@@ -35,7 +35,11 @@ def test_round_trip_has_one_authoritative_source_and_two_accounts(tmp_path):
     loaded = service.load()
     assert [account.account_alias for account in loaded.accounts] == ["account_1", "account_2"]
     assert loaded.storage == model.storage
-    assert service.field_sources() == {"accounts.*": path, "storage.*": path}
+    assert service.field_sources() == {
+        "accounts.*": path,
+        "storage.*": path,
+        "preferences.*": path,
+    }
     assert "bucoliche:" in path.read_text(encoding="utf-8")
 
 

@@ -16,16 +16,19 @@ from ..application.configuration import ConfigurationService
 from ..application.home_status import AccountHomeStatusService, HomeStatus, HomeStatusService
 from ..application.home_control import HomeRunController
 from ..application.operation_runner import ManagedOperationRunner
+from ..application.settings import DisabledStartupAdapter, SettingsService
+from ..application.windows_startup import WindowsStartupAdapter
 from ..application.windows_credentials import create_account_credential_service
 from ..application_paths import default_application_paths
 from .home import HomeView, StaticHomeStatusService
 from .activity import ActivitySource, ActivityView, EmptyActivitySource
 from .navigation import UserRoute, initial_route
+from .settings import SettingsView
 from .wizard import AccountForm, FirstRunController
 
 
 WINDOW_TITLE = "Caronte"
-USER_VIEWS = ("Primo avvio", "Home", "Attivita e problemi")
+USER_VIEWS = ("Primo avvio", "Home", "Attivita e problemi", "Impostazioni")
 
 class UserAppShell:
     """Own the root window and route to the first user-facing screen."""
@@ -41,13 +44,25 @@ class UserAppShell:
         home_status: HomeStatusService | None = None,
         home_control: HomeRunController | None = None,
         activity_service: ActivitySource | None = None,
+        settings_service: SettingsService | None = None,
     ) -> None:
         self.root = root
         self._ttk = ttk_module
         self._readonly_test = readonly_test
         self._account_service = account_service
+        self._settings_service = settings_service or SettingsService(
+            configuration, DisabledStartupAdapter()
+        )
+        self._minimize_on_close = False
+        interval_seconds = 300
+        if configuration.exists() and settings_service is not None:
+            current_settings = self._settings_service.load()
+            self._minimize_on_close = current_settings.minimize_on_close
+            interval_seconds = current_settings.interval_minutes * 60
         self._home_control = home_control or HomeRunController(
-            configuration.store.source, ManagedOperationRunner()
+            configuration.store.source,
+            ManagedOperationRunner(),
+            interval_seconds=interval_seconds,
         )
         self.route = initial_route(configuration)
         self.root.title(WINDOW_TITLE)
@@ -56,6 +71,7 @@ class UserAppShell:
         self.first_run: FirstRunController | None = None
         self.home: HomeView | None = None
         self.activity: ActivityView | None = None
+        self.settings: SettingsView | None = None
         self._activity_service = activity_service or EmptyActivitySource()
         self._home_status = home_status or (
             AccountHomeStatusService(account_service)
@@ -64,7 +80,7 @@ class UserAppShell:
         )
         self._render()
         if hasattr(self.root, "protocol"):
-            self.root.protocol("WM_DELETE_WINDOW", self.close)
+            self.root.protocol("WM_DELETE_WINDOW", self.close_window)
 
     def _render(self, *, open_existing: bool = False) -> None:
         if self.current_frame is not None:
@@ -98,6 +114,15 @@ class UserAppShell:
                 go_home=self.show_home,
             )
             return
+        if self.route is UserRoute.SETTINGS:
+            self.settings = SettingsView(
+                content,
+                self._settings_service,
+                ttk_module=self._ttk,
+                go_home=self.show_home,
+                on_saved=self._apply_settings,
+            )
+            return
         self.home = HomeView(
             content,
             self._home_status,
@@ -107,6 +132,7 @@ class UserAppShell:
             pause=self._home_control.pause,
             open_configuration=self.open_configuration,
             open_activity=self.show_activity,
+            open_settings=self.show_settings,
         )
 
     def show_home(self) -> None:
@@ -124,6 +150,15 @@ class UserAppShell:
         self.home = None
         self._render()
 
+    def show_settings(self) -> None:
+        self.route = UserRoute.SETTINGS
+        self.home = None
+        self._render()
+
+    def _apply_settings(self, interval_seconds: int, minimize_on_close: bool) -> None:
+        self._home_control.set_interval_seconds(interval_seconds)
+        self._minimize_on_close = minimize_on_close
+
     def minimize(self) -> None:
         self.root.iconify()
 
@@ -132,6 +167,12 @@ class UserAppShell:
 
         self._home_control.close()
         self.root.destroy()
+
+    def close_window(self) -> None:
+        if self._minimize_on_close:
+            self.minimize()
+            return
+        self.close()
 
 
 def launch_user_app(*, config_path: Path | None = None) -> int:
@@ -152,6 +193,9 @@ def launch_user_app(*, config_path: Path | None = None) -> int:
         readonly_test=lambda form: connection.check(_connection_request(form)),
         account_service=account_service,
         activity_service=ActivityService(paths.data_dir / "state.db"),
+        settings_service=SettingsService(
+            configuration, WindowsStartupAdapter(configuration.store.source)
+        ),
     )
     root.mainloop()
     return 0

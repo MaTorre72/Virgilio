@@ -371,7 +371,7 @@ Condizione di blocco: gli eventi esistenti non possono essere tradotti senza esp
 
 ### GUI-U-E3-T02 — Impostazioni essenziali
 
-Stato: `TODO`
+Stato: `DONE`
 Risultato: le preferenze ordinarie sono modificabili senza esporre parametri tecnici.
 Dipendenza: `GUI-U-E3-T01 = DONE`.
 Componenti ammessi: vista impostazioni, modello configurazione condiviso, servizi avvio/chiusura, test UI.
@@ -380,15 +380,15 @@ Condizione di blocco: una preferenza non ha una fonte autorevole unica o richied
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| E` configurabile il Limbo. | Test UI e persistenza con directory temporanea. | — | `NOT_RUN` |
-| E` configurabile l'intervallo. | Test validazione e round-trip. | — | `NOT_RUN` |
-| E` configurabile l'avvio automatico. | Test con adapter Windows fake. | — | `NOT_RUN` |
-| E` configurabile il comportamento alla chiusura. | Test controller sui comportamenti ammessi. | — | `NOT_RUN` |
-| I parametri tecnici sono confinati alle impostazioni avanzate. | Test sulle stringhe visibili di default. | — | `NOT_RUN` |
+| E` configurabile il Limbo. | Test UI e persistenza con directory temporanea. | `test_limbo_interval_and_preferences_round_trip_through_shared_model`: la directory temporanea scelta e` riletta da `storage.staging_dir`; `test_settings_view_saves_preferences_and_updates_close_behavior`: salvataggio dalla vista. | `MET` |
+| E` configurabile l'intervallo. | Test validazione e round-trip. | `test_limbo_interval_and_preferences_round_trip_through_shared_model` verifica il round-trip a 720 secondi; `test_interval_validation_rejects_values_outside_allowed_range` copre valori vuoti, non numerici e limiti. | `MET` |
+| E` configurabile l'avvio automatico. | Test con adapter Windows fake. | `test_windows_startup_adapter_uses_injected_registry_without_real_access` verifica abilita/disabilita con registro iniettato; il round-trip usa `FakeStartupAdapter` senza accessi reali. | `MET` |
+| E` configurabile il comportamento alla chiusura. | Test controller sui comportamenti ammessi. | `test_settings_view_saves_preferences_and_updates_close_behavior` verifica riduzione a icona sul controllo finestra e chiusura esplicita con arresto del worker. | `MET` |
+| I parametri tecnici sono confinati alle impostazioni avanzate. | Test sulle stringhe visibili di default. | `test_default_settings_view_hides_technical_parameters` verifica l'assenza completa dei termini vietati nella vista ordinaria. | `MET` |
 
 ### GUI-U-E3-T03 — Bucoliche e avvio Windows
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `TODO`
 Risultato: Bucoliche e avvio automatico sono configurabili tramite percorsi guidati e stati comprensibili.
 Dipendenza: `GUI-U-E3-T02 = DONE`.
 Componenti ammessi: servizi Bucoliche e Task Scheduler condivisi, viste guidate, adapter fake, test UI.

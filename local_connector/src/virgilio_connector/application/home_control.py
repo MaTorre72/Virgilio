@@ -10,9 +10,16 @@ from .operation_runner import ManagedOperationRunner, RunnerEvent
 class HomeRunController:
     """Translate Home intentions into one owned background worker."""
 
-    def __init__(self, config_path: Path, runner: ManagedOperationRunner) -> None:
+    def __init__(
+        self,
+        config_path: Path,
+        runner: ManagedOperationRunner,
+        *,
+        interval_seconds: int = 300,
+    ) -> None:
         self._config_path = Path(config_path)
         self._runner = runner
+        self.set_interval_seconds(interval_seconds)
 
     @property
     def state(self) -> str:
@@ -30,6 +37,11 @@ class HomeRunController:
     def close(self) -> None:
         self._runner.close()
 
+    def set_interval_seconds(self, value: int) -> None:
+        if not 60 <= int(value) <= 86_400:
+            raise ValueError("interval_seconds must be between 60 and 86400")
+        self._interval_seconds = int(value)
+
     def drain_events(self) -> list[RunnerEvent]:
         return self._runner.drain_events()
 
@@ -39,6 +51,8 @@ class HomeRunController:
             "--config",
             str(self._config_path),
             "--human",
+            "--interval-seconds",
+            str(self._interval_seconds),
         ]
         if max_cycles is not None:
             args.extend(("--max-cycles", str(max_cycles)))

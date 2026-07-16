@@ -11,6 +11,7 @@ class UserRoute(str, Enum):
     FIRST_RUN = "first_run"
     HOME = "home"
     ACTIVITY = "activity"
+    SETTINGS = "settings"
 
 
 def initial_route(configuration: ConfigurationService) -> UserRoute:

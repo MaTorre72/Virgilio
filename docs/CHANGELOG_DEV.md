@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-16 - Completato `GUI-U-E3-T02`: la GUI utente espone impostazioni ordinarie per cartella Limbo, intervallo di controllo, avvio automatico su Windows e comportamento alla chiusura, tutte persistite nel modello condiviso; l'integrazione di avvio usa un adapter Windows iniettabile e la chiusura mantiene l'arresto esplicito del worker. Test task (`8 passed`), regressione mirata (`30 passed`), suite local connector e smoke (`422 passed`) verdi; scansioni stringhe vietate e segreti verdi. Prossimo task `GUI-U-E3-T03 - Bucoliche e avvio Windows`.
+
 - 2026-07-16 - Completato `GUI-U-E3-T01`: la GUI utente espone una tabella `Attivita e problemi` alimentata dalla proiezione sicura degli eventi locali esistenti, con filtri combinabili per casella, esito e data, azioni consigliate per errori e conflitti e dettagli tecnici separati e chiusi per default. Test task/regressione GUI (`27 passed`), suite local connector e smoke (`414 passed`) verdi; nessun import della presentazione legacy e nessun dato reale usato. Prossimo task `GUI-U-E3-T02 - Impostazioni essenziali`.
 
 - 2026-07-16 - `GATE U-H2 = PASS` su conferma umana esplicita dopo le correzioni di `GUI-U-E2-T07`: il percorso verticale e` approvato, la sotto-epica E3 e` sbloccata e il prossimo task univoco e` `GUI-U-E3-T01 - Attivita` e problemi`. Smoke locale verde (`409 passed`); nessun codice applicativo modificato.
