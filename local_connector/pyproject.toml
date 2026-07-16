@@ -12,10 +12,16 @@ license = { text = "Proprietary" }
 authors = [
   { name = "Virgilio project contributors" }
 ]
-dependencies = ["google-auth>=2.30,<3", "google-auth-oauthlib>=1.2,<2", "requests>=2.31,<3"]
+dependencies = [
+  "google-auth>=2.30,<3",
+  "google-auth-oauthlib>=1.2,<2",
+  "requests>=2.31,<3",
+  "tzdata>=2025.2",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9"]
+build = ["pyinstaller>=6.21,<7"]
 
 [project.scripts]
 virgilio = "virgilio_connector.__main__:main"

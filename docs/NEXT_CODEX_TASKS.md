@@ -1,11 +1,11 @@
 # Next Codex Tasks
 
-- Task corrente: `GUI-U-E3-T05 - Build autonoma`, stato `TODO`.
-- Dipendenza soddisfatta: `GUI-U-E3-T04 = DONE`.
-- Risultato richiesto: produrre una build one-folder riproducibile che avvia
-  `Caronte.exe` senza ambiente di sviluppo o repository.
-- Vincolo architetturale: la build include `user_app` e i servizi condivisi ma
-  esclude l'implementazione legacy `gui`/`gui_*`; installer e firma restano fuori task.
-- Dopo `GUI-U-E3-T05`: `GUI-U-E3-T06 - Installer Windows`.
+- Task corrente: `GUI-U-E3-T06 - Installer Windows`, stato `TODO`.
+- Dipendenza soddisfatta: `GUI-U-E3-T05 = DONE`.
+- Risultato richiesto: rendere Caronte installabile e disinstallabile su Windows,
+  mantenendo separati i dati utente dai file del programma.
+- Vincolo architetturale: l'installer consuma la build one-folder gia` verificata;
+  pubblicazione, firma commerciale e aggiornamento automatico restano fuori task.
+- Dopo `GUI-U-E3-T06`: `GATE U-H3`.
 
 Dettagli, dipendenze ed evidenze: `docs/GUI_U_BACKLOG.md`.

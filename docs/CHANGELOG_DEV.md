@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-17 - Completato `GUI-U-E3-T05`: aggiunte build PyInstaller one-folder deterministica, entry point `Caronte.exe`, dipendenze runtime Windows dichiarate, script di build e smoke isolato e documentazione operativa. Due build pulite identiche (`1582` file, zero differenze SHA-256) e avvio dalla sola cartella copiata con titolo `Caronte`; test task (`10 passed`), suite local connector e smoke (`438 passed`) verdi. Prossimo task `GUI-U-E3-T06 - Installer Windows`.
+
 - 2026-07-17 - Completato `GUI-U-E3-T04`: sostituita la riesportazione legacy con la nuova presentazione indipendente `Caronte Manutenzione` e aggiunto un servizio applicativo condiviso per backup locale, verifica integrita`, report diagnostico redatto e reset protetto da conferma e backup automatico. Test task (`50 passed`), suite local connector e smoke (`433 passed`) verdi; scansioni import legacy e segreti verdi. Prossimo task `GUI-U-E3-T05 - Build autonoma`.
 
 - 2026-07-16 - Completato `GUI-U-E3-T03`: aggiunti servizio applicativo e percorso guidato utente per attivare/disattivare Bucoliche, collegare Google, verificare il registro in sola lettura e installare/rimuovere il controllo automatico tramite adapter Task Scheduler iniettabile; stati ed errori noti sono tradotti senza dettagli tecnici. Test task (`28 passed`), suite local connector e smoke (`428 passed`) verdi; scansioni stringhe vietate, import legacy e segreti verdi. Prossimo task `GUI-U-E3-T04 - Manutenzione avanzata`.

@@ -423,7 +423,7 @@ Condizione di blocco: un'operazione distruttiva non offre backup, conferma o ris
 
 ### GUI-U-E3-T05 — Build autonoma
 
-Stato: `TODO`
+Stato: `DONE`
 Risultato: una build one-folder riproducibile avvia Caronte senza ambiente di sviluppo.
 Dipendenza: `GUI-U-E3-T04 = DONE`.
 Componenti ammessi: configurazione build, risorse, entry point utente, smoke della build, documentazione di build.
@@ -432,15 +432,15 @@ Condizione di blocco: la build richiede repository, runtime esterno o file non d
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| La build one-folder e` riproducibile. | Due build pulite con inventario equivalente. | — | `NOT_RUN` |
-| Il runtime e` incluso. | Avvio su ambiente di test senza runtime installato. | — | `NOT_RUN` |
-| Non e` richiesto un venv. | Smoke da shell priva dell'ambiente di sviluppo. | — | `NOT_RUN` |
-| Non e` richiesto il repository. | Smoke dopo copia della sola cartella build. | — | `NOT_RUN` |
-| L'avvio avviene da `Caronte.exe`. | Test di processo e titolo finestra. | — | `NOT_RUN` |
+| La build one-folder e` riproducibile. | Due build pulite con inventario equivalente. | Due build PyInstaller pulite con epoch e hash seed fissati: `1582` file per cartella e `0` differenze su percorso, dimensione e SHA-256. | `MET` |
+| Il runtime e` incluso. | Avvio su ambiente di test senza runtime installato. | La cartella include Python 3.13, Tcl/Tk e `tzdata`; lo smoke avvia la copia su Windows privo di Python registrate dal launcher. | `MET` |
+| Non e` richiesto un venv. | Smoke da shell priva dell'ambiente di sviluppo. | `smoke_caronte_build.ps1` azzera `VIRTUAL_ENV` e `PYTHONPATH`; la copia si avvia correttamente. | `MET` |
+| Non e` richiesto il repository. | Smoke dopo copia della sola cartella build. | Lo smoke copia esclusivamente `dist/Caronte` in una directory temporanea, cambia directory di lavoro e completa l'avvio. | `MET` |
+| L'avvio avviene da `Caronte.exe`. | Test di processo e titolo finestra. | Processo `Caronte.exe` vivo e finestra con titolo esatto `Caronte`; test entry point e comando worker congelato verdi. | `MET` |
 
 ### GUI-U-E3-T06 — Installer Windows
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `TODO`
 Risultato: Caronte e` installabile e disinstallabile con dati separati dal programma.
 Dipendenza: `GUI-U-E3-T05 = DONE`.
 Componenti ammessi: configurazione installer, artefatto build, collegamento Start, test su VM/ambiente isolato.

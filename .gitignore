@@ -27,6 +27,8 @@ __pycache__/
 .pytest-tmp/
 .venv/
 venv/
+local_connector/build-output/
+local_connector/.build-python*/
 
 # Editor and OS noise
 .DS_Store

@@ -1,0 +1,71 @@
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+import tomllib
+
+from virgilio_connector import build_entry
+from virgilio_connector.application.operation_runner import _runtime_command
+
+
+ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parent
+
+
+def test_build_configuration_defines_one_folder_caronte() -> None:
+    spec = (ROOT / "build" / "Caronte.spec").read_text(encoding="utf-8")
+
+    assert 'name="Caronte"' in spec
+    assert "COLLECT(" in spec
+    assert "console=False" in spec
+    assert "Path(SPECPATH).parent" in spec
+    build_script = REPO_ROOT / "scripts" / "dev" / "build_caronte.ps1"
+    assert build_script.is_file()
+    build_text = build_script.read_text(encoding="utf-8")
+    assert "import tkinter" in build_text
+    assert "SOURCE_DATE_EPOCH" in build_text
+    assert "PYTHONHASHSEED" in build_text
+    assert (REPO_ROOT / "scripts" / "dev" / "smoke_caronte_build.ps1").is_file()
+    assert (REPO_ROOT / "docs" / "BUILD_CARONTE.md").is_file()
+
+
+def test_windows_timezone_data_is_declared_for_standalone_runtime() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+    assert any(item.startswith("tzdata>=") for item in project["project"]["dependencies"])
+
+
+def test_build_entry_opens_user_application_without_arguments(monkeypatch) -> None:
+    called = []
+    monkeypatch.setattr(sys, "argv", ["Caronte.exe"])
+    monkeypatch.setattr(
+        "virgilio_connector.user_app.launch_user_app",
+        lambda: called.append("Caronte") or 0,
+    )
+
+    assert build_entry.main() == 0
+    assert called == ["Caronte"]
+
+
+def test_frozen_worker_reuses_bundled_executable(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", r"C:\Program Files\Caronte\Caronte.exe")
+
+    assert _runtime_command(["scan-imap-accounts", "--config", "config.yaml"]) == [
+        r"C:\Program Files\Caronte\Caronte.exe",
+        "scan-imap-accounts",
+        "--config",
+        "config.yaml",
+    ]
+
+
+def test_development_worker_keeps_module_command(monkeypatch) -> None:
+    monkeypatch.delattr(sys, "frozen", raising=False)
+    monkeypatch.setattr(sys, "executable", r"C:\Python\python.exe")
+
+    assert _runtime_command(["watch"]) == [
+        r"C:\Python\python.exe",
+        "-m",
+        "virgilio_connector",
+        "watch",
+    ]

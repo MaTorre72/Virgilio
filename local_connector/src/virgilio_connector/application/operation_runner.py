@@ -54,7 +54,7 @@ class ManagedOperationRunner:
                 return False
             self._state = "starting"
             self._stop_requested = False
-        command = [sys.executable, "-m", "virgilio_connector", *args]
+        command = _runtime_command(args)
         self._thread = Thread(target=self._run, args=(command,), daemon=True)
         self._thread.start()
         return True
@@ -129,3 +129,11 @@ class ManagedOperationRunner:
                 events.append(self._events.get_nowait())
             except Empty:
                 return events
+
+
+def _runtime_command(args: list[str]) -> list[str]:
+    """Use the bundled executable directly when running from a frozen build."""
+
+    if getattr(sys, "frozen", False):
+        return [sys.executable, *args]
+    return [sys.executable, "-m", "virgilio_connector", *args]
