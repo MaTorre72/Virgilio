@@ -2,7 +2,7 @@
 
 Stato: `IN_PROGRESS`
 Sotto-epica attiva: `GUI-U-E2 - Percorso verticale minimo`, riaperta dopo il collaudo umano
-Task corrente: `GUI-U-E2-T07 - Correzioni dal collaudo verticale`
+Task corrente: `GATE U-H2 - Collaudo umano del percorso verticale`
 
 Obiettivo finale:
 
@@ -286,7 +286,7 @@ Condizione di blocco: il runner esistente non puo` essere controllato senza dupl
 
 ### GUI-U-E2-T07 — Correzioni dal collaudo verticale
 
-Stato: `TODO`.
+Stato: `DONE`.
 Risultato: il primo avvio termina in modo esplicito, la configurazione resta
 rivedibile dalla Home e i controlli booleani e di finestra hanno comportamento
 coerente con quanto mostrato.
@@ -300,18 +300,19 @@ l'architettura oltre le osservazioni approvate nel collaudo.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `Casella attiva` ha uno stato iniziale binario e il valore salvato coincide con quello mostrato. | Test UI e round-trip su stato selezionato e non selezionato. | — | `NOT_RUN` |
-| Dopo il salvataggio delle caselle esiste una conclusione esplicita del wizard che porta alla Home nella stessa sessione. | Test di navigazione completo senza chiusura e riapertura. | — | `NOT_RUN` |
-| Dalla Home si puo` riaprire la configurazione esistente, correggere un dettaglio e tornare alla Home. | Test UI di riapertura, modifica e persistenza. | — | `NOT_RUN` |
-| Chiusura e riduzione a icona sono chiaramente disponibili e funzionanti nelle viste utente. | Test sui controlli finestra e sulla chiusura controllata del worker. | — | `NOT_RUN` |
-| Restano assenti termini tecnici, percorsi del repository e viste legacy. | Test automatico sull'inventario completo dei testi visibili. | — | `NOT_RUN` |
+| `Casella attiva` ha uno stato iniziale binario e il valore salvato coincide con quello mostrato. | Test UI e round-trip su stato selezionato e non selezionato. | `test_active_mailbox_state_is_binary_visible_and_persisted`: selezione iniziale visibile e round-trip `true`/`false`. | `MET` |
+| Dopo il salvataggio delle caselle esiste una conclusione esplicita del wizard che porta alla Home nella stessa sessione. | Test di navigazione completo senza chiusura e riapertura. | `test_first_run_finishes_explicitly_on_home_without_restart`: `Termina configurazione` porta alla Home senza riavvio. | `MET` |
+| Dalla Home si puo` riaprire la configurazione esistente, correggere un dettaglio e tornare alla Home. | Test UI di riapertura, modifica e persistenza. | `test_home_reopens_existing_configuration_and_returns_after_edit`: valori e credenziale ricaricati, modifica persistita, ritorno Home. | `MET` |
+| Chiusura e riduzione a icona sono chiaramente disponibili e funzionanti nelle viste utente. | Test sui controlli finestra e sulla chiusura controllata del worker. | `test_window_controls_are_visible_and_close_owned_worker`: controlli visibili, `iconify`, arresto worker e distruzione finestra. | `MET` |
+| Restano assenti termini tecnici, percorsi del repository e viste legacy. | Test automatico sull'inventario completo dei testi visibili. | `test_complete_visible_text_inventory_has_no_technical_or_legacy_terms`: inventario completo privo di stringhe vietate e viste legacy. | `MET` |
 
 ### GATE U-H2 — Collaudo umano del percorso verticale
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `WAITING_HUMAN_REVIEW`.
 
-Prerequisiti verificati: `GUI-U-E2-T01` - `GUI-U-E2-T06` sono `DONE`; test
-mirati `32 passed`, suite local connector e smoke `404 passed`.
+Prerequisiti verificati: `GUI-U-E2-T01` - `GUI-U-E2-T07` sono `DONE`; test
+mirati T07 `5 passed`, regressione GUI utente `36 passed`, suite local connector
+e smoke `409 passed`.
 
 Codex non puo` dichiararlo `PASS`.
 
@@ -323,18 +324,20 @@ mostra termini tecnici o percorsi del repository, ma il collaudo ha rilevato:
 - assenza di un accesso dalla Home per rivedere la configurazione;
 - assenza di controlli chiaramente visibili per chiudere o ridurre la finestra.
 
-Azione necessaria unica: completare `GUI-U-E2-T07`, quindi ripetere questo gate.
+Azione necessaria unica: ripetere il collaudo umano e registrare `PASS` oppure
+`FAIL` con l'area da correggere.
 
 Scenario umano:
 
 1. avvio GUI;
 2. selezione Limbo;
 3. configurazione di due caselle;
-4. chiusura e riapertura;
-5. visualizzazione Home;
+4. conclusione esplicita verso la Home senza riavvio;
+5. riapertura delle impostazioni dalla Home, modifica e ritorno alla Home;
 6. controllo manuale;
 7. avvio;
-8. pausa.
+8. pausa;
+9. riduzione a icona e chiusura.
 
 Condizioni:
 

@@ -23,12 +23,24 @@ class FakeRoot:
     def __init__(self):
         self.window_title = None
         self.minimum_size = None
+        self.protocols = {}
+        self.iconified = False
+        self.destroyed = False
 
     def title(self, value):
         self.window_title = value
 
     def minsize(self, width, height):
         self.minimum_size = (width, height)
+
+    def protocol(self, name, command):
+        self.protocols[name] = command
+
+    def iconify(self):
+        self.iconified = True
+
+    def destroy(self):
+        self.destroyed = True
 
 
 class FakeWidget:
@@ -40,6 +52,8 @@ class FakeWidget:
         self.grid_options = None
         self.destroyed = False
         self.config = dict(kwargs)
+        self.states = set()
+        self.bindings = {}
         type(self).created.append(self)
 
     def grid(self, **kwargs):
@@ -53,6 +67,21 @@ class FakeWidget:
 
     def configure(self, **kwargs):
         self.config.update(kwargs)
+
+    def state(self, states=None):
+        if states is None:
+            return tuple(self.states)
+        for value in states:
+            if value.startswith("!"):
+                self.states.discard(value[1:])
+            else:
+                self.states.add(value)
+
+    def bind(self, event, command):
+        self.bindings[event] = command
+
+    def event_generate(self, event):
+        self.bindings[event](None)
 
 
 class FakeFrame(FakeWidget):
@@ -78,6 +107,9 @@ class FakeEntry(FakeWidget):
 
     def insert(self, index, value):
         self.config["value"] = value
+
+    def delete(self, start, end=None):
+        self.config["value"] = ""
 
 
 class FakeTreeview(FakeWidget):

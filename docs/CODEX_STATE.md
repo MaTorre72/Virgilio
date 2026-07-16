@@ -3,19 +3,19 @@
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Iniziativa attiva: `GUI-U - Caronte Desktop utente`
-- Fase corrente: `GUI-U-E2-T07 - Correzioni dal collaudo verticale`
+- Fase corrente: `GATE U-H2 - nuovo collaudo umano`
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
-- Task corrente di codice: `GUI-U-E2-T07 - Correzioni dal collaudo verticale`
-- Task corrente consigliato: `GUI-U-E2-T07 - Correzioni dal collaudo verticale`
-- Massimo due successivi: `GATE U-H2 - nuovo collaudo umano`; nessun task E3 avviabile prima del `PASS`
+- Task corrente di codice: nessuno; `GUI-U-E2-T07 = DONE`
+- Task corrente consigliato: `GATE U-H2 - nuovo collaudo umano`
+- Massimo due successivi: nessun task E3 avviabile prima del `PASS` umano
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
-- Gate corrente: `GATE U-H2`, esito umano 2026-07-16 `FAIL`, stato `WAITING_FOR_PREVIOUS_TASKS`; il percorso funziona e non espone termini tecnici, ma richiede `GUI-U-E2-T07` per stato `Casella attiva`, conclusione e riapertura del wizard e controlli finestra
+- Gate corrente: `GATE U-H2`, precedente esito umano 2026-07-16 `FAIL`, stato `WAITING_HUMAN_REVIEW`; `GUI-U-E2-T07` ha corretto stato `Casella attiva`, conclusione e riapertura del wizard e controlli finestra, ma Codex non puo` dichiarare `PASS`
 - Blocchi aperti: nessuno noto
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
-- Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp %TEMP%\virgilio-pytest-gui-e2-t06-full local_connector -q` -> `OK` (`404 passed`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`404 passed`); una prima esecuzione ha incontrato il noto test Bucoliche fluttuante, poi verde isolato e nella ripetizione completa senza modifiche fuori task
+- Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-pytest-gui-e2-t07-full local_connector -q` -> `OK` (`409 passed`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`409 passed`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

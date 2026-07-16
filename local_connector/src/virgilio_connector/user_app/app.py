@@ -58,27 +58,55 @@ class UserAppShell:
             else StaticHomeStatusService(HomeStatus("Pronto", 0))
         )
         self._render()
+        if hasattr(self.root, "protocol"):
+            self.root.protocol("WM_DELETE_WINDOW", self.close)
 
-    def _render(self) -> None:
+    def _render(self, *, open_existing: bool = False) -> None:
+        if self.current_frame is not None:
+            self.current_frame.destroy()
         frame = self._ttk.Frame(self.root, padding=32)
         frame.grid(row=0, column=0, sticky="nsew")
         self.current_frame = frame
+        controls = self._ttk.Frame(frame)
+        controls.grid(row=0, column=0, sticky="e")
+        self._ttk.Button(
+            controls, text="Riduci a icona", command=self.minimize
+        ).grid(row=0, column=0, padx=(0, 8))
+        self._ttk.Button(controls, text="Chiudi", command=self.close).grid(
+            row=0, column=1
+        )
+        content = self._ttk.Frame(frame)
+        content.grid(row=1, column=0, sticky="nsew")
         if self.route is UserRoute.FIRST_RUN:
             self.first_run = FirstRunController(
-                frame, ttk_module=self._ttk, readonly_test=self._readonly_test,
+                content, ttk_module=self._ttk, readonly_test=self._readonly_test,
                 account_service=self._account_service,
+                on_complete=self.show_home,
+                open_existing=open_existing,
             )
             return
         self.home = HomeView(
-            frame,
+            content,
             self._home_status,
             ttk_module=self._ttk,
             check_now=self._home_control.check_now,
             start=self._home_control.start,
             pause=self._home_control.pause,
+            open_configuration=self.open_configuration,
         )
-        if hasattr(self.root, "protocol"):
-            self.root.protocol("WM_DELETE_WINDOW", self.close)
+
+    def show_home(self) -> None:
+        self.route = UserRoute.HOME
+        self.first_run = None
+        self._render()
+
+    def open_configuration(self) -> None:
+        self.route = UserRoute.FIRST_RUN
+        self.home = None
+        self._render(open_existing=True)
+
+    def minimize(self) -> None:
+        self.root.iconify()
 
     def close(self) -> None:
         """Stop the owned worker before closing the window."""

@@ -37,6 +37,12 @@ class AccountManagementService:
             return ()
         return tuple(_managed(account) for account in self.configuration.load().accounts)
 
+    def get_account(self, alias: str) -> tuple[ManagedAccount, AccountCredentials]:
+        """Return one editable account with credentials only to the presentation."""
+
+        account = _find(self.configuration.load(), alias)
+        return _managed(account), self.credentials.read(account)
+
     def add(
         self,
         *,

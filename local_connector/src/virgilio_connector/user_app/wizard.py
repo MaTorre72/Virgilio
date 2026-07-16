@@ -143,6 +143,7 @@ class AccountView:
         on_add: Callable[[], None],
         on_update: Callable[[], None],
         on_remove: Callable[[], None],
+        on_select: Callable[[], None],
     ) -> None:
         self._ttk = ttk_module
         self._enabled = True
@@ -171,6 +172,7 @@ class AccountView:
         self.enabled_control = ttk_module.Checkbutton(
             self.frame, text="Casella attiva", command=self.toggle_enabled
         )
+        self.enabled_control.state(("selected",))
         self.enabled_control.grid(row=5, column=0, columnspan=2, sticky="w", pady=(12, 0))
         self.advanced_button = ttk_module.Button(
             self.frame,
@@ -206,9 +208,10 @@ class AccountView:
         ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
             row=11, column=0, sticky="w", pady=(24, 0)
         )
-        ttk_module.Button(self.frame, text="Continua", command=on_continue).grid(
+        ttk_module.Button(self.frame, text="Termina configurazione", command=on_continue).grid(
             row=11, column=1, sticky="e", pady=(24, 0)
         )
+        self.table.bind("<<TreeviewSelect>>", lambda _event: on_select())
 
     def _field(self, row: int, label: str, **entry_options: Any) -> Any:
         self._ttk.Label(self.frame, text=label).grid(row=row, column=0, sticky="w")
@@ -221,6 +224,21 @@ class AccountView:
 
     def toggle_enabled(self) -> None:
         self._enabled = not self._enabled
+
+    def populate(self, account: Any, password: str) -> None:
+        """Show the persisted values of the selected mailbox for editing."""
+
+        for entry, value in (
+            (self.name_entry, account.name),
+            (self.email_entry, account.email),
+            (self.password_entry, password),
+            (self.host_entry, account.host),
+            (self.port_entry, str(account.port)),
+        ):
+            entry.delete(0, "end")
+            entry.insert(0, value)
+        self._enabled = account.enabled
+        self.enabled_control.state(("selected" if account.enabled else "!selected",))
 
     def toggle_advanced(self) -> None:
         self.advanced_visible = not self.advanced_visible
@@ -273,6 +291,8 @@ class FirstRunController:
         ttk_module: Any,
         readonly_test: Callable[[AccountForm], str] | None = None,
         account_service: AccountManagementService | None = None,
+        on_complete: Callable[[], None] | None = None,
+        open_existing: bool = False,
     ) -> None:
         self.parent = parent
         self._ttk = ttk_module
@@ -283,8 +303,15 @@ class FirstRunController:
         self._account_validator = AccountValidator()
         self._readonly_test = readonly_test
         self._account_service = account_service
+        self._on_complete = on_complete
         self._limbo_folder = ""
-        self._show_welcome()
+        if open_existing and account_service is not None:
+            self._limbo_folder = str(
+                account_service.configuration.load().storage.staging_dir
+            )
+            self._show_account()
+        else:
+            self._show_welcome()
 
     def continue_forward(self) -> ValidationResult:
         if self.step is WizardStep.WELCOME:
@@ -303,6 +330,16 @@ class FirstRunController:
             return result
 
         assert isinstance(self.current_view, AccountView)
+        if self._account_service is not None:
+            if not self._account_service.list_accounts():
+                result = ValidationResult(False, "Aggiungi almeno una casella.")
+                self.current_view.show_validation(result)
+                return result
+            result = ValidationResult(True, "Configurazione completata.")
+            self.current_view.show_validation(result)
+            if self._on_complete is not None:
+                self._on_complete()
+            return result
         result = self._account_validator.validate(self.current_view.form_value())
         self.current_view.show_validation(result)
         return result
@@ -371,6 +408,14 @@ class FirstRunController:
         self.current_view.show_validation(result)
         return result
 
+    def load_selected_account(self) -> None:
+        assert isinstance(self.current_view, AccountView)
+        alias = self.current_view.selected_alias()
+        if self._account_service is None or alias is None:
+            return
+        account, credentials = self._account_service.get_account(alias)
+        self.current_view.populate(account, credentials.password)
+
     def _replace(
         self, view: WelcomeView | LimboView | AccountView, step: WizardStep
     ) -> None:
@@ -408,6 +453,7 @@ class FirstRunController:
             on_add=self.add_account,
             on_update=self.update_account,
             on_remove=self.remove_account,
+            on_select=self.load_selected_account,
         )
         if self._account_service is not None:
             view.render_accounts(self._account_service.list_accounts())

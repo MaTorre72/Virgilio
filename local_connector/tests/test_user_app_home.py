@@ -66,9 +66,11 @@ def test_home_renders_last_check_in_europe_rome(tmp_path):
 def test_home_has_exactly_the_three_primary_actions(tmp_path):
     _home(tmp_path, HomeStatus("Pronto", 2))
 
-    assert [button.kwargs["text"] for button in FakeButton.created] == [
+    labels = [button.kwargs["text"] for button in FakeButton.created]
+    assert [label for label in labels if label in {"Controlla ora", "Avvia", "Pausa"}] == [
         "Controlla ora", "Avvia", "Pausa"
     ]
+    assert "Impostazioni" in labels
 
 
 def test_home_contains_no_technical_output_or_forbidden_terms(tmp_path):
