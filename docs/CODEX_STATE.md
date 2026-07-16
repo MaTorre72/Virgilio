@@ -3,14 +3,14 @@
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Iniziativa attiva: `GUI-U - Caronte Desktop utente`
-- Fase corrente: `GATE U-H2 - nuovo collaudo umano`
+- Fase corrente: `GUI-U-E3-T01 - Attivita` e problemi`
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
-- Task corrente di codice: nessuno; `GUI-U-E2-T07 = DONE`
-- Task corrente consigliato: `GATE U-H2 - nuovo collaudo umano`
-- Massimo due successivi: nessun task E3 avviabile prima del `PASS` umano
+- Task corrente di codice: `GUI-U-E3-T01 - Attivita` e problemi`
+- Task corrente consigliato: `GUI-U-E3-T01 - Attivita` e problemi`
+- Massimo due successivi: `GUI-U-E3-T02 - Impostazioni essenziali`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
-- Gate corrente: `GATE U-H2`, precedente esito umano 2026-07-16 `FAIL`, stato `WAITING_HUMAN_REVIEW`; `GUI-U-E2-T07` ha corretto stato `Casella attiva`, conclusione e riapertura del wizard e controlli finestra, ma Codex non puo` dichiarare `PASS`
+- Gate corrente: `GATE U-H2 = PASS` su conferma umana esplicita del 2026-07-16 dopo `GUI-U-E2-T07`; la sotto-epica E3 e` sbloccata
 - Blocchi aperti: nessuno noto
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3

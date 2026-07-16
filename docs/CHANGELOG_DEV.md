@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-16 - `GATE U-H2 = PASS` su conferma umana esplicita dopo le correzioni di `GUI-U-E2-T07`: il percorso verticale e` approvato, la sotto-epica E3 e` sbloccata e il prossimo task univoco e` `GUI-U-E3-T01 - Attivita` e problemi`. Smoke locale verde (`409 passed`); nessun codice applicativo modificato.
+
 - 2026-07-16 - Completato `GUI-U-E2-T07`: `Casella attiva` mostra e salva uno stato binario coerente; il wizard termina esplicitamente sulla Home nella stessa sessione; `Impostazioni` riapre valori e credenziali esistenti per la modifica; riduzione a icona e chiusura sono visibili e la chiusura arresta il worker. Test T07 (`5 passed`), regressione GUI utente (`36 passed`), suite local connector e smoke (`409 passed`) verdi; inventario testi privo di termini tecnici e viste legacy. `GATE U-H2` e` di nuovo `WAITING_HUMAN_REVIEW` e Codex non ne dichiara il `PASS`.
 
 - 2026-07-16 - `GATE U-H2 = FAIL` su collaudo umano: confermati il funzionamento del percorso principale e l'assenza di termini tecnici o percorsi del repository; rilevati stato `Casella attiva` indeterminato e invertito, mancanza della conclusione esplicita del wizard verso la Home, assenza di accesso dalla Home per rivedere la configurazione e controlli finestra non chiaramente disponibili. Aperto il solo task correttivo `GUI-U-E2-T07`; E3 resta bloccata fino a correzione e nuovo `PASS` umano.

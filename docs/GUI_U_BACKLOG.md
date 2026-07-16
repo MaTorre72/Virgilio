@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
 Stato: `IN_PROGRESS`
-Sotto-epica attiva: `GUI-U-E2 - Percorso verticale minimo`, riaperta dopo il collaudo umano
-Task corrente: `GATE U-H2 - Collaudo umano del percorso verticale`
+Sotto-epica attiva: `GUI-U-E3 - Completamento e distribuzione`
+Task corrente: `GUI-U-E3-T01 - Attivita` e problemi`
 
 Obiettivo finale:
 
@@ -308,13 +308,14 @@ l'architettura oltre le osservazioni approvate nel collaudo.
 
 ### GATE U-H2 — Collaudo umano del percorso verticale
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `PASS`.
 
 Prerequisiti verificati: `GUI-U-E2-T01` - `GUI-U-E2-T07` sono `DONE`; test
 mirati T07 `5 passed`, regressione GUI utente `36 passed`, suite local connector
 e smoke `409 passed`.
 
-Codex non puo` dichiararlo `PASS`.
+`PASS` registrato il 2026-07-16 su conferma umana esplicita dopo il nuovo
+collaudo del percorso corretto. Codex non ha approvato autonomamente il gate.
 
 Esito umano del 2026-07-16: `FAIL`. Il percorso principale funziona e non
 mostra termini tecnici o percorsi del repository, ma il collaudo ha rilevato:
@@ -324,8 +325,7 @@ mostra termini tecnici o percorsi del repository, ma il collaudo ha rilevato:
 - assenza di un accesso dalla Home per rivedere la configurazione;
 - assenza di controlli chiaramente visibili per chiudere o ridurre la finestra.
 
-Azione necessaria unica: ripetere il collaudo umano e registrare `PASS` oppure
-`FAIL` con l'area da correggere.
+Azione necessaria: nessuna; il gate e` chiuso.
 
 Scenario umano:
 
@@ -350,11 +350,11 @@ GUI-U-E3 non puo` iniziare prima del nuovo `PASS` esplicito.
 
 ## GUI-U-E3 — Completamento e distribuzione
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `IN_PROGRESS`.
 
 ### GUI-U-E3-T01 — Attivita` e problemi
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `TODO`
 Risultato: attivita` e problemi sono leggibili e orientati all'azione.
 Dipendenza: `GATE U-H2 = PASS`.
 Componenti ammessi: vista attivita`, proiezione eventi, filtri, dettaglio tecnico separato, test UI.
