@@ -1,12 +1,11 @@
 # Next Codex Tasks
 
-- Task corrente: `GUI-U-E3-T04 - Manutenzione avanzata`, stato `TODO`.
-- Dipendenza soddisfatta: `GUI-U-E3-T03 = DONE`.
-- Risultato richiesto: sostituire la riesportazione legacy di `maintenance_gui`
-  con la nuova presentazione protetta di `Caronte Manutenzione`.
-- Vincolo architetturale: `gui`/`gui_*` sono un'implementazione legacy
-  abbandonata; `Caronte Manutenzione` resta target con una nuova presentazione
-  `maintenance_gui` separata e consumer dei servizi condivisi.
-- Dopo `GUI-U-E3-T04`: `GUI-U-E3-T05 - Build autonoma`.
+- Task corrente: `GUI-U-E3-T05 - Build autonoma`, stato `TODO`.
+- Dipendenza soddisfatta: `GUI-U-E3-T04 = DONE`.
+- Risultato richiesto: produrre una build one-folder riproducibile che avvia
+  `Caronte.exe` senza ambiente di sviluppo o repository.
+- Vincolo architetturale: la build include `user_app` e i servizi condivisi ma
+  esclude l'implementazione legacy `gui`/`gui_*`; installer e firma restano fuori task.
+- Dopo `GUI-U-E3-T05`: `GUI-U-E3-T06 - Installer Windows`.
 
 Dettagli, dipendenze ed evidenze: `docs/GUI_U_BACKLOG.md`.

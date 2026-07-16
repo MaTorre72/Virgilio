@@ -405,7 +405,7 @@ Condizione di blocco: un'azione non possiede un servizio applicativo stabile e t
 
 ### GUI-U-E3-T04 — Manutenzione avanzata
 
-Stato: `TODO`
+Stato: `DONE`
 Risultato: `Caronte Manutenzione` espone le operazioni tecniche tramite una nuova
 presentazione protetta, separata dall'implementazione legacy.
 Dipendenza: `GUI-U-E3-T03 = DONE`.
@@ -415,15 +415,15 @@ Condizione di blocco: un'operazione distruttiva non offre backup, conferma o ris
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Esiste il backup. | Test su directory temporanea e contenuto prodotto. | — | `NOT_RUN` |
-| Esiste la verifica integrita`. | Test su stato valido e corrotto sintetico. | — | `NOT_RUN` |
-| Esiste il report diagnostico. | Test di redazione e contenuti minimi. | — | `NOT_RUN` |
-| Il reset e` protetto. | Test su conferma, annullamento e backup. | — | `NOT_RUN` |
-| `Caronte Manutenzione` usa la nuova presentazione senza import legacy. | Test UI, import e inventario della build. | — | `NOT_RUN` |
+| Esiste il backup. | Test su directory temporanea e contenuto prodotto. | `test_backup_copies_directory_and_content`: copia sibling di 2 file sintetici, contenuto e sorgente verificati. | `MET` |
+| Esiste la verifica integrita`. | Test su stato valido e corrotto sintetico. | `test_integrity_reports_valid_and_corrupt_synthetic_databases`: archivio inizializzato `valid`, byte non validi `corrupt`. | `MET` |
+| Esiste il report diagnostico. | Test di redazione e contenuti minimi. | `test_diagnostic_report_has_minimum_content_and_redacts`: metadati minimi presenti e valore/chiave sensibili redatti. | `MET` |
+| Il reset e` protetto. | Test su conferma, annullamento e backup. | `test_reset_requires_confirmation_and_creates_backup`: annullamento conserva i dati; conferma crea backup leggibile e ricrea la baseline. | `MET` |
+| `Caronte Manutenzione` usa la nuova presentazione senza import legacy. | Test UI, import e inventario della build. | `test_new_maintenance_presentation_has_only_supported_operations_and_no_legacy_import`: titolo, quattro operazioni, protezione reset e AST import verdi; suite/smoke `433 passed`. | `MET` |
 
 ### GUI-U-E3-T05 — Build autonoma
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `TODO`
 Risultato: una build one-folder riproducibile avvia Caronte senza ambiente di sviluppo.
 Dipendenza: `GUI-U-E3-T04 = DONE`.
 Componenti ammessi: configurazione build, risorse, entry point utente, smoke della build, documentazione di build.

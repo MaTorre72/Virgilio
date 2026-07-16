@@ -27,6 +27,13 @@ from .windows_credentials import (
     create_account_credential_service,
     credential_error_message,
 )
+from .maintenance import (
+    BackupResult,
+    DiagnosticReportResult,
+    IntegrityResult,
+    MaintenanceResetResult,
+    MaintenanceService,
+)
 
 __all__ = [
     "ConfigurationModel",
@@ -51,4 +58,9 @@ __all__ = [
     "WindowsCredentialStore",
     "create_account_credential_service",
     "credential_error_message",
+    "BackupResult",
+    "DiagnosticReportResult",
+    "IntegrityResult",
+    "MaintenanceResetResult",
+    "MaintenanceService",
 ]
