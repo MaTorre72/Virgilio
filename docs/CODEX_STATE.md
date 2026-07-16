@@ -3,14 +3,14 @@
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Iniziativa attiva: `GUI-U - Caronte Desktop utente`
-- Fase corrente: `GATE U-H2 - Collaudo umano del percorso verticale`
+- Fase corrente: `GUI-U-E2-T07 - Correzioni dal collaudo verticale`
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
-- Task corrente di codice: nessuno; `GUI-U-E2-T06 = DONE`
-- Task corrente consigliato: `GATE U-H2 - Collaudo umano del percorso verticale`
-- Massimo due successivi: nessuno avviabile prima dell'esito umano
+- Task corrente di codice: `GUI-U-E2-T07 - Correzioni dal collaudo verticale`
+- Task corrente consigliato: `GUI-U-E2-T07 - Correzioni dal collaudo verticale`
+- Massimo due successivi: `GATE U-H2 - nuovo collaudo umano`; nessun task E3 avviabile prima del `PASS`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
-- Gate corrente: `GATE U-H2`, stato `WAITING_HUMAN_REVIEW`; Codex non puo` dichiararlo `PASS`
+- Gate corrente: `GATE U-H2`, esito umano 2026-07-16 `FAIL`, stato `WAITING_FOR_PREVIOUS_TASKS`; il percorso funziona e non espone termini tecnici, ma richiede `GUI-U-E2-T07` per stato `Casella attiva`, conclusione e riapertura del wizard e controlli finestra
 - Blocchi aperti: nessuno noto
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3

@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-16 - `GATE U-H2 = FAIL` su collaudo umano: confermati il funzionamento del percorso principale e l'assenza di termini tecnici o percorsi del repository; rilevati stato `Casella attiva` indeterminato e invertito, mancanza della conclusione esplicita del wizard verso la Home, assenza di accesso dalla Home per rivedere la configurazione e controlli finestra non chiaramente disponibili. Aperto il solo task correttivo `GUI-U-E2-T07`; E3 resta bloccata fino a correzione e nuovo `PASS` umano.
+
 - 2026-07-16 - Completato `GUI-U-E2-T06`: le azioni Home usano un controller applicativo e un runner condiviso in background per controllo singolo, avvio continuo, pausa, rifiuto del doppio avvio e arresto deterministico alla chiusura; la GUI utente non importa moduli legacy. Test task (`32 passed`), suite local connector e smoke (`404 passed`) verdi; una prima esecuzione smoke ha incontrato il noto test Bucoliche fluttuante, poi verde isolato e nella ripetizione completa. `GATE U-H2` e` ora `WAITING_HUMAN_REVIEW` e blocca E3 fino a esito umano esplicito.
 
 - 2026-07-16 - Completato `GUI-U-E2-T05`: la Home utente mostra stato generale, numero di caselle attive e ultimo controllo in Europe/Rome tramite un servizio applicativo indipendente dalle presentazioni; espone soltanto le tre azioni primarie `Controlla ora`, `Avvia` e `Pausa`, senza output tecnico o import legacy. Test task (`26 passed`), suite local connector e smoke (`399 passed`) verdi. Prossimo task `GUI-U-E2-T06 - Avvio, pausa e arresto`.

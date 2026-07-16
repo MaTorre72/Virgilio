@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
 Stato: `IN_PROGRESS`
-Sotto-epica attiva: `GUI-U-E2 - Percorso verticale minimo`, completata in attesa di gate
-Task corrente: `GATE U-H2 - Collaudo umano del percorso verticale`
+Sotto-epica attiva: `GUI-U-E2 - Percorso verticale minimo`, riaperta dopo il collaudo umano
+Task corrente: `GUI-U-E2-T07 - Correzioni dal collaudo verticale`
 
 Obiettivo finale:
 
@@ -284,14 +284,46 @@ Condizione di blocco: il runner esistente non puo` essere controllato senza dupl
 | Non puo` partire un doppio processo. | Test doppio start concorrente. | `test_concurrent_second_start_is_rejected`: seconda richiesta rifiutata con evento dedicato. | `MET` |
 | Non resta un processo orfano alla chiusura. | Test close con worker attivo. | `test_close_kills_unresponsive_worker_and_leaves_no_orphan`: fallback kill eseguito e stato `stopped`. | `MET` |
 
+### GUI-U-E2-T07 — Correzioni dal collaudo verticale
+
+Stato: `TODO`.
+Risultato: il primo avvio termina in modo esplicito, la configurazione resta
+rivedibile dalla Home e i controlli booleani e di finestra hanno comportamento
+coerente con quanto mostrato.
+Dipendenza: `GUI-U-E2-T06 = DONE`; esito umano negativo di `GATE U-H2` del 2026-07-16.
+Componenti ammessi: shell e viste `user_app`, navigazione, servizi applicativi
+gia` condivisi e test UI mirati.
+Esclusioni: servizi reali, packaging, nuove funzioni operative, GUI legacy,
+modifiche ai nomi definitivi o all'architettura approvata.
+Condizione di blocco: una correzione richiede di cambiare il percorso utente o
+l'architettura oltre le osservazioni approvate nel collaudo.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `Casella attiva` ha uno stato iniziale binario e il valore salvato coincide con quello mostrato. | Test UI e round-trip su stato selezionato e non selezionato. | — | `NOT_RUN` |
+| Dopo il salvataggio delle caselle esiste una conclusione esplicita del wizard che porta alla Home nella stessa sessione. | Test di navigazione completo senza chiusura e riapertura. | — | `NOT_RUN` |
+| Dalla Home si puo` riaprire la configurazione esistente, correggere un dettaglio e tornare alla Home. | Test UI di riapertura, modifica e persistenza. | — | `NOT_RUN` |
+| Chiusura e riduzione a icona sono chiaramente disponibili e funzionanti nelle viste utente. | Test sui controlli finestra e sulla chiusura controllata del worker. | — | `NOT_RUN` |
+| Restano assenti termini tecnici, percorsi del repository e viste legacy. | Test automatico sull'inventario completo dei testi visibili. | — | `NOT_RUN` |
+
 ### GATE U-H2 — Collaudo umano del percorso verticale
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
 
 Prerequisiti verificati: `GUI-U-E2-T01` - `GUI-U-E2-T06` sono `DONE`; test
 mirati `32 passed`, suite local connector e smoke `404 passed`.
 
 Codex non puo` dichiararlo `PASS`.
+
+Esito umano del 2026-07-16: `FAIL`. Il percorso principale funziona e non
+mostra termini tecnici o percorsi del repository, ma il collaudo ha rilevato:
+
+- stato iniziale indeterminato di `Casella attiva` e semantica salvata invertita;
+- assenza di una conclusione esplicita del wizard verso la Home;
+- assenza di un accesso dalla Home per rivedere la configurazione;
+- assenza di controlli chiaramente visibili per chiudere o ridurre la finestra.
+
+Azione necessaria unica: completare `GUI-U-E2-T07`, quindi ripetere questo gate.
 
 Scenario umano:
 
@@ -311,7 +343,7 @@ Condizioni:
 - nessuna documentazione tecnica necessaria;
 - nessun termine vietato visibile.
 
-GUI-U-E3 non puo` iniziare prima del `PASS` esplicito.
+GUI-U-E3 non puo` iniziare prima del nuovo `PASS` esplicito.
 
 ## GUI-U-E3 — Completamento e distribuzione
 
