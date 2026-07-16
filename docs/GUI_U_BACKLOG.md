@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
 Stato: `IN_PROGRESS`
-Sotto-epica attiva: `GUI-U-E2 - Percorso verticale minimo`
-Task corrente: `GUI-U-E2-T06 - Avvio, pausa e arresto`
+Sotto-epica attiva: `GUI-U-E2 - Percorso verticale minimo`, completata in attesa di gate
+Task corrente: `GATE U-H2 - Collaudo umano del percorso verticale`
 
 Obiettivo finale:
 
@@ -269,7 +269,7 @@ Condizione di blocco: lo stato operativo non e` disponibile tramite un servizio 
 
 ### GUI-U-E2-T06 — Avvio, pausa e arresto
 
-Stato: `READY`
+Stato: `DONE`
 Risultato: controllo singolo e continuo sono non bloccanti e hanno ciclo di vita deterministico.
 Dipendenza: `GUI-U-E2-T05 = DONE`.
 Componenti ammessi: runner/worker condiviso, coda eventi, controller Home, fake lenti, test di concorrenza.
@@ -278,15 +278,18 @@ Condizione di blocco: il runner esistente non puo` essere controllato senza dupl
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Il controllo singolo e` non bloccante. | Test con fake lento e verifica reattivita`. | — | `NOT_RUN` |
-| Il controllo continuo e` non bloccante. | Test start con fake worker. | — | `NOT_RUN` |
-| La pausa e` funzionante. | Test stop e stato finale. | — | `NOT_RUN` |
-| Non puo` partire un doppio processo. | Test doppio start concorrente. | — | `NOT_RUN` |
-| Non resta un processo orfano alla chiusura. | Test close con worker attivo. | — | `NOT_RUN` |
+| Il controllo singolo e` non bloccante. | Test con fake lento e verifica reattivita`. | `test_check_now_returns_before_slow_worker_finishes`: il comando ritorna mentre il fake e` ancora bloccato. | `MET` |
+| Il controllo continuo e` non bloccante. | Test start con fake worker. | `test_continuous_start_returns_before_slow_worker_finishes`: avvio accettato e worker ancora attivo. | `MET` |
+| La pausa e` funzionante. | Test stop e stato finale. | `test_pause_stops_active_worker_and_reaches_final_state`: terminate ricevuto e stato finale `stopped`. | `MET` |
+| Non puo` partire un doppio processo. | Test doppio start concorrente. | `test_concurrent_second_start_is_rejected`: seconda richiesta rifiutata con evento dedicato. | `MET` |
+| Non resta un processo orfano alla chiusura. | Test close con worker attivo. | `test_close_kills_unresponsive_worker_and_leaves_no_orphan`: fallback kill eseguito e stato `stopped`. | `MET` |
 
 ### GATE U-H2 — Collaudo umano del percorso verticale
 
-Stato iniziale: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `WAITING_HUMAN_REVIEW`.
+
+Prerequisiti verificati: `GUI-U-E2-T01` - `GUI-U-E2-T06` sono `DONE`; test
+mirati `32 passed`, suite local connector e smoke `404 passed`.
 
 Codex non puo` dichiararlo `PASS`.
 

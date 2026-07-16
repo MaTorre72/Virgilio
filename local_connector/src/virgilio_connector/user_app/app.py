@@ -13,6 +13,8 @@ from ..application.account_connection import (
 from ..application.account_management import AccountManagementService
 from ..application.configuration import ConfigurationService
 from ..application.home_status import AccountHomeStatusService, HomeStatus, HomeStatusService
+from ..application.home_control import HomeRunController
+from ..application.operation_runner import ManagedOperationRunner
 from ..application.windows_credentials import create_account_credential_service
 from ..application_paths import default_application_paths
 from .home import HomeView, StaticHomeStatusService
@@ -35,11 +37,15 @@ class UserAppShell:
         readonly_test: Any | None = None,
         account_service: AccountManagementService | None = None,
         home_status: HomeStatusService | None = None,
+        home_control: HomeRunController | None = None,
     ) -> None:
         self.root = root
         self._ttk = ttk_module
         self._readonly_test = readonly_test
         self._account_service = account_service
+        self._home_control = home_control or HomeRunController(
+            configuration.store.source, ManagedOperationRunner()
+        )
         self.route = initial_route(configuration)
         self.root.title(WINDOW_TITLE)
         self.root.minsize(720, 480)
@@ -63,7 +69,22 @@ class UserAppShell:
                 account_service=self._account_service,
             )
             return
-        self.home = HomeView(frame, self._home_status, ttk_module=self._ttk)
+        self.home = HomeView(
+            frame,
+            self._home_status,
+            ttk_module=self._ttk,
+            check_now=self._home_control.check_now,
+            start=self._home_control.start,
+            pause=self._home_control.pause,
+        )
+        if hasattr(self.root, "protocol"):
+            self.root.protocol("WM_DELETE_WINDOW", self.close)
+
+    def close(self) -> None:
+        """Stop the owned worker before closing the window."""
+
+        self._home_control.close()
+        self.root.destroy()
 
 
 def launch_user_app(*, config_path: Path | None = None) -> int:

@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-16 - Completato `GUI-U-E2-T06`: le azioni Home usano un controller applicativo e un runner condiviso in background per controllo singolo, avvio continuo, pausa, rifiuto del doppio avvio e arresto deterministico alla chiusura; la GUI utente non importa moduli legacy. Test task (`32 passed`), suite local connector e smoke (`404 passed`) verdi; una prima esecuzione smoke ha incontrato il noto test Bucoliche fluttuante, poi verde isolato e nella ripetizione completa. `GATE U-H2` e` ora `WAITING_HUMAN_REVIEW` e blocca E3 fino a esito umano esplicito.
+
 - 2026-07-16 - Completato `GUI-U-E2-T05`: la Home utente mostra stato generale, numero di caselle attive e ultimo controllo in Europe/Rome tramite un servizio applicativo indipendente dalle presentazioni; espone soltanto le tre azioni primarie `Controlla ora`, `Avvia` e `Pausa`, senza output tecnico o import legacy. Test task (`26 passed`), suite local connector e smoke (`399 passed`) verdi. Prossimo task `GUI-U-E2-T06 - Avvio, pausa e arresto`.
 
 - 2026-07-16 - Completato `GUI-U-E2-T04`: il wizard gestisce una tabella di caselle persistenti con aggiunta, modifica e rimozione tramite un servizio applicativo condiviso; configurazioni Gmail/Workspace e IMAP personalizzate e relative credenziali restano indipendenti. Test task (`18 passed`), suite local connector e smoke (`391 passed`) verdi; nessun servizio reale usato. Prossimo task `GUI-U-E2-T05 - Home minima`.
