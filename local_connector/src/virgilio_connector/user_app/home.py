@@ -33,6 +33,7 @@ class HomeView:
         open_configuration: Callable[[], None] = lambda: None,
         open_activity: Callable[[], None] = lambda: None,
         open_settings: Callable[[], None] = lambda: None,
+        open_bucoliche_startup: Callable[[], None] = lambda: None,
     ) -> None:
         self.frame = ttk_module.Frame(parent)
         self.frame.grid(row=0, column=0, sticky="nsew")
@@ -47,6 +48,9 @@ class HomeView:
         ttk_module.Button(
             self.frame, text="Impostazioni", command=open_settings
         ).grid(row=5, column=2, sticky="w", pady=(16, 0))
+        ttk_module.Button(
+            self.frame, text="Bucoliche e avvio", command=open_bucoliche_startup
+        ).grid(row=6, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
     def _render(
         self,

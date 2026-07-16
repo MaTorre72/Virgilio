@@ -17,6 +17,11 @@ from ..application.home_status import AccountHomeStatusService, HomeStatus, Home
 from ..application.home_control import HomeRunController
 from ..application.operation_runner import ManagedOperationRunner
 from ..application.settings import DisabledStartupAdapter, SettingsService
+from ..application.bucoliche_startup import (
+    BucolicheStartupService,
+    ExistingBucolicheGateway,
+    WindowsAutomaticControlGateway,
+)
 from ..application.windows_startup import WindowsStartupAdapter
 from ..application.windows_credentials import create_account_credential_service
 from ..application_paths import default_application_paths
@@ -24,11 +29,15 @@ from .home import HomeView, StaticHomeStatusService
 from .activity import ActivitySource, ActivityView, EmptyActivitySource
 from .navigation import UserRoute, initial_route
 from .settings import SettingsView
+from .bucoliche_startup import BucolicheStartupView
 from .wizard import AccountForm, FirstRunController
 
 
 WINDOW_TITLE = "Caronte"
-USER_VIEWS = ("Primo avvio", "Home", "Attivita e problemi", "Impostazioni")
+USER_VIEWS = (
+    "Primo avvio", "Home", "Attivita e problemi", "Impostazioni",
+    "Bucoliche e avvio",
+)
 
 class UserAppShell:
     """Own the root window and route to the first user-facing screen."""
@@ -45,6 +54,7 @@ class UserAppShell:
         home_control: HomeRunController | None = None,
         activity_service: ActivitySource | None = None,
         settings_service: SettingsService | None = None,
+        bucoliche_startup_service: BucolicheStartupService | None = None,
     ) -> None:
         self.root = root
         self._ttk = ttk_module
@@ -53,6 +63,7 @@ class UserAppShell:
         self._settings_service = settings_service or SettingsService(
             configuration, DisabledStartupAdapter()
         )
+        self._bucoliche_startup_service = bucoliche_startup_service
         self._minimize_on_close = False
         interval_seconds = 300
         if configuration.exists() and settings_service is not None:
@@ -72,6 +83,7 @@ class UserAppShell:
         self.home: HomeView | None = None
         self.activity: ActivityView | None = None
         self.settings: SettingsView | None = None
+        self.bucoliche_startup: BucolicheStartupView | None = None
         self._activity_service = activity_service or EmptyActivitySource()
         self._home_status = home_status or (
             AccountHomeStatusService(account_service)
@@ -123,6 +135,14 @@ class UserAppShell:
                 on_saved=self._apply_settings,
             )
             return
+        if self.route is UserRoute.BUCOLICHE_STARTUP:
+            self.bucoliche_startup = BucolicheStartupView(
+                content,
+                self._bucoliche_startup_service,
+                ttk_module=self._ttk,
+                go_home=self.show_home,
+            )
+            return
         self.home = HomeView(
             content,
             self._home_status,
@@ -133,6 +153,7 @@ class UserAppShell:
             open_configuration=self.open_configuration,
             open_activity=self.show_activity,
             open_settings=self.show_settings,
+            open_bucoliche_startup=self.show_bucoliche_startup,
         )
 
     def show_home(self) -> None:
@@ -152,6 +173,11 @@ class UserAppShell:
 
     def show_settings(self) -> None:
         self.route = UserRoute.SETTINGS
+        self.home = None
+        self._render()
+
+    def show_bucoliche_startup(self) -> None:
+        self.route = UserRoute.BUCOLICHE_STARTUP
         self.home = None
         self._render()
 
@@ -195,6 +221,11 @@ def launch_user_app(*, config_path: Path | None = None) -> int:
         activity_service=ActivityService(paths.data_dir / "state.db"),
         settings_service=SettingsService(
             configuration, WindowsStartupAdapter(configuration.store.source)
+        ),
+        bucoliche_startup_service=BucolicheStartupService(
+            configuration,
+            ExistingBucolicheGateway(configuration.store.source),
+            WindowsAutomaticControlGateway(configuration),
         ),
     )
     root.mainloop()

@@ -12,6 +12,7 @@ class UserRoute(str, Enum):
     HOME = "home"
     ACTIVITY = "activity"
     SETTINGS = "settings"
+    BUCOLICHE_STARTUP = "bucoliche_startup"
 
 
 def initial_route(configuration: ConfigurationService) -> UserRoute:

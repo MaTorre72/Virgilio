@@ -388,7 +388,7 @@ Condizione di blocco: una preferenza non ha una fonte autorevole unica o richied
 
 ### GUI-U-E3-T03 — Bucoliche e avvio Windows
 
-Stato: `TODO`
+Stato: `DONE`
 Risultato: Bucoliche e avvio automatico sono configurabili tramite percorsi guidati e stati comprensibili.
 Dipendenza: `GUI-U-E3-T02 = DONE`.
 Componenti ammessi: servizi Bucoliche e Task Scheduler condivisi, viste guidate, adapter fake, test UI.
@@ -397,15 +397,15 @@ Condizione di blocco: un'azione non possiede un servizio applicativo stabile e t
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Bucoliche e` attivabile e disattivabile. | Test UI e persistenza. | — | `NOT_RUN` |
-| Il collegamento Google e` guidato. | Test del percorso con adapter fake. | — | `NOT_RUN` |
-| Il registro e` verificabile. | Test read-only con fake client. | — | `NOT_RUN` |
-| Avvio automatico installabile e rimovibile. | Test con adapter Task Scheduler fake. | — | `NOT_RUN` |
-| Lo stato e` comprensibile. | Test dei messaggi per stati ed errori noti. | — | `NOT_RUN` |
+| Bucoliche e` attivabile e disattivabile. | Test UI e persistenza. | `test_bucoliche_activation_and_deactivation_persist_without_changing_other_sections`: round-trip e sezione unica. | `MET` |
+| Il collegamento Google e` guidato. | Test del percorso con adapter fake. | `test_google_connection_is_a_guided_step_using_only_the_injected_adapter`: percorso numerato e gateway fake. | `MET` |
+| Il registro e` verificabile. | Test read-only con fake client. | `test_register_verification_is_read_only_through_the_injected_adapter`: file invariato e sola lettura fake. | `MET` |
+| Avvio automatico installabile e rimovibile. | Test con adapter Task Scheduler fake. | `test_automatic_control_install_remove_and_status_use_fake_scheduler`: stato, installazione e rimozione. | `MET` |
+| Lo stato e` comprensibile. | Test dei messaggi per stati ed errori noti. | `test_guided_view_shows_clear_steps_and_known_error_messages` e traduzione errori: messaggi azionabili, nessun dettaglio interno. | `MET` |
 
 ### GUI-U-E3-T04 — Manutenzione avanzata
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`
+Stato: `TODO`
 Risultato: `Caronte Manutenzione` espone le operazioni tecniche tramite una nuova
 presentazione protetta, separata dall'implementazione legacy.
 Dipendenza: `GUI-U-E3-T03 = DONE`.
