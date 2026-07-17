@@ -556,7 +556,7 @@ reale resta necessario il client OAuth Desktop centrale gia` previsto in T09.
 
 ### GUI-U-E3-T11 — Avvio automatico della distribuzione installata
 
-Stato: `TODO`.
+Stato: `BLOCKED`.
 Risultato: Caronte installato puo` avviarsi all'accesso a Windows e controllare
 in automatico senza dipendere dal repository o da una runtime esterna.
 Dipendenza: `GUI-U-E3-T10 = DONE`.
@@ -569,11 +569,19 @@ senza percorsi di sviluppo o senza lasciare processi orfani.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `Avvia Caronte quando accedo a Windows` registra un comando valido della build installata. | Test registro e avvio da profilo isolato. | Da ottenere. | `NOT_MET` |
-| Il controllo automatico usa l'eseguibile installato senza repository o runtime esterna. | Test piano Task Scheduler congelato. | Da ottenere. | `NOT_MET` |
-| Attivazione, stato e rimozione mostrano esiti visibili e coerenti. | Test UI e adapter fake. | Da ottenere. | `NOT_MET` |
-| Disinstallazione rimuove ogni avvio automatico del programma. | Smoke installazione, attivazione e disinstallazione. | Da ottenere. | `NOT_MET` |
-| Nessun processo resta orfano dopo pausa, chiusura o disinstallazione. | Test lifecycle e smoke isolato. | Da ottenere. | `NOT_MET` |
+| `Avvia Caronte quando accedo a Windows` registra un comando valido della build installata. | Test registro e avvio da profilo isolato. | Il test isolato non e` producibile: le toolchain locali disponibili non inizializzano Tcl/Tk, quindi non generano `Caronte.exe` aggiornato. | `BLOCKED` |
+| Il controllo automatico usa l'eseguibile installato senza repository o runtime esterna. | Test piano Task Scheduler congelato. | Il test isolato non e` producibile: le toolchain locali disponibili non inizializzano Tcl/Tk, quindi non generano `Caronte.exe` aggiornato. | `BLOCKED` |
+| Attivazione, stato e rimozione mostrano esiti visibili e coerenti. | Test UI e adapter fake. | Il test isolato non e` producibile: le toolchain locali disponibili non inizializzano Tcl/Tk, quindi non generano `Caronte.exe` aggiornato. | `BLOCKED` |
+| Disinstallazione rimuove ogni avvio automatico del programma. | Smoke installazione, attivazione e disinstallazione. | `build_caronte.ps1` termina prima della build: Tcl/Tk non inizializzabile in tutte le toolchain locali predisposte. | `BLOCKED` |
+| Nessun processo resta orfano dopo pausa, chiusura o disinstallazione. | Test lifecycle e smoke isolato. | Lo smoke isolato della distribuzione non e` producibile per la medesima toolchain Tcl/Tk non inizializzabile. | `BLOCKED` |
+
+Blocco registrato il 2026-07-17: l'esecuzione del build gate fallisce prima di
+PyInstaller con `TclError: Can't find a usable init.tcl` sia nella `.venv` sia
+nelle toolchain locali di build gia` predisposte. Le modifiche parziali di T11
+sono state annullate; test mirati (`34 passed`), suite e smoke locale (`471
+passed`) non sostituiscono lo smoke della distribuzione. Azione unica necessaria:
+ripristinare una toolchain Python Windows completa con Tcl/Tk funzionante per la
+build, quindi rieseguire T11 dall'inizio.
 
 ### GATE U-H3 — Collaudo umano di distribuzione
 

@@ -7,11 +7,11 @@
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
 - Task corrente di codice: `GUI-U-E3-T11 - Avvio automatico della distribuzione installata`
-- Task corrente consigliato: `GUI-U-E3-T11`
+- Task corrente consigliato: `GUI-U-E3-T11` (`BLOCKED`: toolchain build Tcl/Tk non inizializzabile)
 - Massimo due successivi: `GATE U-H3`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate corrente: `GATE U-H3 = WAITING_FOR_PREVIOUS_TASKS` dopo `FAIL` umano del 2026-07-17
-- Blocchi aperti: nessuno per `GUI-U-E3-T11`; prima del prossimo collaudo va registrato il client OAuth Desktop centrale e fornito alla build tramite l'input locale ignorato gia` predisposto
+- Blocchi aperti: `GUI-U-E3-T11` richiede il ripristino di una toolchain Python Windows completa con Tcl/Tk funzionante; il build gate fallisce prima di PyInstaller in tutte le toolchain locali disponibili. Prima del prossimo collaudo va inoltre registrato il client OAuth Desktop centrale e fornito alla build tramite l'input locale ignorato gia` predisposto
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-pytest-gui-e3-t10-full local_connector -q` -> `OK` (`467 passed`)
