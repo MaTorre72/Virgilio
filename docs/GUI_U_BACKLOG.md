@@ -504,7 +504,7 @@ in modo verificabile dalla Quarantena o richiede all'utente dettagli tecnici.
 
 ### GUI-U-E3-T09 — Accesso alle caselle Google
 
-Stato: `BLOCKED` (2026-07-17).
+Stato: `BLOCKED` (2026-07-17, dipendenza OAuth applicativa assente).
 Risultato: Gmail e Google Workspace hanno un percorso di accesso coerente con le
 policy Google correnti e distinto dall'IMAP generico.
 Dipendenza: `GUI-U-E3-T08 = DONE`.
@@ -512,22 +512,26 @@ Componenti ammessi: servizio connessione casella, credenziali Windows, flusso
 OAuth Google gia` dichiarato, guida per password per app e test con fake.
 Esclusioni: password reali nei test, memorizzazione in chiaro, accesso Google
 reale automatico e modifica delle policy di sicurezza.
-Condizione di blocco: manca la decisione umana tra OAuth come unico percorso o
-OAuth predefinito con password per app come fallback amministrato.
+Decisione umana: `A - solo OAuth`, confermata il 2026-07-17. Per Gmail,
+Google Workspace e Drive l'utente apre l'accesso Google dal programma; Caronte
+gestisce token e rinnovi senza richiedere progetti Cloud o token manuali.
+Condizione di blocco: manca il client OAuth Desktop centrale di Caronte da
+fornire alla build come risorsa protetta e non versionata.
 
-Blocco rilevato: il percorso utente e la policy di sicurezza cambiano in base
-alla scelta; Codex non puo` assumerla autonomamente. Evidenza: la condizione di
-blocco e` ancora aperta all'avvio della run e non risultano decisioni precedenti.
-Azione necessaria unica: scegliere tra OAuth come unico percorso oppure OAuth
-predefinito con password per app come fallback amministrato.
+Blocco rilevato: il repository e le cartelle locali previste non contengono una
+configurazione OAuth Desktop per Caronte; il flusso esistente richiede invece un
+file esterno scelto manualmente. Codex non puo` creare o inventare credenziali
+Google ne` versionarle. Azione necessaria unica: il titolare del progetto deve
+registrare una volta il client OAuth Desktop di Caronte per Gmail/Drive e fornire
+la configurazione come input locale ignorato della build.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Gmail/Workspace propone accesso Google e non la password ordinaria dell'account. | Test UI per provider Google. | Percorso non definibile prima della decisione umana richiesta. | `BLOCKED` |
-| L'eventuale password per app e` spiegata come fallback subordinato a verifica in due passaggi e policy amministratore. | Test testi e percorso alternativo. | Il fallback e` oggetto della decisione umana richiesta. | `BLOCKED` |
+| Gmail/Workspace propone accesso Google e non la password ordinaria dell'account. | Test UI per provider Google. | Scelto OAuth esclusivo; manca il client OAuth Desktop centrale necessario al flusso reale. | `BLOCKED` |
+| Nessun percorso password per app e` offerto per account Google. | Test testi e assenza del percorso alternativo. | Decisione OAuth esclusivo acquisita; prova non avviabile senza il client applicativo. | `BLOCKED` |
 | IMAP generico conserva host, porta e credenziale specifica del provider. | Test regressione provider non Google. | Prova non avviata: il task deve essere concluso interamente nella stessa run. | `BLOCKED` |
 | La verifica distingue accesso riuscito, credenziali rifiutate, rete assente e configurazione incompleta. | Test fake per quattro esiti. | Prova non avviata: il task deve essere concluso interamente nella stessa run. | `BLOCKED` |
-| Token o password restano nel gestore credenziali e non nei file o nei messaggi. | Test persistenza e scansione segreti. | Modello credenziali dipendente dal percorso di accesso da scegliere. | `BLOCKED` |
+| Token o password restano nel gestore credenziali e non nei file o nei messaggi. | Test persistenza e scansione segreti. | Modello definito: token protetti e rinnovo automatico; implementazione non avviabile senza il client applicativo. | `BLOCKED` |
 
 ### GUI-U-E3-T10 — Registro e collegamento Google comprensibili
 
