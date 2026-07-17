@@ -440,20 +440,29 @@ Condizione di blocco: la build richiede repository, runtime esterno o file non d
 
 ### GUI-U-E3-T06 — Installer Windows
 
-Stato: `TODO`
+Stato: `BLOCKED`
 Risultato: Caronte e` installabile e disinstallabile con dati separati dal programma.
 Dipendenza: `GUI-U-E3-T05 = DONE`.
 Componenti ammessi: configurazione installer, artefatto build, collegamento Start, test su VM/ambiente isolato.
 Esclusioni: distribuzione pubblica, firma commerciale, aggiornamento automatico.
 Condizione di blocco: l'installer richiede privilegi o dipendenze non dichiarati, oppure mescola dati utente e file programma.
 
+Blocco 2026-07-17: la build one-folder necessaria non e` ricreabile con la
+toolchain portabile disponibile: Tcl/Tk non si inizializza e PyInstaller esclude
+Tkinter. L'installazione della distribuzione Python completa gia` dichiarata ha
+restituito Windows Installer `2503`; l'esecuzione elevata e` stata rifiutata
+perche` richiede autorizzazione umana esplicita. Un tentativo con copia portabile
+ha riprodotto lo stesso errore. Azione necessaria unica: autorizzare esplicitamente
+l'installazione elevata della toolchain Python completa nella cartella di build
+ignorata, quindi rieseguire questo task.
+
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| L'installer funziona. | Installazione pulita su VM Windows. | — | `NOT_RUN` |
-| Esiste il collegamento nel menu Start. | Verifica automatica/manuale del collegamento. | — | `NOT_RUN` |
-| La directory dati e` separata. | Verifica path dopo primo avvio. | — | `NOT_RUN` |
-| La disinstallazione funziona. | Verifica rimozione programma e policy dati. | — | `NOT_RUN` |
-| Il wizard parte alla prima apertura. | Avvio su profilo utente nuovo. | — | `NOT_RUN` |
+| L'installer funziona. | Installazione pulita su VM Windows. | Build preliminare bloccata: Tcl/Tk non inizializzabile; PyInstaller segnala `tkinter installation is broken`. | `BLOCKED` |
+| Esiste il collegamento nel menu Start. | Verifica automatica/manuale del collegamento. | Non verificabile senza artefatto installabile valido. | `BLOCKED` |
+| La directory dati e` separata. | Verifica path dopo primo avvio. | Non verificabile senza artefatto installabile valido. | `BLOCKED` |
+| La disinstallazione funziona. | Verifica rimozione programma e policy dati. | Non verificabile senza artefatto installabile valido. | `BLOCKED` |
+| Il wizard parte alla prima apertura. | Avvio su profilo utente nuovo. | Non verificabile: la build prodotta senza Tkinter non e` una GUI valida. | `BLOCKED` |
 
 ### GATE U-H3 — Collaudo umano di distribuzione
 
