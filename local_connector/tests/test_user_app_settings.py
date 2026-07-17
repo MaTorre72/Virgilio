@@ -68,6 +68,7 @@ def test_limbo_interval_and_preferences_round_trip_through_shared_model(tmp_path
     startup = FakeStartupAdapter()
     service = SettingsService(configuration, startup)
     new_limbo = (tmp_path / "nuovo limbo").resolve()
+    new_limbo.mkdir()
 
     saved = service.save(
         limbo=str(new_limbo),
@@ -127,7 +128,9 @@ def test_settings_view_saves_preferences_and_updates_close_behavior(tmp_path):
 
     shell.show_settings()
     assert shell.route is UserRoute.SETTINGS
-    shell.settings.limbo_entry.set(str((tmp_path / "limbo scelto").resolve()))
+    selected_limbo = (tmp_path / "limbo scelto").resolve()
+    selected_limbo.mkdir()
+    shell.settings.limbo_entry.set(str(selected_limbo))
     shell.settings.interval_entry.set("7")
     shell.settings.toggle_start_with_windows()
     shell.settings.toggle_minimize_on_close()

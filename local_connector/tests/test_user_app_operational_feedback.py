@@ -58,7 +58,7 @@ def _account_form():
     return AccountForm("Principale", "person@example.invalid", "synthetic-password", True)
 
 
-def test_connection_check_shows_immediate_progress_then_success_without_blocking():
+def test_connection_check_shows_immediate_progress_then_success_without_blocking(tmp_path):
     release = threading.Event()
 
     def slow_success(_form):
@@ -67,7 +67,7 @@ def test_connection_check_shows_immediate_progress_then_success_without_blocking
 
     controller = FirstRunController(FakeRoot(), ttk_module=FakeTtk, readonly_test=slow_success)
     controller.continue_forward()
-    controller.current_view.folder_entry.set("C:\\Limbo")
+    controller.current_view.folder_entry.set(str(tmp_path))
     controller.continue_forward()
     view = controller.current_view
     view.name_entry.set(_account_form().name)

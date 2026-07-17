@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import PureWindowsPath
 from pathlib import Path
 from typing import Any, Callable
 
 from ..application.account_connection import BackgroundAccountConnectionCheck
 from ..application.account_management import AccountManagementService
+from .text_controls import bind_text_interactions
 
 
 class WizardStep(str, Enum):
@@ -38,8 +38,11 @@ class LimboValidator:
         value = folder.strip()
         if not value:
             return ValidationResult(False, "Scegli la cartella Limbo.")
-        if not PureWindowsPath(value).is_absolute():
+        path = Path(value).expanduser()
+        if not path.is_absolute():
             return ValidationResult(False, "Scegli un percorso completo.")
+        if not path.is_dir():
+            return ValidationResult(False, "Scegli una cartella esistente.")
         return ValidationResult(True)
 
 
@@ -99,6 +102,9 @@ class LimboView:
         ttk_module: Any,
         on_back: Callable[[], None],
         on_continue: Callable[[], None],
+        initial_folder: str = "",
+        choose_folder: Callable[[], str] | None = None,
+        menu_factory: Callable[..., Any] | None = None,
     ) -> None:
         self.frame = ttk_module.Frame(parent, padding=32)
         ttk_module.Label(self.frame, text="Scegli la cartella Limbo").grid(
@@ -106,12 +112,19 @@ class LimboView:
         )
         ttk_module.Label(
             self.frame,
-            text="Qui Caronte prepara i documenti da controllare.",
+            text=(
+                "Scegli sul computer la cartella del Limbo Drive sincronizzato. "
+                "Qui Caronte prepara i documenti da controllare."
+            ),
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(12, 0))
         self.folder_entry = ttk_module.Entry(self.frame)
-        self.folder_entry.grid(
-            row=2, column=0, columnspan=2, sticky="ew", pady=(16, 0)
-        )
+        self.folder_entry.grid(row=2, column=0, sticky="ew", pady=(16, 0))
+        self.folder_entry.insert(0, initial_folder)
+        bind_text_interactions(self.folder_entry, menu_factory=menu_factory)
+        self._choose_folder = choose_folder or self._open_folder_dialog
+        ttk_module.Button(
+            self.frame, text="Scegli cartella...", command=self.select_folder
+        ).grid(row=2, column=1, sticky="w", pady=(16, 0))
         self.message = ttk_module.Label(self.frame, text="")
         self.message.grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 0))
         ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
@@ -123,6 +136,18 @@ class LimboView:
 
     def folder_value(self) -> str:
         return self.folder_entry.get()
+
+    @staticmethod
+    def _open_folder_dialog() -> str:
+        from tkinter import filedialog
+
+        return filedialog.askdirectory(mustexist=True)
+
+    def select_folder(self) -> None:
+        selected = self._choose_folder()
+        if selected:
+            self.folder_entry.delete(0, "end")
+            self.folder_entry.insert(0, selected)
 
     def show_validation(self, result: ValidationResult) -> None:
         self.message.configure(text=result.message)
@@ -145,8 +170,10 @@ class AccountView:
         on_update: Callable[[], None],
         on_remove: Callable[[], None],
         on_select: Callable[[], None],
+        menu_factory: Callable[..., Any] | None = None,
     ) -> None:
         self._ttk = ttk_module
+        self._menu_factory = menu_factory
         self._enabled = True
         self.advanced_visible = False
         self.frame = ttk_module.Frame(parent, padding=32)
@@ -187,12 +214,14 @@ class AccountView:
             self.advanced_frame, text="Server posta in arrivo"
         ).grid(row=0, column=0, sticky="w")
         self.host_entry = ttk_module.Entry(self.advanced_frame)
+        bind_text_interactions(self.host_entry, menu_factory=menu_factory)
         self.host_entry.insert(0, "imap.gmail.com")
         self.host_entry.grid(row=0, column=1, sticky="ew")
         ttk_module.Label(self.advanced_frame, text="Porta").grid(
             row=1, column=0, sticky="w"
         )
         self.port_entry = ttk_module.Entry(self.advanced_frame)
+        bind_text_interactions(self.port_entry, menu_factory=menu_factory)
         self.port_entry.insert(0, "993")
         self.port_entry.grid(row=1, column=1, sticky="ew")
         self.advanced_frame.grid_remove()
@@ -217,6 +246,7 @@ class AccountView:
     def _field(self, row: int, label: str, **entry_options: Any) -> Any:
         self._ttk.Label(self.frame, text=label).grid(row=row, column=0, sticky="w")
         entry = self._ttk.Entry(self.frame, **entry_options)
+        bind_text_interactions(entry, menu_factory=self._menu_factory)
         entry.grid(row=row, column=1, sticky="ew")
         return entry
 
@@ -294,6 +324,8 @@ class FirstRunController:
         account_service: AccountManagementService | None = None,
         on_complete: Callable[[], None] | None = None,
         open_existing: bool = False,
+        choose_folder: Callable[[], str] | None = None,
+        menu_factory: Callable[..., Any] | None = None,
     ) -> None:
         self.parent = parent
         self._ttk = ttk_module
@@ -310,6 +342,8 @@ class FirstRunController:
         )
         self._account_service = account_service
         self._on_complete = on_complete
+        self._choose_folder = choose_folder
+        self._menu_factory = menu_factory
         self._limbo_folder = ""
         if open_existing and account_service is not None:
             self._limbo_folder = str(
@@ -471,6 +505,9 @@ class FirstRunController:
             ttk_module=self._ttk,
             on_back=self.go_back,
             on_continue=self.continue_forward,
+            initial_folder=self._limbo_folder,
+            choose_folder=self._choose_folder,
+            menu_factory=self._menu_factory,
         )
         self._replace(view, WizardStep.LIMBO)
 
@@ -485,6 +522,7 @@ class FirstRunController:
             on_update=self.update_account,
             on_remove=self.remove_account,
             on_select=self.load_selected_account,
+            menu_factory=self._menu_factory,
         )
         if self._account_service is not None:
             view.render_accounts(self._account_service.list_accounts())

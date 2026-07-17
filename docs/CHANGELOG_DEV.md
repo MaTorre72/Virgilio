@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-17 - Completato `GUI-U-E3-T08`: il wizard identifica senza ambiguita` la cartella locale del Limbo Drive sincronizzato, wizard e Impostazioni usano un selettore di directory assolute esistenti e conservano il percorso tra navigazione, riapertura e salvataggio; i controlli testuali condividono selezione, copia/incolla e menu contestuale Windows. Test mirati `43 passed`, suite local connector e smoke `454 passed`; inventario stringhe vietate, diff e scansione segreti verdi. Prossimo task `GUI-U-E3-T09 - Accesso alle caselle Google`.
+
 - 2026-07-17 - Completato `GUI-U-E3-T07`: verifica casella asincrona con riscontro immediato ed errori azionabili redatti; la Home consuma periodicamente gli eventi condivisi e distingue accettazione, avanzamento, completamento, doppio avvio e pausa aggiornando stato, ultimo controllo e attivita`. Test mirati `40 passed`, suite local connector e smoke `448 passed`; scansioni stringhe vietate e segreti verdi. Prossimo task `GUI-U-E3-T08 - Limbo, persistenza e interazioni di base`.
 
 - 2026-07-17 - `GATE U-H3 = FAIL` su collaudo umano: installazione, collegamento Start, conclusione wizard, persistenza e disinstallazione riusciti; falliti i riscontri osservabili di verifica/controllo/avvio/pausa, la chiarezza e persistenza del Limbo, l'accesso Gmail, il percorso Registro/Google, l'avvio automatico e le interazioni di copia/incolla. Suddivise le correzioni finite in `GUI-U-E3-T07` - `GUI-U-E3-T11`; corrente `GUI-U-E3-T07`, gate in `WAITING_FOR_PREVIOUS_TASKS`.

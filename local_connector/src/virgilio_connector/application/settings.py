@@ -65,7 +65,7 @@ class SettingsService:
         minimize_on_close: bool,
     ) -> SettingsSnapshot:
         folder = Path(limbo.strip()).expanduser()
-        if not limbo.strip() or not folder.is_absolute():
+        if not limbo.strip() or not folder.is_absolute() or not folder.is_dir():
             raise SettingsValidationError("Scegli una cartella Limbo valida.")
         try:
             minutes = int(interval_minutes.strip())

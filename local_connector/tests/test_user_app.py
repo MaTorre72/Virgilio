@@ -292,13 +292,14 @@ def test_continue_replaces_widgets_and_back_restores_welcome_frame():
     assert controller.current_view.frame.destroyed is False
 
 
-def test_each_step_validator_checks_only_its_own_data():
+def test_each_step_validator_checks_only_its_own_data(tmp_path):
     assert WelcomeValidator().validate().is_valid is True
 
     validator = LimboValidator()
     assert validator.validate("").is_valid is False
     assert validator.validate("relative-folder").is_valid is False
-    assert validator.validate("C:\\Limbo").is_valid is True
+    assert validator.validate(str(tmp_path)).is_valid is True
+    assert validator.validate(str(tmp_path / "missing")).is_valid is False
 
 
 def test_limbo_validation_stays_on_step_and_shows_local_message():
@@ -313,18 +314,18 @@ def test_limbo_validation_stays_on_step_and_shows_local_message():
     assert limbo.message.config["text"] == "Scegli la cartella Limbo."
 
 
-def _account_controller(readonly_test=None):
+def _account_controller(tmp_path, readonly_test=None):
     controller = FirstRunController(
         FakeRoot(), ttk_module=FakeTtk, readonly_test=readonly_test
     )
     controller.continue_forward()
-    controller.current_view.folder_entry.set("C:\\Limbo")
+    controller.current_view.folder_entry.set(str(tmp_path))
     controller.continue_forward()
     return controller
 
 
-def test_account_step_starts_with_only_ordinary_fields_visible():
-    controller = _account_controller()
+def test_account_step_starts_with_only_ordinary_fields_visible(tmp_path):
+    controller = _account_controller(tmp_path)
 
     assert controller.step is WizardStep.ACCOUNT
     assert isinstance(controller.current_view, AccountView)
@@ -334,15 +335,15 @@ def test_account_step_starts_with_only_ordinary_fields_visible():
     assert controller.current_view.password_entry.kwargs["show"] == "*"
 
 
-def test_gmail_workspace_prefills_server_and_port():
-    view = _account_controller().current_view
+def test_gmail_workspace_prefills_server_and_port(tmp_path):
+    view = _account_controller(tmp_path).current_view
 
     assert view.form_value().host == "imap.gmail.com"
     assert view.form_value().port == 993
 
 
-def test_advanced_account_settings_can_be_opened_and_closed():
-    view = _account_controller().current_view
+def test_advanced_account_settings_can_be_opened_and_closed(tmp_path):
+    view = _account_controller(tmp_path).current_view
 
     assert view.advanced_visible is False
     assert view.advanced_frame.grid_options is None
@@ -354,7 +355,7 @@ def test_advanced_account_settings_can_be_opened_and_closed():
     assert view.advanced_frame.grid_options is None
 
 
-def test_account_connection_check_uses_separate_readonly_port():
+def test_account_connection_check_uses_separate_readonly_port(tmp_path):
     calls = []
 
     class MutationRejectingFakeImap:
@@ -365,7 +366,7 @@ def test_account_connection_check_uses_separate_readonly_port():
         def mutate(self):
             raise AssertionError("mutating operations are forbidden")
 
-    controller = _account_controller(MutationRejectingFakeImap().check)
+    controller = _account_controller(tmp_path, MutationRejectingFakeImap().check)
     view = controller.current_view
     view.email_entry.set("account@example.invalid")
     view.password_entry.set("synthetic-password")
@@ -384,8 +385,8 @@ def test_account_connection_check_uses_separate_readonly_port():
     assert view.message.config["text"] == "Collegamento riuscito."
 
 
-def test_account_view_has_no_forbidden_technical_terms():
-    _account_controller()
+def test_account_view_has_no_forbidden_technical_terms(tmp_path):
+    _account_controller(tmp_path)
     visible = " ".join(
         widget.kwargs.get("text", "")
         for widget_type in (FakeLabel, FakeButton)

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from ..application.settings import SettingsService, SettingsValidationError
+from .text_controls import bind_text_interactions
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +24,8 @@ class SettingsView:
         ttk_module: Any,
         go_home: Callable[[], None],
         on_saved: Callable[[int, bool], None],
+        choose_folder: Callable[[], str] | None = None,
+        menu_factory: Callable[..., Any] | None = None,
     ) -> None:
         self.service = service
         self._on_saved = on_saved
@@ -41,6 +44,11 @@ class SettingsView:
         self.limbo_entry = ttk_module.Entry(self.frame)
         self.limbo_entry.grid(row=1, column=1, sticky="ew")
         self.limbo_entry.insert(0, str(current.limbo))
+        bind_text_interactions(self.limbo_entry, menu_factory=menu_factory)
+        self._choose_folder = choose_folder or self._open_folder_dialog
+        ttk_module.Button(
+            self.frame, text="Scegli cartella...", command=self.select_limbo
+        ).grid(row=1, column=2, sticky="w")
 
         ttk_module.Label(self.frame, text="Controlla ogni quanti minuti").grid(
             row=2, column=0, sticky="w"
@@ -48,6 +56,7 @@ class SettingsView:
         self.interval_entry = ttk_module.Entry(self.frame)
         self.interval_entry.grid(row=2, column=1, sticky="ew")
         self.interval_entry.insert(0, str(current.interval_minutes))
+        bind_text_interactions(self.interval_entry, menu_factory=menu_factory)
 
         self.startup_control = ttk_module.Checkbutton(
             self.frame,
@@ -75,6 +84,18 @@ class SettingsView:
     def toggle_start_with_windows(self) -> None:
         self._start_with_windows = not self._start_with_windows
         self._sync_controls()
+
+    @staticmethod
+    def _open_folder_dialog() -> str:
+        from tkinter import filedialog
+
+        return filedialog.askdirectory(mustexist=True)
+
+    def select_limbo(self) -> None:
+        selected = self._choose_folder()
+        if selected:
+            self.limbo_entry.delete(0, "end")
+            self.limbo_entry.insert(0, selected)
 
     def toggle_minimize_on_close(self) -> None:
         self._minimize_on_close = not self._minimize_on_close

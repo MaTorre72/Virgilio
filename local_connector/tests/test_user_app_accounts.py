@@ -21,7 +21,9 @@ def _open_accounts(tmp_path: Path):
         FakeRoot(), ttk_module=FakeTtk, account_service=service
     )
     controller.continue_forward()
-    controller.current_view.folder_entry.set("C:\\Limbo")
+    limbo = tmp_path / "limbo"
+    limbo.mkdir()
+    controller.current_view.folder_entry.set(str(limbo.resolve()))
     controller.continue_forward()
     return controller, service, credential_store, config_path
 

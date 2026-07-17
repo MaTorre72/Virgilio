@@ -35,9 +35,10 @@ def _services(tmp_path: Path):
     return configuration, accounts
 
 
-def _open_account_step(shell: UserAppShell) -> AccountView:
+def _open_account_step(shell: UserAppShell, limbo: Path) -> AccountView:
     shell.first_run.continue_forward()
-    shell.first_run.current_view.folder_entry.set("C:\\Limbo")
+    limbo.mkdir(exist_ok=True)
+    shell.first_run.current_view.folder_entry.set(str(limbo.resolve()))
     shell.first_run.continue_forward()
     assert shell.first_run.step is WizardStep.ACCOUNT
     return shell.first_run.current_view
@@ -54,7 +55,7 @@ def test_active_mailbox_state_is_binary_visible_and_persisted(tmp_path):
     shell = UserAppShell(
         FakeRoot(), configuration, ttk_module=FakeTtk, account_service=accounts
     )
-    view = _open_account_step(shell)
+    view = _open_account_step(shell, tmp_path / "limbo")
     _fill(view)
 
     assert "selected" in view.enabled_control.state()
@@ -73,7 +74,7 @@ def test_first_run_finishes_explicitly_on_home_without_restart(tmp_path):
     shell = UserAppShell(
         FakeRoot(), configuration, ttk_module=FakeTtk, account_service=accounts
     )
-    view = _open_account_step(shell)
+    view = _open_account_step(shell, tmp_path / "limbo")
     _fill(view)
     assert shell.first_run.add_account().is_valid
 
@@ -90,7 +91,7 @@ def test_home_reopens_existing_configuration_and_returns_after_edit(tmp_path):
     first_shell = UserAppShell(
         FakeRoot(), configuration, ttk_module=FakeTtk, account_service=accounts
     )
-    view = _open_account_step(first_shell)
+    view = _open_account_step(first_shell, tmp_path / "limbo")
     _fill(view)
     first_shell.first_run.add_account()
     first_shell.first_run.continue_forward()
@@ -138,7 +139,7 @@ def test_complete_visible_text_inventory_has_no_technical_or_legacy_terms(tmp_pa
     shell = UserAppShell(
         FakeRoot(), configuration, ttk_module=FakeTtk, account_service=accounts
     )
-    view = _open_account_step(shell)
+    view = _open_account_step(shell, tmp_path / "limbo")
     _fill(view)
     shell.first_run.add_account()
     shell.first_run.continue_forward()

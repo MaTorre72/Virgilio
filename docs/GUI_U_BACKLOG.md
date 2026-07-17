@@ -483,7 +483,7 @@ tecnico o senza distinguere accettazione, avanzamento e completamento.
 
 ### GUI-U-E3-T08 — Limbo, persistenza e interazioni di base
 
-Stato: `TODO`.
+Stato: `DONE`.
 Risultato: la scelta del Limbo e` inequivocabile, persistente e utilizzabile con
 i normali comandi Windows di selezione e copia/incolla.
 Dipendenza: `GUI-U-E3-T07 = DONE`.
@@ -496,11 +496,11 @@ in modo verificabile dalla Quarantena o richiede all'utente dettagli tecnici.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Il wizard definisce il Limbo come cartella locale del Limbo Drive sincronizzato e non come Quarantena. | Test inventario testi e revisione del percorso. | Da ottenere. | `NOT_MET` |
-| Il Limbo si sceglie con un selettore cartella e deve essere una directory assoluta esistente. | Test selettore e validazioni. | Da ottenere. | `NOT_MET` |
-| Tornando indietro, riaprendo la configurazione o le Impostazioni, il percorso salvato resta valorizzato. | Test round-trip completo. | Da ottenere. | `NOT_MET` |
-| La GUI non chiede di scegliere la Quarantena ne` un URL o ID Drive non necessario al percorso locale. | Test inventario campi visibili. | Da ottenere. | `NOT_MET` |
-| Campi e messaggi consentono selezione, copia/incolla da tastiera e menu contestuale Windows. | Test binding condivisi sui controlli testuali. | Da ottenere. | `NOT_MET` |
+| Il wizard definisce il Limbo come cartella locale del Limbo Drive sincronizzato e non come Quarantena. | Test inventario testi e revisione del percorso. | `test_limbo_copy_identifies_the_synced_drive_folder_without_quarantine_fields`: descrizione esplicita del Limbo Drive sincronizzato e inventario privo di Quarantena (`1 passed`). | `MET` |
+| Il Limbo si sceglie con un selettore cartella e deve essere una directory assoluta esistente. | Test selettore e validazioni. | `test_folder_selector_and_validator_require_an_existing_absolute_directory`: selezione positiva e rifiuto di percorso relativo o inesistente (`1 passed`). | `MET` |
+| Tornando indietro, riaprendo la configurazione o le Impostazioni, il percorso salvato resta valorizzato. | Test round-trip completo. | `test_limbo_value_survives_back_navigation_and_reopening_configuration` e `test_settings_folder_selector_persists_and_reloads_the_limbo` coprono navigazione, riapertura e persistenza (`2 passed`). | `MET` |
+| La GUI non chiede di scegliere la Quarantena ne` un URL o ID Drive non necessario al percorso locale. | Test inventario campi visibili. | Inventario mirato T08 e inventario globale stringhe GUI verdi (`3 passed` complessivi); nessun campo Quarantena, URL o ID Drive. | `MET` |
+| Campi e messaggi consentono selezione, copia/incolla da tastiera e menu contestuale Windows. | Test binding condivisi sui controlli testuali. | `test_text_controls_offer_keyboard_and_windows_context_menu_actions`: selezione, taglia/copia/incolla e menu destro condivisi verificati (`1 passed`). | `MET` |
 
 ### GUI-U-E3-T09 — Accesso alle caselle Google
 
