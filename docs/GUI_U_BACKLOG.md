@@ -504,7 +504,7 @@ in modo verificabile dalla Quarantena o richiede all'utente dettagli tecnici.
 
 ### GUI-U-E3-T09 — Accesso alle caselle Google
 
-Stato: `TODO`.
+Stato: `BLOCKED` (2026-07-17).
 Risultato: Gmail e Google Workspace hanno un percorso di accesso coerente con le
 policy Google correnti e distinto dall'IMAP generico.
 Dipendenza: `GUI-U-E3-T08 = DONE`.
@@ -515,13 +515,19 @@ reale automatico e modifica delle policy di sicurezza.
 Condizione di blocco: manca la decisione umana tra OAuth come unico percorso o
 OAuth predefinito con password per app come fallback amministrato.
 
+Blocco rilevato: il percorso utente e la policy di sicurezza cambiano in base
+alla scelta; Codex non puo` assumerla autonomamente. Evidenza: la condizione di
+blocco e` ancora aperta all'avvio della run e non risultano decisioni precedenti.
+Azione necessaria unica: scegliere tra OAuth come unico percorso oppure OAuth
+predefinito con password per app come fallback amministrato.
+
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Gmail/Workspace propone accesso Google e non la password ordinaria dell'account. | Test UI per provider Google. | Da ottenere. | `NOT_MET` |
-| L'eventuale password per app e` spiegata come fallback subordinato a verifica in due passaggi e policy amministratore. | Test testi e percorso alternativo. | Da ottenere. | `NOT_MET` |
-| IMAP generico conserva host, porta e credenziale specifica del provider. | Test regressione provider non Google. | Da ottenere. | `NOT_MET` |
-| La verifica distingue accesso riuscito, credenziali rifiutate, rete assente e configurazione incompleta. | Test fake per quattro esiti. | Da ottenere. | `NOT_MET` |
-| Token o password restano nel gestore credenziali e non nei file o nei messaggi. | Test persistenza e scansione segreti. | Da ottenere. | `NOT_MET` |
+| Gmail/Workspace propone accesso Google e non la password ordinaria dell'account. | Test UI per provider Google. | Percorso non definibile prima della decisione umana richiesta. | `BLOCKED` |
+| L'eventuale password per app e` spiegata come fallback subordinato a verifica in due passaggi e policy amministratore. | Test testi e percorso alternativo. | Il fallback e` oggetto della decisione umana richiesta. | `BLOCKED` |
+| IMAP generico conserva host, porta e credenziale specifica del provider. | Test regressione provider non Google. | Prova non avviata: il task deve essere concluso interamente nella stessa run. | `BLOCKED` |
+| La verifica distingue accesso riuscito, credenziali rifiutate, rete assente e configurazione incompleta. | Test fake per quattro esiti. | Prova non avviata: il task deve essere concluso interamente nella stessa run. | `BLOCKED` |
+| Token o password restano nel gestore credenziali e non nei file o nei messaggi. | Test persistenza e scansione segreti. | Modello credenziali dipendente dal percorso di accesso da scegliere. | `BLOCKED` |
 
 ### GUI-U-E3-T10 — Registro e collegamento Google comprensibili
 
