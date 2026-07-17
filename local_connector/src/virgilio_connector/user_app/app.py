@@ -37,7 +37,7 @@ from .wizard import AccountForm, FirstRunController
 WINDOW_TITLE = "Caronte"
 USER_VIEWS = (
     "Primo avvio", "Home", "Attivita e problemi", "Impostazioni",
-    "Bucoliche e avvio",
+    "Registro e avvio",
 )
 
 class UserAppShell:

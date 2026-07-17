@@ -6,6 +6,7 @@ from virgilio_connector.application.bucoliche_startup import (
     GuidedStatus,
 )
 from virgilio_connector.application.configuration import ConfigurationService
+from virgilio_connector.application.registry_configuration import RegistryConfigurationService
 from virgilio_connector.multi_account import scaffold_local_config
 from virgilio_connector.user_app.app import UserAppShell
 from virgilio_connector.user_app.navigation import UserRoute
@@ -68,25 +69,24 @@ def _configuration(tmp_path: Path):
     return ConfigurationService.for_file(path)
 
 
-def _service(tmp_path, *, installed=False, bucoliche=None):
+def _service(tmp_path, *, installed=False, bucoliche=None, configured=True):
     configuration = _configuration(tmp_path)
+    if configured:
+        RegistryConfigurationService(configuration.store.source).select_register(
+            "abcDEFGhijklmNOPQRST_uvwx"
+        )
     google = bucoliche or FakeBucolicheGateway()
     automatic = FakeAutomaticControl(installed)
     return configuration, BucolicheStartupService(configuration, google, automatic), google, automatic
 
 
-def test_bucoliche_activation_and_deactivation_persist_without_changing_other_sections(tmp_path):
-    configuration, service, _, _ = _service(tmp_path)
-    path = configuration.store.source
-    original_account = configuration.load().accounts[0]
+def test_register_is_always_present_and_reports_administrative_configuration(tmp_path):
+    _, service, _, _ = _service(tmp_path, configured=False)
 
-    assert service.load().bucoliche_enabled is False
-    assert service.set_bucoliche_enabled(True).ok
-    assert service.load().bucoliche_enabled is True
-    assert configuration.load().accounts[0] == original_account
-    assert service.set_bucoliche_enabled(False).ok
-    assert service.load().bucoliche_enabled is False
-    assert path.read_text(encoding="utf-8").count("bucoliche:") == 1
+    snapshot = service.load()
+
+    assert snapshot.register_configured is False
+    assert snapshot.register_message == "Registro non ancora configurato dall'amministratore."
 
 
 def test_google_connection_is_a_guided_step_using_only_the_injected_adapter(tmp_path):
@@ -115,9 +115,7 @@ def test_known_connection_errors_are_translated_without_internal_details(tmp_pat
     connection = service.connect_google()
     register = service.verify_register()
 
-    assert connection == GuidedStatus(
-        False, "Collegamento non completato. Controlla il file Google scelto."
-    )
+    assert connection == GuidedStatus(False, "Collegamento Google non completato. Riprova.")
     assert register == GuidedStatus(
         False, "Registro non pronto. Completa prima il collegamento Google."
     )
@@ -151,9 +149,8 @@ def test_guided_view_shows_clear_steps_and_known_error_messages(tmp_path):
     shell.show_bucoliche_startup()
     assert shell.route is UserRoute.BUCOLICHE_STARTUP
     view = shell.bucoliche_startup
-    assert view.toggle_bucoliche().message == "Bucoliche attivato."
     assert view.connect_google().ok is False
-    assert "file Google" in view.bucoliche_message.config["text"]
+    assert "Riprova" in view.bucoliche_message.config["text"]
     assert view.verify_register().ok is False
     assert "Completa prima" in view.bucoliche_message.config["text"]
     assert view.install().ok and automatic.installed
@@ -164,7 +161,8 @@ def test_guided_view_shows_clear_steps_and_known_error_messages(tmp_path):
         for kind in (FakeLabel, FakeButton)
         for widget in kind.created
     ).lower()
-    assert "1. scegli" in visible and "2. collega" in visible and "3. controlla" in visible
+    assert "registro delle attivita" in visible
+    assert "collega il tuo account google per aggiornare il registro" in visible
     forbidden = {
         "python", "venv", "cli", "yaml", ".env", "doctor", "pilot", "dry-run",
         "watch", "staging", "ack", "manifest", "sqlite", "exit code",
@@ -172,3 +170,4 @@ def test_guided_view_shows_clear_steps_and_known_error_messages(tmp_path):
         "percorso del repository",
     }
     assert all(term not in visible for term in forbidden)
+    assert "bucoliche" not in visible

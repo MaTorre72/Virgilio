@@ -20,6 +20,7 @@ from ..windows_task import (
     unregister_windows_watch_task,
 )
 from .configuration import ConfigurationService
+from .registry_configuration import RegistryConfigurationService
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,7 +31,8 @@ class GuidedStatus:
 
 @dataclass(frozen=True, slots=True)
 class BucolicheStartupSnapshot:
-    bucoliche_enabled: bool
+    register_configured: bool
+    register_message: str
     automatic_control_installed: bool
     automatic_control_message: str
 
@@ -56,7 +58,7 @@ class ExistingBucolicheGateway:
         result = GoogleOAuthLogin(load_bucoliche_config(self.config_path)).run()
         if result.status in {"token_created", "token_refreshed"}:
             return GuidedStatus(True, "Collegamento Google completato.")
-        return GuidedStatus(False, "Collegamento non completato. Controlla il file Google scelto.")
+        return GuidedStatus(False, "Collegamento Google non completato. Riprova.")
 
     def verify_register(self) -> GuidedStatus:
         config = load_bucoliche_config(self.config_path)
@@ -76,6 +78,9 @@ class WindowsAutomaticControlGateway:
 
     def __init__(self, configuration: ConfigurationService) -> None:
         self.configuration = configuration
+        self.registry_configuration = RegistryConfigurationService(
+            configuration.store.source
+        )
 
     def is_installed(self) -> bool:
         return query_windows_watch_task(self.TASK_NAME).installed
@@ -107,11 +112,14 @@ class BucolicheStartupService:
         automatic_control: AutomaticControlGateway,
     ) -> None:
         self.configuration = configuration
+        self.registry_configuration = RegistryConfigurationService(
+            configuration.store.source
+        )
         self.bucoliche = bucoliche
         self.automatic_control = automatic_control
 
     def load(self) -> BucolicheStartupSnapshot:
-        enabled = load_bucoliche_config(self.configuration.store.source).enabled
+        register = self.registry_configuration.load()
         try:
             installed = self.automatic_control.is_installed()
             message = (
@@ -121,7 +129,9 @@ class BucolicheStartupService:
         except (OSError, WindowsTaskError):
             installed = False
             message = "Stato del controllo automatico non disponibile."
-        return BucolicheStartupSnapshot(enabled, installed, message)
+        return BucolicheStartupSnapshot(
+            register.configured, register.message, installed, message
+        )
 
     def set_bucoliche_enabled(self, enabled: bool) -> GuidedStatus:
         _write_bucoliche_enabled(self.configuration.store.source, enabled)
@@ -132,13 +142,20 @@ class BucolicheStartupService:
 
     def connect_google(self) -> GuidedStatus:
         try:
-            return self.bucoliche.connect_google()
+            result = self.bucoliche.connect_google()
+            if result.ok:
+                return result
+            return GuidedStatus(False, "Collegamento Google non completato. Riprova.")
         except (BucolicheError, OSError):
             return GuidedStatus(
-                False, "Collegamento non completato. Controlla il file Google scelto."
+                False, "Collegamento Google non completato. Riprova."
             )
 
     def verify_register(self) -> GuidedStatus:
+        if not self.registry_configuration.load().configured:
+            return GuidedStatus(
+                False, "Registro non ancora configurato dall'amministratore."
+            )
         try:
             return self.bucoliche.verify_register()
         except (BucolicheError, OSError):

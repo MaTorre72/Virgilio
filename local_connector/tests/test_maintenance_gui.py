@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from virgilio_connector.application.maintenance import MaintenanceService
+from virgilio_connector.application.registry_configuration import RegistryConfigurationService
 from virgilio_connector.maintenance_gui import (
     MAINTENANCE_OPERATIONS,
     WINDOW_TITLE,
@@ -54,11 +55,22 @@ class FakeButton(FakeWidget):
     created = []
 
 
+class FakeEntry(FakeWidget):
+    created = []
+
+    def get(self):
+        return self.config.get("value", "")
+
+    def insert(self, index, value):
+        self.config["value"] = value
+
+
 class FakeTtk:
     Frame = FakeFrame
     Label = FakeLabel
     Button = FakeButton
     Checkbutton = FakeButton
+    Entry = FakeEntry
 
 
 def seed_data(root: Path) -> None:
@@ -150,9 +162,27 @@ def test_new_maintenance_presentation_has_only_supported_operations_and_no_legac
     assert root.window_title == WINDOW_TITLE == "Caronte Manutenzione"
     assert root.minimum_size == (680, 420)
     assert MAINTENANCE_OPERATIONS == (
-        "Backup locale", "Verifica integrita`", "Report diagnostico", "Reset protetto",
+        "Registro condiviso", "Backup locale", "Verifica integrita`", "Report diagnostico",
+        "Reset protetto",
     )
     assert all("gui" not in imported for imported in imports)
     assert app.reset().status == "cancelled"
     app.toggle_reset_confirmation()
     assert "selected" in app.confirm_control.states
+
+
+def test_maintenance_administrator_can_persist_selected_register(tmp_path):
+    root = FakeRoot()
+    registry = RegistryConfigurationService(tmp_path / "accounts.yaml")
+    app = MaintenanceApp(
+        root, MaintenanceService(tmp_path / "data"), ttk_module=FakeTtk,
+        registry_configuration=registry,
+    )
+    app.registry_entry.insert(
+        0, "https://docs.google.com/spreadsheets/d/abcDEFGhijklmNOPQRST_uvwx/edit"
+    )
+
+    result = app.save_register()
+
+    assert result is not None and result.configured
+    assert registry.load().spreadsheet_id == "abcDEFGhijklmNOPQRST_uvwx"

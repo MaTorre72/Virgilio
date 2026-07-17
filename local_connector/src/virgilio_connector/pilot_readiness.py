@@ -55,9 +55,12 @@ class BucolicheDoctor:
         if not self.config.enabled:
             warnings.append("Bucoliche adapter disabled; real export remains blocked")
         checks.append({"name": "enabled", "status": str(self.config.enabled).upper()})
-        spreadsheet_id = self.environ.get(self.config.spreadsheet_id_env, "").strip()
-        if not spreadsheet_id: errors.append(f"missing env: {self.config.spreadsheet_id_env}")
-        checks.append(_check("spreadsheet_env", bool(spreadsheet_id)))
+        spreadsheet_id = self.config.spreadsheet_id.strip() or self.environ.get(
+            self.config.spreadsheet_id_env, ""
+        ).strip()
+        if not spreadsheet_id:
+            errors.append(f"missing env: {self.config.spreadsheet_id_env}")
+        checks.append(_check("spreadsheet_configured", bool(spreadsheet_id)))
         credential_value = self._check_credentials(checks, errors)
         if not errors:
             try:

@@ -43,6 +43,7 @@ class BucolicheError(RuntimeError): pass
 class BucolicheConfig:
     enabled: bool = False
     adapter: str = "google_sheets_append_only"
+    spreadsheet_id: str = ""
     spreadsheet_id_env: str = "VIRGILIO_BUCOLICHE_SPREADSHEET_ID"
     events_sheet: str = "Bucoliche_Eventi"
     state_sheet: str = "Bucoliche_Stato"
@@ -428,7 +429,9 @@ def _state_notes(current: Mapping[str, object], machine_ids: Sequence[str],
 
 def build_google_sheets_client(config: BucolicheConfig,
                                environ: Mapping[str, str]) -> GoogleSheetsAppendClient:
-    spreadsheet_id = environ.get(config.spreadsheet_id_env, "").strip()
+    spreadsheet_id = config.spreadsheet_id.strip() or environ.get(
+        config.spreadsheet_id_env, ""
+    ).strip()
     if not spreadsheet_id:
         raise BucolicheError(f"missing env: {config.spreadsheet_id_env}")
     if config.credentials_mode == "service_account_json_env":

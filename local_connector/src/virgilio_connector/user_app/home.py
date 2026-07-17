@@ -51,7 +51,7 @@ class HomeView:
             self.frame, text="Impostazioni", command=open_settings
         ).grid(row=7, column=2, sticky="w", pady=(16, 0))
         ttk_module.Button(
-            self.frame, text="Bucoliche e avvio", command=open_bucoliche_startup
+            self.frame, text="Registro e avvio", command=open_bucoliche_startup
         ).grid(row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
     def _render(

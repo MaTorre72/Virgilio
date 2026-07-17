@@ -20,26 +20,27 @@ class BucolicheStartupView:
         self.frame = ttk_module.Frame(parent)
         self.frame.grid(row=0, column=0, sticky="nsew")
         snapshot = service.load()
-        self._enabled = snapshot.bucoliche_enabled
-
-        ttk_module.Label(self.frame, text="Bucoliche e controllo automatico").grid(
+        ttk_module.Label(self.frame, text="Registro delle attivita`").grid(
             row=0, column=0, columnspan=2, sticky="w", pady=(0, 12)
         )
-        ttk_module.Label(self.frame, text="1. Scegli se usare il registro condiviso").grid(
+        ttk_module.Label(
+            self.frame, text="Il Registro e` sempre attivo per le attivita` di Caronte."
+        ).grid(
             row=1, column=0, columnspan=2, sticky="w"
         )
-        self.enabled_control = ttk_module.Checkbutton(
-            self.frame, text="Usa Bucoliche", command=self.toggle_bucoliche
+        self.registry_status = ttk_module.Label(
+            self.frame, text=snapshot.register_message
         )
-        self.enabled_control.grid(row=2, column=0, sticky="w")
-        self._sync_enabled()
-        ttk_module.Label(self.frame, text="2. Collega il tuo account Google").grid(
+        self.registry_status.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        ttk_module.Label(
+            self.frame, text="Collega il tuo account Google per aggiornare il Registro"
+        ).grid(
             row=3, column=0, columnspan=2, sticky="w", pady=(12, 0)
         )
         ttk_module.Button(
             self.frame, text="Collega Google", command=self.connect_google
         ).grid(row=4, column=0, sticky="w")
-        ttk_module.Label(self.frame, text="3. Controlla che il registro sia pronto").grid(
+        ttk_module.Label(self.frame, text="Controlla che il Registro sia pronto").grid(
             row=5, column=0, columnspan=2, sticky="w", pady=(12, 0)
         )
         ttk_module.Button(
@@ -65,13 +66,6 @@ class BucolicheStartupView:
             row=11, column=0, sticky="w", pady=(16, 0)
         )
 
-    def toggle_bucoliche(self) -> GuidedStatus:
-        self._enabled = not self._enabled
-        result = self.service.set_bucoliche_enabled(self._enabled)
-        self._sync_enabled()
-        self.bucoliche_message.configure(text=result.message)
-        return result
-
     def connect_google(self) -> GuidedStatus:
         result = self.service.connect_google()
         self.bucoliche_message.configure(text=result.message)
@@ -91,6 +85,3 @@ class BucolicheStartupView:
         result = self.service.remove_automatic_control()
         self.automatic_message.configure(text=result.message)
         return result
-
-    def _sync_enabled(self) -> None:
-        self.enabled_control.state(("selected",) if self._enabled else ("!selected",))
