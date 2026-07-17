@@ -8,6 +8,7 @@ from pathlib import PureWindowsPath
 from pathlib import Path
 from typing import Any, Callable
 
+from ..application.account_connection import BackgroundAccountConnectionCheck
 from ..application.account_management import AccountManagementService
 
 
@@ -302,6 +303,11 @@ class FirstRunController:
         self._limbo_validator = LimboValidator()
         self._account_validator = AccountValidator()
         self._readonly_test = readonly_test
+        self._connection_check = (
+            BackgroundAccountConnectionCheck(readonly_test)
+            if readonly_test is not None
+            else None
+        )
         self._account_service = account_service
         self._on_complete = on_complete
         self._limbo_folder = ""
@@ -401,12 +407,37 @@ class FirstRunController:
         form = self.current_view.form_value()
         result = self._account_validator.validate(form)
         if result.is_valid:
-            if self._readonly_test is None:
+            if self._connection_check is None:
                 result = ValidationResult(False, "Verifica non disponibile.")
+            elif not self._connection_check.start(form):
+                result = ValidationResult(False, "Verifica gia` in corso. Attendi il risultato.")
             else:
-                result = ValidationResult(True, self._readonly_test(form))
+                result = ValidationResult(True, "Verifica avviata per la casella selezionata.")
+                self._schedule_connection_poll()
         self.current_view.show_validation(result)
         return result
+
+    def poll_account_connection(self) -> ValidationResult | None:
+        if self._connection_check is None:
+            return None
+        feedback = self._connection_check.poll()
+        if feedback is None:
+            return None
+        result = ValidationResult(feedback.ok, feedback.message)
+        if isinstance(self.current_view, AccountView):
+            self.current_view.show_validation(result)
+        return result
+
+    def _schedule_connection_poll(self) -> None:
+        after = getattr(self.parent, "after", None)
+        if after is None:
+            return
+
+        def poll() -> None:
+            if self.poll_account_connection() is None and self._connection_check.running:
+                after(100, poll)
+
+        after(100, poll)
 
     def load_selected_account(self) -> None:
         assert isinstance(self.current_view, AccountView)

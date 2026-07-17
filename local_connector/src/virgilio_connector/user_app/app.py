@@ -91,6 +91,7 @@ class UserAppShell:
             else StaticHomeStatusService(HomeStatus("Pronto", 0))
         )
         self._render()
+        self._schedule_home_poll()
         if hasattr(self.root, "protocol"):
             self.root.protocol("WM_DELETE_WINDOW", self.close_window)
 
@@ -155,6 +156,32 @@ class UserAppShell:
             open_settings=self.show_settings,
             open_bucoliche_startup=self.show_bucoliche_startup,
         )
+
+    def poll_home_operations(self) -> int:
+        feedback_items = self._home_control.drain_feedback()
+        if self.route is not UserRoute.HOME or self.home is None:
+            return len(feedback_items)
+        for feedback in feedback_items:
+            activity_count = None
+            if feedback.refresh_activity:
+                try:
+                    activity_count = len(self._activity_service.list_activities())
+                except Exception:
+                    activity_count = None
+            self.home.apply_feedback(feedback, activity_count=activity_count)
+        return len(feedback_items)
+
+    def _schedule_home_poll(self) -> None:
+        after = getattr(self.root, "after", None)
+        if after is None:
+            return
+
+        def poll() -> None:
+            self.poll_home_operations()
+            if not getattr(self.root, "destroyed", False):
+                after(100, poll)
+
+        after(100, poll)
 
     def show_home(self) -> None:
         self.route = UserRoute.HOME

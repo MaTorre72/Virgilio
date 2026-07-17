@@ -180,7 +180,7 @@ Condizione di blocco: il backend scelto richiede segreti versionati, privilegi a
 
 ## GUI-U-E2 — Percorso verticale minimo
 
-Stato: `IN_PROGRESS`.
+Stato: `DONE`.
 
 ### GUI-U-E2-T01 — Nuova shell `user_app`
 
@@ -475,11 +475,11 @@ tecnico o senza distinguere accettazione, avanzamento e completamento.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `Verifica collegamento` mostra avvio, successo o errore azionabile della casella selezionata. | Test UI con connessione lenta, successo e autenticazione rifiutata. | Da ottenere. | `NOT_MET` |
-| `Controlla ora` mostra richiesta accettata e riepilogo finale oppure errore. | Test controller/view con eventi di completamento. | Da ottenere. | `NOT_MET` |
-| `Avvia` e `Pausa` aggiornano lo stato visibile e spiegano richieste rifiutate. | Test di ciclo avvio, doppio avvio e pausa. | Da ottenere. | `NOT_MET` |
-| La Home consuma periodicamente gli eventi del runner e aggiorna stato, ultimo controllo e Attivita. | Test di polling deterministico senza bloccare la finestra. | Da ottenere. | `NOT_MET` |
-| Gli errori installati restano leggibili e non espongono dettagli tecnici o credenziali. | Test su errori sintetici e inventario testi. | Da ottenere. | `NOT_MET` |
+| `Verifica collegamento` mostra avvio, successo o errore azionabile della casella selezionata. | Test UI con connessione lenta, successo e autenticazione rifiutata. | `test_connection_check_shows_immediate_progress_then_success_without_blocking` verifica riscontro immediato e completamento asincrono; `test_connection_authentication_failure_is_actionable_and_redacted` verifica il rifiuto azionabile. | `MET` |
+| `Controlla ora` mostra richiesta accettata e riepilogo finale oppure errore. | Test controller/view con eventi di completamento. | `test_check_now_reports_acceptance_and_final_result` distingue richiesta accettata e riepilogo finale con aggiornamento attivita`. | `MET` |
+| `Avvia` e `Pausa` aggiornano lo stato visibile e spiegano richieste rifiutate. | Test di ciclo avvio, doppio avvio e pausa. | `test_start_double_start_and_pause_have_visible_coherent_feedback` copre avvio, doppio avvio rifiutato, richiesta di pausa e stato finale. | `MET` |
+| La Home consuma periodicamente gli eventi del runner e aggiorna stato, ultimo controllo e Attivita. | Test di polling deterministico senza bloccare la finestra. | `test_home_schedules_periodic_non_blocking_event_consumption` verifica la pianificazione periodica; `test_home_poll_updates_state_last_check_and_activity_count` verifica ora Europe/Rome e conteggio aggiornato; suite e smoke `448 passed`. | `MET` |
+| Gli errori installati restano leggibili e non espongono dettagli tecnici o credenziali. | Test su errori sintetici e inventario testi. | `test_runner_error_never_exposes_installed_runtime_details_or_credentials`, test autenticazione e inventario GUI escludono dettagli interni, path e valori sentinella. | `MET` |
 
 ### GUI-U-E3-T08 — Limbo, persistenza e interazioni di base
 

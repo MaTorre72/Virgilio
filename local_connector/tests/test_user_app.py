@@ -1,5 +1,6 @@
 import ast
 from pathlib import Path
+import time
 
 import pytest
 
@@ -373,6 +374,13 @@ def test_account_connection_check_uses_separate_readonly_port():
 
     assert result.is_valid is True
     assert calls == [("check", "account@example.invalid", "imap.gmail.com", 993)]
+    assert view.message.config["text"] == "Verifica avviata per la casella selezionata."
+    deadline = time.monotonic() + 1
+    completed = None
+    while completed is None and time.monotonic() < deadline:
+        completed = controller.poll_account_connection()
+        time.sleep(0.005)
+    assert completed is not None and completed.is_valid is True
     assert view.message.config["text"] == "Collegamento riuscito."
 
 
