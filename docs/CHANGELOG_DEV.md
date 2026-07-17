@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-17 - `GATE U-H3 = FAIL` su collaudo umano: installazione, collegamento Start, conclusione wizard, persistenza e disinstallazione riusciti; falliti i riscontri osservabili di verifica/controllo/avvio/pausa, la chiarezza e persistenza del Limbo, l'accesso Gmail, il percorso Registro/Google, l'avvio automatico e le interazioni di copia/incolla. Suddivise le correzioni finite in `GUI-U-E3-T07` - `GUI-U-E3-T11`; corrente `GUI-U-E3-T07`, gate in `WAITING_FOR_PREVIOUS_TASKS`.
+
 - 2026-07-17 - Completato `GUI-U-E3-T06`: aggiunto `CaronteSetup.exe` per installazione per utente senza privilegi, collegamento Start, registrazione di disinstallazione HKCU, rimozione del programma con conservazione di configurazione e dati, build e smoke isolato del primo avvio. Test task `9 passed`, suite e smoke locale `442 passed`, smoke installer verde con riferimenti Python rimossi. `GATE U-H3 = WAITING_HUMAN_REVIEW` e richiede esito umano esplicito.
 
 - 2026-07-17 - Completato `GUI-U-E3-T05`: aggiunte build PyInstaller one-folder deterministica, entry point `Caronte.exe`, dipendenze runtime Windows dichiarate, script di build e smoke isolato e documentazione operativa. Due build pulite identiche (`1582` file, zero differenze SHA-256) e avvio dalla sola cartella copiata con titolo `Caronte`; test task (`10 passed`), suite local connector e smoke (`438 passed`) verdi. Prossimo task `GUI-U-E3-T06 - Installer Windows`.

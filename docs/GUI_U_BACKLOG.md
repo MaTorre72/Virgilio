@@ -459,15 +459,131 @@ e collaudo isolato del setup per utente, che non richiede privilegi in esecuzion
 | La disinstallazione funziona. | Verifica rimozione programma e policy dati. | Lo smoke verifica registrazione e rimozione del disinstallatore, programma, collegamento e voce HKCU; configurazione e dati sintetici restano presenti. | `MET` |
 | Il wizard parte alla prima apertura. | Avvio su profilo utente nuovo. | Con profilo isolato privo di configurazione, `Caronte.exe` resta attivo e mostra la finestra `Caronte`; i test di routing confermano il percorso di primo avvio. | `MET` |
 
+### GUI-U-E3-T07 — Riscontri operativi delle azioni principali
+
+Stato: `IN_PROGRESS`.
+Risultato: ogni azione primaria comunica subito se e` partita e mostra poi un
+esito finale comprensibile e azionabile.
+Dipendenza: `GUI-U-E3-T06 = DONE`; esito umano negativo di `GATE U-H3` del
+2026-07-17.
+Componenti ammessi: viste `user_app`, controller Home, coda eventi condivisa,
+servizio di verifica casella, proiezione Attivita e test con fake.
+Esclusioni: servizi reali, nuove operazioni, modifiche a Limbo, autenticazione
+Google, Registro condiviso e packaging.
+Condizione di blocco: l'esito non puo` essere esposto senza mostrare output
+tecnico o senza distinguere accettazione, avanzamento e completamento.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `Verifica collegamento` mostra avvio, successo o errore azionabile della casella selezionata. | Test UI con connessione lenta, successo e autenticazione rifiutata. | Da ottenere. | `NOT_MET` |
+| `Controlla ora` mostra richiesta accettata e riepilogo finale oppure errore. | Test controller/view con eventi di completamento. | Da ottenere. | `NOT_MET` |
+| `Avvia` e `Pausa` aggiornano lo stato visibile e spiegano richieste rifiutate. | Test di ciclo avvio, doppio avvio e pausa. | Da ottenere. | `NOT_MET` |
+| La Home consuma periodicamente gli eventi del runner e aggiorna stato, ultimo controllo e Attivita. | Test di polling deterministico senza bloccare la finestra. | Da ottenere. | `NOT_MET` |
+| Gli errori installati restano leggibili e non espongono dettagli tecnici o credenziali. | Test su errori sintetici e inventario testi. | Da ottenere. | `NOT_MET` |
+
+### GUI-U-E3-T08 — Limbo, persistenza e interazioni di base
+
+Stato: `TODO`.
+Risultato: la scelta del Limbo e` inequivocabile, persistente e utilizzabile con
+i normali comandi Windows di selezione e copia/incolla.
+Dipendenza: `GUI-U-E3-T07 = DONE`.
+Componenti ammessi: wizard, Impostazioni, selettore cartella, binding comuni dei
+controlli testuali, configurazione condivisa e test UI.
+Esclusioni: scelta della Quarantena, API Drive, modifica del Limbo cloud,
+scansione e servizi reali.
+Condizione di blocco: il percorso locale sincronizzato non puo` essere distinto
+in modo verificabile dalla Quarantena o richiede all'utente dettagli tecnici.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| Il wizard definisce il Limbo come cartella locale del Limbo Drive sincronizzato e non come Quarantena. | Test inventario testi e revisione del percorso. | Da ottenere. | `NOT_MET` |
+| Il Limbo si sceglie con un selettore cartella e deve essere una directory assoluta esistente. | Test selettore e validazioni. | Da ottenere. | `NOT_MET` |
+| Tornando indietro, riaprendo la configurazione o le Impostazioni, il percorso salvato resta valorizzato. | Test round-trip completo. | Da ottenere. | `NOT_MET` |
+| La GUI non chiede di scegliere la Quarantena ne` un URL o ID Drive non necessario al percorso locale. | Test inventario campi visibili. | Da ottenere. | `NOT_MET` |
+| Campi e messaggi consentono selezione, copia/incolla da tastiera e menu contestuale Windows. | Test binding condivisi sui controlli testuali. | Da ottenere. | `NOT_MET` |
+
+### GUI-U-E3-T09 — Accesso alle caselle Google
+
+Stato: `TODO`.
+Risultato: Gmail e Google Workspace hanno un percorso di accesso coerente con le
+policy Google correnti e distinto dall'IMAP generico.
+Dipendenza: `GUI-U-E3-T08 = DONE`.
+Componenti ammessi: servizio connessione casella, credenziali Windows, flusso
+OAuth Google gia` dichiarato, guida per password per app e test con fake.
+Esclusioni: password reali nei test, memorizzazione in chiaro, accesso Google
+reale automatico e modifica delle policy di sicurezza.
+Condizione di blocco: manca la decisione umana tra OAuth come unico percorso o
+OAuth predefinito con password per app come fallback amministrato.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| Gmail/Workspace propone accesso Google e non la password ordinaria dell'account. | Test UI per provider Google. | Da ottenere. | `NOT_MET` |
+| L'eventuale password per app e` spiegata come fallback subordinato a verifica in due passaggi e policy amministratore. | Test testi e percorso alternativo. | Da ottenere. | `NOT_MET` |
+| IMAP generico conserva host, porta e credenziale specifica del provider. | Test regressione provider non Google. | Da ottenere. | `NOT_MET` |
+| La verifica distingue accesso riuscito, credenziali rifiutate, rete assente e configurazione incompleta. | Test fake per quattro esiti. | Da ottenere. | `NOT_MET` |
+| Token o password restano nel gestore credenziali e non nei file o nei messaggi. | Test persistenza e scansione segreti. | Da ottenere. | `NOT_MET` |
+
+### GUI-U-E3-T10 — Registro e collegamento Google comprensibili
+
+Stato: `TODO`.
+Risultato: l'utente comprende che il Registro e` sempre usato e puo` completare
+il collegamento Google richiesto senza conoscere Bucoliche o configurazioni
+tecniche.
+Dipendenza: `GUI-U-E3-T09 = DONE`.
+Componenti ammessi: vista Registro, servizio Bucoliche condiviso rinominato solo
+nella presentazione, OAuth browser, selezione guidata del Registro e test fake.
+Esclusioni: nuovo registro, modifica degli Apps Script, file o credenziali reali,
+esposizione di nomi interni.
+Condizione di blocco: manca una decisione umana su chi seleziona il Registro
+Google condiviso e se il collegamento e` configurazione utente o amministrativa.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| Il Registro delle attivita` e` sempre attivo e non esiste una scelta utente per disabilitarlo. | Test stato e assenza del toggle. | Da ottenere. | `NOT_MET` |
+| `Bucoliche` e i nomi delle sue schede non compaiono nella GUI utente. | Test inventario testi visibili. | Da ottenere. | `NOT_MET` |
+| `Collega Google` apre un flusso interattivo e identifica chiaramente account e autorizzazione del Registro. | Test OAuth fake e apertura browser controllata. | Da ottenere. | `NOT_MET` |
+| Il Registro condiviso si seleziona o riconosce con un percorso guidato, senza file tecnici o variabili esterne. | Test selezione e persistenza dell'identificativo. | Da ottenere. | `NOT_MET` |
+| Verifica e problemi del Registro hanno esiti visibili, specifici e azionabili. | Test successi ed errori sintetici. | Da ottenere. | `NOT_MET` |
+
+### GUI-U-E3-T11 — Avvio automatico della distribuzione installata
+
+Stato: `TODO`.
+Risultato: Caronte installato puo` avviarsi all'accesso a Windows e controllare
+in automatico senza dipendere dal repository o da una runtime esterna.
+Dipendenza: `GUI-U-E3-T10 = DONE`.
+Componenti ammessi: adapter avvio Windows, supervisore, comando congelato,
+Task Scheduler/registro utente e test isolati.
+Esclusioni: servizio Windows, privilegi amministrativi, processo permanente
+aggiuntivo, GUI legacy.
+Condizione di blocco: la build congelata non puo` rappresentare i due comportamenti
+senza percorsi di sviluppo o senza lasciare processi orfani.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `Avvia Caronte quando accedo a Windows` registra un comando valido della build installata. | Test registro e avvio da profilo isolato. | Da ottenere. | `NOT_MET` |
+| Il controllo automatico usa l'eseguibile installato senza repository o runtime esterna. | Test piano Task Scheduler congelato. | Da ottenere. | `NOT_MET` |
+| Attivazione, stato e rimozione mostrano esiti visibili e coerenti. | Test UI e adapter fake. | Da ottenere. | `NOT_MET` |
+| Disinstallazione rimuove ogni avvio automatico del programma. | Smoke installazione, attivazione e disinstallazione. | Da ottenere. | `NOT_MET` |
+| Nessun processo resta orfano dopo pausa, chiusura o disinstallazione. | Test lifecycle e smoke isolato. | Da ottenere. | `NOT_MET` |
+
 ### GATE U-H3 — Collaudo umano di distribuzione
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
 
 Codex non puo` dichiararlo `PASS`.
 
 Prerequisiti verificati: `GUI-U-E3-T01` - `GUI-U-E3-T06 = DONE`; test mirati
 installer `9 passed`, suite local connector `442 passed`, smoke locale
 `442 passed` e smoke installer isolato completato con dati sintetici preservati.
+
+Esito umano del 2026-07-17: `FAIL`. Installazione, collegamento Start,
+conclusione del wizard, persistenza e disinstallazione sono riusciti. Il collaudo
+ha rilevato assenza di riscontri osservabili per verifica casella, controllo,
+avvio e pausa; significato ambiguo e mancata persistenza del Limbo tornando
+indietro; accesso Gmail non guidato; `Bucoliche` e collegamento Google non
+comprensibili ne` completabili; avvio automatico non attivabile; copia/incolla e
+selezione testo incomplete. I task `GUI-U-E3-T07` - `GUI-U-E3-T11` devono essere
+`DONE` prima di ripetere il gate.
 
 Scenario su PC o VM senza Python:
 

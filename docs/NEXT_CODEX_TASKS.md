@@ -1,16 +1,14 @@
 # Next Codex Tasks
 
-- Task corrente: `GATE U-H3 - Collaudo umano di distribuzione`, stato
-  `WAITING_HUMAN_REVIEW`.
-- Prerequisiti: `GUI-U-E3-T01` - `GUI-U-E3-T06 = DONE`.
-- Artefatto locale pronto:
-  `local_connector\build-output\installer\dist\CaronteSetup.exe`.
-- Scenario umano su PC o VM senza Python: installazione, primo avvio, due caselle,
-  controllo, pausa, chiusura e riapertura, persistenza, avvio automatico e
-  disinstallazione.
-- Evidenze automatiche: test installer `9 passed`, suite e smoke locale
-  `442 passed`, smoke installer isolato verde con dati sintetici preservati.
-- Azione necessaria unica: comunicare esito umano esplicito `PASS`, oppure `FAIL`
-  indicando l'area osservata; Codex non puo` approvare il gate.
+- Task corrente: `GUI-U-E3-T07 - Riscontri operativi delle azioni principali`.
+- Risultato: verifica casella, `Controlla ora`, `Avvia` e `Pausa` devono mostrare
+  avvio, stato ed esito finale comprensibile consumando gli eventi del runner.
+- Dipendenza soddisfatta: `GUI-U-E3-T06 = DONE`; `GATE U-H3 = FAIL` umano.
+- Successivi: `GUI-U-E3-T08 - Limbo, persistenza e interazioni di base`, poi
+  `GUI-U-E3-T09 - Accesso alle caselle Google`.
+- Ulteriori correzioni gia` delimitate: `GUI-U-E3-T10 - Registro e collegamento
+  Google comprensibili`, `GUI-U-E3-T11 - Avvio automatico della distribuzione
+  installata`.
+- `GATE U-H3` resta `WAITING_FOR_PREVIOUS_TASKS` fino alla chiusura di T07-T11.
 
-Dettagli e istruzioni: `docs/GUI_U_BACKLOG.md`, sezione `GATE U-H3`.
+Dettagli, criteri ed evidenze: `docs/GUI_U_BACKLOG.md`.
