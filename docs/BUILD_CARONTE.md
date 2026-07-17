@@ -33,3 +33,24 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_caronte_bu
 Lo smoke copia soltanto la cartella prodotta in una directory temporanea,
 rimuove i riferimenti all'ambiente di sviluppo, avvia `Caronte.exe`, verifica
 il titolo `Caronte` e infine arresta il processo e rimuove la copia.
+
+## Installer Windows
+
+Dopo la build autonoma, creare il setup per utente con:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\build_caronte_installer.ps1
+```
+
+Il risultato e` `local_connector\build-output\installer\dist\CaronteSetup.exe`.
+Installa il programma in `%LOCALAPPDATA%\Programs\Caronte`, crea il collegamento
+Start e registra il disinstallatore per l'utente corrente. Configurazione e dati
+restano rispettivamente in `%APPDATA%\Caronte` e `%LOCALAPPDATA%\Caronte` e non
+vengono rimossi dalla disinstallazione.
+
+Lo smoke isolato dell'intero ciclo e`:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_caronte_installer.ps1 `
+  -InstallerPath local_connector\build-output\installer\dist\CaronteSetup.exe
+```

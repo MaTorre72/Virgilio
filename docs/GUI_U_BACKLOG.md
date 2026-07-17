@@ -440,35 +440,34 @@ Condizione di blocco: la build richiede repository, runtime esterno o file non d
 
 ### GUI-U-E3-T06 — Installer Windows
 
-Stato: `BLOCKED`
+Stato: `DONE`
 Risultato: Caronte e` installabile e disinstallabile con dati separati dal programma.
 Dipendenza: `GUI-U-E3-T05 = DONE`.
 Componenti ammessi: configurazione installer, artefatto build, collegamento Start, test su VM/ambiente isolato.
 Esclusioni: distribuzione pubblica, firma commerciale, aggiornamento automatico.
 Condizione di blocco: l'installer richiede privilegi o dipendenze non dichiarati, oppure mescola dati utente e file programma.
 
-Blocco 2026-07-17: la build one-folder necessaria non e` ricreabile con la
-toolchain portabile disponibile: Tcl/Tk non si inizializza e PyInstaller esclude
-Tkinter. L'installazione della distribuzione Python completa gia` dichiarata ha
-restituito Windows Installer `2503`; l'esecuzione elevata e` stata rifiutata
-perche` richiede autorizzazione umana esplicita. Un tentativo con copia portabile
-ha riprodotto lo stesso errore. Azione necessaria unica: autorizzare esplicitamente
-l'installazione elevata della toolchain Python completa nella cartella di build
-ignorata, quindi rieseguire questo task.
+Sblocco 2026-07-17: ricevuta autorizzazione umana esplicita, predisposta una
+toolchain completa con Tcl/Tk nella cartella di build ignorata e completati build
+e collaudo isolato del setup per utente, che non richiede privilegi in esecuzione.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| L'installer funziona. | Installazione pulita su VM Windows. | Build preliminare bloccata: Tcl/Tk non inizializzabile; PyInstaller segnala `tkinter installation is broken`. | `BLOCKED` |
-| Esiste il collegamento nel menu Start. | Verifica automatica/manuale del collegamento. | Non verificabile senza artefatto installabile valido. | `BLOCKED` |
-| La directory dati e` separata. | Verifica path dopo primo avvio. | Non verificabile senza artefatto installabile valido. | `BLOCKED` |
-| La disinstallazione funziona. | Verifica rimozione programma e policy dati. | Non verificabile senza artefatto installabile valido. | `BLOCKED` |
-| Il wizard parte alla prima apertura. | Avvio su profilo utente nuovo. | Non verificabile: la build prodotta senza Tkinter non e` una GUI valida. | `BLOCKED` |
+| L'installer funziona. | Installazione pulita su VM Windows. | Prodotto `CaronteSetup.exe` (`30.594.909` byte, SHA-256 `810C35C61E6E42062FBEE9BEAB870A2AB62E8F9192422A010695851155632043`); smoke su profilo Windows isolato con riferimenti Python rimossi: installazione silenziosa completata e programma avviabile. | `MET` |
+| Esiste il collegamento nel menu Start. | Verifica automatica/manuale del collegamento. | Lo smoke crea e verifica `Caronte.lnk` nella cartella Start del profilo isolato. | `MET` |
+| La directory dati e` separata. | Verifica path dopo primo avvio. | Programma in `LOCALAPPDATA/Programs/Caronte`, configurazione in `APPDATA/Caronte` e dati in `LOCALAPPDATA/Caronte`; test unitario e smoke confermano tre radici distinte. | `MET` |
+| La disinstallazione funziona. | Verifica rimozione programma e policy dati. | Lo smoke verifica registrazione e rimozione del disinstallatore, programma, collegamento e voce HKCU; configurazione e dati sintetici restano presenti. | `MET` |
+| Il wizard parte alla prima apertura. | Avvio su profilo utente nuovo. | Con profilo isolato privo di configurazione, `Caronte.exe` resta attivo e mostra la finestra `Caronte`; i test di routing confermano il percorso di primo avvio. | `MET` |
 
 ### GATE U-H3 — Collaudo umano di distribuzione
 
-Stato iniziale: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `WAITING_HUMAN_REVIEW`.
 
 Codex non puo` dichiararlo `PASS`.
+
+Prerequisiti verificati: `GUI-U-E3-T01` - `GUI-U-E3-T06 = DONE`; test mirati
+installer `9 passed`, suite local connector `442 passed`, smoke locale
+`442 passed` e smoke installer isolato completato con dati sintetici preservati.
 
 Scenario su PC o VM senza Python:
 

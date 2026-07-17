@@ -1,17 +1,16 @@
 # Next Codex Tasks
 
-- Task corrente: `GUI-U-E3-T06 - Installer Windows`, stato `BLOCKED`.
-- Dipendenza soddisfatta: `GUI-U-E3-T05 = DONE`.
-- Risultato richiesto: rendere Caronte installabile e disinstallabile su Windows,
-  mantenendo separati i dati utente dai file del programma.
-- Vincolo architetturale: l'installer consuma la build one-folder gia` verificata;
-  pubblicazione, firma commerciale e aggiornamento automatico restano fuori task.
-- Blocco: la toolchain portabile non inizializza Tcl/Tk; la distribuzione Python
-  completa richiede un'esecuzione elevata esplicitamente autorizzata dopo errore
-  Windows Installer `2503`.
-- Unica azione necessaria: autorizzare esplicitamente l'installazione elevata
-  della toolchain completa nella cartella di build ignorata, poi rieseguire
-  `GUI-U-E3-T06`.
-- `GATE U-H3` resta non avviabile.
+- Task corrente: `GATE U-H3 - Collaudo umano di distribuzione`, stato
+  `WAITING_HUMAN_REVIEW`.
+- Prerequisiti: `GUI-U-E3-T01` - `GUI-U-E3-T06 = DONE`.
+- Artefatto locale pronto:
+  `local_connector\build-output\installer\dist\CaronteSetup.exe`.
+- Scenario umano su PC o VM senza Python: installazione, primo avvio, due caselle,
+  controllo, pausa, chiusura e riapertura, persistenza, avvio automatico e
+  disinstallazione.
+- Evidenze automatiche: test installer `9 passed`, suite e smoke locale
+  `442 passed`, smoke installer isolato verde con dati sintetici preservati.
+- Azione necessaria unica: comunicare esito umano esplicito `PASS`, oppure `FAIL`
+  indicando l'area osservata; Codex non puo` approvare il gate.
 
-Dettagli, dipendenze ed evidenze: `docs/GUI_U_BACKLOG.md`.
+Dettagli e istruzioni: `docs/GUI_U_BACKLOG.md`, sezione `GATE U-H3`.

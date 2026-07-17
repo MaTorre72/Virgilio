@@ -3,19 +3,19 @@
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Iniziativa attiva: `GUI-U - Caronte Desktop utente`
-- Fase corrente: `GUI-U-E3-T06 - Installer Windows` (`BLOCKED`)
+- Fase corrente: `GATE U-H3 - Collaudo umano di distribuzione` (`WAITING_HUMAN_REVIEW`)
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
-- Task corrente di codice: nessuno avviabile; `GUI-U-E3-T06` e` `BLOCKED`
-- Task corrente consigliato: sbloccare `GUI-U-E3-T06` autorizzando la toolchain di build completa
-- Massimo due successivi: `GATE U-H3`
+- Task corrente di codice: nessuno avviabile durante il gate umano
+- Task corrente consigliato: eseguire il collaudo umano `GATE U-H3` con `CaronteSetup.exe`
+- Massimo due successivi: nessuno; la EPIC GUI-U dipende dal `PASS` umano
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
-- Gate corrente: `GATE U-H2 = PASS` su conferma umana esplicita del 2026-07-16 dopo `GUI-U-E2-T07`; la sotto-epica E3 e` sbloccata
-- Blocchi aperti: la toolchain portabile non inizializza Tcl/Tk e PyInstaller esclude Tkinter; Windows Installer `2503` impedisce di predisporre la distribuzione completa senza esecuzione elevata esplicitamente autorizzata
+- Gate corrente: `GATE U-H3 = WAITING_HUMAN_REVIEW`; Codex non puo` dichiararlo `PASS`
+- Blocchi aperti: nessuno automatico; serve l'esito umano esplicito del collaudo di distribuzione
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
-- Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-pytest-gui-e3-t05-full-rerun local_connector -q` -> `OK` (`438 passed`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`438 passed`)
+- Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-pytest-gui-e3-t06-full local_connector -q` -> `OK` (`442 passed`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`442 passed`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3
