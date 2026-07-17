@@ -17,6 +17,7 @@ class AccountConnectionRequest:
     password: str = field(repr=False)
     host: str = "imap.gmail.com"
     port: int = 993
+    auth_mode: str = "password"
 
 
 class ReadonlyAccountConnectionService:
@@ -38,6 +39,7 @@ class ReadonlyAccountConnectionService:
                 port=request.port,
                 username=request.email,
                 password=request.password,
+                auth_mode=request.auth_mode,
             ),
             self._local_root,
         )
@@ -95,6 +97,10 @@ def _safe_connection_error(exc: Exception) -> str:
     """Translate known failure families without echoing exception details."""
 
     category = f"{type(exc).__name__} {exc}".casefold()
+    if "googleoauthconfigurationerror" in category:
+        return "Collegamento Google non configurato. Contatta chi gestisce Caronte."
+    if isinstance(exc, PermissionError) or "access denied" in category:
+        return "Accesso Google rifiutato. Riprova e completa il consenso nel browser."
     if any(word in category for word in ("auth", "login", "credential", "password")):
         return "Accesso rifiutato. Controlla le credenziali della casella e riprova."
     if any(word in category for word in ("timeout", "network", "socket", "connect", "reachable")):

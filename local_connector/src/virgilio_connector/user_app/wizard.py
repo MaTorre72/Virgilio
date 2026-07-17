@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
+import json
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
@@ -50,21 +51,30 @@ class LimboValidator:
 class AccountForm:
     name: str
     email: str
-    password: str
+    password: str = field(repr=False)
     enabled: bool
     host: str = "imap.gmail.com"
     port: int = 993
+    provider: str = "gmail_workspace"
 
 
 class AccountValidator:
     """Validate only values belonging to the mailbox step."""
 
-    def validate(self, form: AccountForm) -> ValidationResult:
+    def validate(
+        self, form: AccountForm, *, require_google_access: bool = True
+    ) -> ValidationResult:
         if not form.name.strip():
             return ValidationResult(False, "Inserisci un nome per la casella.")
         if "@" not in form.email or not form.email.strip():
             return ValidationResult(False, "Inserisci un indirizzo email valido.")
-        if not form.password:
+        google_provider = (
+            form.provider == "gmail_workspace"
+            or form.host.strip().lower() == "imap.gmail.com"
+        )
+        if google_provider and require_google_access and not _is_google_authorization(form.password):
+            return ValidationResult(False, "Accedi con Google per collegare la casella.")
+        if not google_provider and not form.password:
             return ValidationResult(False, "Inserisci la password della casella.")
         if not form.host.strip() or not 1 <= form.port <= 65535:
             return ValidationResult(False, "Controlla le impostazioni avanzate.")
@@ -153,10 +163,23 @@ class LimboView:
         self.message.configure(text=result.message)
 
 
+def _is_google_authorization(value: str) -> bool:
+    try:
+        payload = json.loads(value)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return False
+    return bool(
+        isinstance(payload, dict)
+        and payload.get("token")
+        and payload.get("refresh_token")
+    )
+
+
 class AccountView:
     """Ordinary mailbox fields with optional provider details."""
 
-    ORDINARY_FIELDS = ("Nome casella", "Email", "Password", "Casella attiva")
+    GOOGLE_FIELDS = ("Nome casella", "Email", "Casella attiva")
+    GENERIC_FIELDS = ("Nome casella", "Email", "Password", "Casella attiva")
 
     def __init__(
         self,
@@ -175,6 +198,7 @@ class AccountView:
         self._ttk = ttk_module
         self._menu_factory = menu_factory
         self._enabled = True
+        self.provider = "gmail_workspace"
         self.advanced_visible = False
         self.frame = ttk_module.Frame(parent, padding=32)
         ttk_module.Label(self.frame, text="Configura le caselle").grid(
@@ -196,20 +220,32 @@ class AccountView:
         self.name_entry = self._field(2, "Nome casella")
         self.name_entry.insert(0, "Principale")
         self.email_entry = self._field(3, "Email")
-        self.password_entry = self._field(4, "Password", show="*")
+        self.password_label = ttk_module.Label(self.frame, text="Password")
+        self.password_label.grid(row=4, column=0, sticky="w")
+        self.password_entry = ttk_module.Entry(self.frame, show="*")
+        bind_text_interactions(self.password_entry, menu_factory=menu_factory)
+        self.password_entry.grid(row=4, column=1, sticky="ew")
+        self.password_label.grid_remove()
+        self.password_entry.grid_remove()
         self.enabled_control = ttk_module.Checkbutton(
             self.frame, text="Casella attiva", command=self.toggle_enabled
         )
         self.enabled_control.state(("selected",))
         self.enabled_control.grid(row=5, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        self.provider_button = ttk_module.Button(
+            self.frame,
+            text="Usa un altro provider",
+            command=self.use_generic_provider,
+        )
+        self.provider_button.grid(row=6, column=0, columnspan=2, sticky="w", pady=(12, 0))
         self.advanced_button = ttk_module.Button(
             self.frame,
             text="Mostra impostazioni avanzate",
             command=self.toggle_advanced,
         )
-        self.advanced_button.grid(row=6, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        self.advanced_button.grid(row=7, column=0, columnspan=2, sticky="w", pady=(12, 0))
         self.advanced_frame = ttk_module.Frame(self.frame)
-        self.advanced_frame.grid(row=7, column=0, columnspan=2, sticky="ew")
+        self.advanced_frame.grid(row=8, column=0, columnspan=2, sticky="ew")
         ttk_module.Label(
             self.advanced_frame, text="Server posta in arrivo"
         ).grid(row=0, column=0, sticky="w")
@@ -226,20 +262,21 @@ class AccountView:
         self.port_entry.grid(row=1, column=1, sticky="ew")
         self.advanced_frame.grid_remove()
         self.message = ttk_module.Label(self.frame, text="")
-        self.message.grid(row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        self.message.grid(row=9, column=0, columnspan=2, sticky="w", pady=(8, 0))
         actions = ttk_module.Frame(self.frame)
-        actions.grid(row=9, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        actions.grid(row=10, column=0, columnspan=2, sticky="w", pady=(12, 0))
         ttk_module.Button(actions, text="Aggiungi", command=on_add).grid(row=0, column=0)
         ttk_module.Button(actions, text="Modifica", command=on_update).grid(row=0, column=1)
         ttk_module.Button(actions, text="Rimuovi", command=on_remove).grid(row=0, column=2)
-        ttk_module.Button(
-            self.frame, text="Verifica collegamento", command=on_test
-        ).grid(row=10, column=0, sticky="w", pady=(24, 0))
+        self.access_button = ttk_module.Button(
+            self.frame, text="Accedi con Google", command=on_test
+        )
+        self.access_button.grid(row=11, column=0, sticky="w", pady=(24, 0))
         ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
-            row=11, column=0, sticky="w", pady=(24, 0)
+            row=12, column=0, sticky="w", pady=(24, 0)
         )
         ttk_module.Button(self.frame, text="Termina configurazione", command=on_continue).grid(
-            row=11, column=1, sticky="e", pady=(24, 0)
+            row=12, column=1, sticky="e", pady=(24, 0)
         )
         self.table.bind("<<TreeviewSelect>>", lambda _event: on_select())
 
@@ -251,8 +288,33 @@ class AccountView:
         return entry
 
     def visible_fields(self) -> tuple[str, ...]:
-        return self.ORDINARY_FIELDS
+        return self.GOOGLE_FIELDS if self.provider == "gmail_workspace" else self.GENERIC_FIELDS
 
+    def use_generic_provider(self) -> None:
+        self.provider = "custom_imap"
+        self.password_label.grid(row=4, column=0, sticky="w")
+        self.password_entry.grid(row=4, column=1, sticky="ew")
+        self.provider_button.configure(
+            text="Usa Gmail o Workspace", command=self.use_google_provider
+        )
+        self.access_button.configure(text="Verifica collegamento")
+
+    def use_google_provider(self) -> None:
+        self.provider = "gmail_workspace"
+        self.host_entry.delete(0, "end")
+        self.host_entry.insert(0, "imap.gmail.com")
+        self.port_entry.delete(0, "end")
+        self.port_entry.insert(0, "993")
+        if not _is_google_authorization(self.password_entry.get()):
+            self.password_entry.delete(0, "end")
+        self.password_label.grid_remove()
+        self.password_entry.grid_remove()
+        self.provider_button.configure(
+            text="Usa un altro provider", command=self.use_generic_provider
+        )
+        self.access_button.configure(text="Accedi con Google")
+        if self.advanced_visible:
+            self.toggle_advanced()
     def toggle_enabled(self) -> None:
         self._enabled = not self._enabled
 
@@ -270,11 +332,15 @@ class AccountView:
             entry.insert(0, value)
         self._enabled = account.enabled
         self.enabled_control.state(("selected" if account.enabled else "!selected",))
+        if account.host == "imap.gmail.com":
+            self.use_google_provider()
+        else:
+            self.use_generic_provider()
 
     def toggle_advanced(self) -> None:
         self.advanced_visible = not self.advanced_visible
         if self.advanced_visible:
-            self.advanced_frame.grid(row=7, column=0, columnspan=2, sticky="ew")
+            self.advanced_frame.grid(row=8, column=0, columnspan=2, sticky="ew")
             self.advanced_button.configure(text="Nascondi impostazioni avanzate")
         else:
             self.advanced_frame.grid_remove()
@@ -292,6 +358,7 @@ class AccountView:
             enabled=self._enabled,
             host=self.host_entry.get(),
             port=port,
+            provider=self.provider,
         )
 
     def show_validation(self, result: ValidationResult) -> None:
@@ -321,6 +388,7 @@ class FirstRunController:
         *,
         ttk_module: Any,
         readonly_test: Callable[[AccountForm], str] | None = None,
+        google_access: Callable[[AccountForm], Any] | None = None,
         account_service: AccountManagementService | None = None,
         on_complete: Callable[[], None] | None = None,
         open_existing: bool = False,
@@ -335,8 +403,10 @@ class FirstRunController:
         self._limbo_validator = LimboValidator()
         self._account_validator = AccountValidator()
         self._readonly_test = readonly_test
+        self._google_access = google_access
+        self._pending_google_credentials = ""
         self._connection_check = (
-            BackgroundAccountConnectionCheck(readonly_test)
+            BackgroundAccountConnectionCheck(self._check_connection)
             if readonly_test is not None
             else None
         )
@@ -439,7 +509,7 @@ class FirstRunController:
     def test_account_connection(self) -> ValidationResult:
         assert isinstance(self.current_view, AccountView)
         form = self.current_view.form_value()
-        result = self._account_validator.validate(form)
+        result = self._account_validator.validate(form, require_google_access=False)
         if result.is_valid:
             if self._connection_check is None:
                 result = ValidationResult(False, "Verifica non disponibile.")
@@ -451,6 +521,17 @@ class FirstRunController:
         self.current_view.show_validation(result)
         return result
 
+    def _check_connection(self, form: AccountForm) -> str:
+        if self._readonly_test is None:
+            raise RuntimeError("connection check unavailable")
+        if form.provider != "gmail_workspace":
+            return self._readonly_test(form)
+        if self._google_access is None:
+            return self._readonly_test(form)
+        authorization = self._google_access(form)
+        self._pending_google_credentials = authorization.credentials_json
+        return self._readonly_test(replace(form, password=authorization.access_token))
+
     def poll_account_connection(self) -> ValidationResult | None:
         if self._connection_check is None:
             return None
@@ -459,6 +540,10 @@ class FirstRunController:
             return None
         result = ValidationResult(feedback.ok, feedback.message)
         if isinstance(self.current_view, AccountView):
+            if feedback.ok and self._pending_google_credentials:
+                self.current_view.password_entry.delete(0, "end")
+                self.current_view.password_entry.insert(0, self._pending_google_credentials)
+                self._pending_google_credentials = ""
             self.current_view.show_validation(result)
         return result
 

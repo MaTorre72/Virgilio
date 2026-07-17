@@ -40,6 +40,7 @@ class ImapReadonlyConfig:
     port: int = 993
     timeout_seconds: float = 20.0
     max_messages: int = 25
+    auth_mode: str = "password"
 
     def __post_init__(self) -> None:
         if not self.host.strip() or not self.username.strip() or not self.password:
@@ -48,6 +49,8 @@ class ImapReadonlyConfig:
             raise ValueError("port must be between 1 and 65535")
         if self.timeout_seconds <= 0 or self.max_messages <= 0:
             raise ValueError("timeout_seconds and max_messages must be positive")
+        if self.auth_mode not in {"password", "oauth2"}:
+            raise ValueError("unsupported IMAP authentication mode")
 
 
 class ImapReadonlyMailbox:
@@ -113,8 +116,16 @@ class ImapReadonlyMailbox:
     def _connect(self):
         client = self._client_factory(self.config.host, self.config.port,
                                       timeout=self.config.timeout_seconds)
-        status, _ = client.login(self.config.username, self.config.password)
-        self._require_ok(status, "LOGIN")
+        if self.config.auth_mode == "oauth2":
+            payload = (
+                f"user={self.config.username}\x01"
+                f"auth=Bearer {self.config.password}\x01\x01"
+            ).encode("utf-8")
+            status, _ = client.authenticate("XOAUTH2", lambda _challenge: payload)
+            self._require_ok(status, "AUTHENTICATE XOAUTH2")
+        else:
+            status, _ = client.login(self.config.username, self.config.password)
+            self._require_ok(status, "LOGIN")
         return client
 
     def _select_readonly(self, client) -> None:
@@ -239,8 +250,16 @@ class ImapCompletionMailbox:
     def _connect(self):
         client = self._client_factory(self.config.host, self.config.port,
                                       timeout=self.config.timeout_seconds)
-        status, _ = client.login(self.config.username, self.config.password)
-        ImapReadonlyMailbox._require_ok(status, "LOGIN")
+        if self.config.auth_mode == "oauth2":
+            payload = (
+                f"user={self.config.username}\x01"
+                f"auth=Bearer {self.config.password}\x01\x01"
+            ).encode("utf-8")
+            status, _ = client.authenticate("XOAUTH2", lambda _challenge: payload)
+            ImapReadonlyMailbox._require_ok(status, "AUTHENTICATE XOAUTH2")
+        else:
+            status, _ = client.login(self.config.username, self.config.password)
+            ImapReadonlyMailbox._require_ok(status, "LOGIN")
         return client
 
     @staticmethod

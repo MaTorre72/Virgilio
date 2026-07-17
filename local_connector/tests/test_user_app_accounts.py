@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from virgilio_connector.application.account_management import AccountManagementService
 from virgilio_connector.application.configuration import ConfigurationService
@@ -29,6 +30,11 @@ def _open_accounts(tmp_path: Path):
 
 
 def _fill(view: AccountView, *, name: str, email: str, password: str, host: str):
+    if host == "imap.gmail.com":
+        view.use_google_provider()
+        password = json.dumps({"token": password, "refresh_token": f"refresh-{password}"})
+    else:
+        view.use_generic_provider()
     view.name_entry.set(name)
     view.email_entry.set(email)
     view.password_entry.set(password)
@@ -86,7 +92,7 @@ def test_account_crud_supports_different_providers_and_separate_credentials(tmp_
     assert [account.provider_hint for account in accounts] == ["gmail_workspace", "custom_imap"]
     assert accounts[0].username_env != accounts[1].username_env
     assert accounts[0].password_env != accounts[1].password_env
-    assert credential_store.read(accounts[0].password_env) == "one-secret"
+    assert json.loads(credential_store.read(accounts[0].password_env))["token"] == "one-secret"
     assert credential_store.read(accounts[1].password_env) == "two-secret"
 
     view.table.select(accounts[0].account_alias)

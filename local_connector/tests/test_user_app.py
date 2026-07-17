@@ -330,9 +330,10 @@ def test_account_step_starts_with_only_ordinary_fields_visible(tmp_path):
     assert controller.step is WizardStep.ACCOUNT
     assert isinstance(controller.current_view, AccountView)
     assert controller.current_view.visible_fields() == (
-        "Nome casella", "Email", "Password", "Casella attiva"
+        "Nome casella", "Email", "Casella attiva"
     )
     assert controller.current_view.password_entry.kwargs["show"] == "*"
+    assert controller.current_view.password_entry.grid_options is None
 
 
 def test_gmail_workspace_prefills_server_and_port(tmp_path):

@@ -15,6 +15,7 @@ from ..application.activity import ActivityService
 from ..application.configuration import ConfigurationService
 from ..application.home_status import AccountHomeStatusService, HomeStatus, HomeStatusService
 from ..application.home_control import HomeRunController
+from ..application.google_oauth import GoogleMailboxOAuthService
 from ..application.operation_runner import ManagedOperationRunner
 from ..application.settings import DisabledStartupAdapter, SettingsService
 from ..application.bucoliche_startup import (
@@ -72,7 +73,13 @@ class UserAppShell:
             interval_seconds = current_settings.interval_minutes * 60
         self._home_control = home_control or HomeRunController(
             configuration.store.source,
-            ManagedOperationRunner(),
+            ManagedOperationRunner(
+                environment_provider=(
+                    account_service.protected_runtime_environment
+                    if account_service is not None
+                    else None
+                )
+            ),
             interval_seconds=interval_seconds,
         )
         self.route = initial_route(configuration)
@@ -239,11 +246,13 @@ def launch_user_app(*, config_path: Path | None = None) -> int:
         configuration, create_account_credential_service()
     )
     connection = ReadonlyAccountConnectionService(paths.data_dir / "connection-check")
+    google_oauth = GoogleMailboxOAuthService()
     root = Tk()
     UserAppShell(
         root,
         configuration,
         readonly_test=lambda form: connection.check(_connection_request(form)),
+        google_access=lambda form: google_oauth.authorize(form.email),
         account_service=account_service,
         activity_service=ActivityService(paths.data_dir / "state.db"),
         settings_service=SettingsService(
@@ -265,4 +274,5 @@ def _connection_request(form: AccountForm) -> AccountConnectionRequest:
         password=form.password,
         host=form.host,
         port=form.port,
+        auth_mode="oauth2" if form.provider == "gmail_workspace" else "password",
     )

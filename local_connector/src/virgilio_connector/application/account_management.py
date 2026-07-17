@@ -37,6 +37,18 @@ class AccountManagementService:
             return ()
         return tuple(_managed(account) for account in self.configuration.load().accounts)
 
+    def protected_runtime_environment(self) -> dict[str, str]:
+        """Resolve protected values only for the owned local worker process."""
+
+        if not self.configuration.exists():
+            return {}
+        values: dict[str, str] = {}
+        for account in self.configuration.load().accounts:
+            credentials = self.credentials.read(account)
+            values[account.username_env] = credentials.username
+            values[account.password_env] = credentials.password
+        return values
+
     def get_account(self, alias: str) -> tuple[ManagedAccount, AccountCredentials]:
         """Return one editable account with credentials only to the presentation."""
 

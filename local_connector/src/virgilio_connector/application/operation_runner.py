@@ -6,8 +6,9 @@ from dataclasses import dataclass
 from queue import Empty, Queue
 import subprocess
 import sys
+import os
 from threading import Lock, Thread
-from typing import Callable
+from typing import Callable, Mapping
 
 
 @dataclass(frozen=True)
@@ -26,9 +27,11 @@ class ManagedOperationRunner:
         *,
         process_factory: Callable[..., object] = subprocess.Popen,
         stop_timeout: float = 3.0,
+        environment_provider: Callable[[], Mapping[str, str]] | None = None,
     ) -> None:
         self._process_factory = process_factory
         self._stop_timeout = stop_timeout
+        self._environment_provider = environment_provider
         self._process = None
         self._thread: Thread | None = None
         self._lock = Lock()
@@ -55,11 +58,16 @@ class ManagedOperationRunner:
             self._state = "starting"
             self._stop_requested = False
         command = _runtime_command(args)
-        self._thread = Thread(target=self._run, args=(command,), daemon=True)
+        environment = dict(os.environ)
+        if self._environment_provider is not None:
+            environment.update(self._environment_provider())
+        self._thread = Thread(
+            target=self._run, args=(command, environment), daemon=True
+        )
         self._thread.start()
         return True
 
-    def _run(self, command: list[str]) -> None:
+    def _run(self, command: list[str], environment: Mapping[str, str]) -> None:
         try:
             process = self._process_factory(
                 command,
@@ -67,6 +75,7 @@ class ManagedOperationRunner:
                 stderr=subprocess.PIPE,
                 text=True,
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                env=dict(environment),
             )
             with self._lock:
                 self._process = process

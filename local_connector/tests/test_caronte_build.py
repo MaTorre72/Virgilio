@@ -19,12 +19,16 @@ def test_build_configuration_defines_one_folder_caronte() -> None:
     assert "COLLECT(" in spec
     assert "console=False" in spec
     assert "Path(SPECPATH).parent" in spec
+    assert '"resources"' in spec
+    assert "google_oauth_client.json" in spec
     build_script = REPO_ROOT / "scripts" / "dev" / "build_caronte.ps1"
     assert build_script.is_file()
     build_text = build_script.read_text(encoding="utf-8")
     assert "import tkinter" in build_text
     assert "SOURCE_DATE_EPOCH" in build_text
     assert "PYTHONHASHSEED" in build_text
+    assert "GoogleOAuthClientPath" in build_text
+    assert "CARONTE_GOOGLE_OAUTH_CLIENT_PATH" in build_text
     assert (REPO_ROOT / "scripts" / "dev" / "smoke_caronte_build.ps1").is_file()
     assert (REPO_ROOT / "docs" / "BUILD_CARONTE.md").is_file()
 

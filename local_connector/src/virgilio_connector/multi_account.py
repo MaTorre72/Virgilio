@@ -97,6 +97,12 @@ class LocalImapAccount:
             raise MultiAccountConfigError(
                 f"missing password environment variable for {self.account_alias}: {self.password_env}"
             )
+        auth_mode = "password"
+        if self.provider_hint == "gmail_workspace" and password.lstrip().startswith("{"):
+            from .application.google_oauth import GoogleMailboxOAuthService
+
+            password = GoogleMailboxOAuthService().access_token(password).access_token
+            auth_mode = "oauth2"
         return ImapReadonlyConfig(
             host=self.imap_host,
             port=self.imap_port,
@@ -104,6 +110,7 @@ class LocalImapAccount:
             password=password,
             mailbox=self.input_folder,
             max_messages=self.max_messages,
+            auth_mode=auth_mode,
         )
 
     def operational_email(self, environ: Mapping[str, str] | None = None) -> str:

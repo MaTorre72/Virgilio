@@ -1,16 +1,24 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
 from pathlib import Path
 
 
 PROJECT_DIR = Path(SPECPATH).parent
 SOURCE_DIR = PROJECT_DIR / "src"
+OAUTH_CLIENT_PATH = os.environ.get("CARONTE_GOOGLE_OAUTH_CLIENT_PATH", "").strip()
+OAUTH_DATAS = []
+if OAUTH_CLIENT_PATH:
+    oauth_client = Path(OAUTH_CLIENT_PATH)
+    if not oauth_client.is_file() or oauth_client.name != "google_oauth_client.json":
+        raise ValueError("Google OAuth input must be google_oauth_client.json")
+    OAUTH_DATAS.append((str(oauth_client), "resources"))
 
 a = Analysis(
     [str(SOURCE_DIR / "virgilio_connector" / "build_entry.py")],
     pathex=[str(SOURCE_DIR)],
     binaries=[],
-    datas=[],
+    datas=OAUTH_DATAS,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

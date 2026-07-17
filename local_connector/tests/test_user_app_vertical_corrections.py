@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from virgilio_connector.application.account_management import AccountManagementService
 from virgilio_connector.application.configuration import ConfigurationService
@@ -45,9 +46,13 @@ def _open_account_step(shell: UserAppShell, limbo: Path) -> AccountView:
 
 
 def _fill(view: AccountView, *, email="one@example.invalid", password="secret"):
+    view.use_google_provider()
     view.name_entry.set("Principale")
     view.email_entry.set(email)
-    view.password_entry.set(password)
+    view.password_entry.set(json.dumps({
+        "token": password,
+        "refresh_token": f"refresh-{password}",
+    }))
 
 
 def test_active_mailbox_state_is_binary_visible_and_persisted(tmp_path):
@@ -102,10 +107,13 @@ def test_home_reopens_existing_configuration_and_returns_after_edit(tmp_path):
     edit.table.select(alias)
     edit.table.event_generate("<<TreeviewSelect>>")
     assert edit.email_entry.get() == "one@example.invalid"
-    assert edit.password_entry.get() == "secret"
+    assert json.loads(edit.password_entry.get())["token"] == "secret"
 
     edit.email_entry.set("changed@example.invalid")
-    edit.password_entry.set("changed-secret")
+    edit.password_entry.set(json.dumps({
+        "token": "changed-secret",
+        "refresh_token": "refresh-changed-secret",
+    }))
     assert first_shell.first_run.update_account().is_valid
     assert first_shell.first_run.continue_forward().is_valid
     assert first_shell.route is UserRoute.HOME

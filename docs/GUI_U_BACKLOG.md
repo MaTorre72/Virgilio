@@ -504,34 +504,29 @@ in modo verificabile dalla Quarantena o richiede all'utente dettagli tecnici.
 
 ### GUI-U-E3-T09 — Accesso alle caselle Google
 
-Stato: `BLOCKED` (2026-07-17, dipendenza OAuth applicativa assente).
+Stato: `DONE` (2026-07-17).
 Risultato: Gmail e Google Workspace hanno un percorso di accesso coerente con le
 policy Google correnti e distinto dall'IMAP generico.
 Dipendenza: `GUI-U-E3-T08 = DONE`.
 Componenti ammessi: servizio connessione casella, credenziali Windows, flusso
-OAuth Google gia` dichiarato, guida per password per app e test con fake.
+OAuth Google gia` dichiarato, input protetto della build e test con fake.
 Esclusioni: password reali nei test, memorizzazione in chiaro, accesso Google
 reale automatico e modifica delle policy di sicurezza.
 Decisione umana: `A - solo OAuth`, confermata il 2026-07-17. Per Gmail,
 Google Workspace e Drive l'utente apre l'accesso Google dal programma; Caronte
 gestisce token e rinnovi senza richiedere progetti Cloud o token manuali.
-Condizione di blocco: manca il client OAuth Desktop centrale di Caronte da
-fornire alla build come risorsa protetta e non versionata.
-
-Blocco rilevato: il repository e le cartelle locali previste non contengono una
-configurazione OAuth Desktop per Caronte; il flusso esistente richiede invece un
-file esterno scelto manualmente. Codex non puo` creare o inventare credenziali
-Google ne` versionarle. Azione necessaria unica: il titolare del progetto deve
-registrare una volta il client OAuth Desktop di Caronte per Gmail/Drive e fornire
-la configurazione come input locale ignorato della build.
+Condizione di blocco: nessuna per codice e prove sintetiche. Prima del prossimo
+collaudo della distribuzione il titolare deve registrare una volta il client
+OAuth Desktop di Caronte e passarlo alla build con l'input locale ignorato
+documentato in `docs/GOOGLE_OAUTH_DESKTOP.md`.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Gmail/Workspace propone accesso Google e non la password ordinaria dell'account. | Test UI per provider Google. | Scelto OAuth esclusivo; manca il client OAuth Desktop centrale necessario al flusso reale. | `BLOCKED` |
-| Nessun percorso password per app e` offerto per account Google. | Test testi e assenza del percorso alternativo. | Decisione OAuth esclusivo acquisita; prova non avviabile senza il client applicativo. | `BLOCKED` |
-| IMAP generico conserva host, porta e credenziale specifica del provider. | Test regressione provider non Google. | Prova non avviata: il task deve essere concluso interamente nella stessa run. | `BLOCKED` |
-| La verifica distingue accesso riuscito, credenziali rifiutate, rete assente e configurazione incompleta. | Test fake per quattro esiti. | Prova non avviata: il task deve essere concluso interamente nella stessa run. | `BLOCKED` |
-| Token o password restano nel gestore credenziali e non nei file o nei messaggi. | Test persistenza e scansione segreti. | Modello definito: token protetti e rinnovo automatico; implementazione non avviabile senza il client applicativo. | `BLOCKED` |
+| Gmail/Workspace propone accesso Google e non la password ordinaria dell'account. | Test UI per provider Google. | `test_gmail_view_offers_google_access_without_password_path` verifica vista predefinita senza password e azione `Accedi con Google`; il flusso usa `InstalledAppFlow` Desktop. | `MET` |
+| Nessun percorso password per app e` offerto per account Google. | Test testi e assenza del percorso alternativo. | Il validatore accetta Gmail solo con credenziali OAuth strutturate e rifiuta password ordinarie anche se il server viene impostato manualmente a `imap.gmail.com`. | `MET` |
+| IMAP generico conserva host, porta e credenziale specifica del provider. | Test regressione provider non Google. | `test_generic_imap_keeps_provider_specific_host_port_and_password` e la regressione CRUD multi-account conservano host, porta e credenziale del provider. | `MET` |
+| La verifica distingue accesso riuscito, credenziali rifiutate, rete assente e configurazione incompleta. | Test fake per quattro esiti. | I test OAuth/connessione coprono successo e messaggi distinti per configurazione mancante, consenso rifiutato e rete assente senza dettagli sensibili. | `MET` |
+| Token o password restano nel gestore credenziali e non nei file o nei messaggi. | Test persistenza e scansione segreti. | `test_google_credentials_are_persisted_only_in_protected_store` verifica token solo nel `CredentialStore`; configurazione e messaggi ne sono privi. Suite, smoke e scansione segreti verdi. | `MET` |
 
 ### GUI-U-E3-T10 — Registro e collegamento Google comprensibili
 
