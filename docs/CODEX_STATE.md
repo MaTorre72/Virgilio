@@ -11,7 +11,7 @@
 - Massimo due successivi: `GUI-U-E3-T11`, `GATE U-H3`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate corrente: `GATE U-H3 = WAITING_FOR_PREVIOUS_TASKS` dopo `FAIL` umano del 2026-07-17
-- Blocchi aperti: `GUI-U-E3-T10` richiede una decisione sulla responsabilita` di selezione del Registro Google; prima del prossimo collaudo va registrato il client OAuth Desktop centrale e fornito alla build tramite l'input locale ignorato gia` predisposto
+- Blocchi aperti: `GUI-U-E3-T10 = BLOCKED` al gate iniziale del 2026-07-17 per la decisione umana sulla responsabilita` di selezione del Registro Google; scelta raccomandata: predisposizione centrale, con utente limitato al collegamento Google. Prima del prossimo collaudo va inoltre registrato il client OAuth Desktop centrale e fornito alla build tramite l'input locale ignorato gia` predisposto
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-pytest-gui-e3-t09-final local_connector -q` -> `OK` (`464 passed`)

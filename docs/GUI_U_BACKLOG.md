@@ -530,7 +530,7 @@ documentato in `docs/GOOGLE_OAUTH_DESKTOP.md`.
 
 ### GUI-U-E3-T10 — Registro e collegamento Google comprensibili
 
-Stato: `TODO`.
+Stato: `BLOCKED` al gate iniziale del 2026-07-17.
 Risultato: l'utente comprende che il Registro e` sempre usato e puo` completare
 il collegamento Google richiesto senza conoscere Bucoliche o configurazioni
 tecniche.
@@ -542,13 +542,23 @@ esposizione di nomi interni.
 Condizione di blocco: manca una decisione umana su chi seleziona il Registro
 Google condiviso e se il collegamento e` configurazione utente o amministrativa.
 
+Blocco rilevato: la dipendenza tecnica `GUI-U-E3-T09 = DONE` e` soddisfatta,
+ma la responsabilita` della selezione cambia il percorso utente e non puo`
+essere scelta autonomamente. Azione unica necessaria: decidere tra
+`A` (raccomandata), Registro predisposto centralmente e utente limitato al
+collegamento Google; `B`, selezione guidata del Registro da parte dell'utente;
+`C`, riconoscimento automatico tra i Registri accessibili, con gestione delle
+ambiguita`. Con `A` l'esperienza e` piu` semplice ma serve predisposizione
+amministrativa; con `B` l'utente ha controllo ma deve riconoscere il Registro;
+con `C` si riducono i passaggi ma aumentano complessita` e casi ambigui.
+
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Il Registro delle attivita` e` sempre attivo e non esiste una scelta utente per disabilitarlo. | Test stato e assenza del toggle. | Da ottenere. | `NOT_MET` |
-| `Bucoliche` e i nomi delle sue schede non compaiono nella GUI utente. | Test inventario testi visibili. | Da ottenere. | `NOT_MET` |
-| `Collega Google` apre un flusso interattivo e identifica chiaramente account e autorizzazione del Registro. | Test OAuth fake e apertura browser controllata. | Da ottenere. | `NOT_MET` |
-| Il Registro condiviso si seleziona o riconosce con un percorso guidato, senza file tecnici o variabili esterne. | Test selezione e persistenza dell'identificativo. | Da ottenere. | `NOT_MET` |
-| Verifica e problemi del Registro hanno esiti visibili, specifici e azionabili. | Test successi ed errori sintetici. | Da ottenere. | `NOT_MET` |
+| Il Registro delle attivita` e` sempre attivo e non esiste una scelta utente per disabilitarlo. | Test stato e assenza del toggle. | Non eseguibile prima di fissare responsabilita` e percorso del Registro. | `BLOCKED` |
+| `Bucoliche` e i nomi delle sue schede non compaiono nella GUI utente. | Test inventario testi visibili. | Non eseguibile prima di fissare la presentazione utente o amministrativa. | `BLOCKED` |
+| `Collega Google` apre un flusso interattivo e identifica chiaramente account e autorizzazione del Registro. | Test OAuth fake e apertura browser controllata. | Il punto di ingresso dipende dalla decisione sul responsabile della configurazione. | `BLOCKED` |
+| Il Registro condiviso si seleziona o riconosce con un percorso guidato, senza file tecnici o variabili esterne. | Test selezione e persistenza dell'identificativo. | Selezione utente, predisposizione centrale e riconoscimento automatico richiedono implementazioni diverse. | `BLOCKED` |
+| Verifica e problemi del Registro hanno esiti visibili, specifici e azionabili. | Test successi ed errori sintetici. | Collocazione e azioni correttive dipendono dal responsabile scelto. | `BLOCKED` |
 
 ### GUI-U-E3-T11 — Avvio automatico della distribuzione installata
 
