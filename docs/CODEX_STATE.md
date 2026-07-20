@@ -7,11 +7,11 @@
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
 - Task completato: `GUI-U-R01 - Identita certa della build e dell'installer`
-- Task corrente: `GUI-U-R02 - Prototipo visuale completo`
-- Massimo due successivi: `GUI-U-R03 - Collegamento dei servizi`; `GUI-U-R04 - Release candidate e collaudo finale`
+- Task corrente: `GUI-U-R02-T01 - Percorso dimostrativo isolato`
+- Massimo due successivi: `GUI-U-R02-T02 - Schermate del primo avvio osservabili`; `GUI-U-R02-T03 - Home dimostrativa ed evidenze installate`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
-- Gate previsto: R02 deve terminare in `WAITING_HUMAN_REVIEW` e richiede conferma umana esplicita
+- Gate previsto: R02-T03 deve terminare in `WAITING_HUMAN_REVIEW` e richiede conferma umana esplicita
 - Blocchi aperti: nessuno per avviare il prototipo visuale R02; non sono autorizzati microcorrettivi della sequenza E3
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3

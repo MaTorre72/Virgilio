@@ -2,7 +2,7 @@
 
 Stato: `RECOVERY_ACTIVE`
 Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
-Task corrente: `GUI-U-R02 - Prototipo visuale completo`
+Task corrente: `GUI-U-R02-T01 - Percorso dimostrativo isolato`
 
 Obiettivo finale:
 
@@ -712,10 +712,75 @@ build pulita, un installer identificato e smoke coerenti con il commit corrente.
 
 ### GUI-U-R02 - Prototipo visuale completo
 
-Stato: `TODO`.
+Stato: `IN_PROGRESS`.
 Risultato: prototipo completo delle cinque schermate con dati sintetici ed
 evidenze prodotte dalla build installata reale.
 Esito terminale obbligatorio: `WAITING_HUMAN_REVIEW`; Codex non puo dichiarare `PASS`.
+
+La sotto-epica e` suddivisa per separare il percorso dimostrativo, la resa delle
+schermate e le prove sulla build installata. Nessun task collega servizi reali.
+
+#### GUI-U-R02-T01 - Percorso dimostrativo isolato
+
+Stato: `TODO`.
+Risultato: Caronte offre un percorso dimostrativo ripetibile, con dati sintetici,
+attraverso Benvenuto, Limbo, Caselle, Riepilogo e Home.
+Dipendenza: `GUI-U-R01 = DONE`.
+Componenti ammessi: stato demo in memoria, navigazione `user_app`, viste gia`
+esistenti, test GUI mirati e documentazione minima.
+Esclusioni: servizi reali, persistenza reale, credenziali, OAuth, Registro,
+build/installer, redesign visuale delle schermate, nuove dipendenze e GUI legacy.
+Condizione di blocco: non e` possibile isolare i dati sintetici dalla
+configurazione e dalle credenziali locali senza cambiare i contratti condivisi.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R02-T01-AC1` Il percorso demo parte senza configurazione o credenziali locali. | Test con filesystem e credential store finti. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T01-AC2` Le cinque schermate sono raggiungibili nel solo percorso Benvenuto -> Limbo -> Caselle -> Riepilogo -> Home. | Test di routing con shell Tk finta. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T01-AC3` Limbo e due caselle sintetiche restano coerenti dopo Indietro/Continua. | Test di navigazione e stato in memoria. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T01-AC4` Il percorso demo non esegue rete, salvataggi reali o accessi a credenziali. | Test con adapter che falliscono a ogni accesso esterno. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T01-AC5` Le stringhe vietate non sono visibili nel percorso demo. | Test automatico sull'inventario delle stringhe visuali. | Non ancora eseguita. | `NOT_MET` |
+
+#### GUI-U-R02-T02 - Schermate del primo avvio osservabili
+
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Risultato: Benvenuto, Limbo, Caselle e Riepilogo presentano una gerarchia visuale
+leggibile e azioni coerenti con gli scenari `H-R02-01`-`H-R02-05`.
+Dipendenza: `GUI-U-R02-T01 = DONE`.
+Componenti ammessi: viste `user_app` del primo avvio, risorse locali, test GUI e
+documentazione minima.
+Esclusioni: Home, servizi reali, persistenza reale, build/installer, GUI legacy e nuove dipendenze.
+Condizione di blocco: la resa non puo` restare leggibile a 960x640 e con scala
+Windows 100%/125% usando il toolkit e le risorse locali approvate.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R02-T02-AC1` Benvenuto rende immediati identita`, scopo e azione iniziale. | Test delle label/azioni e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T02-AC2` Limbo mostra istruzione, selettore, valore ed errore presso il campo. | Test UI e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T02-AC3` Caselle separa elenco e form, rende evidente la seconda casella e relega i campi avanzati. | Test UI e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T02-AC4` Riepilogo mostra completezza e una correzione azionabile per ogni dato mancante. | Test UI e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T02-AC5` Le quattro schermate restano utilizzabili a 960x640 e nei test di resize. | Test geometria/resize con Tk e ispezione screenshot. | Non ancora eseguita. | `NOT_MET` |
+
+#### GUI-U-R02-T03 - Home dimostrativa ed evidenze installate
+
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Risultato: Home dimostrativa coerente con il percorso e pacchetto di evidenze
+reali della build installata, pronto per il collaudo umano R02.
+Dipendenza: `GUI-U-R02-T02 = DONE`.
+Componenti ammessi: Home `user_app`, dati demo, pipeline di build/installer gia`
+approvata, smoke e artefatti di collaudo.
+Esclusioni: servizi reali, credenziali, modifiche ai contratti applicativi,
+nuovi toolkit e GUI legacy.
+Condizione di blocco: non e` possibile produrre o installare una build identificata
+del commit corrente, oppure non e` possibile acquisire le evidenze reali richieste.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R02-T03-AC1` Home mostra stato, caselle, prossima azione, attivita`, problemi e azione primaria con dati demo. | Test UI e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T03-AC2` Home e primo avvio hanno gerarchia leggibile nei resize minimi previsti. | Test geometria/resize e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T03-AC3` Build e installer del commit corrente superano gli smoke di identita` e installazione. | Build pulita, smoke build e smoke installer isolato. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T03-AC4` La cartella `artifacts/gui-u-r02/<build-id>/` contiene manifest, hash, cinque screenshot reali, varianti scala e checklist/instructions. | Verifica struttura e apertura manuale degli artefatti. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T03-AC5` La scheda R02 e il collaudo umano sono preparati come `WAITING_HUMAN_REVIEW`, senza dichiarare `PASS`. | Revisione documentale e stato Git. | Non ancora eseguita. | `NOT_MET` |
 
 ### GUI-U-R03 - Collegamento dei servizi
 
