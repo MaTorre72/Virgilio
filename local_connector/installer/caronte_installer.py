@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import ctypes
+import json
 import os
 from pathlib import Path
 import shutil
@@ -14,7 +15,6 @@ from typing import Callable, Mapping
 
 
 PRODUCT_NAME = "Caronte"
-PRODUCT_VERSION = "0.11.0"
 UNINSTALL_KEY = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\Caronte"
 STARTUP_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
 STARTUP_VALUE = "Caronte"
@@ -68,12 +68,37 @@ def _create_shortcut(shortcut: Path, target: Path) -> None:
     )
 
 
+def _uninstall_key() -> str:
+    return os.environ.get("CARONTE_UNINSTALL_KEY", UNINSTALL_KEY)
+
+
+def _payload_build_info(source: Path) -> dict[str, str]:
+    candidates = (
+        source / "_internal" / "resources" / "build_manifest.json",
+        source / "resources" / "build_manifest.json",
+    )
+    manifest = next((path for path in candidates if path.is_file()), None)
+    if manifest is None:
+        raise FileNotFoundError("Il pacchetto non contiene la propria identita` di build.")
+    try:
+        values = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError("L'identita` della build non e` valida.") from exc
+    required = ("version", "git_commit", "git_short_commit", "build_id")
+    if not isinstance(values, dict) or any(not isinstance(values.get(key), str) or not values[key] for key in required):
+        raise ValueError("L'identita` della build non e` completa.")
+    if not values["git_commit"].startswith(values["git_short_commit"]):
+        raise ValueError("L'identita` della build non e` coerente.")
+    return {key: values[key] for key in required}
+
+
 def _register_uninstall(uninstaller: Path) -> None:
     import winreg
 
-    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, UNINSTALL_KEY) as key:
+    version = _payload_build_info(uninstaller.parent)["version"]
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, _uninstall_key()) as key:
         winreg.SetValueEx(key, "DisplayName", 0, winreg.REG_SZ, PRODUCT_NAME)
-        winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, PRODUCT_VERSION)
+        winreg.SetValueEx(key, "DisplayVersion", 0, winreg.REG_SZ, version)
         winreg.SetValueEx(key, "Publisher", 0, winreg.REG_SZ, "Virgilio")
         winreg.SetValueEx(key, "InstallLocation", 0, winreg.REG_SZ, str(uninstaller.parent))
         winreg.SetValueEx(key, "UninstallString", 0, winreg.REG_SZ, f'"{uninstaller}" /UNINSTALL')
@@ -85,7 +110,7 @@ def _unregister_uninstall() -> None:
     import winreg
 
     try:
-        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, UNINSTALL_KEY)
+        winreg.DeleteKey(winreg.HKEY_CURRENT_USER, _uninstall_key())
     except FileNotFoundError:
         pass
 
@@ -118,6 +143,7 @@ def install(
     executable = source / "Caronte.exe"
     if not executable.is_file():
         raise FileNotFoundError("Il pacchetto di Caronte non e` completo.")
+    _payload_build_info(source)
     if layout.program_dir.exists():
         raise FileExistsError("Caronte e` gia` installato. Disinstallarlo prima di continuare.")
     if layout.program_dir in (layout.config_dir, layout.data_dir):

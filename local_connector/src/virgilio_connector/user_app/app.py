@@ -32,6 +32,7 @@ from .navigation import UserRoute, initial_route
 from .settings import SettingsView
 from .bucoliche_startup import BucolicheStartupView
 from .wizard import AccountForm, FirstRunController
+from .about import show_about_dialog
 
 
 WINDOW_TITLE = "Caronte"
@@ -113,10 +114,13 @@ class UserAppShell:
         controls = self._ttk.Frame(frame)
         controls.grid(row=0, column=0, sticky="e")
         self._ttk.Button(
-            controls, text="Riduci a icona", command=self.minimize
+            controls, text="Informazioni", command=self.show_about
         ).grid(row=0, column=0, padx=(0, 8))
+        self._ttk.Button(
+            controls, text="Riduci a icona", command=self.minimize
+        ).grid(row=0, column=1, padx=(0, 8))
         self._ttk.Button(controls, text="Chiudi Caronte", command=self.close).grid(
-            row=0, column=1
+            row=0, column=2
         )
         content = self._ttk.Frame(frame)
         content.grid(row=1, column=0, sticky="nsew")
@@ -236,6 +240,9 @@ class UserAppShell:
 
     def minimize(self) -> None:
         self.root.iconify()
+
+    def show_about(self) -> None:
+        show_about_dialog(self.root)
 
     def close(self) -> None:
         """Stop the owned worker before closing the window."""

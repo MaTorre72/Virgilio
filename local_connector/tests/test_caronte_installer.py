@@ -1,13 +1,32 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import sys
+
+import pytest
 
 
 INSTALLER_DIR = Path(__file__).resolve().parents[1] / "installer"
 sys.path.insert(0, str(INSTALLER_DIR))
 
 from caronte_installer import InstallLayout, install, uninstall  # noqa: E402
+
+
+def _write_payload_manifest(payload: Path) -> None:
+    resources = payload / "_internal" / "resources"
+    resources.mkdir(parents=True)
+    (resources / "build_manifest.json").write_text(
+        json.dumps(
+            {
+                "version": "0.11.0",
+                "git_commit": "a1b2c3d4e5f67890123456789012345678901234",
+                "git_short_commit": "a1b2c3d",
+                "build_id": "12345678-1234-4abc-8def-1234567890ab",
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def _layout(tmp_path: Path) -> InstallLayout:
@@ -24,6 +43,7 @@ def test_install_creates_program_shortcut_and_uninstaller_without_data(tmp_path:
     payload.mkdir()
     (payload / "Caronte.exe").write_bytes(b"synthetic-caronte")
     (payload / "runtime.dll").write_bytes(b"synthetic-runtime")
+    _write_payload_manifest(payload)
     setup = tmp_path / "CaronteSetup.exe"
     setup.write_bytes(b"synthetic-installer")
     layout = _layout(tmp_path)
@@ -104,5 +124,23 @@ def test_installer_build_and_smoke_scripts_are_declared() -> None:
     assert build_script.is_file()
     assert smoke_script.is_file()
     assert spec.is_file()
-    assert 'name="CaronteSetup"' in spec.read_text(encoding="utf-8")
-    assert "CARONTE_INSTALL_ROOT" in smoke_script.read_text(encoding="utf-8")
+    spec_text = spec.read_text(encoding="utf-8")
+    build_text = build_script.read_text(encoding="utf-8")
+    smoke_text = smoke_script.read_text(encoding="utf-8")
+    assert "CARONTE_INSTALLER_BASENAME" in spec_text
+    assert "CaronteSetup-$($BuildManifest.version)-$($BuildManifest.git_short_commit)" in build_text
+    assert "installer_sha256" in build_text
+    assert "smoke_installer_result" in build_text
+    assert "HumanAcceptanceBuild" in build_text
+    assert "--build-info" in smoke_text
+    assert "CARONTE_UNINSTALL_KEY" in smoke_text
+    assert "DisplayVersion" in smoke_text
+
+
+def test_install_rejects_payload_without_build_identity(tmp_path: Path) -> None:
+    payload = tmp_path / "payload"
+    payload.mkdir()
+    (payload / "Caronte.exe").write_bytes(b"synthetic-caronte")
+
+    with pytest.raises(FileNotFoundError, match="identita"):
+        install(payload, tmp_path / "setup.exe", _layout(tmp_path))

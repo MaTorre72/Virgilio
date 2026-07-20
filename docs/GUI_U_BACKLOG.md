@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
-Stato: `BLOCKED`
-Sotto-epica attiva: `GUI-U-E3 - Completamento e distribuzione`
-Task corrente: nessuno; `GUI-U = BLOCKED` dopo `GATE U-H3 = FAIL`
+Stato: `RECOVERY_ACTIVE`
+Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
+Task corrente: `GUI-U-R02 - Prototipo visuale completo`
 
 Obiettivo finale:
 
@@ -16,7 +16,7 @@ Regole operative:
 - i gate `U-H1`, `U-H2` e `U-H3` richiedono un `PASS` umano esplicito;
 - Codex non avvia una sotto-epica bloccata da un gate.
 
-Stati ammessi: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`, `WAITING_FOR_PREVIOUS_TASKS`, `WAITING_HUMAN_REVIEW`, `PASS`.
+Stati ammessi: `TODO`, `IN_PROGRESS`, `DONE`, `IMPLEMENTED_NOT_ACCEPTED`, `BLOCKED`, `WAITING_FOR_PREVIOUS_TASKS`, `WAITING_HUMAN_REVIEW`, `PASS`.
 
 ## GUI-U-E0 — Separazione dal prototipo tecnico
 
@@ -350,7 +350,7 @@ GUI-U-E3 non puo` iniziare prima del nuovo `PASS` esplicito.
 
 ## GUI-U-E3 — Completamento e distribuzione
 
-Stato: `IN_PROGRESS`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 
 ### GUI-U-E3-T01 — Attivita` e problemi
 
@@ -461,7 +461,7 @@ e collaudo isolato del setup per utente, che non richiede privilegi in esecuzion
 
 ### GUI-U-E3-T07 — Riscontri operativi delle azioni principali
 
-Stato: `IN_PROGRESS`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 Risultato: ogni azione primaria comunica subito se e` partita e mostra poi un
 esito finale comprensibile e azionabile.
 Dipendenza: `GUI-U-E3-T06 = DONE`; esito umano negativo di `GATE U-H3` del
@@ -483,7 +483,7 @@ tecnico o senza distinguere accettazione, avanzamento e completamento.
 
 ### GUI-U-E3-T08 — Limbo, persistenza e interazioni di base
 
-Stato: `DONE`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 Risultato: la scelta del Limbo e` inequivocabile, persistente e utilizzabile con
 i normali comandi Windows di selezione e copia/incolla.
 Dipendenza: `GUI-U-E3-T07 = DONE`.
@@ -504,7 +504,7 @@ in modo verificabile dalla Quarantena o richiede all'utente dettagli tecnici.
 
 ### GUI-U-E3-T09 — Accesso alle caselle Google
 
-Stato: `DONE` (2026-07-17).
+Stato: `IMPLEMENTED_NOT_ACCEPTED` (implementato il 2026-07-17).
 Risultato: Gmail e Google Workspace hanno un percorso di accesso coerente con le
 policy Google correnti e distinto dall'IMAP generico.
 Dipendenza: `GUI-U-E3-T08 = DONE`.
@@ -530,7 +530,7 @@ documentato in `docs/GOOGLE_OAUTH_DESKTOP.md`.
 
 ### GUI-U-E3-T10 — Registro e collegamento Google comprensibili
 
-Stato: `DONE` il 2026-07-17.
+Stato: `IMPLEMENTED_NOT_ACCEPTED` (implementato il 2026-07-17).
 Risultato: l'utente comprende che il Registro e` sempre usato e puo` completare
 il collegamento Google richiesto senza conoscere Bucoliche o configurazioni
 tecniche.
@@ -556,7 +556,7 @@ reale resta necessario il client OAuth Desktop centrale gia` previsto in T09.
 
 ### GUI-U-E3-T11 — Avvio automatico della distribuzione installata
 
-Stato: `DONE`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 Risultato: Caronte installato puo` avviarsi all'accesso a Windows e controllare
 in automatico senza dipendere dal repository o da una runtime esterna.
 Dipendenza: `GUI-U-E3-T10 = DONE`.
@@ -581,7 +581,7 @@ prossimo task operativo e` `GUI-U-E3-T12`.
 
 ### GUI-U-E3-T12 — Chiusura e riduzione a icona comprensibili
 
-Stato: `DONE`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 Risultato: i controlli della finestra distinguono senza ambiguita` riduzione a
 icona, ritorno alla Home e chiusura generale.
 Dipendenza: `GUI-U-E3-T11 = DONE`.
@@ -602,7 +602,7 @@ Test mirati `31 passed`; suite local connector e smoke locale `474 passed`.
 
 ### GUI-U-E3-T13 — Attivita` visibili e utili
 
-Stato: `DONE`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 Risultato: i controlli utente producono riscontri consultabili in `Attivita e
 problemi`, anche quando non trovano nuovi documenti.
 Dipendenza: `GUI-U-E3-T12 = DONE`.
@@ -621,7 +621,7 @@ sicuro controllo, avvio, pausa e completamento.
 
 ### GUI-U-E3-T14 — Registro e avvio guidati senza finestre tecniche
 
-Stato: `DONE`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 Risultato: `Registro e avvio` resta nella finestra Caronte, espone gli stati
 reali del Registro e dell'avvio automatico e indica una sola azione utile.
 Dipendenza: `GUI-U-E3-T13 = DONE`.
@@ -676,3 +676,53 @@ concreto rispetto alle osservazioni gia` riportate: nessuna correzione e` stata
 validata nel percorso percepito dall'utente. L'EPIC GUI-U resta `BLOCKED`; non
 sono autorizzati nuovi correttivi autonomi finche` non viene definito un nuovo
 piano di recupero con scenari osservabili e criteri di accettazione umani.
+
+## GUI-U-R - Recupero prodotto e collaudo osservabile
+
+Stato iniziativa: `GUI-U = RECOVERY_ACTIVE`.
+
+La classificazione `IMPLEMENTED_NOT_ACCEPTED` di `GUI-U-E3-T07` - `T14`
+significa che il codice e` implementato e i test sintetici sono superati, ma il
+risultato non e` stato accettato dal collaudo umano. Non e` dimostrato che
+l'installer collaudato corrispondesse alla sorgente piu recente; i test
+esistenti non sono evidenza sufficiente di qualita UX. Non sono autorizzati
+microcorrettivi prima del nuovo prototipo visuale.
+
+### GUI-U-R01 - Identita certa della build e dell'installer
+
+Stato: `DONE`.
+Risultato: eseguibile e installer dichiarano e verificano la sorgente precisa da
+cui sono stati prodotti, impedendo un collaudo inconsapevole di una vecchia build.
+Dipendenze: secondo `GATE U-H3 = FAIL` registrato il 2026-07-20.
+Componenti ammessi: build-info, entry point, finestra Informazioni, spec e script
+di build/installer, smoke, test mirati e documentazione di collaudo.
+Esclusioni: layout operativo, nuove schermate operative, account, Limbo, OAuth,
+Registro, pipeline, servizi reali e nuovi toolkit.
+Condizione di blocco: toolchain Windows non produce nella stessa esecuzione una
+build pulita, un installer identificato e smoke coerenti con il commit corrente.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R01-AC1` Manifest interno completo e build di collaudo rifiutata se dirty, senza commit o su branch diversa. | Test manifest e ispezione script; build pulita reale. | Test mirati verificano schema e invalidi; script acquisisce Git/Python/PyInstaller/build ID e applica i tre gate. | `MET` |
+| `R01-AC2` Informazioni mostra solo versione, commit breve, data e build ID. | Test sulla proiezione visibile e disponibilita nella build. | Modulo Informazioni usa la stessa identita validata e non espone ambiente o percorsi. | `MET` |
+| `R01-AC3` `Caronte.exe --build-info` non apre la GUI, coincide con Informazioni e fallisce senza manifest valido. | Test entry point e smoke della build. | Test coprono successo, coincidenza e errore; smoke confronta i quattro campi. | `MET` |
+| `R01-AC4` Installer `CaronteSetup-<version>-<short-sha>.exe`, stessa build e versione registrata, senza riuso di `dist`. | Test script/installer e smoke isolato. | La pipeline ricostruisce la build, pulisce output, deriva il nome dal manifest e verifica `DisplayVersion`. | `MET` |
+| `R01-AC5` Manifest release esterno completo accanto all'installer. | Test struttura script e verifica artefatto reale. | Lo script registra nome, dimensione, SHA-256, identita, stato clean, tre esiti e comando sanificato. | `MET` |
+| `R01-AC6` Smoke installer confronta sorgente, apre Caronte, verifica Informazioni e disinstalla. | Smoke su profilo cartelle/registro isolato. | Lo smoke confronta versione, commit e build ID, controlla nome/versione, finestra e modulo Informazioni, poi disinstalla preservando dati sintetici. | `MET` |
+
+### GUI-U-R02 - Prototipo visuale completo
+
+Stato: `TODO`.
+Risultato: prototipo completo delle cinque schermate con dati sintetici ed
+evidenze prodotte dalla build installata reale.
+Esito terminale obbligatorio: `WAITING_HUMAN_REVIEW`; Codex non puo dichiarare `PASS`.
+
+### GUI-U-R03 - Collegamento dei servizi
+
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Dipendenza: approvazione umana esplicita di R02.
+
+### GUI-U-R04 - Release candidate e collaudo finale
+
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Dipendenza: `GUI-U-R03 = DONE` dopo conferma umana esplicita.

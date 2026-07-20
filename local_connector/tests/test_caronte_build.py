@@ -29,6 +29,13 @@ def test_build_configuration_defines_one_folder_caronte() -> None:
     assert "PYTHONHASHSEED" in build_text
     assert "GoogleOAuthClientPath" in build_text
     assert "CARONTE_GOOGLE_OAUTH_CLIENT_PATH" in build_text
+    assert "HumanAcceptanceBuild" in build_text
+    assert '"dirty"' in build_text
+    assert '"codex/v1.1-development"' in build_text
+    assert "build_manifest.json" in build_text
+    assert "pyinstaller_version" in build_text
+    assert "build_id" in build_text
+    assert "CARONTE_BUILD_MANIFEST_PATH" in spec
     assert (REPO_ROOT / "scripts" / "dev" / "smoke_caronte_build.ps1").is_file()
     assert (REPO_ROOT / "docs" / "BUILD_CARONTE.md").is_file()
 

@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-20 - Completato `GUI-U-R01`: manifest interno validato, `Caronte.exe --build-info`, finestra `Informazioni su Caronte`, build di collaudo con gate Git, installer nominato con versione/commit, manifest release SHA-256 e smoke installato con confronto di versione/commit/build ID. Creato `docs/GUI_U_HUMAN_ACCEPTANCE.md`; `GUI-U-E3-T07` - `T14` riclassificati `IMPLEMENTED_NOT_ACCEPTED`; suite e smoke locale `487 passed`. Prossimo task `GUI-U-R02 - Prototipo visuale completo`, con esito terminale obbligatorio `WAITING_HUMAN_REVIEW`.
+
 - 2026-07-20 - `GATE U-H3 = FAIL`: il collaudo umano non ha rilevato alcun miglioramento concreto rispetto alle osservazioni precedenti; nessuna correzione e` stata validata nel percorso percepito. `GUI-U` e` posta `BLOCKED`; nessun altro correttivo autonomo e` autorizzato prima di un nuovo piano di recupero con scenari osservabili e criteri di accettazione umani.
 
 - 2026-07-20 - Completato `GUI-U-E3-T14`: `Registro e avvio` resta nella finestra Caronte, guida lo stato del Registro e del collegamento Google senza dettagli tecnici e presenta una sola azione per il controllo automatico; i comandi del pianificatore Windows non aprono una console. Test mirati `18 passed`, suite local connector e smoke `478 passed`; inventario stringhe vietate, diff e scansione segreti verificati. Prossimo passo `GATE U-H3 - Collaudo umano di distribuzione`.

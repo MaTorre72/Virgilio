@@ -7,18 +7,21 @@ from pathlib import Path
 PROJECT_DIR = Path(SPECPATH).parent
 SOURCE_DIR = PROJECT_DIR / "src"
 OAUTH_CLIENT_PATH = os.environ.get("CARONTE_GOOGLE_OAUTH_CLIENT_PATH", "").strip()
-OAUTH_DATAS = []
+BUILD_MANIFEST_PATH = os.environ.get("CARONTE_BUILD_MANIFEST_PATH", "").strip()
+if not BUILD_MANIFEST_PATH or not Path(BUILD_MANIFEST_PATH).is_file():
+    raise ValueError("CARONTE_BUILD_MANIFEST_PATH must identify the generated manifest")
+BUILD_DATAS = [(BUILD_MANIFEST_PATH, "resources")]
 if OAUTH_CLIENT_PATH:
     oauth_client = Path(OAUTH_CLIENT_PATH)
     if not oauth_client.is_file() or oauth_client.name != "google_oauth_client.json":
         raise ValueError("Google OAuth input must be google_oauth_client.json")
-    OAUTH_DATAS.append((str(oauth_client), "resources"))
+    BUILD_DATAS.append((str(oauth_client), "resources"))
 
 a = Analysis(
     [str(SOURCE_DIR / "virgilio_connector" / "build_entry.py")],
     pathex=[str(SOURCE_DIR)],
     binaries=[],
-    datas=OAUTH_DATAS,
+    datas=BUILD_DATAS,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

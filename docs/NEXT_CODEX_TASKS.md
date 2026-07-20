@@ -1,10 +1,13 @@
 # Next Codex Tasks
 
-- Task corrente: nessuno.
-- Stato: `GUI-U = BLOCKED`; `GATE U-H3 = FAIL` il 2026-07-20.
-- Evidenza: il collaudo umano non ha rilevato miglioramenti concreti o
-  correzioni percepibili nelle osservazioni precedenti.
-- Azione necessaria: definire un nuovo piano di recupero GUI-U, con scenari
-  osservabili e criteri di accettazione umani prima di autorizzare altro codice.
+- Iniziativa: `GUI-U = RECOVERY_ACTIVE`.
+- Fase: `GUI-U-R - Recupero prodotto e collaudo osservabile`.
+- Task completato: `GUI-U-R01 - Identita certa della build e dell'installer`.
+- Task corrente: `GUI-U-R02 - Prototipo visuale completo`.
+- Esito terminale obbligatorio R02: `WAITING_HUMAN_REVIEW`; Codex non puo
+  dichiarare il `PASS`.
+- Successivi: `GUI-U-R03 - Collegamento dei servizi`; `GUI-U-R04 - Release
+  candidate e collaudo finale`.
 
-Dettagli, criteri ed evidenze: `docs/GUI_U_BACKLOG.md`.
+Dettagli, criteri ed evidenze: `docs/GUI_U_BACKLOG.md` e
+`docs/GUI_U_HUMAN_ACCEPTANCE.md`.
