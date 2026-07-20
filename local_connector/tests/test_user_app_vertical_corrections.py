@@ -3,7 +3,9 @@ import json
 
 from virgilio_connector.application.account_management import AccountManagementService
 from virgilio_connector.application.configuration import ConfigurationService
+from virgilio_connector.application.settings import SettingsService
 from virgilio_connector.application.credentials import AccountCredentialService, FakeCredentialStore
+from virgilio_connector.multi_account import scaffold_local_config
 from virgilio_connector.user_app.app import UserAppShell
 from virgilio_connector.user_app.navigation import UserRoute
 from virgilio_connector.user_app.wizard import AccountView, WizardStep
@@ -134,12 +136,49 @@ def test_window_controls_are_visible_and_close_owned_worker(tmp_path):
     labels = [button.kwargs.get("text") for button in FakeButton.created]
 
     assert "Riduci a icona" in labels
-    assert "Chiudi" in labels
+    assert "Chiudi Caronte" in labels
     shell.minimize()
     assert root.iconified is True
     root.protocols["WM_DELETE_WINDOW"]()
     assert control.closed is True
     assert root.destroyed is True
+
+
+def test_returning_home_keeps_the_owned_worker_running(tmp_path):
+    configuration, accounts = _services(tmp_path)
+    limbo = tmp_path / "limbo"
+    limbo.mkdir()
+    configuration.store.source.write_text(
+        scaffold_local_config(
+            email="account@example.invalid", staging_dir=limbo.resolve()
+        ),
+        encoding="utf-8",
+    )
+    SettingsService(configuration, _NoopStartupAdapter()).save(
+        limbo=str(limbo.resolve()),
+        interval_minutes="5",
+        start_with_windows=False,
+        minimize_on_close=False,
+    )
+    control = FakeHomeControl()
+    shell = UserAppShell(
+        FakeRoot(),
+        configuration,
+        ttk_module=FakeTtk,
+        home_control=control,
+        settings_service=SettingsService(configuration, _NoopStartupAdapter()),
+    )
+
+    shell.show_settings()
+    shell.show_home()
+
+    assert shell.route is UserRoute.HOME
+    assert control.closed is False
+
+
+class _NoopStartupAdapter:
+    def set_enabled(self, enabled):
+        return None
 
 
 def test_complete_visible_text_inventory_has_no_technical_or_legacy_terms(tmp_path):

@@ -115,7 +115,7 @@ class UserAppShell:
         self._ttk.Button(
             controls, text="Riduci a icona", command=self.minimize
         ).grid(row=0, column=0, padx=(0, 8))
-        self._ttk.Button(controls, text="Chiudi", command=self.close).grid(
+        self._ttk.Button(controls, text="Chiudi Caronte", command=self.close).grid(
             row=0, column=1
         )
         content = self._ttk.Frame(frame)

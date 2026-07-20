@@ -160,6 +160,33 @@ def test_settings_view_saves_preferences_and_updates_close_behavior(tmp_path):
     assert root.destroyed is True
 
 
+def test_saved_minimize_preference_is_loaded_when_shell_is_reopened(tmp_path):
+    configuration = _configuration(tmp_path)
+    service = SettingsService(configuration, FakeStartupAdapter())
+    (tmp_path / "old-limbo").mkdir()
+    service.save(
+        limbo=str((tmp_path / "old-limbo").resolve()),
+        interval_minutes="5",
+        start_with_windows=False,
+        minimize_on_close=True,
+    )
+    root = FakeRoot()
+    control = FakeHomeControl()
+    shell = UserAppShell(
+        root,
+        configuration,
+        ttk_module=FakeTtk,
+        home_control=control,
+        settings_service=service,
+    )
+
+    root.protocols["WM_DELETE_WINDOW"]()
+
+    assert root.iconified is True
+    assert root.destroyed is False
+    assert control.closed is False
+
+
 def test_default_settings_view_hides_technical_parameters(tmp_path):
     shell = UserAppShell(
         FakeRoot(),

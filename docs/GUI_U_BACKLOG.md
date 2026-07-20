@@ -581,7 +581,7 @@ prossimo task operativo e` `GUI-U-E3-T12`.
 
 ### GUI-U-E3-T12 — Chiusura e riduzione a icona comprensibili
 
-Stato: `TODO`.
+Stato: `DONE`.
 Risultato: i controlli della finestra distinguono senza ambiguita` riduzione a
 icona, ritorno alla Home e chiusura generale.
 Dipendenza: `GUI-U-E3-T11 = DONE`.
@@ -593,10 +593,12 @@ riduzione o chiusura nel profilo isolato.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| La scelta di ridurre a icona alla chiusura salva e viene applicata. | Test preferenza, protocollo finestra e riapertura. | Da ottenere. | `NOT_MET` |
-| Il comando di chiusura generale e` visivamente distinto dalla navigazione. | Test inventario controlli e revisione sintetica. | Da ottenere. | `NOT_MET` |
-| Tornare alla Home non arresta Caronte. | Test routing e stato del supervisore fake. | Da ottenere. | `NOT_MET` |
-| Chiudere esplicitamente arresta il supervisore senza processi residui. | Test lifecycle fake. | Da ottenere. | `NOT_MET` |
+| La scelta di ridurre a icona alla chiusura salva e viene applicata. | Test preferenza, protocollo finestra e riapertura. | `test_settings_view_saves_preferences_and_updates_close_behavior` e `test_saved_minimize_preference_is_loaded_when_shell_is_reopened` verdi. | `MET` |
+| Il comando di chiusura generale e` visivamente distinto dalla navigazione. | Test inventario controlli e revisione sintetica. | `test_window_controls_are_visible_and_close_owned_worker` verde: `Riduci a icona` e `Chiudi Caronte` sono controlli separati. | `MET` |
+| Tornare alla Home non arresta Caronte. | Test routing e stato del supervisore fake. | `test_returning_home_keeps_the_owned_worker_running` verde. | `MET` |
+| Chiudere esplicitamente arresta il supervisore senza processi residui. | Test lifecycle fake. | `test_window_controls_are_visible_and_close_owned_worker` verde: la chiusura invoca il lifecycle fake e distrugge la finestra. | `MET` |
+
+Test mirati `31 passed`; suite local connector e smoke locale `474 passed`.
 
 ### GUI-U-E3-T13 — Attivita` visibili e utili
 

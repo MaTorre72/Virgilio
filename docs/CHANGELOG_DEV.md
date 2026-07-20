@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-20 - Completato `GUI-U-E3-T12`: la chiusura dalla barra del titolo puo` ridurre Caronte a icona secondo una preferenza persistita e ricaricata; i controlli distinguono `Riduci a icona`, ritorno alla Home e `Chiudi Caronte`, che arresta il supervisore posseduto. Test mirati `31 passed`, suite local connector e smoke locale `474 passed`; inventario stringhe vietate, diff e scansione segreti verdi. Prossimo task `GUI-U-E3-T13 - Attivita` visibili e utili`.
+
 - 2026-07-20 - Completato `GUI-U-E3-T11`: l'avvio automatico usa nella distribuzione installata `Caronte.exe` sia per l'accesso Windows sia per il controllo automatico, senza repository o runtime di sviluppo; rimozione e disinstallazione arrestano prima il controllo e cancellano le integrazioni di avvio. Test mirati `29 passed`, suite e smoke locale `472 passed`, build autonoma, avvio dalla sola cartella copiata e smoke installer isolato verdi. Prossimo task `GUI-U-E3-T12 - Chiusura e riduzione a icona comprensibili`.
 
 - 2026-07-20 - Suddiviso il completamento dopo il collaudo anticipato: `GUI-U-E3-T11` torna avviabile dopo il ripristino della build; aggiunti `T12` (chiusura/riduzione), `T13` (Attivita`) e `T14` (Registro e avvio), con criteri binari e prove dedicate. `GATE U-H3` resta bloccato finche` tutti i task `T07` - `T14` non sono `DONE`.
