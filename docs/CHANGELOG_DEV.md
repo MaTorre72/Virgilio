@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-20 - Completato `GUI-U-R02-T01`: introdotto un percorso demo
+  esclusivamente in memoria attraverso Benvenuto, Limbo, Caselle, Riepilogo e
+  Home, con Limbo e due caselle sintetiche coerenti nel ritorno. Nessun adapter
+  di configurazione, credenziali, rete o salvataggio viene interrogato; test
+  mirati `22 passed`, suite e smoke locale `488 passed`. Prossimo task
+  `GUI-U-R02-T02 - Schermate del primo avvio osservabili`.
+
 - 2026-07-20 - Suddiviso `GUI-U-R02` nel percorso dimostrativo isolato, nelle
   schermate del primo avvio e nelle evidenze installate: ogni task possiede
   criteri binari, prove, confini e blocco; il primo task eseguibile e`

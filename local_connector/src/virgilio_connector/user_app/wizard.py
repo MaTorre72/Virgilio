@@ -10,6 +10,7 @@ from typing import Any, Callable
 
 from ..application.account_connection import BackgroundAccountConnectionCheck
 from ..application.account_management import AccountManagementService
+from .demo import DemoState
 from .text_controls import bind_text_interactions
 
 
@@ -17,6 +18,7 @@ class WizardStep(str, Enum):
     WELCOME = "welcome"
     LIMBO = "limbo"
     ACCOUNT = "account"
+    SUMMARY = "summary"
 
 
 @dataclass(frozen=True)
@@ -379,6 +381,27 @@ class AccountView:
             )
 
 
+class SummaryView:
+    """Small completion screen used by the isolated demonstration route."""
+
+    def __init__(
+        self, parent: Any, *, ttk_module: Any, demo: DemoState,
+        on_back: Callable[[], None], on_continue: Callable[[], None],
+    ) -> None:
+        self.frame = ttk_module.Frame(parent, padding=32)
+        ttk_module.Label(self.frame, text="Riepilogo").grid(row=0, column=0, sticky="w")
+        ttk_module.Label(
+            self.frame,
+            text=f"Limbo: {demo.limbo_folder}. Caselle pronte: {len(demo.accounts)}.",
+        ).grid(row=1, column=0, sticky="w", pady=(12, 0))
+        ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
+            row=2, column=0, sticky="w", pady=(24, 0)
+        )
+        ttk_module.Button(self.frame, text="Apri Home", command=on_continue).grid(
+            row=2, column=1, sticky="e", pady=(24, 0)
+        )
+
+
 class FirstRunController:
     """Replace wizard frames while keeping validation local to each step."""
 
@@ -394,11 +417,12 @@ class FirstRunController:
         open_existing: bool = False,
         choose_folder: Callable[[], str] | None = None,
         menu_factory: Callable[..., Any] | None = None,
+        demo: DemoState | None = None,
     ) -> None:
         self.parent = parent
         self._ttk = ttk_module
         self.step = WizardStep.WELCOME
-        self.current_view: WelcomeView | LimboView | AccountView | None = None
+        self.current_view: WelcomeView | LimboView | AccountView | SummaryView | None = None
         self._welcome_validator = WelcomeValidator()
         self._limbo_validator = LimboValidator()
         self._account_validator = AccountValidator()
@@ -414,6 +438,7 @@ class FirstRunController:
         self._on_complete = on_complete
         self._choose_folder = choose_folder
         self._menu_factory = menu_factory
+        self._demo = demo
         self._limbo_folder = ""
         if open_existing and account_service is not None:
             self._limbo_folder = str(
@@ -432,6 +457,10 @@ class FirstRunController:
 
         if self.step is WizardStep.LIMBO:
             assert isinstance(self.current_view, LimboView)
+            if self._demo is not None:
+                self._limbo_folder = self._demo.limbo_folder
+                self._show_account()
+                return ValidationResult(True)
             result = self._limbo_validator.validate(self.current_view.folder_value())
             self.current_view.show_validation(result)
             if result.is_valid:
@@ -439,7 +468,15 @@ class FirstRunController:
                 self._show_account()
             return result
 
+        if self.step is WizardStep.SUMMARY:
+            if self._on_complete is not None:
+                self._on_complete()
+            return ValidationResult(True, "Percorso dimostrativo completato.")
+
         assert isinstance(self.current_view, AccountView)
+        if self._demo is not None:
+            self._show_summary()
+            return ValidationResult(True)
         if self._account_service is not None:
             if not self._account_service.list_accounts():
                 result = ValidationResult(False, "Aggiungi almeno una casella.")
@@ -505,6 +542,8 @@ class FirstRunController:
             self._show_welcome()
         elif self.step is WizardStep.ACCOUNT:
             self._show_limbo()
+        elif self.step is WizardStep.SUMMARY:
+            self._show_account()
 
     def test_account_connection(self) -> ValidationResult:
         assert isinstance(self.current_view, AccountView)
@@ -567,7 +606,7 @@ class FirstRunController:
         self.current_view.populate(account, credentials.password)
 
     def _replace(
-        self, view: WelcomeView | LimboView | AccountView, step: WizardStep
+        self, view: WelcomeView | LimboView | AccountView | SummaryView, step: WizardStep
     ) -> None:
         previous = self.current_view
         if previous is not None:
@@ -590,7 +629,9 @@ class FirstRunController:
             ttk_module=self._ttk,
             on_back=self.go_back,
             on_continue=self.continue_forward,
-            initial_folder=self._limbo_folder,
+            initial_folder=(
+                self._demo.limbo_folder if self._demo is not None else self._limbo_folder
+            ),
             choose_folder=self._choose_folder,
             menu_factory=self._menu_factory,
         )
@@ -609,6 +650,17 @@ class FirstRunController:
             on_select=self.load_selected_account,
             menu_factory=self._menu_factory,
         )
-        if self._account_service is not None:
+        if self._demo is not None:
+            view.render_accounts(self._demo.accounts)
+        elif self._account_service is not None:
             view.render_accounts(self._account_service.list_accounts())
         self._replace(view, WizardStep.ACCOUNT)
+
+    def _show_summary(self) -> None:
+        assert self._demo is not None
+        self._replace(
+            SummaryView(
+                self.parent, ttk_module=self._ttk, demo=self._demo,
+                on_back=self.go_back, on_continue=self.continue_forward,
+            ), WizardStep.SUMMARY,
+        )

@@ -27,6 +27,7 @@ from ..application.windows_startup import WindowsStartupAdapter
 from ..application.windows_credentials import create_account_credential_service
 from ..application_paths import default_application_paths
 from .home import HomeView, StaticHomeStatusService
+from .demo import DemoState
 from .activity import ActivitySource, ActivityView, EmptyActivitySource
 from .navigation import UserRoute, initial_route
 from .settings import SettingsView
@@ -40,6 +41,28 @@ USER_VIEWS = (
     "Primo avvio", "Home", "Attivita e problemi", "Impostazioni",
     "Registro e avvio",
 )
+
+
+class DemoHomeControl:
+    """No-op control surface that keeps the demonstration isolated."""
+
+    def check_now(self) -> None:
+        return None
+
+    def start(self) -> None:
+        return None
+
+    def pause(self) -> None:
+        return None
+
+    def close(self) -> None:
+        return None
+
+    def drain_feedback(self) -> tuple[object, ...]:
+        return ()
+
+    def set_interval_seconds(self, interval_seconds: int) -> None:
+        return None
 
 class UserAppShell:
     """Own the root window and route to the first user-facing screen."""
@@ -58,34 +81,42 @@ class UserAppShell:
         activity_service: ActivitySource | None = None,
         settings_service: SettingsService | None = None,
         bucoliche_startup_service: BucolicheStartupService | None = None,
+        demo: DemoState | None = None,
     ) -> None:
         self.root = root
         self._ttk = ttk_module
         self._readonly_test = readonly_test
         self._google_access = google_access
         self._account_service = account_service
-        self._settings_service = settings_service or SettingsService(
-            configuration, DisabledStartupAdapter()
+        self._demo = demo
+        self._settings_service = (
+            None
+            if demo is not None
+            else settings_service or SettingsService(configuration, DisabledStartupAdapter())
         )
         self._bucoliche_startup_service = bucoliche_startup_service
         self._minimize_on_close = False
         interval_seconds = 300
-        if configuration.exists() and settings_service is not None:
+        if demo is None and configuration.exists() and settings_service is not None:
             current_settings = self._settings_service.load()
             self._minimize_on_close = current_settings.minimize_on_close
             interval_seconds = current_settings.interval_minutes * 60
-        self._home_control = home_control or HomeRunController(
-            configuration.store.source,
-            ManagedOperationRunner(
-                environment_provider=(
-                    account_service.protected_runtime_environment
-                    if account_service is not None
-                    else None
-                )
-            ),
-            interval_seconds=interval_seconds,
+        self._home_control = (
+            DemoHomeControl()
+            if demo is not None
+            else home_control or HomeRunController(
+                configuration.store.source,
+                ManagedOperationRunner(
+                    environment_provider=(
+                        account_service.protected_runtime_environment
+                        if account_service is not None
+                        else None
+                    )
+                ),
+                interval_seconds=interval_seconds,
+            )
         )
-        self.route = initial_route(configuration)
+        self.route = UserRoute.FIRST_RUN if demo is not None else initial_route(configuration)
         self.root.title(WINDOW_TITLE)
         self.root.minsize(720, 480)
         self.current_frame: Any | None = None
@@ -96,7 +127,11 @@ class UserAppShell:
         self.bucoliche_startup: BucolicheStartupView | None = None
         self._activity_service = activity_service or EmptyActivitySource()
         self._home_status = home_status or (
-            AccountHomeStatusService(account_service)
+            StaticHomeStatusService(
+                HomeStatus("Pronto per la dimostrazione", len(demo.accounts))
+            )
+            if demo is not None
+            else AccountHomeStatusService(account_service)
             if account_service is not None
             else StaticHomeStatusService(HomeStatus("Pronto", 0))
         )
@@ -131,6 +166,7 @@ class UserAppShell:
                 account_service=self._account_service,
                 on_complete=self.show_home,
                 open_existing=open_existing,
+                demo=self._demo,
             )
             return
         if self.route is UserRoute.ACTIVITY:

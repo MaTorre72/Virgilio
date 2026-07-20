@@ -722,7 +722,7 @@ schermate e le prove sulla build installata. Nessun task collega servizi reali.
 
 #### GUI-U-R02-T01 - Percorso dimostrativo isolato
 
-Stato: `TODO`.
+Stato: `DONE`.
 Risultato: Caronte offre un percorso dimostrativo ripetibile, con dati sintetici,
 attraverso Benvenuto, Limbo, Caselle, Riepilogo e Home.
 Dipendenza: `GUI-U-R01 = DONE`.
@@ -735,15 +735,15 @@ configurazione e dalle credenziali locali senza cambiare i contratti condivisi.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R02-T01-AC1` Il percorso demo parte senza configurazione o credenziali locali. | Test con filesystem e credential store finti. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T01-AC2` Le cinque schermate sono raggiungibili nel solo percorso Benvenuto -> Limbo -> Caselle -> Riepilogo -> Home. | Test di routing con shell Tk finta. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T01-AC3` Limbo e due caselle sintetiche restano coerenti dopo Indietro/Continua. | Test di navigazione e stato in memoria. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T01-AC4` Il percorso demo non esegue rete, salvataggi reali o accessi a credenziali. | Test con adapter che falliscono a ogni accesso esterno. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T01-AC5` Le stringhe vietate non sono visibili nel percorso demo. | Test automatico sull'inventario delle stringhe visuali. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T01-AC1` Il percorso demo parte senza configurazione o credenziali locali. | Test con filesystem e credential store finti. | `test_demo_route_uses_only_synthetic_state_and_reaches_all_five_screens`: store configurazione che fallisce se interrogato, percorso avviato. | `MET` |
+| `R02-T01-AC2` Le cinque schermate sono raggiungibili nel solo percorso Benvenuto -> Limbo -> Caselle -> Riepilogo -> Home. | Test di routing con shell Tk finta. | Stesso test: cinque passi e route Home finale; test GUI mirati `22 passed`. | `MET` |
+| `R02-T01-AC3` Limbo e due caselle sintetiche restano coerenti dopo Indietro/Continua. | Test di navigazione e stato in memoria. | Stesso test: due caselle demo, ritorno da Riepilogo a Caselle e nuovo avanzamento. | `MET` |
+| `R02-T01-AC4` Il percorso demo non esegue rete, salvataggi reali o accessi a credenziali. | Test con adapter che falliscono a ogni accesso esterno. | Store di configurazione esplosivo non viene letto/scritto; `DemoHomeControl` non avvia operazioni. | `MET` |
+| `R02-T01-AC5` Le stringhe vietate non sono visibili nel percorso demo. | Test automatico sull'inventario delle stringhe visuali. | Inventari automatici GUI `test_user_app.py` e verticale verdi; verifica mirata dei testi demo inclusa. | `MET` |
 
 #### GUI-U-R02-T02 - Schermate del primo avvio osservabili
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `TODO`.
 Risultato: Benvenuto, Limbo, Caselle e Riepilogo presentano una gerarchia visuale
 leggibile e azioni coerenti con gli scenari `H-R02-01`-`H-R02-05`.
 Dipendenza: `GUI-U-R02-T01 = DONE`.

@@ -7,6 +7,7 @@ import pytest
 from virgilio_connector.application.configuration import ConfigurationService
 from virgilio_connector.user_app import launch_user_app
 from virgilio_connector.user_app.app import USER_VIEWS, WINDOW_TITLE, UserAppShell
+from virgilio_connector.user_app.demo import DemoState
 from virgilio_connector.user_app.navigation import UserRoute
 from virgilio_connector.user_app.wizard import (
     AccountForm,
@@ -187,6 +188,49 @@ def test_shell_passes_google_access_to_the_first_run_controller(tmp_path):
     )
 
     assert shell.first_run._google_access is google_access
+
+
+def test_demo_route_uses_only_synthetic_state_and_reaches_all_five_screens(tmp_path):
+    class ExplodingStore:
+        @property
+        def source(self):
+            raise AssertionError("demo must not read configuration")
+
+        def load(self):
+            raise AssertionError("demo must not load configuration")
+
+        def save(self, model):
+            raise AssertionError("demo must not save configuration")
+
+    class ExplodingAccountService:
+        def __getattr__(self, name):
+            raise AssertionError(f"demo must not access credentials: {name}")
+
+    shell = UserAppShell(
+        FakeRoot(), ConfigurationService(ExplodingStore()), ttk_module=FakeTtk,
+        account_service=ExplodingAccountService(), demo=DemoState(),
+    )
+
+    controller = shell.first_run
+    assert controller.step is WizardStep.WELCOME
+    assert controller.continue_forward().is_valid
+    assert controller.step is WizardStep.LIMBO
+    assert controller.continue_forward().is_valid
+    assert controller.step is WizardStep.ACCOUNT
+    assert len(controller.current_view.table.rows) == 2
+    assert controller.continue_forward().is_valid
+    assert controller.step is WizardStep.SUMMARY
+    controller.go_back()
+    assert controller.step is WizardStep.ACCOUNT
+    assert controller.continue_forward().is_valid
+    assert controller.continue_forward().is_valid
+    assert shell.route is UserRoute.HOME
+    visible_text = " ".join(
+        widget.kwargs.get("text", "")
+        for widget in (*FakeLabel.created, *FakeButton.created)
+    ).lower()
+    forbidden = {"python", "venv", "cli", "yaml", ".env", "doctor", "pilot", "dry-run", "watch", "staging", "ack", "manifest", "sqlite", "exit code", "account_alias", "username_env", "password_env", "stack trace", "percorso del repository"}
+    assert all(term not in visible_text for term in forbidden)
 
 
 def test_shell_routes_existing_configuration_to_home(tmp_path):
