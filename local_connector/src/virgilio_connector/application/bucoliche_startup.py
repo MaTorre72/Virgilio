@@ -59,6 +59,11 @@ class ExistingBucolicheGateway:
         result = GoogleOAuthLogin(load_bucoliche_config(self.config_path)).run()
         if result.status in {"token_created", "token_refreshed"}:
             return GuidedStatus(True, "Collegamento Google completato.")
+        if result.status == "blocked":
+            return GuidedStatus(
+                False,
+                "Collegamento Google non disponibile. Chiedi all'amministratore di completare la configurazione di Caronte.",
+            )
         return GuidedStatus(False, "Collegamento Google non completato. Riprova.")
 
     def verify_register(self) -> GuidedStatus:
@@ -151,9 +156,19 @@ class BucolicheStartupService:
         )
 
     def connect_google(self) -> GuidedStatus:
+        if not self.registry_configuration.load().configured:
+            return GuidedStatus(
+                False,
+                "Registro non ancora configurato dall'amministratore. Chiedi di configurarlo.",
+            )
         try:
             result = self.bucoliche.connect_google()
             if result.ok:
+                return result
+            if result.message == (
+                "Collegamento Google non disponibile. Chiedi all'amministratore di "
+                "completare la configurazione di Caronte."
+            ):
                 return result
             return GuidedStatus(False, "Collegamento Google non completato. Riprova.")
         except (BucolicheError, OSError):

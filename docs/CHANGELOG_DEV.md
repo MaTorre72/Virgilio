@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-20 - Completato `GUI-U-E3-T14`: `Registro e avvio` resta nella finestra Caronte, guida lo stato del Registro e del collegamento Google senza dettagli tecnici e presenta una sola azione per il controllo automatico; i comandi del pianificatore Windows non aprono una console. Test mirati `18 passed`, suite local connector e smoke `478 passed`; inventario stringhe vietate, diff e scansione segreti verificati. Prossimo passo `GATE U-H3 - Collaudo umano di distribuzione`.
+
 - 2026-07-20 - Completato `GUI-U-E3-T13`: ogni controllo della Home lascia un riscontro leggibile nella sorgente condivisa di `Attivita e problemi`, inclusi avvio, pausa, completamento e controllo senza nuovi documenti; i dettagli tecnici restano chiusi senza una riga selezionata. Test mirati `18 passed`, suite local connector e smoke `475 passed`; inventario stringhe vietate, diff e scansione segreti verificati. Prossimo task `GUI-U-E3-T14 - Registro e avvio guidati senza finestre tecniche`.
 
 - 2026-07-20 - Completato `GUI-U-E3-T12`: la chiusura dalla barra del titolo puo` ridurre Caronte a icona secondo una preferenza persistita e ricaricata; i controlli distinguono `Riduci a icona`, ritorno alla Home e `Chiudi Caronte`, che arresta il supervisore posseduto. Test mirati `31 passed`, suite local connector e smoke locale `474 passed`; inventario stringhe vietate, diff e scansione segreti verdi. Prossimo task `GUI-U-E3-T13 - Attivita` visibili e utili`.

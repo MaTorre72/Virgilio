@@ -30,6 +30,22 @@ def test_query_windows_task_parses_real_state(monkeypatch):
     assert status.to_payload()["status"] == "installed"
 
 
+def test_scheduler_queries_run_without_a_console_window(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(windows_task.os, "name", "nt")
+    monkeypatch.setattr(windows_task.subprocess, "CREATE_NO_WINDOW", 0x08000000, raising=False)
+
+    def fake_run(args, **kwargs):
+        seen["args"] = args
+        seen["flags"] = kwargs["creationflags"]
+        return completed(args, payload={"task_name": "Caronte", "installed": False})
+
+    monkeypatch.setattr(windows_task.subprocess, "run", fake_run)
+
+    assert windows_task.query_windows_watch_task("Caronte").installed is False
+    assert seen["flags"] == 0x08000000
+
+
 def test_query_windows_task_reports_absent_and_rejects_bad_output(monkeypatch):
     monkeypatch.setattr(windows_task.os, "name", "nt")
     monkeypatch.setattr(windows_task.subprocess, "run", lambda args, **kwargs: completed(

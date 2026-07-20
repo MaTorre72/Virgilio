@@ -82,6 +82,18 @@ def _powershell_executable() -> Path:
             "WindowsPowerShell" / "v1.0" / "powershell.exe")
 
 
+def _run_hidden(args: list[str]) -> subprocess.CompletedProcess[str]:
+    """Run a scheduler command without creating a console beside Caronte."""
+
+    return subprocess.run(
+        args,
+        capture_output=True,
+        text=True,
+        check=False,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+
+
 def _resolve_existing_path(path: Path, *, label: str) -> Path:
     resolved = path.expanduser().resolve(strict=False)
     if not resolved.exists():
@@ -188,7 +200,7 @@ def build_windows_frozen_watch_task(
 
 
 def register_windows_watch_task(plan: WindowsTaskRegistrationPlan) -> dict[str, object]:
-    completed = subprocess.run(plan.create_args, capture_output=True, text=True, check=False)
+    completed = _run_hidden(plan.create_args)
     stdout = completed.stdout.strip()
     stderr = completed.stderr.strip()
     if completed.returncode != 0:
@@ -216,7 +228,7 @@ def query_windows_watch_task(task_name: str) -> WindowsTaskStatus:
         "last_result=[int]$info.LastTaskResult} | ConvertTo-Json -Compress"
     )
     args = [str(_powershell_executable()), "-NoProfile", "-NonInteractive", "-Command", script]
-    completed = subprocess.run(args, capture_output=True, text=True, check=False)
+    completed = _run_hidden(args)
     stdout = completed.stdout.strip()
     stderr = completed.stderr.strip()
     if completed.returncode != 0:
@@ -246,12 +258,9 @@ def unregister_windows_watch_task(task_name: str) -> dict[str, object]:
     if not current.installed:
         return {"status": "not_installed", "task_name": task_name, "removed": False}
     if current.state.lower() == "running":
-        subprocess.run(
-            ["schtasks", "/end", "/tn", task_name],
-            capture_output=True, text=True, check=False,
-        )
+        _run_hidden(["schtasks", "/end", "/tn", task_name])
     args = ["schtasks", "/delete", "/tn", task_name, "/f"]
-    completed = subprocess.run(args, capture_output=True, text=True, check=False)
+    completed = _run_hidden(args)
     stdout = completed.stdout.strip()
     stderr = completed.stderr.strip()
     if completed.returncode != 0:

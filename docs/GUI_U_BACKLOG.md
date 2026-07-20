@@ -621,7 +621,7 @@ sicuro controllo, avvio, pausa e completamento.
 
 ### GUI-U-E3-T14 — Registro e avvio guidati senza finestre tecniche
 
-Stato: `TODO`.
+Stato: `DONE`.
 Risultato: `Registro e avvio` resta nella finestra Caronte, espone gli stati
 reali del Registro e dell'avvio automatico e indica una sola azione utile.
 Dipendenza: `GUI-U-E3-T13 = DONE`.
@@ -633,14 +633,14 @@ tecnici o richiede configurazioni amministrative non disponibili.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| Nessuna azione Registro o avvio apre una finestra di shell. | Test adapter e avvio GUI isolato. | Da ottenere. | `NOT_MET` |
-| Registro non configurato mostra stato e unica azione comprensibili. | Test fake configurazione assente. | Da ottenere. | `NOT_MET` |
-| Collegamento Google non configurato mostra un esito guidato senza dettagli interni. | Test fake OAuth non disponibile. | Da ottenere. | `NOT_MET` |
-| Stato e attivazione dell'avvio automatico mostrano esiti coerenti. | Test adapter fake successo e errore. | Da ottenere. | `NOT_MET` |
+| Nessuna azione Registro o avvio apre una finestra di shell. | Test adapter e avvio GUI isolato. | `test_scheduler_queries_run_without_a_console_window` verifica `CREATE_NO_WINDOW`; `test_guided_view_offers_one_automatic_control_action_at_a_time` usa la vista isolata con adapter fake. | `MET` |
+| Registro non configurato mostra stato e unica azione comprensibili. | Test fake configurazione assente. | `test_register_is_always_present_and_reports_administrative_configuration` verifica stato, richiesta all'amministratore e nessun avvio del collegamento Google. | `MET` |
+| Collegamento Google non configurato mostra un esito guidato senza dettagli interni. | Test fake OAuth non disponibile. | `test_google_configuration_problem_has_a_guided_message` verifica l'indicazione all'amministratore e l'assenza di termini tecnici. | `MET` |
+| Stato e attivazione dell'avvio automatico mostrano esiti coerenti. | Test adapter fake successo e errore. | `test_automatic_control_install_remove_and_status_use_fake_scheduler` e `test_guided_view_offers_one_automatic_control_action_at_a_time` verificano stato, attivazione e disattivazione con una sola azione alla volta. | `MET` |
 
 ### GATE U-H3 — Collaudo umano di distribuzione
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `WAITING_HUMAN_REVIEW`.
 
 Codex non puo` dichiararlo `PASS`.
 

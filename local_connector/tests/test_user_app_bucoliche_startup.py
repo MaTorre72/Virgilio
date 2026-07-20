@@ -81,12 +81,25 @@ def _service(tmp_path, *, installed=False, bucoliche=None, configured=True):
 
 
 def test_register_is_always_present_and_reports_administrative_configuration(tmp_path):
-    _, service, _, _ = _service(tmp_path, configured=False)
+    configuration, service, google, _ = _service(tmp_path, configured=False)
 
     snapshot = service.load()
 
     assert snapshot.register_configured is False
     assert snapshot.register_message == "Registro non ancora configurato dall'amministratore."
+    assert service.connect_google() == GuidedStatus(
+        False, "Registro non ancora configurato dall'amministratore. Chiedi di configurarlo."
+    )
+    assert google.calls == []
+
+    shell = UserAppShell(
+        FakeRoot(), configuration, ttk_module=FakeTtk,
+        bucoliche_startup_service=service,
+    )
+    shell.show_bucoliche_startup()
+    visible = " ".join(widget.kwargs.get("text", "") for widget in FakeLabel.created)
+    assert "Azione da fare: chiedi all'amministratore" in visible
+    assert shell.bucoliche_startup.registry_action is None
 
 
 def test_google_connection_is_a_guided_step_using_only_the_injected_adapter(tmp_path):
@@ -121,6 +134,22 @@ def test_known_connection_errors_are_translated_without_internal_details(tmp_pat
     )
 
 
+def test_google_configuration_problem_has_a_guided_message(tmp_path):
+    unavailable = FakeBucolicheGateway(
+        connect=GuidedStatus(
+            False,
+            "Collegamento Google non disponibile. Chiedi all'amministratore di completare la configurazione di Caronte.",
+        )
+    )
+    _, service, _, _ = _service(tmp_path, bucoliche=unavailable)
+
+    result = service.connect_google()
+
+    assert result.ok is False
+    assert "amministratore" in result.message
+    assert all(term not in result.message.lower() for term in ("file", "oauth", "path", "json"))
+
+
 def test_automatic_control_install_remove_and_status_use_fake_scheduler(tmp_path):
     _, service, _, automatic = _service(tmp_path)
 
@@ -133,6 +162,24 @@ def test_automatic_control_install_remove_and_status_use_fake_scheduler(tmp_path
         True, "Controllo automatico rimosso."
     )
     assert automatic.calls == ["status", "install", "status", "remove"]
+
+
+def test_guided_view_offers_one_automatic_control_action_at_a_time(tmp_path):
+    configuration, service, _, automatic = _service(tmp_path)
+    shell = UserAppShell(
+        FakeRoot(), configuration, ttk_module=FakeTtk,
+        bucoliche_startup_service=service,
+    )
+    shell.show_bucoliche_startup()
+    view = shell.bucoliche_startup
+
+    assert view.automatic_message.config["text"] == "Controllo automatico non attivo."
+    assert view.automatic_action.config["text"] == "Attiva controllo automatico"
+    assert view.toggle_automatic_control().ok is True
+    assert automatic.installed is True
+    assert view.automatic_action.config["text"] == "Disattiva controllo automatico"
+    assert view.toggle_automatic_control().ok is True
+    assert automatic.installed is False
 
 
 def test_guided_view_shows_clear_steps_and_known_error_messages(tmp_path):
@@ -150,9 +197,9 @@ def test_guided_view_shows_clear_steps_and_known_error_messages(tmp_path):
     assert shell.route is UserRoute.BUCOLICHE_STARTUP
     view = shell.bucoliche_startup
     assert view.connect_google().ok is False
-    assert "Riprova" in view.bucoliche_message.config["text"]
+    assert "Riprova" in view.registry_status.config["text"]
     assert view.verify_register().ok is False
-    assert "Completa prima" in view.bucoliche_message.config["text"]
+    assert "Completa prima" in view.registry_status.config["text"]
     assert view.install().ok and automatic.installed
     assert view.remove().ok and not automatic.installed
 
