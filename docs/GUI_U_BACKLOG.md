@@ -556,7 +556,7 @@ reale resta necessario il client OAuth Desktop centrale gia` previsto in T09.
 
 ### GUI-U-E3-T11 — Avvio automatico della distribuzione installata
 
-Stato: `BLOCKED`.
+Stato: `TODO`.
 Risultato: Caronte installato puo` avviarsi all'accesso a Windows e controllare
 in automatico senza dipendere dal repository o da una runtime esterna.
 Dipendenza: `GUI-U-E3-T10 = DONE`.
@@ -569,19 +569,72 @@ senza percorsi di sviluppo o senza lasciare processi orfani.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `Avvia Caronte quando accedo a Windows` registra un comando valido della build installata. | Test registro e avvio da profilo isolato. | Il test isolato non e` producibile: le toolchain locali disponibili non inizializzano Tcl/Tk, quindi non generano `Caronte.exe` aggiornato. | `BLOCKED` |
-| Il controllo automatico usa l'eseguibile installato senza repository o runtime esterna. | Test piano Task Scheduler congelato. | Il test isolato non e` producibile: le toolchain locali disponibili non inizializzano Tcl/Tk, quindi non generano `Caronte.exe` aggiornato. | `BLOCKED` |
-| Attivazione, stato e rimozione mostrano esiti visibili e coerenti. | Test UI e adapter fake. | Il test isolato non e` producibile: le toolchain locali disponibili non inizializzano Tcl/Tk, quindi non generano `Caronte.exe` aggiornato. | `BLOCKED` |
-| Disinstallazione rimuove ogni avvio automatico del programma. | Smoke installazione, attivazione e disinstallazione. | `build_caronte.ps1` termina prima della build: Tcl/Tk non inizializzabile in tutte le toolchain locali predisposte. | `BLOCKED` |
-| Nessun processo resta orfano dopo pausa, chiusura o disinstallazione. | Test lifecycle e smoke isolato. | Lo smoke isolato della distribuzione non e` producibile per la medesima toolchain Tcl/Tk non inizializzabile. | `BLOCKED` |
+| `Avvia Caronte quando accedo a Windows` registra un comando valido della build installata. | Test registro e avvio da profilo isolato. | Build e smoke disponibili; prova T11 da completare. | `NOT_MET` |
+| Il controllo automatico usa l'eseguibile installato senza repository o runtime esterna. | Test piano Task Scheduler congelato. | Build e smoke disponibili; prova T11 da completare. | `NOT_MET` |
+| Attivazione, stato e rimozione mostrano esiti visibili e coerenti. | Test UI e adapter fake. | Il collaudo ha rilevato attivazione non riuscita. | `NOT_MET` |
+| Disinstallazione rimuove ogni avvio automatico del programma. | Smoke installazione, attivazione e disinstallazione. | Smoke installer disponibile; prova T11 da completare. | `NOT_MET` |
+| Nessun processo resta orfano dopo pausa, chiusura o disinstallazione. | Test lifecycle e smoke isolato. | Smoke installer disponibile; prova T11 da completare. | `NOT_MET` |
 
-Blocco registrato il 2026-07-17: l'esecuzione del build gate fallisce prima di
-PyInstaller con `TclError: Can't find a usable init.tcl` sia nella `.venv` sia
-nelle toolchain locali di build gia` predisposte. Le modifiche parziali di T11
-sono state annullate; test mirati (`34 passed`), suite e smoke locale (`471
-passed`) non sostituiscono lo smoke della distribuzione. Azione unica necessaria:
-ripristinare una toolchain Python Windows completa con Tcl/Tk funzionante per la
-build, quindi rieseguire T11 dall'inizio.
+Il blocco toolchain del 2026-07-17 e` risolto: build e smoke della distribuzione
+sono di nuovo disponibili. T11 resta il primo task operativo e non e` chiuso
+finche` i cinque criteri non hanno la loro evidenza specifica.
+
+### GUI-U-E3-T12 — Chiusura e riduzione a icona comprensibili
+
+Stato: `TODO`.
+Risultato: i controlli della finestra distinguono senza ambiguita` riduzione a
+icona, ritorno alla Home e chiusura generale.
+Dipendenza: `GUI-U-E3-T11 = DONE`.
+Componenti ammessi: shell utente, preferenze di chiusura, vista Impostazioni e
+test GUI sintetici.
+Esclusioni: nuove schermate, tray icon, GUI legacy, modifiche al supervisore.
+Condizione di blocco: Windows non espone un comportamento verificabile per
+riduzione o chiusura nel profilo isolato.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| La scelta di ridurre a icona alla chiusura salva e viene applicata. | Test preferenza, protocollo finestra e riapertura. | Da ottenere. | `NOT_MET` |
+| Il comando di chiusura generale e` visivamente distinto dalla navigazione. | Test inventario controlli e revisione sintetica. | Da ottenere. | `NOT_MET` |
+| Tornare alla Home non arresta Caronte. | Test routing e stato del supervisore fake. | Da ottenere. | `NOT_MET` |
+| Chiudere esplicitamente arresta il supervisore senza processi residui. | Test lifecycle fake. | Da ottenere. | `NOT_MET` |
+
+### GUI-U-E3-T13 — Attivita` visibili e utili
+
+Stato: `TODO`.
+Risultato: i controlli utente producono riscontri consultabili in `Attivita e
+problemi`, anche quando non trovano nuovi documenti.
+Dipendenza: `GUI-U-E3-T12 = DONE`.
+Componenti ammessi: servizi attivita`, controller Home, proiezione eventi e test
+sintetici.
+Esclusioni: nuove fonti dati, rete reale, modifiche al Registro condiviso.
+Condizione di blocco: gli eventi esistenti non permettono di distinguere in modo
+sicuro controllo, avvio, pausa e completamento.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `Controlla ora` crea un riscontro leggibile. | Test controller e tabella Attivita`. | Da ottenere. | `NOT_MET` |
+| `Avvia` e `Pausa` creano riscontri leggibili e ordinati. | Test eventi lifecycle fake. | Da ottenere. | `NOT_MET` |
+| Un controllo senza documenti mostra comunque il suo esito. | Test completamento sintetico vuoto. | Da ottenere. | `NOT_MET` |
+| I dettagli tecnici restano inattivi finche` non esiste una riga selezionabile. | Test vista senza e con eventi. | Da ottenere. | `NOT_MET` |
+
+### GUI-U-E3-T14 — Registro e avvio guidati senza finestre tecniche
+
+Stato: `TODO`.
+Risultato: `Registro e avvio` resta nella finestra Caronte, espone gli stati
+reali del Registro e dell'avvio automatico e indica una sola azione utile.
+Dipendenza: `GUI-U-E3-T13 = DONE`.
+Componenti ammessi: vista Registro e avvio, servizi applicativi esistenti,
+adapter Windows e test fake.
+Esclusioni: nuovo OAuth, selezione utente del Registro, shell, GUI legacy.
+Condizione di blocco: un esito dell'adapter non e` traducibile senza dettagli
+tecnici o richiede configurazioni amministrative non disponibili.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| Nessuna azione Registro o avvio apre una finestra di shell. | Test adapter e avvio GUI isolato. | Da ottenere. | `NOT_MET` |
+| Registro non configurato mostra stato e unica azione comprensibili. | Test fake configurazione assente. | Da ottenere. | `NOT_MET` |
+| Collegamento Google non configurato mostra un esito guidato senza dettagli interni. | Test fake OAuth non disponibile. | Da ottenere. | `NOT_MET` |
+| Stato e attivazione dell'avvio automatico mostrano esiti coerenti. | Test adapter fake successo e errore. | Da ottenere. | `NOT_MET` |
 
 ### GATE U-H3 — Collaudo umano di distribuzione
 
@@ -599,7 +652,7 @@ ha rilevato assenza di riscontri osservabili per verifica casella, controllo,
 avvio e pausa; significato ambiguo e mancata persistenza del Limbo tornando
 indietro; accesso Gmail non guidato; `Bucoliche` e collegamento Google non
 comprensibili ne` completabili; avvio automatico non attivabile; copia/incolla e
-selezione testo incomplete. I task `GUI-U-E3-T07` - `GUI-U-E3-T11` devono essere
+selezione testo incomplete. I task `GUI-U-E3-T07` - `GUI-U-E3-T14` devono essere
 `DONE` prima di ripetere il gate.
 
 Scenario su PC o VM senza Python:
