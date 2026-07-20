@@ -3,15 +3,15 @@
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
 - Iniziativa attiva: `GUI-U - Caronte Desktop utente`
-- Fase corrente: correzioni da `GATE U-H3 = FAIL`
+- Fase corrente: `GUI-U = BLOCKED` dopo il nuovo `GATE U-H3 = FAIL`
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
-- Task corrente di codice: nessuno; `GUI-U-E3-T14 = DONE`
-- Task corrente consigliato: `GATE U-H3 - Collaudo umano di distribuzione`
-- Massimo due successivi: nessuno, in attesa del gate umano
+- Task corrente di codice: nessuno; EPIC sospesa
+- Task corrente consigliato: nessuno; serve una nuova pianificazione umana del recupero GUI-U
+- Massimo due successivi: nessuno
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
-- Gate corrente: `GATE U-H3 = WAITING_HUMAN_REVIEW` dopo `FAIL` umano del 2026-07-17; tutti i task correttivi `GUI-U-E3-T07` - `T14` sono `DONE`
-- Blocchi aperti: nessuno per lo sviluppo locale; prima del collaudo umano va registrato il client OAuth Desktop centrale e fornito alla build tramite l'input locale ignorato gia` predisposto
+- Gate corrente: `GATE U-H3 = FAIL` il 2026-07-20; il collaudo umano non rileva miglioramenti concreti nelle osservazioni precedenti, nonostante `GUI-U-E3-T07` - `T14` siano `DONE`
+- Blocchi aperti: EPIC GUI-U sospesa in attesa di un piano di recupero con scenari osservabili e criteri di accettazione umani; il client OAuth Desktop non e` piu` il prossimo passo operativo
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-pytest-gui-e3-t14-full local_connector -q` -> `OK` (`478 passed`)

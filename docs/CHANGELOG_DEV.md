@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-20 - `GATE U-H3 = FAIL`: il collaudo umano non ha rilevato alcun miglioramento concreto rispetto alle osservazioni precedenti; nessuna correzione e` stata validata nel percorso percepito. `GUI-U` e` posta `BLOCKED`; nessun altro correttivo autonomo e` autorizzato prima di un nuovo piano di recupero con scenari osservabili e criteri di accettazione umani.
+
 - 2026-07-20 - Completato `GUI-U-E3-T14`: `Registro e avvio` resta nella finestra Caronte, guida lo stato del Registro e del collegamento Google senza dettagli tecnici e presenta una sola azione per il controllo automatico; i comandi del pianificatore Windows non aprono una console. Test mirati `18 passed`, suite local connector e smoke `478 passed`; inventario stringhe vietate, diff e scansione segreti verificati. Prossimo passo `GATE U-H3 - Collaudo umano di distribuzione`.
 
 - 2026-07-20 - Completato `GUI-U-E3-T13`: ogni controllo della Home lascia un riscontro leggibile nella sorgente condivisa di `Attivita e problemi`, inclusi avvio, pausa, completamento e controllo senza nuovi documenti; i dettagli tecnici restano chiusi senza una riga selezionata. Test mirati `18 passed`, suite local connector e smoke `475 passed`; inventario stringhe vietate, diff e scansione segreti verificati. Prossimo task `GUI-U-E3-T14 - Registro e avvio guidati senza finestre tecniche`.

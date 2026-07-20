@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
-Stato: `IN_PROGRESS`
+Stato: `BLOCKED`
 Sotto-epica attiva: `GUI-U-E3 - Completamento e distribuzione`
-Task corrente: `GUI-U-E3-T02 - Impostazioni essenziali`
+Task corrente: nessuno; `GUI-U = BLOCKED` dopo `GATE U-H3 = FAIL`
 
 Obiettivo finale:
 
@@ -640,7 +640,7 @@ tecnici o richiede configurazioni amministrative non disponibili.
 
 ### GATE U-H3 — Collaudo umano di distribuzione
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `FAIL`.
 
 Codex non puo` dichiararlo `PASS`.
 
@@ -670,3 +670,9 @@ Scenario su PC o VM senza Python:
 9. disinstallazione.
 
 La EPIC GUI-U puo` essere chiusa solo dopo il `PASS` umano.
+
+Esito umano del 2026-07-20: `FAIL`. Non e` stato osservato alcun miglioramento
+concreto rispetto alle osservazioni gia` riportate: nessuna correzione e` stata
+validata nel percorso percepito dall'utente. L'EPIC GUI-U resta `BLOCKED`; non
+sono autorizzati nuovi correttivi autonomi finche` non viene definito un nuovo
+piano di recupero con scenari osservabili e criteri di accettazione umani.
