@@ -602,7 +602,7 @@ Test mirati `31 passed`; suite local connector e smoke locale `474 passed`.
 
 ### GUI-U-E3-T13 — Attivita` visibili e utili
 
-Stato: `TODO`.
+Stato: `DONE`.
 Risultato: i controlli utente producono riscontri consultabili in `Attivita e
 problemi`, anche quando non trovano nuovi documenti.
 Dipendenza: `GUI-U-E3-T12 = DONE`.
@@ -614,10 +614,10 @@ sicuro controllo, avvio, pausa e completamento.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `Controlla ora` crea un riscontro leggibile. | Test controller e tabella Attivita`. | Da ottenere. | `NOT_MET` |
-| `Avvia` e `Pausa` creano riscontri leggibili e ordinati. | Test eventi lifecycle fake. | Da ottenere. | `NOT_MET` |
-| Un controllo senza documenti mostra comunque il suo esito. | Test completamento sintetico vuoto. | Da ottenere. | `NOT_MET` |
-| I dettagli tecnici restano inattivi finche` non esiste una riga selezionabile. | Test vista senza e con eventi. | Da ottenere. | `NOT_MET` |
+| `Controlla ora` crea un riscontro leggibile. | Test controller e tabella Attivita`. | `test_home_actions_remain_visible_in_activities_including_an_empty_check`: la richiesta resta nella tabella con testo utente. | `MET` |
+| `Avvia` e `Pausa` creano riscontri leggibili e ordinati. | Test eventi lifecycle fake. | Stesso test: riscontri di controllo, completamento e pausa nella sorgente condivisa, in ordine di emissione. | `MET` |
+| Un controllo senza documenti mostra comunque il suo esito. | Test completamento sintetico vuoto. | Stesso test con sorgente audit vuota: `Controllo completato` resta consultabile con esito `Riuscito`. | `MET` |
+| I dettagli tecnici restano inattivi finche` non esiste una riga selezionabile. | Test vista senza e con eventi. | `test_home_actions_remain_visible_in_activities_including_an_empty_check` e `test_problem_has_recommended_action_and_technical_detail_is_opt_in` verdi: pannello chiuso prima della selezione. | `MET` |
 
 ### GUI-U-E3-T14 — Registro e avvio guidati senza finestre tecniche
 

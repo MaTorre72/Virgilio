@@ -20,6 +20,7 @@ class HomeFeedback:
     message: str
     last_check: datetime | None = None
     refresh_activity: bool = False
+    activity: str = ""
 
 
 class HomeRunController:
@@ -51,7 +52,10 @@ class HomeRunController:
     def pause(self) -> bool:
         accepted = self._runner.stop()
         if accepted:
-            self._feedback.put(HomeFeedback("In pausa", "Pausa richiesta. Attendi la conclusione del controllo in corso."))
+            self._feedback.put(HomeFeedback(
+                "In pausa", "Pausa richiesta. Attendi la conclusione del controllo in corso.",
+                activity="Pausa richiesta",
+            ))
         return accepted
 
     def close(self) -> None:
@@ -85,7 +89,10 @@ class HomeRunController:
                 if operation == "check"
                 else "Avvio richiesto. Caronte iniziera` a controllare le caselle."
             )
-            self._feedback.put(HomeFeedback("Controllo in corso", message))
+            self._feedback.put(HomeFeedback(
+                "Controllo in corso", message,
+                activity=("Controllo richiesto" if operation == "check" else "Controllo automatico avviato"),
+            ))
         return accepted
 
     def _translate(self, event: RunnerEvent) -> HomeFeedback:
@@ -95,17 +102,18 @@ class HomeRunController:
                 if self._operation == "check"
                 else "Caronte e` attivo e controllera` periodicamente le caselle."
             )
-            return HomeFeedback("Controllo in corso", message)
+            return HomeFeedback("Controllo in corso", message, activity="Controllo in corso")
         if event.kind == "rejected":
             return HomeFeedback(
                 "Controllo in corso" if self._runner.running else "In pausa",
                 "Richiesta non avviata: un controllo e` gia` in corso."
                 if self._runner.running
                 else "Richiesta non eseguita: Caronte e` gia` in pausa.",
+                activity="Richiesta non eseguita",
             )
         if event.kind == "stopped":
             self._operation = None
-            return HomeFeedback("In pausa", "Caronte e` in pausa.")
+            return HomeFeedback("In pausa", "Caronte e` in pausa.", activity="Controllo automatico in pausa")
         if event.kind == "completed" and event.returncode == 0:
             operation = self._operation
             self._operation = None
@@ -115,13 +123,18 @@ class HomeRunController:
                     "Controllo completato. Apri Attivita e problemi per vedere i risultati.",
                     datetime.now(ROME),
                     True,
+                    "Controllo completato",
                 )
-            return HomeFeedback("In pausa", "Il controllo automatico si e` concluso.", refresh_activity=True)
+            return HomeFeedback(
+                "In pausa", "Il controllo automatico si e` concluso.",
+                refresh_activity=True, activity="Controllo automatico concluso",
+            )
         self._operation = None
         return HomeFeedback(
             "Richiede attenzione",
             "Controllo non completato. Riprova; se il problema continua, chiedi assistenza.",
             refresh_activity=True,
+            activity="Controllo non completato",
         )
 
     def _arguments(self, *, max_cycles: int | None) -> list[str]:

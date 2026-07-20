@@ -3,12 +3,13 @@ import threading
 import time
 
 from virgilio_connector.application.configuration import ConfigurationService
+from virgilio_connector.application.activity import ActivityService
 from virgilio_connector.application.home_control import HomeFeedback, HomeRunController
 from virgilio_connector.application.operation_runner import RunnerEvent
 from virgilio_connector.user_app.app import UserAppShell
 from virgilio_connector.user_app.wizard import AccountForm, FirstRunController
 
-from test_user_app import FakeLabel, FakeRoot, FakeTtk
+from test_user_app import FakeLabel, FakeRoot, FakeTreeview, FakeTtk
 
 
 class FakeRunner:
@@ -103,7 +104,10 @@ def test_check_now_reports_acceptance_and_final_result():
 
     assert controller.check_now() is True
     accepted = controller.drain_feedback()
-    assert accepted == [HomeFeedback("Controllo in corso", "Controllo richiesto. Attendi il risultato.")]
+    assert accepted == [HomeFeedback(
+        "Controllo in corso", "Controllo richiesto. Attendi il risultato.",
+        activity="Controllo richiesto",
+    )]
 
     runner.state = "stopped"
     runner.events.append(RunnerEvent("completed", "stopped", "password=do-not-show", 0))
@@ -198,6 +202,39 @@ def test_home_schedules_periodic_non_blocking_event_consumption(tmp_path):
 
     assert shell.home.status.state == "Controllo in corso"
     assert root.scheduled[0][0] == 100
+
+
+def test_home_actions_remain_visible_in_activities_including_an_empty_check(tmp_path):
+    config = tmp_path / "config.yaml"
+    config.write_text("present: true\n", encoding="utf-8")
+    activities = ActivityService(tmp_path / "state.db")
+    control = QueuedHomeControl((
+        HomeFeedback("Controllo in corso", "Controllo richiesto.", activity="Controllo richiesto"),
+        HomeFeedback("Pronto", "Controllo completato.", refresh_activity=True,
+                     activity="Controllo completato"),
+        HomeFeedback("In pausa", "Pausa richiesta.", activity="Pausa richiesta"),
+    ))
+    shell = UserAppShell(
+        FakeRoot(), ConfigurationService.for_file(config), ttk_module=FakeTtk,
+        home_control=control, activity_service=activities,
+    )
+
+    assert shell.poll_home_operations() == 3
+    rows = activities.list_activities()
+
+    assert {row.activity for row in rows} == {
+        "Controllo richiesto", "Controllo completato", "Pausa richiesta",
+    }
+    assert any(row.activity == "Controllo completato" and row.outcome == "Riuscito"
+               for row in rows)
+    assert [row.occurred_at for row in rows] == sorted(
+        (row.occurred_at for row in rows), reverse=True
+    )
+    shell.show_activity()
+
+    assert len(FakeTreeview.created[-1].rows) == 3
+    assert shell.activity.technical_panel_open is False
+    assert shell.activity.technical_label.grid_options is None
 
 
 def test_runner_error_never_exposes_installed_runtime_details_or_credentials():

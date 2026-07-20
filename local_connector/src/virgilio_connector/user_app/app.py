@@ -172,14 +172,26 @@ class UserAppShell:
         if self.route is not UserRoute.HOME or self.home is None:
             return len(feedback_items)
         for feedback in feedback_items:
+            self._record_activity_feedback(feedback)
             activity_count = None
-            if feedback.refresh_activity:
+            if feedback.refresh_activity or feedback.activity:
                 try:
                     activity_count = len(self._activity_service.list_activities())
                 except Exception:
                     activity_count = None
             self.home.apply_feedback(feedback, activity_count=activity_count)
         return len(feedback_items)
+
+    def _record_activity_feedback(self, feedback: object) -> None:
+        record = getattr(self._activity_service, "record_control_feedback", None)
+        activity = getattr(feedback, "activity", "")
+        if callable(record) and activity:
+            record(
+                activity=activity,
+                message=feedback.message,
+                state=feedback.state,
+                occurred_at=feedback.last_check,
+            )
 
     def _schedule_home_poll(self) -> None:
         after = getattr(self.root, "after", None)

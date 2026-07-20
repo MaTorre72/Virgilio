@@ -68,15 +68,49 @@ class ActivityService:
         self._state_db = state_db
         self._event_reader = event_reader
         self._redact = redact
+        self._session_rows: list[ActivityRow] = []
 
     def list_activities(self) -> tuple[ActivityRow, ...]:
         if self._event_reader is central_event_rows and not self._state_db.is_file():
-            return ()
-        rows = (
-            project_activity(event, redact=self._redact)
-            for event in self._event_reader(self._state_db)
-        )
+            rows: list[ActivityRow] = []
+        else:
+            rows = list(
+                project_activity(event, redact=self._redact)
+                for event in self._event_reader(self._state_db)
+            )
+        rows.extend(self._session_rows)
         return filter_activities(rows, ActivityFilters())
+
+    def record_control_feedback(
+        self,
+        *,
+        activity: str,
+        message: str,
+        state: str,
+        occurred_at: datetime | None = None,
+    ) -> None:
+        """Keep a readable Home action visible during the current session."""
+
+        when = occurred_at or datetime.now(ROME)
+        outcome = {
+            "Controllo in corso": "In corso",
+            "Richiede attenzione": "Problema",
+        }.get(state, "Riuscito")
+        action = (
+            "Riprova il controllo; se il problema continua, chiedi assistenza."
+            if outcome == "Problema" else message
+        )
+        self._session_rows.append(ActivityRow(
+            occurred_at=when,
+            occurred_text=when.astimezone(ROME).strftime("%d/%m/%Y %H:%M"),
+            day=when.astimezone(ROME).date(),
+            account="Tutte le caselle",
+            attachment="-",
+            activity=self._redact(activity),
+            outcome=outcome,
+            recommended_action=self._redact(action),
+            technical_detail="Dettaglio tecnico disponibile solo per le attivita registrate.",
+        ))
 
 
 def project_activity(

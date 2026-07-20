@@ -6,16 +6,16 @@
 - Fase corrente: correzioni da `GATE U-H3 = FAIL`
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
-- Task corrente di codice: `GUI-U-E3-T13 - Attivita` visibili e utili`
-- Task corrente consigliato: `GUI-U-E3-T13`
-- Massimo due successivi: `GUI-U-E3-T14`, `GATE U-H3`
+- Task corrente di codice: `GUI-U-E3-T14 - Registro e avvio guidati senza finestre tecniche`
+- Task corrente consigliato: `GUI-U-E3-T14`
+- Massimo due successivi: `GATE U-H3`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate corrente: `GATE U-H3 = WAITING_FOR_PREVIOUS_TASKS` dopo `FAIL` umano del 2026-07-17
 - Blocchi aperti: nessuno per `GUI-U-E3-T13`; build e smoke della distribuzione sono disponibili. Prima del prossimo collaudo va inoltre registrato il client OAuth Desktop centrale e fornito alla build tramite l'input locale ignorato gia` predisposto
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
-- Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-pytest-gui-e3-t12-full local_connector -q` -> `OK` (`474 passed`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`474 passed`)
+- Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-pytest-gui-e3-t13-full local_connector -q` -> `OK` (`475 passed`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`475 passed`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3
