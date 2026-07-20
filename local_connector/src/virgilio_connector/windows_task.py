@@ -148,6 +148,45 @@ def build_windows_watch_task(
     )
 
 
+def build_windows_frozen_watch_task(
+    *,
+    config_path: Path,
+    executable: Path,
+    interval_seconds: int,
+    task_name: str,
+    force: bool = False,
+) -> WindowsTaskRegistrationPlan:
+    """Plan the sign-in worker for the installed, self-contained Caronte."""
+
+    if os.name != "nt":
+        raise WindowsTaskError("Windows Task Scheduler is supported only on Windows")
+    if interval_seconds <= 0:
+        raise WindowsTaskError("interval_seconds must be greater than 0")
+    task_name = _task_name(task_name)
+    resolved_config = _resolve_existing_path(config_path, label="config_path")
+    resolved_executable = _resolve_existing_path(executable, label="executable")
+    if not resolved_executable.is_file():
+        raise WindowsTaskError(f"executable must be a file: {resolved_executable}")
+    action_args = [
+        str(resolved_executable), "watch", "--config", str(resolved_config),
+        "--human", "--interval-seconds", str(interval_seconds),
+    ]
+    task_action = subprocess.list2cmdline(action_args)
+    create_args = ["schtasks", "/create", "/tn", task_name, "/sc", "ONLOGON", "/rl", "LIMITED", "/tr", task_action]
+    if force:
+        create_args.append("/f")
+    return WindowsTaskRegistrationPlan(
+        task_name=task_name,
+        config_path=str(resolved_config),
+        python_exe="",
+        repo_root="",
+        interval_seconds=interval_seconds,
+        task_action=task_action,
+        create_args=create_args,
+        create_command=subprocess.list2cmdline(create_args),
+    )
+
+
 def register_windows_watch_task(plan: WindowsTaskRegistrationPlan) -> dict[str, object]:
     completed = subprocess.run(plan.create_args, capture_output=True, text=True, check=False)
     stdout = completed.stdout.strip()
@@ -206,6 +245,11 @@ def unregister_windows_watch_task(task_name: str) -> dict[str, object]:
     current = query_windows_watch_task(task_name)
     if not current.installed:
         return {"status": "not_installed", "task_name": task_name, "removed": False}
+    if current.state.lower() == "running":
+        subprocess.run(
+            ["schtasks", "/end", "/tn", task_name],
+            capture_output=True, text=True, check=False,
+        )
     args = ["schtasks", "/delete", "/tn", task_name, "/f"]
     completed = subprocess.run(args, capture_output=True, text=True, check=False)
     stdout = completed.stdout.strip()

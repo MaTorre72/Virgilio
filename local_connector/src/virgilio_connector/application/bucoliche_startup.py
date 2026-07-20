@@ -14,6 +14,7 @@ from ..bucoliche import BucolicheError, GoogleOAuthLogin, load_bucoliche_config
 from ..pilot_readiness import BucolicheDoctor, has_bucoliche_section
 from ..windows_task import (
     WindowsTaskError,
+    build_windows_frozen_watch_task,
     build_windows_watch_task,
     query_windows_watch_task,
     register_windows_watch_task,
@@ -87,15 +88,24 @@ class WindowsAutomaticControlGateway:
 
     def install(self) -> None:
         model = self.configuration.load()
-        repo_root = Path(__file__).resolve().parents[4]
-        plan = build_windows_watch_task(
-            config_path=self.configuration.store.source,
-            python_exe=Path(sys.executable),
-            repo_root=repo_root,
-            interval_seconds=model.preferences.interval_seconds,
-            task_name=self.TASK_NAME,
-            force=True,
-        )
+        if getattr(sys, "frozen", False):
+            plan = build_windows_frozen_watch_task(
+                config_path=self.configuration.store.source,
+                executable=Path(sys.executable),
+                interval_seconds=model.preferences.interval_seconds,
+                task_name=self.TASK_NAME,
+                force=True,
+            )
+        else:
+            repo_root = Path(__file__).resolve().parents[4]
+            plan = build_windows_watch_task(
+                config_path=self.configuration.store.source,
+                python_exe=Path(sys.executable),
+                repo_root=repo_root,
+                interval_seconds=model.preferences.interval_seconds,
+                task_name=self.TASK_NAME,
+                force=True,
+            )
         register_windows_watch_task(plan)
 
     def remove(self) -> None:

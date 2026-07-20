@@ -50,6 +50,7 @@ class UserAppShell:
         *,
         ttk_module: Any = ttk,
         readonly_test: Any | None = None,
+        google_access: Any | None = None,
         account_service: AccountManagementService | None = None,
         home_status: HomeStatusService | None = None,
         home_control: HomeRunController | None = None,
@@ -60,6 +61,7 @@ class UserAppShell:
         self.root = root
         self._ttk = ttk_module
         self._readonly_test = readonly_test
+        self._google_access = google_access
         self._account_service = account_service
         self._settings_service = settings_service or SettingsService(
             configuration, DisabledStartupAdapter()
@@ -121,6 +123,7 @@ class UserAppShell:
         if self.route is UserRoute.FIRST_RUN:
             self.first_run = FirstRunController(
                 content, ttk_module=self._ttk, readonly_test=self._readonly_test,
+                google_access=self._google_access,
                 account_service=self._account_service,
                 on_complete=self.show_home,
                 open_existing=open_existing,

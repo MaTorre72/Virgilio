@@ -100,6 +100,21 @@ def test_windows_startup_adapter_uses_injected_registry_without_real_access(tmp_
     assert registry.saved == {}
 
 
+def test_windows_startup_adapter_uses_installed_executable_when_frozen(tmp_path, monkeypatch):
+    registry = FakeRegistry()
+    monkeypatch.setattr("virgilio_connector.application.windows_startup.sys.frozen", True, raising=False)
+    monkeypatch.setattr("virgilio_connector.application.windows_startup.sys.executable",
+                        r"C:\\Program Files\\Caronte\\Caronte.exe")
+
+    adapter = WindowsStartupAdapter(tmp_path / "config.yaml", registry=registry)
+    adapter.set_enabled(True)
+
+    command = registry.saved["Caronte"]
+    assert "Caronte.exe" in command
+    assert "user-gui" in command
+    assert "-m virgilio_connector" not in command
+
+
 @pytest.mark.parametrize("value", ("", "zero", "0", "1441"))
 def test_interval_validation_rejects_values_outside_allowed_range(tmp_path, value):
     service = SettingsService(_configuration(tmp_path), FakeStartupAdapter())

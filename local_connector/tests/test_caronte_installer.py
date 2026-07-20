@@ -68,6 +68,22 @@ def test_uninstall_removes_program_and_shortcut_but_preserves_user_data(tmp_path
     assert unregistered == [True]
 
 
+def test_uninstall_removes_automatic_startup_before_program_files(tmp_path: Path) -> None:
+    layout = _layout(tmp_path)
+    layout.program_dir.mkdir(parents=True)
+    (layout.program_dir / "Caronte.exe").write_bytes(b"program")
+    calls: list[str] = []
+
+    uninstall(
+        layout,
+        unregister_uninstall=lambda: calls.append("unregister"),
+        remove_automatic_startup=lambda: calls.append("automatic"),
+    )
+
+    assert calls == ["automatic", "unregister"]
+    assert not layout.program_dir.exists()
+
+
 def test_layout_separates_program_configuration_and_data(tmp_path: Path) -> None:
     layout = InstallLayout.from_environment(
         {"USERPROFILE": str(tmp_path), "LOCALAPPDATA": str(tmp_path / "local"), "APPDATA": str(tmp_path / "roaming")}

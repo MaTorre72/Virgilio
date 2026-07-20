@@ -556,7 +556,7 @@ reale resta necessario il client OAuth Desktop centrale gia` previsto in T09.
 
 ### GUI-U-E3-T11 — Avvio automatico della distribuzione installata
 
-Stato: `TODO`.
+Stato: `DONE`.
 Risultato: Caronte installato puo` avviarsi all'accesso a Windows e controllare
 in automatico senza dipendere dal repository o da una runtime esterna.
 Dipendenza: `GUI-U-E3-T10 = DONE`.
@@ -569,15 +569,15 @@ senza percorsi di sviluppo o senza lasciare processi orfani.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `Avvia Caronte quando accedo a Windows` registra un comando valido della build installata. | Test registro e avvio da profilo isolato. | Build e smoke disponibili; prova T11 da completare. | `NOT_MET` |
-| Il controllo automatico usa l'eseguibile installato senza repository o runtime esterna. | Test piano Task Scheduler congelato. | Build e smoke disponibili; prova T11 da completare. | `NOT_MET` |
-| Attivazione, stato e rimozione mostrano esiti visibili e coerenti. | Test UI e adapter fake. | Il collaudo ha rilevato attivazione non riuscita. | `NOT_MET` |
-| Disinstallazione rimuove ogni avvio automatico del programma. | Smoke installazione, attivazione e disinstallazione. | Smoke installer disponibile; prova T11 da completare. | `NOT_MET` |
-| Nessun processo resta orfano dopo pausa, chiusura o disinstallazione. | Test lifecycle e smoke isolato. | Smoke installer disponibile; prova T11 da completare. | `NOT_MET` |
+| `Avvia Caronte quando accedo a Windows` registra un comando valido della build installata. | Test registro e avvio da profilo isolato. | `test_windows_startup_adapter_uses_installed_executable_when_frozen` verde; build e `smoke_caronte_build.ps1` avviano `Caronte.exe` dalla sola cartella copiata. | `MET` |
+| Il controllo automatico usa l'eseguibile installato senza repository o runtime esterna. | Test piano Task Scheduler congelato. | `test_frozen_watch_task_uses_only_installed_executable` verde: azione con `Caronte.exe watch`, senza modulo o repository. | `MET` |
+| Attivazione, stato e rimozione mostrano esiti visibili e coerenti. | Test UI e adapter fake. | `test_automatic_control_install_remove_and_status_use_fake_scheduler` verde: stato, attivazione e rimozione espongono i messaggi utente previsti. | `MET` |
+| Disinstallazione rimuove ogni avvio automatico del programma. | Smoke installazione, attivazione e disinstallazione. | `test_uninstall_removes_automatic_startup_before_program_files` verde; `smoke_caronte_installer.ps1` conferma disinstallazione isolata e conservazione dati utente. | `MET` |
+| Nessun processo resta orfano dopo pausa, chiusura o disinstallazione. | Test lifecycle e smoke isolato. | `test_unregister_running_windows_task_stops_it_before_deletion` verifica `/end` prima di `/delete`; smoke build e installer verdi. | `MET` |
 
 Il blocco toolchain del 2026-07-17 e` risolto: build e smoke della distribuzione
-sono di nuovo disponibili. T11 resta il primo task operativo e non e` chiuso
-finche` i cinque criteri non hanno la loro evidenza specifica.
+sono di nuovo disponibili. Tutte le evidenze specifiche sono registrate; il
+prossimo task operativo e` `GUI-U-E3-T12`.
 
 ### GUI-U-E3-T12 — Chiusura e riduzione a icona comprensibili
 

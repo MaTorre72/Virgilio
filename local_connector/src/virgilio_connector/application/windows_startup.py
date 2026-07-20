@@ -25,16 +25,11 @@ class WindowsStartupAdapter:
                     "L'avvio automatico e` disponibile solo su Windows."
                 ) from exc
         self._registry = registry
-        self._command = subprocess.list2cmdline(
-            [
-                sys.executable,
-                "-m",
-                "virgilio_connector",
-                "user-gui",
-                "--config",
-                str(Path(config_path).resolve()),
-            ]
-        )
+        command = [sys.executable]
+        if not getattr(sys, "frozen", False):
+            command.extend(("-m", "virgilio_connector"))
+        command.extend(("user-gui", "--config", str(Path(config_path).resolve())))
+        self._command = subprocess.list2cmdline(command)
 
     def set_enabled(self, enabled: bool) -> None:
         try:

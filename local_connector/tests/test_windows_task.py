@@ -73,6 +73,42 @@ def test_unregister_windows_task_deletes_existing_task(monkeypatch):
     assert payload["removed"] is True
 
 
+def test_unregister_running_windows_task_stops_it_before_deletion(monkeypatch):
+    seen = []
+    monkeypatch.setattr(windows_task, "query_windows_watch_task", lambda name:
+                        windows_task.WindowsTaskStatus(name, installed=True, state="Running"))
+    monkeypatch.setattr(windows_task.subprocess, "run", lambda args, **kwargs: (
+        seen.append(args), subprocess.CompletedProcess(args, 0, stdout="SUCCESS", stderr="")
+    )[1])
+
+    payload = windows_task.unregister_windows_watch_task("Caronte - controllo automatico")
+
+    assert seen == [
+        ["schtasks", "/end", "/tn", "Caronte - controllo automatico"],
+        ["schtasks", "/delete", "/tn", "Caronte - controllo automatico", "/f"],
+    ]
+    assert payload["removed"] is True
+
+
+def test_frozen_watch_task_uses_only_installed_executable(monkeypatch, tmp_path):
+    config = tmp_path / "config.yaml"
+    executable = tmp_path / "Caronte.exe"
+    config.write_text("synthetic: true", encoding="utf-8")
+    executable.write_bytes(b"synthetic")
+    monkeypatch.setattr(windows_task.os, "name", "nt")
+
+    plan = windows_task.build_windows_frozen_watch_task(
+        config_path=config, executable=executable, interval_seconds=300,
+        task_name="Caronte - controllo automatico", force=True,
+    )
+
+    assert str(executable.resolve()) in plan.task_action
+    assert "watch" in plan.task_action
+    assert "-m virgilio_connector" not in plan.task_action
+    assert plan.repo_root == ""
+    assert plan.python_exe == ""
+
+
 def test_windows_task_status_cli_has_readable_last_result(monkeypatch, capsys):
     from virgilio_connector.__main__ import main
 

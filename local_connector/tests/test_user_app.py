@@ -178,6 +178,17 @@ def test_shell_has_caronte_title_and_routes_missing_configuration_to_first_run(t
     assert FakeLabel.created[0].kwargs["text"] == "Benvenuto in Caronte"
 
 
+def test_shell_passes_google_access_to_the_first_run_controller(tmp_path):
+    google_access = lambda form: form.email
+
+    shell = UserAppShell(
+        FakeRoot(), ConfigurationService.for_file(tmp_path / "config.yaml"),
+        ttk_module=FakeTtk, google_access=google_access,
+    )
+
+    assert shell.first_run._google_access is google_access
+
+
 def test_shell_routes_existing_configuration_to_home(tmp_path):
     config_path = tmp_path / "config.yaml"
     config_path.write_text("present: true\n", encoding="utf-8")

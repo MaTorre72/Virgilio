@@ -16,6 +16,9 @@ from typing import Callable, Mapping
 PRODUCT_NAME = "Caronte"
 PRODUCT_VERSION = "0.11.0"
 UNINSTALL_KEY = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\Caronte"
+STARTUP_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
+STARTUP_VALUE = "Caronte"
+AUTOMATIC_TASK_NAME = "Caronte - controllo automatico"
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,6 +90,23 @@ def _unregister_uninstall() -> None:
         pass
 
 
+def _remove_automatic_startup() -> None:
+    """Remove both sign-in integrations, stopping a scheduled worker first."""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, STARTUP_KEY, 0, winreg.KEY_SET_VALUE) as key:
+            try:
+                winreg.DeleteValue(key, STARTUP_VALUE)
+            except FileNotFoundError:
+                pass
+    except FileNotFoundError:
+        pass
+    subprocess.run(["schtasks", "/end", "/tn", AUTOMATIC_TASK_NAME], capture_output=True, text=True, check=False,
+                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    subprocess.run(["schtasks", "/delete", "/tn", AUTOMATIC_TASK_NAME, "/f"], capture_output=True, text=True, check=False,
+                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+
+
 def install(
     source: Path,
     installer_executable: Path,
@@ -129,7 +149,9 @@ def uninstall(
     layout: InstallLayout,
     *,
     unregister_uninstall: Callable[[], None] = _unregister_uninstall,
+    remove_automatic_startup: Callable[[], None] = _remove_automatic_startup,
 ) -> None:
+    remove_automatic_startup()
     if layout.start_menu_dir.exists():
         shutil.rmtree(layout.start_menu_dir)
     if layout.program_dir.exists():

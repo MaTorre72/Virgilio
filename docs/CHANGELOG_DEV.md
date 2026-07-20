@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-20 - Completato `GUI-U-E3-T11`: l'avvio automatico usa nella distribuzione installata `Caronte.exe` sia per l'accesso Windows sia per il controllo automatico, senza repository o runtime di sviluppo; rimozione e disinstallazione arrestano prima il controllo e cancellano le integrazioni di avvio. Test mirati `29 passed`, suite e smoke locale `472 passed`, build autonoma, avvio dalla sola cartella copiata e smoke installer isolato verdi. Prossimo task `GUI-U-E3-T12 - Chiusura e riduzione a icona comprensibili`.
+
 - 2026-07-20 - Suddiviso il completamento dopo il collaudo anticipato: `GUI-U-E3-T11` torna avviabile dopo il ripristino della build; aggiunti `T12` (chiusura/riduzione), `T13` (Attivita`) e `T14` (Registro e avvio), con criteri binari e prove dedicate. `GATE U-H3` resta bloccato finche` tutti i task `T07` - `T14` non sono `DONE`.
 
 - 2026-07-17 - `GUI-U-E3-T11` bloccato: i test mirati (`34 passed`), suite e smoke locale (`471 passed`) hanno validato le prove sintetiche, ma il build gate necessario allo smoke installazione/attivazione/disinstallazione fallisce prima di PyInstaller. La `.venv` e tutte le toolchain locali di build gia` predisposte non inizializzano Tcl/Tk (`init.tcl` non utilizzabile), percio` non e` possibile produrre `Caronte.exe` aggiornato senza ripristinare la toolchain. Le modifiche parziali sono state annullate; unica azione necessaria: ripristinare una toolchain Python Windows completa con Tcl/Tk funzionante e rieseguire T11 dall'inizio.
