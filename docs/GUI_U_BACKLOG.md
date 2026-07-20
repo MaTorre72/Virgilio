@@ -785,9 +785,59 @@ del commit corrente, oppure non e` possibile acquisire le evidenze reali richies
 ### GUI-U-R03 - Collegamento dei servizi
 
 Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Risultato: il prototipo visuale approvato usa i servizi applicativi condivisi
+per Limbo, due caselle, controlli operativi, persistenza e controllo automatico,
+con riscontri osservabili nella GUI e senza esporre dettagli tecnici.
 Dipendenza: approvazione umana esplicita di R02.
+Componenti ammessi: viste `user_app` approvate in R02, servizi applicativi
+condivisi di configurazione, account, credenziali, verifica read-only, runner,
+attivita`, impostazioni e adapter Windows; test automatici con fake; evidenze e
+checklist di collaudo R03.
+Esclusioni: redesign del layout approvato, GUI legacy, nuovi toolkit, duplicazione
+della logica CLI, modifiche ad Apps Script, Registro o pipeline non necessarie
+ai sei scenari R03, credenziali o servizi reali nei test automatici.
+Condizione di blocco: R02 non ha un'approvazione umana esplicita, oppure un
+servizio richiesto non puo` essere collegato alle viste approvate senza esporre
+termini tecnici, bloccare la GUI o cambiare il prototipo accettato.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-AC1` Il Limbo reale si seleziona, valida, salva, persiste dopo riapertura e si modifica da Impostazioni (`H-R03-01`). | Test applicativi/UI con filesystem temporaneo; collaudo umano completo del round-trip. | Non ancora eseguita. | `NOT_MET` |
+| `R03-AC2` Prima e seconda casella hanno credenziali distinte, percorsi Google/IMAP corretti e operazioni persistenti di aggiunta, modifica, stato e rimozione (`H-R03-02`, `H-R03-03`). | Test con OAuth/IMAP/credential store fake; collaudo umano su due caselle reali autorizzate. | Non ancora eseguita. | `NOT_MET` |
+| `R03-AC3` Verifica collegamento, Controlla ora, Avvia e Pausa mostrano avvio, stato, esito o errore azionabile e registrano l'attivita (`H-R03-04`). | Test asincroni deterministici su successo/errore; collaudo umano dei quattro comandi. | Non ancora eseguita. | `NOT_MET` |
+| `R03-AC4` Chiusura, eventuale riduzione a icona e riapertura non lasciano console o processi duplicati e conservano configurazione e stato (`H-R03-05`). | Test lifecycle/processi su build installata; collaudo umano di chiusura e riapertura. | Non ancora eseguita. | `NOT_MET` |
+| `R03-AC5` Il controllo automatico si attiva, conferma, espone lo stato, persiste e si disattiva senza finestre tecniche (`H-R03-06`). | Test adapter Windows isolato e persistenza; collaudo umano sulla build installata. | Non ancora eseguita. | `NOT_MET` |
+
+Esito terminale prima della decisione umana: `WAITING_HUMAN_REVIEW`. R03 passa a
+`DONE` solo dopo conferma umana esplicita su tutti gli scenari obbligatori. Un
+fallimento deve registrare scenario, passaggio, atteso, osservato e screenshot;
+Codex propone un numero finito di correttivi e attende l'approvazione del piano.
 
 ### GUI-U-R04 - Release candidate e collaudo finale
 
 Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Risultato: una release candidate identificata viene installata, usata e rimossa
+con successo su un PC o profilo Windows senza Python utilizzabile dall'utente,
+eseguendo l'intero percorso finale senza terminale o documentazione tecnica.
 Dipendenza: `GUI-U-R03 = DONE` dopo conferma umana esplicita.
+Componenti ammessi: sorgente accettata in R03, pipeline build/installer R01,
+smoke di release, applicazione installata, integrazioni Windows gia` approvate,
+manifest/hash, checklist ed evidenze del collaudo finale.
+Esclusioni: nuove funzioni, redesign, correttivi non approvati, servizi o dati
+reali nei test automatici, uso di terminale/Python o modifica manuale di file
+durante il collaudo umano, merge, `clasp push` e modifica di `main`.
+Condizione di blocco: non e` disponibile un ambiente Windows idoneo senza Python,
+la release candidate non coincide con commit/hash/build ID attesi, oppure un
+prerequisito R03 non ha ricevuto conferma umana esplicita.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R04-AC1` Hash e build-info coincidono con il manifest; installazione e avvio dal menu Start riescono su ambiente idoneo. | Smoke release e passi umani 1-4 con installer, hash, commit e build ID registrati. | Non ancora eseguita. | `NOT_MET` |
+| `R04-AC2` Primo avvio, Limbo, due caselle, riapertura, persistenza, controllo manuale, avvio continuo, pausa e attivita` completano il percorso senza strumenti tecnici. | Collaudo umano dei passi 5-13 con evidenze puntuali. | Non ancora eseguita. | `NOT_MET` |
+| `R04-AC3` Controllo automatico, riavvio sessione o simulazione equivalente, verifica stato, disattivazione, Impostazioni e Informazioni funzionano in sequenza. | Collaudo umano dei passi 14-19 e confronto finale dell'identita build. | Non ancora eseguita. | `NOT_MET` |
+| `R04-AC4` Disinstallazione rimuove programma e integrazioni e applica la policy dichiarata di conservazione dati. | Smoke disinstallazione e collaudo umano dei passi 20-22. | Non ancora eseguita. | `NOT_MET` |
+| `R04-AC5` Tutti gli scenari obbligatori sono `PASS`, nessuno e` `FAIL` o `INVALID_BUILD`, e il fascicolo contiene identificazione ed evidenze complete. | Revisione umana della checklist e verifica documentale del fascicolo finale. | Non ancora eseguita; Codex non puo` compilare l'esito umano. | `NOT_MET` |
+
+Esito terminale prima della decisione umana: `WAITING_HUMAN_REVIEW`. R04 e
+l'iniziativa GUI-U possono essere dichiarati completati solo dopo un `PASS`
+umano esplicito conforme a `docs/GUI_U_HUMAN_ACCEPTANCE.md`.
