@@ -58,6 +58,20 @@ def test_build_entry_opens_user_application_without_arguments(monkeypatch) -> No
     assert called == ["Caronte"]
 
 
+def test_build_entry_opens_requested_isolated_demo_screen(monkeypatch) -> None:
+    called = []
+    monkeypatch.setattr(
+        sys, "argv", ["Caronte.exe", "--demo", "--demo-screen=home", "--demo-scale=1.25"]
+    )
+    monkeypatch.setattr(
+        "virgilio_connector.user_app.launch_user_app",
+        lambda **kwargs: called.append(kwargs) or 0,
+    )
+
+    assert build_entry.main() == 0
+    assert called == [{"demo": True, "demo_screen": "home", "demo_scale": 1.25}]
+
+
 def test_frozen_worker_reuses_bundled_executable(monkeypatch) -> None:
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     monkeypatch.setattr(sys, "executable", r"C:\Program Files\Caronte\Caronte.exe")

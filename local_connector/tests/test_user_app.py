@@ -494,6 +494,17 @@ def test_first_run_demo_fits_real_tk_window_at_960x640_for_supported_scales(tmp_
                 controller.continue_forward()
             elif controller.step is WizardStep.ACCOUNT:
                 controller.continue_forward()
+        controller.continue_forward()
+        assert shell.home is not None
+        for scale in (1.0, 1.25):
+            root.tk.call("tk", "scaling", scale)
+            root.update_idletasks()
+            text = _real_widget_text(root)
+            assert all(label in text for label in (
+                "Prossima azione", "Attivita recenti", "Problemi", "Controlla ora",
+            ))
+            assert root.winfo_reqwidth() <= 960
+            assert root.winfo_reqheight() <= 640
     finally:
         root.destroy()
 

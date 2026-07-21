@@ -23,3 +23,6 @@ class DemoState:
         DemoAccount("demo-principale", "Casella principale", "principale@example.invalid"),
         DemoAccount("demo-seconda", "Seconda casella", "seconda@example.invalid"),
     )
+    next_action: str = "Controlla ora per vedere se sono arrivati nuovi documenti."
+    recent_activity: str = "Nessuna attivita recente da segnalare."
+    problems: str = "Nessun problema da risolvere."

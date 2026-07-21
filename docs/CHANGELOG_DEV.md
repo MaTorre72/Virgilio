@@ -1,5 +1,14 @@
 # Changelog sviluppo
 
+- 2026-07-21 - Completato `GUI-U-R02-T03`: Home dimostrativa ora mostra stato,
+  caselle, prossima azione, attivita`, problemi e azione primaria con dati solo
+  in memoria; l'eseguibile supporta il percorso demo isolato per le prove.
+  Build e installer puliti `4cbcea4` con build ID
+  `f7eb037d-924e-4a04-b9a9-3f2751137a42` hanno superato gli smoke e il fascicolo
+  ignorato contiene manifest, hash e dieci screenshot diretti della build
+  installata. Test mirati `33 passed`, suite `492 passed`, smoke `491 passed`.
+  `GUI-U-R02` e` ora `WAITING_HUMAN_REVIEW`; Codex non dichiara `PASS`.
+
 - 2026-07-21 - Completato `GUI-U-R02-T02`: ripristinata la venv locale da
   Python Windows 3.13.14 con Tcl/Tk 8.6.15; Benvenuto, Limbo, Caselle e
   Riepilogo espongono gerarchia e azioni coerenti, mentre Caselle rientra a

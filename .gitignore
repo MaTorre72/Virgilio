@@ -26,9 +26,11 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .pytest-tmp/
+.pytest-tmp*/
 .venv/
 venv/
 local_connector/build-output/
+artifacts/
 local_connector/.build-python*/
 
 # Editor and OS noise

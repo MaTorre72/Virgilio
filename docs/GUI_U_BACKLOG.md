@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
-Stato: `RECOVERY_ACTIVE`
+Stato: `WAITING_HUMAN_REVIEW`
 Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
-Task corrente: `GUI-U-R02-T01 - Percorso dimostrativo isolato`
+Task corrente: `GUI-U-R02 - Prototipo visuale completo` (`WAITING_HUMAN_REVIEW`)
 
 Obiettivo finale:
 
@@ -712,7 +712,7 @@ build pulita, un installer identificato e smoke coerenti con il commit corrente.
 
 ### GUI-U-R02 - Prototipo visuale completo
 
-Stato: `IN_PROGRESS`.
+Stato: `WAITING_HUMAN_REVIEW`.
 Risultato: prototipo completo delle cinque schermate con dati sintetici ed
 evidenze prodotte dalla build installata reale.
 Esito terminale obbligatorio: `WAITING_HUMAN_REVIEW`; Codex non puo dichiarare `PASS`.
@@ -767,7 +767,7 @@ automatico delle stringhe visuali, diff e scansione segreti verdi.
 
 #### GUI-U-R02-T03 - Home dimostrativa ed evidenze installate
 
-Stato: `TODO`.
+Stato: `WAITING_HUMAN_REVIEW`.
 Risultato: Home dimostrativa coerente con il percorso e pacchetto di evidenze
 reali della build installata, pronto per il collaudo umano R02.
 Dipendenza: `GUI-U-R02-T02 = DONE`.
@@ -780,11 +780,11 @@ del commit corrente, oppure non e` possibile acquisire le evidenze reali richies
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R02-T03-AC1` Home mostra stato, caselle, prossima azione, attivita`, problemi e azione primaria con dati demo. | Test UI e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T03-AC2` Home e primo avvio hanno gerarchia leggibile nei resize minimi previsti. | Test geometria/resize e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T03-AC3` Build e installer del commit corrente superano gli smoke di identita` e installazione. | Build pulita, smoke build e smoke installer isolato. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T03-AC4` La cartella `artifacts/gui-u-r02/<build-id>/` contiene manifest, hash, cinque screenshot reali, varianti scala e checklist/instructions. | Verifica struttura e apertura manuale degli artefatti. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T03-AC5` La scheda R02 e il collaudo umano sono preparati come `WAITING_HUMAN_REVIEW`, senza dichiarare `PASS`. | Revisione documentale e stato Git. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T03-AC1` Home mostra stato, caselle, prossima azione, attivita`, problemi e azione primaria con dati demo. | Test UI e screenshot locale controllato. | `test_demo_home_makes_status_next_action_activity_and_problems_visible`; Home installata in `home-100.png` e `home-125.png`. | `MET` |
+| `R02-T03-AC2` Home e primo avvio hanno gerarchia leggibile nei resize minimi previsti. | Test geometria/resize e screenshot locale controllato. | Test Tk reale unico percorre le cinque viste a 960x640 e scala `1.0`/`1.25`; `491 passed` nello smoke locale. | `MET` |
+| `R02-T03-AC3` Build e installer del commit corrente superano gli smoke di identita` e installazione. | Build pulita, smoke build e smoke installer isolato. | Release `4cbcea4`, build ID `f7eb037d-924e-4a04-b9a9-3f2751137a42`; `release_manifest.json` registra build, smoke build e smoke installer `PASS`. | `MET` |
+| `R02-T03-AC4` La cartella `artifacts/gui-u-r02/<build-id>/` contiene manifest, hash, cinque screenshot reali, varianti scala e checklist/instructions. | Verifica struttura e apertura manuale degli artefatti. | Cartella ignorata `artifacts/gui-u-r02/f7eb037d-924e-4a04-b9a9-3f2751137a42/`: due manifest, SHA-256, cinque screenshot diretti dell'eseguibile installato a `100`/`125`, checklist e istruzioni; Home aperta e verificata. | `MET` |
+| `R02-T03-AC5` La scheda R02 e il collaudo umano sono preparati come `WAITING_HUMAN_REVIEW`, senza dichiarare `PASS`. | Revisione documentale e stato Git. | Questa sotto-epica e T03 sono `WAITING_HUMAN_REVIEW`; checklist vuota copiata nel fascicolo; `docs/GUI_U_HUMAN_ACCEPTANCE.md` resta l'unico riferimento umano. | `MET` |
 
 ### GUI-U-R03 - Collegamento dei servizi
 

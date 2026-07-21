@@ -48,6 +48,21 @@ def main() -> int:
             return 3
         return 0
 
+    demo_args = sys.argv[1:]
+    if demo_args and demo_args[0] == "--demo":
+        from virgilio_connector.user_app import launch_user_app
+
+        screen = "welcome"
+        scale = None
+        for argument in demo_args[1:]:
+            if argument.startswith("--demo-screen="):
+                screen = argument.removeprefix("--demo-screen=")
+            elif argument.startswith("--demo-scale="):
+                scale = float(argument.removeprefix("--demo-scale="))
+            else:
+                return 2
+        return launch_user_app(demo=True, demo_screen=screen, demo_scale=scale)
+
     if len(sys.argv) > 1:
         from virgilio_connector.__main__ import main as command_main
 

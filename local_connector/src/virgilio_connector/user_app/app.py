@@ -207,6 +207,7 @@ class UserAppShell:
             open_activity=self.show_activity,
             open_settings=self.show_settings,
             open_bucoliche_startup=self.show_bucoliche_startup,
+            demo=self._demo,
         )
 
     def poll_home_operations(self) -> int:
@@ -295,10 +296,23 @@ class UserAppShell:
         self.close()
 
 
-def launch_user_app(*, config_path: Path | None = None) -> int:
+def launch_user_app(
+    *, config_path: Path | None = None, demo: bool = False, demo_screen: str = "welcome",
+    demo_scale: float | None = None,
+) -> int:
     """Create and run the Caronte window."""
 
     from tkinter import Tk
+
+    root = Tk()
+    if demo_scale is not None:
+        root.tk.call("tk", "scaling", demo_scale)
+    if demo:
+        configuration = ConfigurationService.for_file(config_path or Path("demo.yaml"))
+        shell = UserAppShell(root, configuration, demo=DemoState())
+        _show_demo_screen(shell, demo_screen)
+        root.mainloop()
+        return 0
 
     paths = default_application_paths()
     configuration = ConfigurationService.for_file(config_path or paths.configuration_file)
@@ -307,8 +321,7 @@ def launch_user_app(*, config_path: Path | None = None) -> int:
     )
     connection = ReadonlyAccountConnectionService(paths.data_dir / "connection-check")
     google_oauth = GoogleMailboxOAuthService()
-    root = Tk()
-    UserAppShell(
+    shell = UserAppShell(
         root,
         configuration,
         readonly_test=lambda form: connection.check(_connection_request(form)),
@@ -336,3 +349,16 @@ def _connection_request(form: AccountForm) -> AccountConnectionRequest:
         port=form.port,
         auth_mode="oauth2" if form.provider == "gmail_workspace" else "password",
     )
+
+
+def _show_demo_screen(shell: UserAppShell, screen: str) -> None:
+    """Advance the isolated route to one requested evidence screen."""
+
+    steps = {"welcome": 0, "limbo": 1, "caselle": 2, "riepilogo": 3, "home": 4}
+    try:
+        count = steps[screen]
+    except KeyError as exc:
+        raise ValueError(f"Schermata demo non supportata: {screen}") from exc
+    for _ in range(count):
+        assert shell.first_run is not None
+        shell.first_run.continue_forward()

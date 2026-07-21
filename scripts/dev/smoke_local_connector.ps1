@@ -6,7 +6,8 @@ $Python = if (Test-Path -LiteralPath $VenvPython) { $VenvPython } else { "python
 Push-Location $Root
 try {
     $env:PYTHONPATH = Join-Path $Root "local_connector\src"
-    & $Python -m pytest -q local_connector
+    $TestRoot = Join-Path $Root (".pytest-tmp-smoke-" + [guid]::NewGuid().ToString("N"))
+    & $Python -m pytest -q -p no:cacheprovider --basetemp $TestRoot local_connector
     if ($LASTEXITCODE -ne 0) { throw "pytest failed" }
     & $Python -m virgilio_connector --help | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "CLI help failed" }

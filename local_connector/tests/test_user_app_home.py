@@ -7,6 +7,7 @@ from virgilio_connector.application.home_status import AccountHomeStatusService,
 from virgilio_connector.application.configuration import ConfigurationService
 from virgilio_connector.user_app.app import UserAppShell
 from virgilio_connector.user_app.home import StaticHomeStatusService
+from virgilio_connector.user_app.demo import DemoState
 
 from test_user_app import FakeButton, FakeFrame, FakeLabel, FakeRoot, FakeTtk
 
@@ -84,3 +85,25 @@ def test_home_contains_no_technical_output_or_forbidden_terms(tmp_path):
     }
 
     assert all(term not in visible for term in forbidden)
+
+
+def test_demo_home_makes_status_next_action_activity_and_problems_visible(tmp_path):
+    FakeFrame.created.clear()
+    FakeLabel.created.clear()
+    FakeButton.created.clear()
+    shell = UserAppShell(
+        FakeRoot(), ConfigurationService.for_file(tmp_path / "demo.yaml"),
+        ttk_module=FakeTtk, demo=DemoState(),
+    )
+    for _ in range(4):
+        shell.first_run.continue_forward()
+
+    visible = _visible_text()
+
+    assert shell.home is not None
+    assert "Stato generale: Pronto per la dimostrazione" in visible
+    assert "Caselle attive: 2" in visible
+    assert "Prossima azione" in visible
+    assert "Attivita recenti" in visible
+    assert "Problemi" in visible
+    assert "Controlla ora" in visible
