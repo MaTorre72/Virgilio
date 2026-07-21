@@ -743,7 +743,7 @@ configurazione e dalle credenziali locali senza cambiare i contratti condivisi.
 
 #### GUI-U-R02-T02 - Schermate del primo avvio osservabili
 
-Stato: `TODO`.
+Stato: `BLOCKED`.
 Risultato: Benvenuto, Limbo, Caselle e Riepilogo presentano una gerarchia visuale
 leggibile e azioni coerenti con gli scenari `H-R02-01`-`H-R02-05`.
 Dipendenza: `GUI-U-R02-T01 = DONE`.
@@ -755,11 +755,15 @@ Windows 100%/125% usando il toolkit e le risorse locali approvate.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R02-T02-AC1` Benvenuto rende immediati identita`, scopo e azione iniziale. | Test delle label/azioni e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T02-AC2` Limbo mostra istruzione, selettore, valore ed errore presso il campo. | Test UI e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T02-AC3` Caselle separa elenco e form, rende evidente la seconda casella e relega i campi avanzati. | Test UI e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T02-AC4` Riepilogo mostra completezza e una correzione azionabile per ogni dato mancante. | Test UI e screenshot locale controllato. | Non ancora eseguita. | `NOT_MET` |
-| `R02-T02-AC5` Le quattro schermate restano utilizzabili a 960x640 e nei test di resize. | Test geometria/resize con Tk e ispezione screenshot. | Non ancora eseguita. | `NOT_MET` |
+| `R02-T02-AC1` Benvenuto rende immediati identita`, scopo e azione iniziale. | Test delle label/azioni e screenshot locale controllato. | Bloccato prima della prova visuale: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
+| `R02-T02-AC2` Limbo mostra istruzione, selettore, valore ed errore presso il campo. | Test UI e screenshot locale controllato. | Bloccato prima della prova visuale: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
+| `R02-T02-AC3` Caselle separa elenco e form, rende evidente la seconda casella e relega i campi avanzati. | Test UI e screenshot locale controllato. | Bloccato prima della prova visuale: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
+| `R02-T02-AC4` Riepilogo mostra completezza e una correzione azionabile per ogni dato mancante. | Test UI e screenshot locale controllato. | Bloccato prima della prova visuale: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
+| `R02-T02-AC5` Le quattro schermate restano utilizzabili a 960x640 e nei test di resize. | Test geometria/resize con Tk e ispezione screenshot. | Non eseguibile: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
+
+Azione unica necessaria: ripristinare un runtime Python Windows eseguibile con
+Tcl/Tk completo, quindi rieseguire `GUI-U-R02-T02` dall'inizio senza riusare
+prove sintetiche come evidenza visuale.
 
 #### GUI-U-R02-T03 - Home dimostrativa ed evidenze installate
 

@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-21 - `GUI-U-R02-T02` bloccato prima delle modifiche: il runtime di
+  test non inizializza Tcl/Tk (`init.tcl` assente) e la venv di build non avvia
+  Python (`Accesso negato`), quindi non sono producibili le screenshot e le
+  prove di resize obbligatorie. Il codice parziale e` stato annullato; unica
+  azione necessaria: ripristinare un runtime Python Windows eseguibile con
+  Tcl/Tk completo e rieseguire il task dall'inizio.
+
 - 2026-07-20 - Completato `GUI-U-R02-T01`: introdotto un percorso demo
   esclusivamente in memoria attraverso Benvenuto, Limbo, Caselle, Riepilogo e
   Home, con Limbo e due caselle sintetiche coerenti nel ritorno. Nessun adapter
