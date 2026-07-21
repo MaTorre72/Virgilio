@@ -91,19 +91,23 @@ class WelcomeView:
         ttk_module: Any,
         on_continue: Callable[[], None],
     ) -> None:
-        self.frame = ttk_module.Frame(parent, padding=32)
+        self.frame = ttk_module.Frame(parent, padding=16)
         ttk_module.Label(self.frame, text="Benvenuto in Caronte").grid(
             row=0, column=0, sticky="w"
         )
         ttk_module.Label(
             self.frame,
-            text="Ti accompagniamo nella configurazione iniziale.",
+            text="Prepariamo Caronte per ricevere i documenti da controllare.",
         ).grid(row=1, column=0, sticky="w", pady=(12, 0))
+        ttk_module.Label(
+            self.frame,
+            text="Servono una cartella Limbo e almeno una casella.",
+        ).grid(row=2, column=0, sticky="w", pady=(8, 0))
         ttk_module.Button(
             self.frame,
-            text="Continua",
+            text="Inizia la configurazione",
             command=on_continue,
-        ).grid(row=2, column=0, sticky="e", pady=(24, 0))
+        ).grid(row=3, column=0, sticky="w", pady=(24, 0))
 
 
 class LimboView:
@@ -118,7 +122,7 @@ class LimboView:
         choose_folder: Callable[[], str] | None = None,
         menu_factory: Callable[..., Any] | None = None,
     ) -> None:
-        self.frame = ttk_module.Frame(parent, padding=32)
+        self.frame = ttk_module.Frame(parent, padding=16)
         ttk_module.Label(self.frame, text="Scegli la cartella Limbo").grid(
             row=0, column=0, columnspan=2, sticky="w"
         )
@@ -129,21 +133,25 @@ class LimboView:
                 "Qui Caronte prepara i documenti da controllare."
             ),
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        ttk_module.Label(
+            self.frame,
+            text="Cartella del Limbo",
+        ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(16, 0))
         self.folder_entry = ttk_module.Entry(self.frame)
-        self.folder_entry.grid(row=2, column=0, sticky="ew", pady=(16, 0))
+        self.folder_entry.grid(row=3, column=0, sticky="ew", pady=(6, 0))
         self.folder_entry.insert(0, initial_folder)
         bind_text_interactions(self.folder_entry, menu_factory=menu_factory)
         self._choose_folder = choose_folder or self._open_folder_dialog
         ttk_module.Button(
             self.frame, text="Scegli cartella...", command=self.select_folder
-        ).grid(row=2, column=1, sticky="w", pady=(16, 0))
+        ).grid(row=3, column=1, sticky="w", pady=(6, 0))
         self.message = ttk_module.Label(self.frame, text="")
-        self.message.grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        self.message.grid(row=4, column=0, columnspan=2, sticky="w", pady=(8, 0))
         ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
-            row=4, column=0, sticky="w", pady=(24, 0)
+            row=5, column=0, sticky="w", pady=(24, 0)
         )
         ttk_module.Button(self.frame, text="Continua", command=on_continue).grid(
-            row=4, column=1, sticky="e", pady=(24, 0)
+            row=5, column=1, sticky="e", pady=(24, 0)
         )
 
     def folder_value(self) -> str:
@@ -202,10 +210,14 @@ class AccountView:
         self._enabled = True
         self.provider = "gmail_workspace"
         self.advanced_visible = False
-        self.frame = ttk_module.Frame(parent, padding=32)
+        self.frame = ttk_module.Frame(parent, padding=16)
         ttk_module.Label(self.frame, text="Configura le caselle").grid(
             row=0, column=0, columnspan=2, sticky="w"
         )
+        ttk_module.Label(
+            self.frame,
+            text="Aggiungi la prima casella. Puoi aggiungere subito anche una seconda casella.",
+        ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
         self.table = ttk_module.Treeview(
             self.frame,
             columns=("name", "email", "provider", "status"),
@@ -218,36 +230,36 @@ class AccountView:
             ("status", "Stato"),
         ):
             self.table.heading(column, text=heading)
-        self.table.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(12, 16))
-        self.name_entry = self._field(2, "Nome casella")
+        self.table.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(8, 8))
+        self.name_entry = self._field(3, "Nome casella")
         self.name_entry.insert(0, "Principale")
-        self.email_entry = self._field(3, "Email")
+        self.email_entry = self._field(4, "Email")
         self.password_label = ttk_module.Label(self.frame, text="Password")
-        self.password_label.grid(row=4, column=0, sticky="w")
+        self.password_label.grid(row=5, column=0, sticky="w")
         self.password_entry = ttk_module.Entry(self.frame, show="*")
         bind_text_interactions(self.password_entry, menu_factory=menu_factory)
-        self.password_entry.grid(row=4, column=1, sticky="ew")
+        self.password_entry.grid(row=5, column=1, sticky="ew")
         self.password_label.grid_remove()
         self.password_entry.grid_remove()
         self.enabled_control = ttk_module.Checkbutton(
             self.frame, text="Casella attiva", command=self.toggle_enabled
         )
         self.enabled_control.state(("selected",))
-        self.enabled_control.grid(row=5, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        self.enabled_control.grid(row=6, column=0, columnspan=2, sticky="w", pady=(4, 0))
         self.provider_button = ttk_module.Button(
             self.frame,
             text="Usa un altro provider",
             command=self.use_generic_provider,
         )
-        self.provider_button.grid(row=6, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        self.provider_button.grid(row=7, column=0, columnspan=2, sticky="w", pady=(4, 0))
         self.advanced_button = ttk_module.Button(
             self.frame,
             text="Mostra impostazioni avanzate",
             command=self.toggle_advanced,
         )
-        self.advanced_button.grid(row=7, column=0, columnspan=2, sticky="w", pady=(12, 0))
+        self.advanced_button.grid(row=8, column=0, columnspan=2, sticky="w", pady=(4, 0))
         self.advanced_frame = ttk_module.Frame(self.frame)
-        self.advanced_frame.grid(row=8, column=0, columnspan=2, sticky="ew")
+        self.advanced_frame.grid(row=9, column=0, columnspan=2, sticky="ew")
         ttk_module.Label(
             self.advanced_frame, text="Server posta in arrivo"
         ).grid(row=0, column=0, sticky="w")
@@ -264,21 +276,21 @@ class AccountView:
         self.port_entry.grid(row=1, column=1, sticky="ew")
         self.advanced_frame.grid_remove()
         self.message = ttk_module.Label(self.frame, text="")
-        self.message.grid(row=9, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        self.message.grid(row=10, column=0, columnspan=2, sticky="w", pady=(4, 0))
         actions = ttk_module.Frame(self.frame)
-        actions.grid(row=10, column=0, columnspan=2, sticky="w", pady=(12, 0))
-        ttk_module.Button(actions, text="Aggiungi", command=on_add).grid(row=0, column=0)
+        actions.grid(row=11, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        ttk_module.Button(actions, text="Aggiungi casella", command=on_add).grid(row=0, column=0)
         ttk_module.Button(actions, text="Modifica", command=on_update).grid(row=0, column=1)
         ttk_module.Button(actions, text="Rimuovi", command=on_remove).grid(row=0, column=2)
         self.access_button = ttk_module.Button(
             self.frame, text="Accedi con Google", command=on_test
         )
-        self.access_button.grid(row=11, column=0, sticky="w", pady=(24, 0))
+        self.access_button.grid(row=12, column=0, sticky="w", pady=(12, 0))
         ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
-            row=12, column=0, sticky="w", pady=(24, 0)
+            row=13, column=0, sticky="w", pady=(12, 0)
         )
         ttk_module.Button(self.frame, text="Termina configurazione", command=on_continue).grid(
-            row=12, column=1, sticky="e", pady=(24, 0)
+            row=13, column=1, sticky="e", pady=(12, 0)
         )
         self.table.bind("<<TreeviewSelect>>", lambda _event: on_select())
 
@@ -342,7 +354,7 @@ class AccountView:
     def toggle_advanced(self) -> None:
         self.advanced_visible = not self.advanced_visible
         if self.advanced_visible:
-            self.advanced_frame.grid(row=8, column=0, columnspan=2, sticky="ew")
+            self.advanced_frame.grid(row=9, column=0, columnspan=2, sticky="ew")
             self.advanced_button.configure(text="Nascondi impostazioni avanzate")
         else:
             self.advanced_frame.grid_remove()
@@ -388,17 +400,29 @@ class SummaryView:
         self, parent: Any, *, ttk_module: Any, demo: DemoState,
         on_back: Callable[[], None], on_continue: Callable[[], None],
     ) -> None:
-        self.frame = ttk_module.Frame(parent, padding=32)
+        self.frame = ttk_module.Frame(parent, padding=16)
         ttk_module.Label(self.frame, text="Riepilogo").grid(row=0, column=0, sticky="w")
         ttk_module.Label(
             self.frame,
-            text=f"Limbo: {demo.limbo_folder}. Caselle pronte: {len(demo.accounts)}.",
+            text="Controlla i dati prima di aprire la Home.",
         ).grid(row=1, column=0, sticky="w", pady=(12, 0))
+        ttk_module.Label(
+            self.frame,
+            text=f"Cartella Limbo: {demo.limbo_folder}",
+        ).grid(row=2, column=0, sticky="w", pady=(12, 0))
+        ttk_module.Label(
+            self.frame,
+            text=f"Caselle pronte: {len(demo.accounts)}",
+        ).grid(row=3, column=0, sticky="w", pady=(8, 0))
+        ttk_module.Label(
+            self.frame,
+            text="Per cambiare un dato, scegli Indietro e correggilo nella schermata indicata.",
+        ).grid(row=4, column=0, sticky="w", pady=(12, 0))
         ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
-            row=2, column=0, sticky="w", pady=(24, 0)
+            row=5, column=0, sticky="w", pady=(24, 0)
         )
         ttk_module.Button(self.frame, text="Apri Home", command=on_continue).grid(
-            row=2, column=1, sticky="e", pady=(24, 0)
+            row=5, column=1, sticky="e", pady=(24, 0)
         )
 
 

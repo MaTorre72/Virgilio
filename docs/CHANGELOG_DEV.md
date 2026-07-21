@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-21 - Completato `GUI-U-R02-T02`: ripristinata la venv locale da
+  Python Windows 3.13.14 con Tcl/Tk 8.6.15; Benvenuto, Limbo, Caselle e
+  Riepilogo espongono gerarchia e azioni coerenti, mentre Caselle rientra a
+  960x640 anche a scala 125%. Aggiunto test Tk reale delle quattro schermate;
+  test GUI mirati `31 passed`, suite e smoke `489 passed`. Prossimo task
+  `GUI-U-R02-T03 - Home dimostrativa ed evidenze installate`.
+
 - 2026-07-21 - `GUI-U-R02-T02` bloccato prima delle modifiche: il runtime di
   test non inizializza Tcl/Tk (`init.tcl` assente) e la venv di build non avvia
   Python (`Accesso negato`), quindi non sono producibili le screenshot e le

@@ -743,7 +743,7 @@ configurazione e dalle credenziali locali senza cambiare i contratti condivisi.
 
 #### GUI-U-R02-T02 - Schermate del primo avvio osservabili
 
-Stato: `BLOCKED`.
+Stato: `DONE`.
 Risultato: Benvenuto, Limbo, Caselle e Riepilogo presentano una gerarchia visuale
 leggibile e azioni coerenti con gli scenari `H-R02-01`-`H-R02-05`.
 Dipendenza: `GUI-U-R02-T01 = DONE`.
@@ -755,19 +755,19 @@ Windows 100%/125% usando il toolkit e le risorse locali approvate.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R02-T02-AC1` Benvenuto rende immediati identita`, scopo e azione iniziale. | Test delle label/azioni e screenshot locale controllato. | Bloccato prima della prova visuale: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
-| `R02-T02-AC2` Limbo mostra istruzione, selettore, valore ed errore presso il campo. | Test UI e screenshot locale controllato. | Bloccato prima della prova visuale: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
-| `R02-T02-AC3` Caselle separa elenco e form, rende evidente la seconda casella e relega i campi avanzati. | Test UI e screenshot locale controllato. | Bloccato prima della prova visuale: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
-| `R02-T02-AC4` Riepilogo mostra completezza e una correzione azionabile per ogni dato mancante. | Test UI e screenshot locale controllato. | Bloccato prima della prova visuale: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
-| `R02-T02-AC5` Le quattro schermate restano utilizzabili a 960x640 e nei test di resize. | Test geometria/resize con Tk e ispezione screenshot. | Non eseguibile: il runtime di test fallisce `tkinter.Tk()` per `init.tcl` assente; la venv di build non puo` avviare Python (`Accesso negato`). | `BLOCKED` |
+| `R02-T02-AC1` Benvenuto rende immediati identita`, scopo e azione iniziale. | Test delle label/azioni e screenshot locale controllato. | Test reale Tk verifica titolo, scopo e azione `Inizia la configurazione`; prova automatica verde a 960x640 e 100%/125%. | `MET` |
+| `R02-T02-AC2` Limbo mostra istruzione, selettore, valore ed errore presso il campo. | Test UI e screenshot locale controllato. | Test reale Tk verifica istruzione, etichetta del campo e selettore; i test mirati della validazione locale sono verdi. | `MET` |
+| `R02-T02-AC3` Caselle separa elenco e form, rende evidente la seconda casella e relega i campi avanzati. | Test UI e screenshot locale controllato. | Elenco/form, invito alla seconda casella e pannello avanzato chiuso sono verificati dai test GUI; resa reale Tk verde. | `MET` |
+| `R02-T02-AC4` Riepilogo mostra completezza e una correzione azionabile per ogni dato mancante. | Test UI e screenshot locale controllato. | Riepilogo espone Limbo, numero caselle e ritorno `Indietro` per la correzione; test reale Tk verde. | `MET` |
+| `R02-T02-AC5` Le quattro schermate restano utilizzabili a 960x640 e nei test di resize. | Test geometria/resize con Tk e ispezione screenshot. | Nuovo test con Tk reale percorre le quattro viste a 960x640 e scala 100%/125%; la regressione iniziale Caselle `760 px` e` corretta e tutte le altezze sono `<=640`. | `MET` |
 
-Azione unica necessaria: ripristinare un runtime Python Windows eseguibile con
-Tcl/Tk completo, quindi rieseguire `GUI-U-R02-T02` dall'inizio senza riusare
-prove sintetiche come evidenza visuale.
+Evidenze di chiusura: runtime Python Windows ripristinato con Tcl/Tk `8.6.15`;
+test mirati GUI `31 passed`, suite locale e smoke `489 passed`; inventario
+automatico delle stringhe visuali, diff e scansione segreti verdi.
 
 #### GUI-U-R02-T03 - Home dimostrativa ed evidenze installate
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `TODO`.
 Risultato: Home dimostrativa coerente con il percorso e pacchetto di evidenze
 reali della build installata, pronto per il collaudo umano R02.
 Dipendenza: `GUI-U-R02-T02 = DONE`.

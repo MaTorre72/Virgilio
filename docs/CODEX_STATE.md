@@ -2,22 +2,23 @@
 
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
-- Iniziativa attiva: `GUI-U = RECOVERY_BLOCKED`
+- Iniziativa attiva: `GUI-U = RECOVERY_IN_PROGRESS`
 - Fase corrente: `GUI-U-R - Recupero prodotto e collaudo osservabile`
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
 - Task completato: `GUI-U-R01 - Identita certa della build e dell'installer`
 - Task completato: `GUI-U-R02-T01 - Percorso dimostrativo isolato`
-- Task corrente: `GUI-U-R02-T02 - Schermate del primo avvio osservabili` (`BLOCKED`)
-- Successivo univoco: riprendere `GUI-U-R02-T02` dopo il ripristino del runtime Tk
+- Task completato: `GUI-U-R02-T02 - Schermate del primo avvio osservabili`
+- Task corrente: `GUI-U-R02-T03 - Home dimostrativa ed evidenze installate` (`TODO`)
+- Successivo univoco: `GUI-U-R02-T03`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate previsto: R02-T03 deve terminare in `WAITING_HUMAN_REVIEW` e richiede conferma umana esplicita
-- Blocchi aperti: il runtime di test non inizializza Tcl/Tk (`init.tcl` assente) e la venv di build non avvia Python (`Accesso negato`); senza Tk non sono producibili le prove visuali R02-T02. Azione unica: ripristinare un runtime Python Windows eseguibile con Tcl/Tk completo. Non sono autorizzati microcorrettivi della sequenza E3
+- Blocchi aperti: nessuno per R02-T02. Python Windows `3.13.14` e la venv locale ora inizializzano Tcl/Tk `8.6.15`; resta valido il divieto di microcorrettivi della sequenza E3
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
-- Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-pytest-r02-t01 local_connector -q` -> `OK` (`488 passed`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` -> `OK` (`488 passed`)
+- Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' --basetemp $env:TEMP\virgilio-r02-t02-full-root local_connector -q` -> `OK` (`489 passed`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp isolato -> `OK` (`489 passed`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

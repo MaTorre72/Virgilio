@@ -143,7 +143,9 @@ class UserAppShell:
     def _render(self, *, open_existing: bool = False) -> None:
         if self.current_frame is not None:
             self.current_frame.destroy()
-        frame = self._ttk.Frame(self.root, padding=32)
+        frame = self._ttk.Frame(
+            self.root, padding=16 if self.route is UserRoute.FIRST_RUN else 32
+        )
         frame.grid(row=0, column=0, sticky="nsew")
         self.current_frame = frame
         controls = self._ttk.Frame(frame)

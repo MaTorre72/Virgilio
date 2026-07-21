@@ -1,6 +1,7 @@
 import ast
 from pathlib import Path
 import time
+from tkinter import Tk
 
 import pytest
 
@@ -456,3 +457,54 @@ def test_account_view_has_no_forbidden_technical_terms(tmp_path):
     }
 
     assert all(term not in visible for term in forbidden)
+
+
+def test_first_run_demo_fits_real_tk_window_at_960x640_for_supported_scales(tmp_path):
+    """Exercise every first-run screen with the real Windows Tk runtime."""
+
+    root = Tk()
+    root.withdraw()
+    try:
+        root.geometry("960x640")
+        shell = UserAppShell(
+            root,
+            ConfigurationService.for_file(tmp_path / "demo-config.yaml"),
+            demo=DemoState(),
+        )
+        controller = shell.first_run
+        assert controller is not None
+
+        expected = (
+            ("Benvenuto in Caronte",),
+            ("Scegli la cartella Limbo", "Cartella del Limbo"),
+            ("Configura le caselle", "seconda casella", "Aggiungi casella"),
+            ("Riepilogo", "Per cambiare un dato", "Apri Home"),
+        )
+        for labels in expected:
+            for scale in (1.0, 1.25):
+                root.tk.call("tk", "scaling", scale)
+                root.update_idletasks()
+                text = _real_widget_text(root)
+                assert all(label in text for label in labels)
+                assert root.winfo_reqwidth() <= 960
+                assert root.winfo_reqheight() <= 640
+            if controller.step is WizardStep.WELCOME:
+                controller.continue_forward()
+            elif controller.step is WizardStep.LIMBO:
+                controller.continue_forward()
+            elif controller.step is WizardStep.ACCOUNT:
+                controller.continue_forward()
+    finally:
+        root.destroy()
+
+
+def _real_widget_text(widget):
+    parts = []
+    try:
+        text = str(widget.cget("text"))
+        if text:
+            parts.append(text)
+    except Exception:
+        pass
+    parts.extend(_real_widget_text(child) for child in widget.winfo_children())
+    return " ".join(part for part in parts if part)
