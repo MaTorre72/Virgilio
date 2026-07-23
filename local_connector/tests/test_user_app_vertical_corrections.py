@@ -90,7 +90,46 @@ def test_first_run_finishes_explicitly_on_home_without_restart(tmp_path):
     assert result.is_valid
     assert shell.route is UserRoute.HOME
     assert shell.home is not None
-    assert "Termina configurazione" in [button.kwargs.get("text") for button in FakeButton.created]
+    assert "Completa configurazione" in [
+        button.kwargs.get("text") for button in FakeButton.created
+    ]
+
+
+def test_account_view_explains_imap_alternative_when_google_is_not_ready(tmp_path):
+    configuration, accounts = _services(tmp_path)
+    shell = UserAppShell(
+        FakeRoot(), configuration, ttk_module=FakeTtk, account_service=accounts
+    )
+    _open_account_step(shell, tmp_path / "limbo")
+
+    labels = [label.kwargs.get("text") for label in FakeLabel.created]
+    buttons = [button.kwargs.get("text") for button in FakeButton.created]
+    assert any("Posta IMAP" in str(label) for label in labels)
+    assert "Scegli Posta IMAP" in buttons
+
+
+def test_selecting_imap_removes_google_dependency_and_saves_first_mailbox(tmp_path):
+    configuration, accounts = _services(tmp_path)
+    shell = UserAppShell(
+        FakeRoot(), configuration, ttk_module=FakeTtk, account_service=accounts
+    )
+    view = _open_account_step(shell, tmp_path / "limbo")
+
+    view.use_generic_provider()
+    assert view.provider == "custom_imap"
+    assert view.host_entry.get() == ""
+    assert view.advanced_visible is True
+
+    view.name_entry.set("Principale")
+    view.email_entry.set("one@example.invalid")
+    view.password_entry.set("secret")
+    view.host_entry.set("imap.example.invalid")
+    view.port_entry.set("993")
+
+    assert shell.first_run.add_account().is_valid
+    assert accounts.list_accounts()[0].host == "imap.example.invalid"
+    assert shell.first_run.continue_forward().is_valid
+    assert shell.route is UserRoute.HOME
 
 
 def test_home_reopens_existing_configuration_and_returns_after_edit(tmp_path):

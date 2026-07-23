@@ -2,7 +2,7 @@
 
 - Branch attesa: `codex/v1.1-development`
 - Modalita: run autonoma/oraria, seriale, un task per run
-- Iniziativa attiva: `GUI-U = BLOCKED`
+- Iniziativa attiva: `GUI-U = IN_PROGRESS`
 - Fase corrente: `GUI-U-R - Recupero prodotto e collaudo osservabile`
 - Task 0.0: chiuso
 - Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
@@ -11,11 +11,14 @@
 - Task completato: `GUI-U-R02-T02 - Schermate del primo avvio osservabili`
 - Task: `GUI-U-R02-T03 - Home dimostrativa ed evidenze installate` (`IMPLEMENTED_NOT_ACCEPTED`)
 - Gate corrente: `GUI-U-R02 = FAIL`
-- Successivo univoco: approvazione del piano `GUI-U-R02-R01`/`R02`; poi nuova build e ripetizione del collaudo R02
+- Task completato: `GUI-U-R03-T01 - Prima casella reale senza blocco Google`
+- Task corrente: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`
+- Successivo univoco: aggiungere la seconda casella e collegare la verifica non bloccante
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate corrente: R02 e` `FAIL` dal collaudo umano del 2026-07-23; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: in installazione pulita Caselle non permette di aggiungere le caselle demo e quindi blocca Riepilogo/Home; la build presenta il percorso ordinario non configurato invece del demo isolato. Serve approvazione del piano R02-R01/R02 prima del codice. Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`; resta valido il divieto di microcorrettivi della sequenza E3
+- Blocchi aperti: R02 resta `FAIL` come evidenza storica del prototipo non accettato e non blocca R03. R03-T01 ha rimosso la dipendenza Google dal primo percorso IMAP; nessun blocco tecnico aperto. Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`; resta valido il divieto di microcorrettivi della sequenza E3
+- Ultima prova nuova mirata: `test_selecting_imap_removes_google_dependency_and_saves_first_mailbox` -> `OK` (`1 passed`, verifiche precedenti non ripetute)
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)

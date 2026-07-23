@@ -218,6 +218,14 @@ class AccountView:
             self.frame,
             text="Aggiungi la prima casella. Puoi aggiungere subito anche una seconda casella.",
         ).grid(row=1, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        self.provider_hint = ttk_module.Label(
+            self.frame,
+            text=(
+                "Per Gmail/Workspace serve Google; per un'altra casella scegli "
+                "Posta IMAP e inserisci password e server."
+            ),
+        )
+        self.provider_hint.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
         self.table = ttk_module.Treeview(
             self.frame,
             columns=("name", "email", "provider", "status"),
@@ -230,36 +238,36 @@ class AccountView:
             ("status", "Stato"),
         ):
             self.table.heading(column, text=heading)
-        self.table.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(8, 8))
-        self.name_entry = self._field(3, "Nome casella")
+        self.table.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(4, 4))
+        self.name_entry = self._field(4, "Nome casella")
         self.name_entry.insert(0, "Principale")
-        self.email_entry = self._field(4, "Email")
+        self.email_entry = self._field(5, "Email")
         self.password_label = ttk_module.Label(self.frame, text="Password")
-        self.password_label.grid(row=5, column=0, sticky="w")
+        self.password_label.grid(row=6, column=0, sticky="w")
         self.password_entry = ttk_module.Entry(self.frame, show="*")
         bind_text_interactions(self.password_entry, menu_factory=menu_factory)
-        self.password_entry.grid(row=5, column=1, sticky="ew")
+        self.password_entry.grid(row=6, column=1, sticky="ew")
         self.password_label.grid_remove()
         self.password_entry.grid_remove()
         self.enabled_control = ttk_module.Checkbutton(
             self.frame, text="Casella attiva", command=self.toggle_enabled
         )
         self.enabled_control.state(("selected",))
-        self.enabled_control.grid(row=6, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        self.enabled_control.grid(row=7, column=0, columnspan=2, sticky="w", pady=(4, 0))
         self.provider_button = ttk_module.Button(
             self.frame,
-            text="Usa un altro provider",
+            text="Scegli Posta IMAP",
             command=self.use_generic_provider,
         )
-        self.provider_button.grid(row=7, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        self.provider_button.grid(row=8, column=0, columnspan=2, sticky="w", pady=(4, 0))
         self.advanced_button = ttk_module.Button(
             self.frame,
             text="Mostra impostazioni avanzate",
             command=self.toggle_advanced,
         )
-        self.advanced_button.grid(row=8, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        self.advanced_button.grid(row=9, column=0, columnspan=2, sticky="w", pady=(4, 0))
         self.advanced_frame = ttk_module.Frame(self.frame)
-        self.advanced_frame.grid(row=9, column=0, columnspan=2, sticky="ew")
+        self.advanced_frame.grid(row=10, column=0, columnspan=2, sticky="ew")
         ttk_module.Label(
             self.advanced_frame, text="Server posta in arrivo"
         ).grid(row=0, column=0, sticky="w")
@@ -276,21 +284,21 @@ class AccountView:
         self.port_entry.grid(row=1, column=1, sticky="ew")
         self.advanced_frame.grid_remove()
         self.message = ttk_module.Label(self.frame, text="")
-        self.message.grid(row=10, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        self.message.grid(row=11, column=0, columnspan=2, sticky="w", pady=(4, 0))
         actions = ttk_module.Frame(self.frame)
-        actions.grid(row=11, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        actions.grid(row=12, column=0, columnspan=2, sticky="w", pady=(6, 0))
         ttk_module.Button(actions, text="Aggiungi casella", command=on_add).grid(row=0, column=0)
         ttk_module.Button(actions, text="Modifica", command=on_update).grid(row=0, column=1)
         ttk_module.Button(actions, text="Rimuovi", command=on_remove).grid(row=0, column=2)
         self.access_button = ttk_module.Button(
             self.frame, text="Accedi con Google", command=on_test
         )
-        self.access_button.grid(row=12, column=0, sticky="w", pady=(12, 0))
+        self.access_button.grid(row=13, column=0, sticky="w", pady=(12, 0))
         ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
-            row=13, column=0, sticky="w", pady=(12, 0)
+            row=14, column=0, sticky="w", pady=(12, 0)
         )
-        ttk_module.Button(self.frame, text="Termina configurazione", command=on_continue).grid(
-            row=13, column=1, sticky="e", pady=(12, 0)
+        ttk_module.Button(self.frame, text="Completa configurazione", command=on_continue).grid(
+            row=14, column=1, sticky="e", pady=(12, 0)
         )
         self.table.bind("<<TreeviewSelect>>", lambda _event: on_select())
 
@@ -306,12 +314,16 @@ class AccountView:
 
     def use_generic_provider(self) -> None:
         self.provider = "custom_imap"
-        self.password_label.grid(row=4, column=0, sticky="w")
-        self.password_entry.grid(row=4, column=1, sticky="ew")
+        if self.host_entry.get().strip().lower() == "imap.gmail.com":
+            self.host_entry.delete(0, "end")
+        self.password_label.grid(row=6, column=0, sticky="w")
+        self.password_entry.grid(row=6, column=1, sticky="ew")
         self.provider_button.configure(
             text="Usa Gmail o Workspace", command=self.use_google_provider
         )
         self.access_button.configure(text="Verifica collegamento")
+        if not self.advanced_visible:
+            self.toggle_advanced()
 
     def use_google_provider(self) -> None:
         self.provider = "gmail_workspace"
@@ -324,7 +336,7 @@ class AccountView:
         self.password_label.grid_remove()
         self.password_entry.grid_remove()
         self.provider_button.configure(
-            text="Usa un altro provider", command=self.use_generic_provider
+            text="Scegli Posta IMAP", command=self.use_generic_provider
         )
         self.access_button.configure(text="Accedi con Google")
         if self.advanced_visible:
@@ -354,7 +366,7 @@ class AccountView:
     def toggle_advanced(self) -> None:
         self.advanced_visible = not self.advanced_visible
         if self.advanced_visible:
-            self.advanced_frame.grid(row=9, column=0, columnspan=2, sticky="ew")
+            self.advanced_frame.grid(row=10, column=0, columnspan=2, sticky="ew")
             self.advanced_button.configure(text="Nascondi impostazioni avanzate")
         else:
             self.advanced_frame.grid_remove()

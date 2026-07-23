@@ -1,8 +1,8 @@
 # EPIC GUI-U — Caronte Desktop utente
 
-Stato: `WAITING_HUMAN_REVIEW`
+Stato: `IN_PROGRESS`
 Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
-Task corrente: `GUI-U-R02 - Prototipo visuale completo` (`WAITING_HUMAN_REVIEW`)
+Task corrente: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`
 
 Obiettivo finale:
 
@@ -816,13 +816,18 @@ Recupero proposto (richiede approvazione prima del codice):
 La ripetizione del collaudo R02 avviene solo dopo il completamento e una nuova
 build identificata di questi correttivi.
 
+Decisione utente del 2026-07-23: non ampliare il prototipo R02. I dati demo
+restano solo nello strumento interno di evidenza; la priorita` passa al primo
+percorso operativo reale, senza attendere un nuovo collaudo del prototipo.
+
 ### GUI-U-R03 - Collegamento dei servizi
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `IN_PROGRESS`.
 Risultato: il prototipo visuale approvato usa i servizi applicativi condivisi
 per Limbo, due caselle, controlli operativi, persistenza e controllo automatico,
 con riscontri osservabili nella GUI e senza esporre dettagli tecnici.
-Dipendenza: approvazione umana esplicita di R02.
+Dipendenza: decisione utente del 2026-07-23 di privilegiare il percorso
+operativo reale e limitare i dati demo al minimo indispensabile.
 Componenti ammessi: viste `user_app` approvate in R02, servizi applicativi
 condivisi di configurazione, account, credenziali, verifica read-only, runner,
 attivita`, impostazioni e adapter Windows; test automatici con fake; evidenze e
@@ -830,9 +835,9 @@ checklist di collaudo R03.
 Esclusioni: redesign del layout approvato, GUI legacy, nuovi toolkit, duplicazione
 della logica CLI, modifiche ad Apps Script, Registro o pipeline non necessarie
 ai sei scenari R03, credenziali o servizi reali nei test automatici.
-Condizione di blocco: R02 non ha un'approvazione umana esplicita, oppure un
-servizio richiesto non puo` essere collegato alle viste approvate senza esporre
-termini tecnici, bloccare la GUI o cambiare il prototipo accettato.
+Condizione di blocco: un servizio richiesto non puo` essere collegato alle viste
+senza esporre termini tecnici, bloccare la GUI o richiedere una nuova dipendenza
+strutturale.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
@@ -846,6 +851,56 @@ Esito terminale prima della decisione umana: `WAITING_HUMAN_REVIEW`. R03 passa a
 `DONE` solo dopo conferma umana esplicita su tutti gli scenari obbligatori. Un
 fallimento deve registrare scenario, passaggio, atteso, osservato e screenshot;
 Codex propone un numero finito di correttivi e attende l'approvazione del piano.
+
+#### GUI-U-R03-T01 - Prima casella reale senza blocco Google
+
+Stato: `DONE`.
+Risultato: da installazione pulita l'utente puo` distinguere Google da un'altra
+casella IMAP, aggiungere e salvare una prima casella IMAP reale anche quando
+Google non e` stato predisposto, quindi terminare la configurazione e riaprire
+la casella salvata.
+Dipendenza: decisione utente del 2026-07-23; servizi esistenti di configurazione,
+gestione caselle e credenziali locali.
+Componenti ammessi: vista Caselle, controller del primo avvio, servizi
+`AccountManagementService` e credenziali locali, test fake e documentazione
+minima.
+Esclusioni: dati demo come sostituto di una casella reale, connessioni Google
+reali nei test, OAuth nuovo, rete nei test, GUI legacy, Registro, Apps Script,
+pipeline e nuove dipendenze.
+Condizione di blocco: l'aggiunta di una casella IMAP richiede una dipendenza non
+presente o non puo` essere salvata senza esporre credenziali.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-T01-AC1` Caselle spiega che Google richiede il collegamento dedicato e rende immediata l'alternativa IMAP. | Test vista con Google non configurato e ispezione dei testi visibili. | `test_account_view_explains_imap_alternative_when_google_is_not_ready`: azione `Scegli Posta IMAP` e indicazione distinta da Google. | `MET` |
+| `R03-T01-AC2` L'utente puo` selezionare IMAP, compilare nome, indirizzo, password e parametri avanzati quando necessari. | Test controller/UI con campi fake. | `test_selecting_imap_removes_google_dependency_and_saves_first_mailbox`: la scelta IMAP rimuove l'host Google, mostra i parametri richiesti e accetta password, server e porta. | `MET` |
+| `R03-T01-AC3` Aggiungi casella salva una prima casella IMAP tramite il servizio condiviso e mostra la riga nell'elenco. | Test `AccountManagementService` con credential store fake. | Lo stesso test salva tramite `AccountManagementService`, legge la casella persistita e verifica l'host IMAP; prova nuova `1 passed`. | `MET` |
+| `R03-T01-AC4` Completa configurazione senza caselle indica la singola azione necessaria; con una casella salvata apre Home. | Test controller successo/blocco. | `test_first_run_finishes_explicitly_on_home_without_restart` e nuovo test IMAP coprono blocco senza casella, azione coerente e apertura Home dopo il salvataggio. | `MET` |
+| `R03-T01-AC5` Dopo riapertura la casella salvata e` modificabile senza mostrare segreti o termini tecnici. | Test persistenza fake e inventario stringhe GUI. | Evidenze gia` acquisite in `test_home_reopens_existing_configuration_and_returns_after_edit`, `test_two_accounts_persist_after_shell_is_closed_and_reopened` e inventario delle stringhe vietate; non ripetute in questa run. | `MET` |
+
+#### GUI-U-R03-T02 - Seconda casella e verifica collegamento
+
+Stato: `READY`.
+Risultato: da una configurazione con la prima casella salvata, l'utente aggiunge
+una seconda casella con credenziali indipendenti e verifica il collegamento
+senza bloccare la finestra, mantenendo entrambe le caselle dopo il riavvio.
+Dipendenza: `GUI-U-R03-T01 = DONE`; servizi esistenti di gestione caselle,
+credenziali e verifica read-only.
+Componenti ammessi: vista Caselle, controller, `AccountManagementService`,
+`BackgroundAccountConnectionCheck`, feedback Home, test con fake e
+documentazione minima.
+Esclusioni: rete o credenziali reali nei test, nuovo OAuth, GUI legacy, Registro,
+Apps Script, pipeline e nuove dipendenze.
+Condizione di blocco: la seconda casella non puo` mantenere credenziali distinte
+oppure la verifica richiede rete reale o blocca il thread della GUI.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-T02-AC1` Da Impostazioni e` possibile aggiungere una seconda casella senza alterare la prima. | Test controller con configurazione contenente una casella. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T02-AC2` Le due caselle conservano credenziali distinte e non mostrano segreti nell'elenco o nei messaggi. | Test credential store fake e inventario visibile. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T02-AC3` Verifica collegamento usa il percorso del provider selezionato, non blocca la finestra e mostra un esito azionabile. | Test asincrono deterministico con adapter fake. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T02-AC4` Modifica, attivazione e rimozione della seconda casella non danneggiano la prima. | Test CRUD mirato tramite servizio condiviso. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T02-AC5` Dopo riapertura entrambe le caselle e il loro stato sono visibili nella GUI. | Test persistenza e reingresso con filesystem e credenziali fake. | Non ancora eseguita. | `NOT_MET` |
 
 ### GUI-U-R04 - Release candidate e collaudo finale
 

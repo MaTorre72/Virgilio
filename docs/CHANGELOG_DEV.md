@@ -1,5 +1,13 @@
 # Changelog sviluppo
 
+- 2026-07-23 +02:00 - Completato `GUI-U-R03-T01`: la scelta Posta IMAP
+  rimuove l'host Google implicito, mostra subito password e parametri server,
+  salva la prima casella tramite il servizio condiviso e apre Home con l'azione
+  `Completa configurazione`. Nuova prova mirata `1 passed`; evidenze precedenti
+  mantenute senza ripetere suite, smoke o collaudi.
+
+- 2026-07-23 +02:00 - Su decisione utente, il recupero GUI passa dal prototipo R02 non accettato al percorso operativo reale: dati demo solo per evidenze interne, avvio di `GUI-U-R03-T01` per configurare e salvare la prima casella IMAP senza dipendere da Google.
+
 - 2026-07-23 +02:00 - Collaudo umano `GUI-U-R02` registrato `FAIL` su installazione pulita: dopo Limbo, Caselle non consente di inserire le caselle demo e blocca Riepilogo/Home; la build installata presenta il percorso ordinario non configurato, mentre R02 richiede un demo completo e isolato senza Google. Osservata anche la difformita` `Termina configurazione` rispetto a `Completa configurazione`. Proposti i correttivi finiti `GUI-U-R02-R01` e `GUI-U-R02-R02`, da approvare prima di modificare codice.
 
 - 2026-07-21 - Completato `GUI-U-R02-T03`: Home dimostrativa ora mostra stato,
