@@ -8,7 +8,7 @@
 - Riscontro: con installazione pulita Caselle non permette di aggiungere dati demo e non consente di arrivare a Riepilogo/Home; il pulsante osservato e` `Termina configurazione` invece di `Completa configurazione`. Google non e` configurato per scelta e non deve esserlo in R02.
 - Decisione: il demo non viene ampliato; viene mantenuto solo per evidenze interne. La priorita` e` un percorso operativo reale.
 - Task completato: `GUI-U-R03-T01 - Prima casella reale senza blocco Google`; la scelta IMAP non conserva piu` l'host Google, mostra i parametri necessari, salva tramite il servizio condiviso e apre Home.
-- Azione unica: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`: aggiungere la seconda casella con credenziali indipendenti e collegare la verifica non bloccante.
+- Blocco: `local_connector\.venv\Scripts\python.exe` restituisce `Accesso negato` prima di eseguire le prove mirate R03-T02. Azione unica: ripristinare l'esecuzione del runtime, poi rieseguire soltanto `test_user_app_accounts.py` e `test_user_app_operational_feedback.py`.
 - Successivo gia` definito: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home`, che assorbe i requisiti UX R2 non ancora dimostrati sul prodotto reale.
 - Le evidenze gia` acquisite restano valide e non devono essere ripetute; ogni run aggiunge soltanto la prova specifica del nuovo criterio.
 - Un solo collaudo umano R3, sulla build operativa completa, verifica insieme servizi reali e requisiti UX ereditati da R2.

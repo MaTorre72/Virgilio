@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - `GUI-U-R03-T02` bloccato prima di modifiche: il runtime
+  obbligatorio `local_connector\.venv\Scripts\python.exe` restituisce `Accesso
+  negato` prima di avviare le due prove mirate. Nessun codice e nessun criterio
+  sono stati modificati; unica azione necessaria: ripristinare il runtime e
+  rieseguire solo quelle prove.
+
 - 2026-07-23 +02:00 - Chiarita la continuita` R02 -> R03: il demo R02 e`
   `SUPERSEDED_BY_R3`, mentre tutti gli otto requisiti UX R2 restano vincolanti
   sul prodotto reale. Aggiunte matrice di trasferimento, `GUI-U-R03-T03` per

@@ -889,7 +889,7 @@ presente o non puo` essere salvata senza esporre credenziali.
 
 #### GUI-U-R03-T02 - Seconda casella e verifica collegamento
 
-Stato: `READY`.
+Stato: `BLOCKED`.
 Risultato: da una configurazione con la prima casella salvata, l'utente aggiunge
 una seconda casella con credenziali indipendenti e verifica il collegamento
 senza bloccare la finestra, mantenendo entrambe le caselle dopo il riavvio.
@@ -902,6 +902,12 @@ Esclusioni: rete o credenziali reali nei test, nuovo OAuth, GUI legacy, Registro
 Apps Script, pipeline e nuove dipendenze.
 Condizione di blocco: la seconda casella non puo` mantenere credenziali distinte
 oppure la verifica richiede rete reale o blocca il thread della GUI.
+
+Blocco attuale (2026-07-24): il runtime obbligatorio
+`local_connector\.venv\Scripts\python.exe` non avvia `pytest` neppure per le
+due prove mirate, con `Accesso negato`; nessun criterio puo` quindi acquisire
+evidenza. Azione unica: ripristinare l'esecuzione di quel runtime e rieseguire
+solo `test_user_app_accounts.py` e `test_user_app_operational_feedback.py`.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
