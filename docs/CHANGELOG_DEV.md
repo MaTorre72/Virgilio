@@ -1,5 +1,7 @@
 # Changelog sviluppo
 
+- 2026-07-23 +02:00 - Collaudo umano `GUI-U-R02` registrato `FAIL` su installazione pulita: dopo Limbo, Caselle non consente di inserire le caselle demo e blocca Riepilogo/Home; la build installata presenta il percorso ordinario non configurato, mentre R02 richiede un demo completo e isolato senza Google. Osservata anche la difformita` `Termina configurazione` rispetto a `Completa configurazione`. Proposti i correttivi finiti `GUI-U-R02-R01` e `GUI-U-R02-R02`, da approvare prima di modificare codice.
+
 - 2026-07-21 - Completato `GUI-U-R02-T03`: Home dimostrativa ora mostra stato,
   caselle, prossima azione, attivita`, problemi e azione primaria con dati solo
   in memoria; l'eseguibile supporta il percorso demo isolato per le prove.

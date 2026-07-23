@@ -712,17 +712,22 @@ build pulita, un installer identificato e smoke coerenti con il commit corrente.
 
 ### GUI-U-R02 - Prototipo visuale completo
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `FAIL`.
 Risultato: prototipo completo delle cinque schermate con dati sintetici ed
 evidenze prodotte dalla build installata reale.
-Esito terminale obbligatorio: `WAITING_HUMAN_REVIEW`; Codex non puo dichiarare `PASS`.
+Esito umano del 2026-07-23: `FAIL`. In installazione pulita la schermata
+Caselle non permette di inserire le caselle demo e blocca il passaggio al
+Riepilogo; la build presenta quindi il percorso ordinario non configurato,
+anziche` un percorso demo eseguibile senza Google. Il pulsante osservato e`
+`Termina configurazione`, non `Completa configurazione` come da criterio.
+Codex non puo dichiarare `PASS`.
 
 La sotto-epica e` suddivisa per separare il percorso dimostrativo, la resa delle
 schermate e le prove sulla build installata. Nessun task collega servizi reali.
 
 #### GUI-U-R02-T01 - Percorso dimostrativo isolato
 
-Stato: `DONE`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 Risultato: Caronte offre un percorso dimostrativo ripetibile, con dati sintetici,
 attraverso Benvenuto, Limbo, Caselle, Riepilogo e Home.
 Dipendenza: `GUI-U-R01 = DONE`.
@@ -740,6 +745,13 @@ configurazione e dalle credenziali locali senza cambiare i contratti condivisi.
 | `R02-T01-AC3` Limbo e due caselle sintetiche restano coerenti dopo Indietro/Continua. | Test di navigazione e stato in memoria. | Stesso test: due caselle demo, ritorno da Riepilogo a Caselle e nuovo avanzamento. | `MET` |
 | `R02-T01-AC4` Il percorso demo non esegue rete, salvataggi reali o accessi a credenziali. | Test con adapter che falliscono a ogni accesso esterno. | Store di configurazione esplosivo non viene letto/scritto; `DemoHomeControl` non avvia operazioni. | `MET` |
 | `R02-T01-AC5` Le stringhe vietate non sono visibili nel percorso demo. | Test automatico sull'inventario delle stringhe visuali. | Inventari automatici GUI `test_user_app.py` e verticale verdi; verifica mirata dei testi demo inclusa. | `MET` |
+
+Riscontro umano 2026-07-23: `FAIL` su installazione pulita. Dopo Limbo, Caselle
+non consente di aggiungere alcuna casella e il percorso non puo` raggiungere
+Riepilogo/Home. Il comportamento richiede o sembra richiedere una
+configurazione Google, esclusa esplicitamente da R02; non e` stata fornita
+evidenza screenshot. Questa e` una regressione riproducibile contro
+`R02-T01-AC1`-`AC3`, non un limite atteso del collaudo.
 
 #### GUI-U-R02-T02 - Schermate del primo avvio osservabili
 
@@ -767,7 +779,7 @@ automatico delle stringhe visuali, diff e scansione segreti verdi.
 
 #### GUI-U-R02-T03 - Home dimostrativa ed evidenze installate
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 Risultato: Home dimostrativa coerente con il percorso e pacchetto di evidenze
 reali della build installata, pronto per il collaudo umano R02.
 Dipendenza: `GUI-U-R02-T02 = DONE`.
@@ -785,6 +797,24 @@ del commit corrente, oppure non e` possibile acquisire le evidenze reali richies
 | `R02-T03-AC3` Build e installer del commit corrente superano gli smoke di identita` e installazione. | Build pulita, smoke build e smoke installer isolato. | Release `4cbcea4`, build ID `f7eb037d-924e-4a04-b9a9-3f2751137a42`; `release_manifest.json` registra build, smoke build e smoke installer `PASS`. | `MET` |
 | `R02-T03-AC4` La cartella `artifacts/gui-u-r02/<build-id>/` contiene manifest, hash, cinque screenshot reali, varianti scala e checklist/instructions. | Verifica struttura e apertura manuale degli artefatti. | Cartella ignorata `artifacts/gui-u-r02/f7eb037d-924e-4a04-b9a9-3f2751137a42/`: due manifest, SHA-256, cinque screenshot diretti dell'eseguibile installato a `100`/`125`, checklist e istruzioni; Home aperta e verificata. | `MET` |
 | `R02-T03-AC5` La scheda R02 e il collaudo umano sono preparati come `WAITING_HUMAN_REVIEW`, senza dichiarare `PASS`. | Revisione documentale e stato Git. | Questa sotto-epica e T03 sono `WAITING_HUMAN_REVIEW`; checklist vuota copiata nel fascicolo; `docs/GUI_U_HUMAN_ACCEPTANCE.md` resta l'unico riferimento umano. | `MET` |
+
+Riscontro umano 2026-07-23: non valutabile nella build installata, perche` il
+blocco Caselle impedisce di raggiungere Home dal percorso iniziale. Il criterio
+di etichetta del Riepilogo osservabile richiede inoltre `Completa
+configurazione`, mentre nella build e` stato osservato `Termina configurazione`.
+
+Recupero proposto (richiede approvazione prima del codice):
+
+1. `GUI-U-R02-R01` — rendere il percorso demo esplicito e selezionabile dalla
+   finestra iniziale della build installata, con due caselle sintetiche gia`
+   disponibili e senza servizi/configurazioni reali; prova automatica di
+   percorso installato e prova umana H-R02-01--06.
+2. `GUI-U-R02-R02` — allineare testi e azioni del percorso demo ai criteri
+   umani, incluso `Completa configurazione`; prova inventario UI e prova umana
+   H-R02-03--05.
+
+La ripetizione del collaudo R02 avviene solo dopo il completamento e una nuova
+build identificata di questi correttivi.
 
 ### GUI-U-R03 - Collegamento dei servizi
 
