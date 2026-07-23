@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-23 +02:00 - Chiarita la continuita` R02 -> R03: il demo R02 e`
+  `SUPERSEDED_BY_R3`, mentre tutti gli otto requisiti UX R2 restano vincolanti
+  sul prodotto reale. Aggiunte matrice di trasferimento, `GUI-U-R03-T03` per
+  percorso completo/Riepilogo/Home e regola di un solo collaudo umano R3.
+
 - 2026-07-23 +02:00 - Completato `GUI-U-R03-T01`: la scelta Posta IMAP
   rimuove l'host Google implicito, mostra subito password e parametri server,
   salva la prima casella tramite il servizio condiviso e apre Home con l'azione

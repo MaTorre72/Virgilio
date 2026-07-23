@@ -56,6 +56,11 @@ valutare la GUI e non aprire task UX.
 
 ## GUI-U-R02 - Prototipo visuale completo
 
+Stato storico: `SUPERSEDED_BY_R3` dopo il `FAIL` del demo del 2026-07-23.
+Questa checklist non viene ripetuta sul demo. Tutti gli scenari seguenti sono
+vincolanti e vengono verificati una sola volta sul percorso operativo reale
+insieme al collaudo R3.
+
 Il prototipo usa dati sintetici e comprende Benvenuto, scelta Limbo, Caselle,
 Riepilogo finale e Home. Le prove visuali devono essere eseguite sulla build
 reale installata.
@@ -71,12 +76,14 @@ reale installata.
 | `H-R02-07` Leggibilita | A 100% e 125%: nessun taglio, sovrapposizione o controllo fuori finestra; azioni principali senza scroll; gerarchia/spaziature coerenti; minimo 960x640 e resize funzionale. | | |
 | `H-R02-08` Linguaggio | Assenti Python, venv, CLI, YAML, `.env`, doctor, pilot, dry-run, watch, staging, ack, manifest, SQLite, exit code, variabili, stack trace e path repository; ogni errore spiega problema e azione. | | |
 
-Evidenze obbligatorie in `artifacts/gui-u-r02/<build-id>/`: manifest build,
-SHA-256, screenshot reali delle cinque schermate, screenshot 100% e 125% quando
-disponibili, checklist umana vuota e istruzioni. Non sono ammessi widget fake o
-rendering sintetici. R02 termina in `WAITING_HUMAN_REVIEW`.
+Le evidenze storiche R02 restano conservate. Le nuove evidenze appartengono al
+fascicolo R3 della build operativa; non si produce una nuova build demo.
 
 ## GUI-U-R03 - Collegamento dei servizi
+
+Il collaudo R3 e` unico: esegue prima gli scenari `H-R02-01`--`H-R02-08` sul
+percorso reale e poi gli scenari di collegamento seguenti, senza duplicare passi
+o evidenze comuni.
 
 | Scenario | Verifiche obbligatorie | Esito umano | Evidenza/note |
 | -------- | ---------------------- | ------------ | -------------- |

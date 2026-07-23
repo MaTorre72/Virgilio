@@ -712,7 +712,7 @@ build pulita, un installer identificato e smoke coerenti con il commit corrente.
 
 ### GUI-U-R02 - Prototipo visuale completo
 
-Stato: `FAIL`.
+Stato: `SUPERSEDED_BY_R3`.
 Risultato: prototipo completo delle cinque schermate con dati sintetici ed
 evidenze prodotte dalla build installata reale.
 Esito umano del 2026-07-23: `FAIL`. In installazione pulita la schermata
@@ -720,7 +720,8 @@ Caselle non permette di inserire le caselle demo e blocca il passaggio al
 Riepilogo; la build presenta quindi il percorso ordinario non configurato,
 anziche` un percorso demo eseguibile senza Google. Il pulsante osservato e`
 `Termina configurazione`, non `Completa configurazione` come da criterio.
-Codex non puo dichiarare `PASS`.
+Codex non puo dichiarare `PASS`. Il `FAIL` resta evidenza storica del demo; non
+e` un'autorizzazione a eliminare i requisiti UX osservati.
 
 La sotto-epica e` suddivisa per separare il percorso dimostrativo, la resa delle
 schermate e le prove sulla build installata. Nessun task collega servizi reali.
@@ -803,22 +804,11 @@ blocco Caselle impedisce di raggiungere Home dal percorso iniziale. Il criterio
 di etichetta del Riepilogo osservabile richiede inoltre `Completa
 configurazione`, mentre nella build e` stato osservato `Termina configurazione`.
 
-Recupero proposto (richiede approvazione prima del codice):
-
-1. `GUI-U-R02-R01` — rendere il percorso demo esplicito e selezionabile dalla
-   finestra iniziale della build installata, con due caselle sintetiche gia`
-   disponibili e senza servizi/configurazioni reali; prova automatica di
-   percorso installato e prova umana H-R02-01--06.
-2. `GUI-U-R02-R02` — allineare testi e azioni del percorso demo ai criteri
-   umani, incluso `Completa configurazione`; prova inventario UI e prova umana
-   H-R02-03--05.
-
-La ripetizione del collaudo R02 avviene solo dopo il completamento e una nuova
-build identificata di questi correttivi.
-
-Decisione utente del 2026-07-23: non ampliare il prototipo R02. I dati demo
-restano solo nello strumento interno di evidenza; la priorita` passa al primo
-percorso operativo reale, senza attendere un nuovo collaudo del prototipo.
+Decisione utente del 2026-07-23, chiarita nella stessa data: bypassare il demo,
+non i requisiti R2. Il demo resta solo uno strumento interno di evidenza e non
+viene ampliato, corretto o ricollaudato. Gli scenari `H-R02-01`--`H-R02-08`
+sono trasferiti integralmente a R3 e devono risultare soddisfatti sul percorso
+operativo reale prima del suo unico collaudo umano.
 
 ### GUI-U-R03 - Collegamento dei servizi
 
@@ -827,7 +817,8 @@ Risultato: il prototipo visuale approvato usa i servizi applicativi condivisi
 per Limbo, due caselle, controlli operativi, persistenza e controllo automatico,
 con riscontri osservabili nella GUI e senza esporre dettagli tecnici.
 Dipendenza: decisione utente del 2026-07-23 di privilegiare il percorso
-operativo reale e limitare i dati demo al minimo indispensabile.
+operativo reale e limitare i dati demo al minimo indispensabile; eredita senza
+eccezioni i requisiti UX R2.
 Componenti ammessi: viste `user_app` approvate in R02, servizi applicativi
 condivisi di configurazione, account, credenziali, verifica read-only, runner,
 attivita`, impostazioni e adapter Windows; test automatici con fake; evidenze e
@@ -839,6 +830,23 @@ Condizione di blocco: un servizio richiesto non puo` essere collegato alle viste
 senza esporre termini tecnici, bloccare la GUI o richiedere una nuova dipendenza
 strutturale.
 
+Matrice vincolante di trasferimento R2 -> R3:
+
+| Requisito R2 | Destinazione di sviluppo | Condizione di chiusura |
+| ------------ | ------------------------ | ---------------------- |
+| `H-R02-01` Avvio e orientamento | `R03-T03` | Dimostrato sul primo avvio reale in una sola finestra. |
+| `H-R02-02` Navigazione wizard | `R03-T03` | Benvenuto -> Limbo -> Caselle -> Riepilogo -> Home conserva i dati reali. |
+| `H-R02-03` Limbo | `R03-T03`, `R03-AC1` | Selezione, errore locale, salvataggio, modifica e persistenza reali. |
+| `H-R02-04` Caselle | `R03-T01`, `R03-T02`, `R03-AC2` | Prima e seconda casella, Google/IMAP, stati e campi avanzati funzionano realmente. |
+| `H-R02-05` Riepilogo | `R03-T03` | Riepilogo reale autonomo con correzioni e `Completa configurazione`. |
+| `H-R02-06` Home | `R03-T03`, `R03-AC3`--`R03-AC5` | Stato, azioni, attivita`, problemi e Impostazioni riflettono i servizi reali. |
+| `H-R02-07` Leggibilita | Tutti i task R3 che cambiano viste; gate R3 | Nessun taglio a 960x640 e scala 100%/125% sulla build operativa. |
+| `H-R02-08` Linguaggio | Tutti i task R3 che cambiano testi; gate R3 | Nessun termine tecnico vietato; errori con problema e azione. |
+
+Questa matrice e` un prerequisito del gate R3. Un requisito puo` riusare
+un'evidenza gia` valida, ma deve essere nuovamente provato solo quando il
+passaggio dal demo al servizio reale ne cambia il comportamento osservabile.
+
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
 | `R03-AC1` Il Limbo reale si seleziona, valida, salva, persiste dopo riapertura e si modifica da Impostazioni (`H-R03-01`). | Test applicativi/UI con filesystem temporaneo; collaudo umano completo del round-trip. | Non ancora eseguita. | `NOT_MET` |
@@ -848,7 +856,8 @@ strutturale.
 | `R03-AC5` Il controllo automatico si attiva, conferma, espone lo stato, persiste e si disattiva senza finestre tecniche (`H-R03-06`). | Test adapter Windows isolato e persistenza; collaudo umano sulla build installata. | Non ancora eseguita. | `NOT_MET` |
 
 Esito terminale prima della decisione umana: `WAITING_HUMAN_REVIEW`. R03 passa a
-`DONE` solo dopo conferma umana esplicita su tutti gli scenari obbligatori. Un
+`DONE` solo dopo un'unica conferma umana esplicita sugli scenari R3 e sui
+requisiti R2 trasferiti. Un
 fallimento deve registrare scenario, passaggio, atteso, osservato e screenshot;
 Codex propone un numero finito di correttivi e attende l'approvazione del piano.
 
@@ -901,6 +910,30 @@ oppure la verifica richiede rete reale o blocca il thread della GUI.
 | `R03-T02-AC3` Verifica collegamento usa il percorso del provider selezionato, non blocca la finestra e mostra un esito azionabile. | Test asincrono deterministico con adapter fake. | Non ancora eseguita. | `NOT_MET` |
 | `R03-T02-AC4` Modifica, attivazione e rimozione della seconda casella non danneggiano la prima. | Test CRUD mirato tramite servizio condiviso. | Non ancora eseguita. | `NOT_MET` |
 | `R03-T02-AC5` Dopo riapertura entrambe le caselle e il loro stato sono visibili nella GUI. | Test persistenza e reingresso con filesystem e credenziali fake. | Non ancora eseguita. | `NOT_MET` |
+
+Successivo univoco dopo la chiusura: `GUI-U-R03-T03`.
+
+#### GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home
+
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Risultato: il primo avvio reale percorre Benvenuto, Limbo, Caselle, Riepilogo e
+Home in una sola finestra, conserva i dati e soddisfa i requisiti UX R2 non
+ancora dimostrati sul prodotto operativo.
+Dipendenza: `GUI-U-R03-T02 = DONE`.
+Componenti ammessi: viste e controller `user_app`, servizi condivisi di
+configurazione e caselle, Home, test fake/Tk mirati e documentazione minima.
+Esclusioni: percorso demo come prodotto, GUI legacy, nuovi toolkit, rete o dati
+reali nei test, Apps Script, Registro, pipeline e nuove dipendenze.
+Condizione di blocco: il Riepilogo reale richiede duplicazione della logica
+applicativa o il percorso non puo` restare utilizzabile a 960x640.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-T03-AC1` Il percorso reale attraversa le cinque viste in una finestra e conserva i dati usando Indietro/Continua. | Test di routing/controller con servizi fake persistenti. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T03-AC2` Riepilogo mostra Limbo, caselle, stati, incompletezze e correzioni; `Completa configurazione` apre Home. | Test vista/controller sul modello reale. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T03-AC3` Home mostra stato, caselle, prossima azione, attivita`, problemi e Impostazioni dai servizi condivisi. | Test Home con servizi fake e stati deterministici. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T03-AC4` Le cinque viste restano utilizzabili a 960x640 e scala 100%/125%. | Solo prova Tk/resize interessata dalle nuove viste; riuso delle evidenze invariate. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T03-AC5` Testi ed errori non espongono termini tecnici e indicano sempre problema e azione. | Inventario delle sole stringhe nuove o modificate. | Non ancora eseguita. | `NOT_MET` |
 
 ### GUI-U-R04 - Release candidate e collaudo finale
 
