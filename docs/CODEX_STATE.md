@@ -15,13 +15,14 @@
 - Task completato: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`
 - Task completato: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home`
 - Task completato: `GUI-U-R03-R01 - Verifica collegamento su INBOX`
-- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL`)
-- Successivo univoco proposto: approvare `GUI-U-R03-R02 - Cartelle operative configurabili per casella`; nessuna nuova build prima di risolvere il valore implicito `Virgilio_Inbox`
+- Task completato: `GUI-U-R03-R02 - Cartelle operative configurabili per casella`
+- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL`, da riprendere su nuova build)
+- Successivo univoco: produrre una sola build identificata con R03-R01/R02 e riprendere il collaudo da `H-R03-02`, senza ripetere le evidenze valide
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: R03-R01 ha separato la verifica su `INBOX` dalla cartella operativa (`15 passed`). Il collaudo ha pero` confermato che la casella reale usa `da-traghettare`, mentre la GUI salva implicitamente `Virgilio_Inbox`; serve approvazione del correttivo separato R03-R02 prima di una nuova build e della ripresa del gate. Il demo R02 non viene ampliato o ricollaudato; Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
-- Ultima prova nuova mirata: `test_account_connection.py`, `test_user_app_accounts.py` e `test_user_app_operational_feedback.py` R03-R01/R03-T02 -> `OK` (`15 passed`, fake, nessuna rete o credenziale reale)
+- Blocchi aperti: nessuno per il codice. R03-R01 verifica su `INBOX`; R03-R02 rende configurabili per casella le cartelle operative e accetta `da-traghettare` senza cartella madre. Serve soltanto una nuova build identificata prima della ripresa umana. Il demo R02 non viene ampliato o ricollaudato; Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
+- Ultima prova nuova mirata: R03-R02/R03-T02 core -> `OK` (`17 passed`, fake) e sola prova Tk interessata -> `OK` (`1 passed`, 960x640 a 100%/125%); nessuna rete o credenziale reale
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)

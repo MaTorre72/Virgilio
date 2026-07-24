@@ -58,6 +58,9 @@ class AccountForm:
     host: str = "imap.gmail.com"
     port: int = 993
     provider: str = "gmail_workspace"
+    input_folder: str = "da-traghettare"
+    done_folder: str = "traghettate"
+    error_folder: str = "errore"
 
 
 class AccountValidator:
@@ -80,6 +83,12 @@ class AccountValidator:
             return ValidationResult(False, "Inserisci la password della casella.")
         if not form.host.strip() or not 1 <= form.port <= 65535:
             return ValidationResult(False, "Controlla le impostazioni avanzate.")
+        if not all((
+            form.input_folder.strip(),
+            form.done_folder.strip(),
+            form.error_folder.strip(),
+        )):
+            return ValidationResult(False, "Indica le tre cartelle della casella.")
         return ValidationResult(True)
 
 
@@ -230,6 +239,7 @@ class AccountView:
             self.frame,
             columns=("name", "email", "provider", "status"),
             show="headings",
+            height=5,
         )
         for column, heading in (
             ("name", "Nome casella"),
@@ -282,6 +292,15 @@ class AccountView:
         bind_text_interactions(self.port_entry, menu_factory=menu_factory)
         self.port_entry.insert(0, "993")
         self.port_entry.grid(row=1, column=1, sticky="ew")
+        self.input_folder_entry = self._advanced_field(
+            2, "Cartella da controllare", "da-traghettare"
+        )
+        self.done_folder_entry = self._advanced_field(
+            3, "Cartella completati", "traghettate"
+        )
+        self.error_folder_entry = self._advanced_field(
+            4, "Cartella problemi", "errore"
+        )
         self.advanced_frame.grid_remove()
         self.message = ttk_module.Label(self.frame, text="")
         self.message.grid(row=11, column=0, columnspan=2, sticky="w", pady=(4, 0))
@@ -306,6 +325,16 @@ class AccountView:
         self._ttk.Label(self.frame, text=label).grid(row=row, column=0, sticky="w")
         entry = self._ttk.Entry(self.frame, **entry_options)
         bind_text_interactions(entry, menu_factory=self._menu_factory)
+        entry.grid(row=row, column=1, sticky="ew")
+        return entry
+
+    def _advanced_field(self, row: int, label: str, initial: str) -> Any:
+        self._ttk.Label(self.advanced_frame, text=label).grid(
+            row=row, column=0, sticky="w"
+        )
+        entry = self._ttk.Entry(self.advanced_frame)
+        bind_text_interactions(entry, menu_factory=self._menu_factory)
+        entry.insert(0, initial)
         entry.grid(row=row, column=1, sticky="ew")
         return entry
 
@@ -353,6 +382,9 @@ class AccountView:
             (self.password_entry, password),
             (self.host_entry, account.host),
             (self.port_entry, str(account.port)),
+            (self.input_folder_entry, account.input_folder),
+            (self.done_folder_entry, account.done_folder),
+            (self.error_folder_entry, account.error_folder),
         ):
             entry.delete(0, "end")
             entry.insert(0, value)
@@ -385,6 +417,9 @@ class AccountView:
             host=self.host_entry.get(),
             port=port,
             provider=self.provider,
+            input_folder=self.input_folder_entry.get(),
+            done_folder=self.done_folder_entry.get(),
+            error_folder=self.error_folder_entry.get(),
         )
 
     def show_validation(self, result: ValidationResult) -> None:
@@ -588,6 +623,8 @@ class FirstRunController:
                 self._account_service.update(
                     alias, email=form.email, password=form.password, host=form.host,
                     port=form.port, enabled=form.enabled,
+                    input_folder=form.input_folder, done_folder=form.done_folder,
+                    error_folder=form.error_folder,
                 )
                 message = "Casella modificata."
             else:
@@ -595,6 +632,8 @@ class FirstRunController:
                     name=form.name, email=form.email, password=form.password,
                     host=form.host, port=form.port, enabled=form.enabled,
                     limbo=Path(self._limbo_folder),
+                    input_folder=form.input_folder, done_folder=form.done_folder,
+                    error_folder=form.error_folder,
                 )
                 message = "Casella aggiunta."
             self.current_view.render_accounts(self._account_service.list_accounts())

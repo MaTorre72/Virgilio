@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Completato `GUI-U-R03-R02`: Caselle espone nelle
+  impostazioni avanzate le cartelle da controllare, completati e problemi,
+  obbligatorie, modificabili e persistenti per account. Il caso reale
+  `da-traghettare` senza cartella madre e` verde; il check resta su `INBOX`.
+  Core mirato `17 passed`, sola prova Tk interessata `1 passed` a
+  960x640/100%/125%. Nuova build rinviata alla run successiva.
+
 - 2026-07-24 +02:00 - Completato `GUI-U-R03-R01`: la verifica collegamento
   dichiara e usa `INBOX`, senza dipendere dalla cartella operativa assente;
   regressione prima rossa e poi verde, gruppo mirato R03-R01/R03-T02

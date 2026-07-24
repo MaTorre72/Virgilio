@@ -890,6 +890,29 @@ assegna oggi `Virgilio_Inbox`, `Virgilio_Done` e `Virgilio_Errori`. Proposto
 `GUI-U-R03-R02 - Cartelle operative configurabili per casella`, da approvare
 prima di una nuova build, senza reintrodurre file tecnici nella GUI.
 
+#### GUI-U-R03-R02 - Cartelle operative configurabili per casella
+
+Stato: `DONE` (approvato e completato il 2026-07-24).
+Risultato: l'utente imposta per ogni casella le cartelle da controllare,
+completati e problemi nelle impostazioni avanzate, senza modificare YAML/.env e
+senza confonderle con `INBOX`, usata soltanto per verificare il collegamento.
+Dipendenza: `GUI-U-R03-R01 = DONE`; conferma umana che la cartella reale e`
+`da-traghettare` senza cartella madre.
+Componenti ammessi: `AccountForm`, vista Caselle, validatore,
+`AccountManagementService`, persistenza esistente e test fake mirati.
+Esclusioni: rete o credenziali reali nei test, elenco remoto cartelle, redesign,
+Apps Script, Registro, pipeline, nuova build e nuove dipendenze.
+Condizione di blocco: i valori non possono restare distinti per casella oppure
+la correzione altera il check read-only su `INBOX`.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-R02-AC1` Le impostazioni avanzate mostrano `Cartella da controllare`, `Cartella completati` e `Cartella problemi`, senza termini tecnici. | Test vista e inventario testi. | `test_operational_folders_are_advanced_validated_and_persist_per_account` verifica i tre testi nel pannello avanzato; inventario termini vietati verde. | `MET` |
+| `R03-R02-AC2` I tre valori sono obbligatori e accettano nomi senza cartella madre, incluso `da-traghettare`. | Test validatore con valore vuoto e caso reale. | `test_operational_folders_are_required` rifiuta il vuoto; il test round-trip salva `da-traghettare`, `traghettate` ed `errore` senza prefisso. | `MET` |
+| `R03-R02-AC3` Aggiunta, modifica e riapertura conservano tre valori distinti per ciascuna casella. | Test controller/servizio con due account e filesystem temporaneo. | Il test round-trip aggiunge due terne distinte, ricarica la prima nella vista, modifica `Cartella completati` e ritrova i valori con un nuovo servizio. | `MET` |
+| `R03-R02-AC4` `Verifica collegamento` continua a usare `INBOX` e non una cartella operativa. | Regressione R03-R01. | `test_connection_check_uses_standard_inbox_not_operational_default` verde nel gruppo mirato. | `MET` |
+| `R03-R02-AC5` Le sole prove interessate R03-R02/R03-T02 sono verdi con fake. | Test account service/UI, connection e feedback asincrono. | Core mirato `17 passed in 1.08s`; sola prova Tk interessata `1 passed in 2.11s`, pannello avanzato entro 960x640 a 100%/125%. | `MET` |
+
 #### GUI-U-R03-T01 - Prima casella reale senza blocco Google
 
 Stato: `DONE`.

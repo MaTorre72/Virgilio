@@ -520,6 +520,17 @@ def test_first_run_demo_fits_real_tk_window_at_960x640_for_supported_scales(tmp_
         real_shell.first_run.current_view.folder_entry.insert(0, str(limbo.resolve()))
         real_shell.first_run.continue_forward()
         account_view = real_shell.first_run.current_view
+        account_view.use_generic_provider()
+        for scale in (1.0, 1.25):
+            root.tk.call("tk", "scaling", scale)
+            root.update_idletasks()
+            text = _real_widget_text(root)
+            assert all(label in text for label in (
+                "Cartella da controllare", "Cartella completati", "Cartella problemi",
+            ))
+            assert root.winfo_reqwidth() <= 960
+            assert root.winfo_reqheight() <= 640
+        account_view.use_google_provider()
         account_view.name_entry.insert(0, "Principale")
         account_view.email_entry.insert(0, "one@example.invalid")
         account_view.password_entry.insert(0, '{"token": "synthetic", "refresh_token": "synthetic"}')

@@ -19,6 +19,9 @@ class ManagedAccount:
     host: str
     port: int
     enabled: bool
+    input_folder: str
+    done_folder: str
+    error_folder: str
 
 
 class AccountManagementService:
@@ -65,11 +68,17 @@ class AccountManagementService:
         port: int,
         enabled: bool,
         limbo: Path,
+        input_folder: str,
+        done_folder: str,
+        error_folder: str,
     ) -> ManagedAccount:
         current = self.configuration.load() if self.configuration.exists() else None
         aliases = {account.account_alias for account in current.accounts} if current else set()
         alias = _unique_alias(name, aliases)
-        account = _account(alias, email, host, port, enabled)
+        account = _account(
+            alias, email, host, port, enabled,
+            input_folder, done_folder, error_folder,
+        )
         model = (
             replace(current, accounts=(*current.accounts, account))
             if current
@@ -98,6 +107,9 @@ class AccountManagementService:
         host: str,
         port: int,
         enabled: bool,
+        input_folder: str,
+        done_folder: str,
+        error_folder: str,
     ) -> ManagedAccount:
         model = self.configuration.load()
         previous = _find(model, alias)
@@ -108,6 +120,9 @@ class AccountManagementService:
             imap_host=host,
             imap_port=port,
             enabled=enabled,
+            input_folder=input_folder,
+            done_folder=done_folder,
+            error_folder=error_folder,
         )
         old_credentials = self.credentials.read(previous)
         self.credentials.update(updated, AccountCredentials(email, password))
@@ -147,10 +162,22 @@ def _managed(account: LocalImapAccount) -> ManagedAccount:
         host=account.imap_host,
         port=account.imap_port,
         enabled=account.enabled,
+        input_folder=account.input_folder,
+        done_folder=account.done_folder,
+        error_folder=account.error_folder,
     )
 
 
-def _account(alias: str, email: str, host: str, port: int, enabled: bool) -> LocalImapAccount:
+def _account(
+    alias: str,
+    email: str,
+    host: str,
+    port: int,
+    enabled: bool,
+    input_folder: str,
+    done_folder: str,
+    error_folder: str,
+) -> LocalImapAccount:
     prefix = re.sub(r"[^A-Z0-9]", "_", alias.upper())
     return LocalImapAccount(
         account_alias=alias,
@@ -160,9 +187,9 @@ def _account(alias: str, email: str, host: str, port: int, enabled: bool) -> Loc
         imap_port=port,
         username_env=f"VIRGILIO_{prefix}_USERNAME",
         password_env=f"VIRGILIO_{prefix}_PASSWORD",
-        input_folder="Virgilio_Inbox",
-        done_folder="Virgilio_Done",
-        error_folder="Virgilio_Errori",
+        input_folder=input_folder,
+        done_folder=done_folder,
+        error_folder=error_folder,
         enabled=enabled,
     )
 

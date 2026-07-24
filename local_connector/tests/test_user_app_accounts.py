@@ -29,7 +29,15 @@ def _open_accounts(tmp_path: Path):
     return controller, service, credential_store, config_path
 
 
-def _fill(view: AccountView, *, name: str, email: str, password: str, host: str):
+def _fill(
+    view: AccountView,
+    *,
+    name: str,
+    email: str,
+    password: str,
+    host: str,
+    folders: tuple[str, str, str] = ("da-traghettare", "traghettate", "errore"),
+):
     if host == "imap.gmail.com":
         view.use_google_provider()
         password = json.dumps({"token": password, "refresh_token": f"refresh-{password}"})
@@ -40,6 +48,9 @@ def _fill(view: AccountView, *, name: str, email: str, password: str, host: str)
     view.password_entry.set(password)
     view.host_entry.set(host)
     view.port_entry.set("993")
+    view.input_folder_entry.set(folders[0])
+    view.done_folder_entry.set(folders[1])
+    view.error_folder_entry.set(folders[2])
 
 
 def test_mailbox_table_has_expected_columns_and_two_synthetic_rows(tmp_path):
@@ -106,6 +117,82 @@ def test_account_crud_supports_different_providers_and_separate_credentials(tmp_
     view.table.select(accounts[1].account_alias)
     assert controller.remove_account().is_valid
     assert [item.email for item in service.list_accounts()] == ["changed@example.invalid"]
+
+
+def test_operational_folders_are_advanced_validated_and_persist_per_account(tmp_path):
+    controller, service, credential_store, config_path = _open_accounts(tmp_path)
+    view = controller.current_view
+    labels = {widget.kwargs.get("text", "") for widget in FakeTtk.Label.created}
+
+    assert {
+        "Cartella da controllare", "Cartella completati", "Cartella problemi",
+    } <= labels
+    assert view.advanced_frame.grid_options is None
+
+    _fill(
+        view,
+        name="Principale",
+        email="one@example.invalid",
+        password="one-secret",
+        host="imap.gmail.com",
+        folders=("da-traghettare", "traghettate", "errore"),
+    )
+    assert controller.add_account().is_valid
+    _fill(
+        view,
+        name="Seconda",
+        email="two@example.invalid",
+        password="two-secret",
+        host="imap.example.invalid",
+        folders=("posta-in", "posta-fatta", "posta-problemi"),
+    )
+    assert controller.add_account().is_valid
+
+    accounts = service.configuration.load().accounts
+    assert [
+        (item.input_folder, item.done_folder, item.error_folder)
+        for item in accounts
+    ] == [
+        ("da-traghettare", "traghettate", "errore"),
+        ("posta-in", "posta-fatta", "posta-problemi"),
+    ]
+
+    view.table.select(accounts[0].account_alias)
+    controller.load_selected_account()
+    assert (
+        view.input_folder_entry.get(),
+        view.done_folder_entry.get(),
+        view.error_folder_entry.get(),
+    ) == ("da-traghettare", "traghettate", "errore")
+
+    view.done_folder_entry.set("completati-modificati")
+    assert controller.update_account().is_valid
+    reopened = AccountManagementService(
+        ConfigurationService.for_file(config_path),
+        AccountCredentialService(credential_store),
+    )
+    managed, _ = reopened.get_account(accounts[0].account_alias)
+    assert managed.input_folder == "da-traghettare"
+    assert managed.done_folder == "completati-modificati"
+    assert managed.error_folder == "errore"
+
+
+def test_operational_folders_are_required(tmp_path):
+    controller, _, _, _ = _open_accounts(tmp_path)
+    view = controller.current_view
+    _fill(
+        view,
+        name="Principale",
+        email="one@example.invalid",
+        password="one-secret",
+        host="imap.gmail.com",
+    )
+    view.input_folder_entry.set("")
+
+    result = controller.add_account()
+
+    assert result.is_valid is False
+    assert result.message == "Indica le tre cartelle della casella."
 
 
 def test_two_accounts_persist_after_shell_is_closed_and_reopened(tmp_path):
