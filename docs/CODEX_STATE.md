@@ -17,14 +17,14 @@
 - Task completato: `GUI-U-R03-R01 - Verifica collegamento su INBOX`
 - Task completato: `GUI-U-R03-R02 - Cartelle operative configurabili per casella`
 - Task completato: `GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile`
-- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL` su `H-R03-06`; `H-R03-02`--`H-R03-05 = PASS` umano sulla build R03-R03)
+- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`WAITING_HUMAN_REVIEW` su `H-R03-01`; `H-R03-02`--`H-R03-06 = PASS` umano)
 - Task completato: `GUI-U-R03-R04 - Controllo automatico per utente`
-- Successivo univoco: riprendere soltanto `H-R03-06` sulla build R03-R04 identificata dal commit conclusivo; non ripetere le evidenze umane valide
+- Successivo univoco: acquisire soltanto `H-R03-01 - Limbo reale`, unica evidenza umana R03 non registrata; non ripetere `H-R03-02`--`H-R03-06`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: gate umano `H-R03-06`. Il controllo automatico usa ora la registrazione del solo utente corrente e resta indipendente dal Registro amministrativo; build R03-R04 e smoke sono pronti. `H-R03-02`--`H-R03-05 = PASS` e `R03-AC2`--`R03-AC4 = MET`. Il disinstallatore diretto resta un difetto separato da trattare prima della release
-- Ultima build operativa: `CaronteSetup-0.11.0-8241325.exe`, commit `8241325bf96d858259a577c87ffaba8c25513a05`, Build ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`, SHA-256 `79BC5677B21B29CAF3F7E07A9394072FBBBA446DA573FF5AF0181B8CFF260FF8`; fascicolo locale ignorato `artifacts/gui-u-r03/7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff/`
+- Blocchi aperti: gate umano `H-R03-01`, unica evidenza R03 non registrata. `H-R03-02`--`H-R03-06 = PASS` e `R03-AC2`--`R03-AC5 = MET`. Il disinstallatore diretto resta un difetto separato da trattare prima della release
+- Ultima build operativa: `CaronteSetup-0.11.0-eaf05fd.exe`, commit `eaf05fd178257fab9f472725b905b0fbf8320fc9`, Build ID `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`, SHA-256 `96EE42FECB35998290CB9BB6F3B07FAAC809B487ABD666EFC44ED3A104CCD82C`; output locale ignorato `local_connector/build-output/installer/dist/`
 - Ultima prova nuova mirata: R03-R04 servizio/adapter/installer -> `OK` (`27 passed`); smoke locale finale `OK` (`504 passed`); nessuna rete o credenziale reale
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3

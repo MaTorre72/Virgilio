@@ -2,7 +2,8 @@
 
 Stato: `IN_PROGRESS`
 Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
-Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL`)
+Task corrente: `GUI-U-R03 - Collegamento dei servizi`
+(`WAITING_HUMAN_REVIEW` su `H-R03-01`)
 
 Obiettivo finale:
 
@@ -640,7 +641,7 @@ tecnici o richiede configurazioni amministrative non disponibili.
 
 ### GATE U-H3 — Collaudo umano di distribuzione
 
-Stato: `FAIL`.
+Stato: `WAITING_HUMAN_REVIEW` su `H-R03-01`.
 
 Codex non puo` dichiararlo `PASS`.
 
@@ -853,7 +854,7 @@ passaggio dal demo al servizio reale ne cambia il comportamento osservabile.
 | `R03-AC2` Prima e seconda casella hanno credenziali distinte, percorsi Google/IMAP corretti e operazioni persistenti di aggiunta, modifica, stato e rimozione (`H-R03-02`, `H-R03-03`). | Test con OAuth/IMAP/credential store fake; collaudo umano su due caselle reali autorizzate. | `H-R03-02` e `H-R03-03 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Test fake mirati gia` verdi; i due `FAIL` precedenti restano storici. | `MET` |
 | `R03-AC3` La verifica casella integrata nel collegamento, Controlla ora, Avvia e Pausa mostrano avvio, stato, esito o errore azionabile e registrano l'attivita (`H-R03-04`). | Test asincroni deterministici su successo/errore; collaudo umano delle azioni operative. | `H-R03-04 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Tre screenshot mostrano controllo in corso, ultimo controllo aggiornato, avvio periodico, pausa riuscita e righe coerenti in Attivita. La verifica casella non e` piu` un comando separato: e` gia` coperta dai flussi approvati `H-R03-02`/`H-R03-03`. Test asincroni fake gia` verdi. | `MET` |
 | `R03-AC4` Chiusura, eventuale riduzione a icona e riapertura non lasciano console o processi duplicati e conservano configurazione e stato (`H-R03-05`). | Test lifecycle/processi su build installata; collaudo umano di chiusura e riapertura. | `H-R03-05 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Test lifecycle/processi e smoke della build gia` verdi. | `MET` |
-| `R03-AC5` Il controllo automatico si attiva, conferma, espone lo stato, persiste e si disattiva senza finestre tecniche (`H-R03-06`). | Test adapter Windows isolato e persistenza; collaudo umano sulla build installata. | `H-R03-06 = FAIL` umano il 2026-07-24 sulla build `8241325`: la GUI mostra `Attivazione non riuscita. Riprova da Windows.` e l'attivita `Caronte - controllo automatico` non viene creata. Diagnosi read-only: il gateway usa `schtasks /create` dalla GUI ordinaria; il Registro non configurato mostrato nella stessa vista e` un prerequisito separato. Screenshot acquisito in chat. | `NOT_MET` |
+| `R03-AC5` Il controllo automatico si attiva, conferma, espone lo stato, persiste e si disattiva senza finestre tecniche (`H-R03-06`). | Test adapter Windows isolato e persistenza; collaudo umano sulla build installata. | `H-R03-06 = PASS` umano esplicito il 2026-07-24 sulla build `eaf05fd`, ID `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`: attivazione senza UAC o finestre tecniche, stato e pulsante corretti, persistenza dopo riapertura e nuovo accesso Windows, disattivazione persistita. Il `FAIL` sulla build `8241325` resta storico. | `MET` |
 
 Esito umano del 2026-07-24: `FAIL` su `H-R03-02`; scenario, passaggio, atteso,
 osservato e screenshot sono registrati nel fascicolo ignorato R03. Correttivo
@@ -881,6 +882,11 @@ Conferme umane esplicite del 2026-07-24: `H-R03-02 = PASS` e
 `H-R03-04 = PASS` con tre screenshot; `R03-AC3 = MET` e il collaudo prosegue
 con `H-R03-05 = PASS`; `R03-AC4 = MET`. `H-R03-06 = FAIL` per mancata
 creazione dell'avvio automatico Windows; il gate e` interrotto.
+
+Ripresa del 2026-07-24 sulla build R03-R04 `eaf05fd`, ID
+`0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`: `H-R03-06 = PASS` umano e
+`R03-AC5 = MET`. Per chiudere R03 resta la sola evidenza umana non registrata
+`H-R03-01`, collegata a `R03-AC1`.
 
 #### GUI-U-R03-R01 - Verifica collegamento su INBOX
 

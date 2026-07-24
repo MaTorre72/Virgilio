@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Ripresa umana `GUI-U-R03` sulla build R03-R04
+  `eaf05fd`, ID `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`: conferma esplicita
+  `H-R03-06 = PASS`. Nessun UAC o finestra tecnica; attivazione, stato,
+  persistenza dopo riapertura e nuovo accesso Windows, disattivazione e
+  persistenza dello stato non attivo tutti approvati. `R03-AC5 = MET`; resta
+  soltanto `H-R03-01`, non ancora registrato.
+
 - 2026-07-24 +02:00 - Completato `GUI-U-R03-R04`: il controllo automatico
   usa `Run` per il solo utente corrente e avvia il worker congelato con
   configurazione e intervallo installati, senza Task Scheduler, UAC o
