@@ -2,8 +2,9 @@
 
 Stato: `IN_PROGRESS`
 Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
-Task corrente: `GUI-U-R03 - Collegamento dei servizi`
-(`WAITING_HUMAN_REVIEW` su `H-R03-01`)
+Task completato: `GUI-U-R03 - Collegamento dei servizi`
+Successivo proposto: `GUI-U-R03-R05 - Campi cartella leggibili`
+(`PROPOSED_WAITING_USER_APPROVAL`)
 
 Obiettivo finale:
 
@@ -641,7 +642,7 @@ tecnici o richiede configurazioni amministrative non disponibili.
 
 ### GATE U-H3 — Collaudo umano di distribuzione
 
-Stato: `WAITING_HUMAN_REVIEW` su `H-R03-01`.
+Stato: `DONE`.
 
 Codex non puo` dichiararlo `PASS`.
 
@@ -850,7 +851,7 @@ passaggio dal demo al servizio reale ne cambia il comportamento osservabile.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R03-AC1` Il Limbo reale si seleziona, valida, salva, persiste dopo riapertura e si modifica da Impostazioni (`H-R03-01`). | Test applicativi/UI con filesystem temporaneo; collaudo umano completo del round-trip. | Non ancora eseguita. | `NOT_MET` |
+| `R03-AC1` Il Limbo reale si seleziona, valida, salva, persiste dopo riapertura e si modifica da Impostazioni (`H-R03-01`). | Test applicativi/UI con filesystem temporaneo; collaudo umano completo del round-trip. | `H-R03-01 = PASS` umano esplicito il 2026-07-24 sulla build R03-R04: selezione, validazione, salvataggio, ritorno, riapertura, persistenza e modifica da Impostazioni approvati. La larghezza insufficiente dei campi cartella e` registrata come osservazione separata non bloccante. | `MET` |
 | `R03-AC2` Prima e seconda casella hanno credenziali distinte, percorsi Google/IMAP corretti e operazioni persistenti di aggiunta, modifica, stato e rimozione (`H-R03-02`, `H-R03-03`). | Test con OAuth/IMAP/credential store fake; collaudo umano su due caselle reali autorizzate. | `H-R03-02` e `H-R03-03 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Test fake mirati gia` verdi; i due `FAIL` precedenti restano storici. | `MET` |
 | `R03-AC3` La verifica casella integrata nel collegamento, Controlla ora, Avvia e Pausa mostrano avvio, stato, esito o errore azionabile e registrano l'attivita (`H-R03-04`). | Test asincroni deterministici su successo/errore; collaudo umano delle azioni operative. | `H-R03-04 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Tre screenshot mostrano controllo in corso, ultimo controllo aggiornato, avvio periodico, pausa riuscita e righe coerenti in Attivita. La verifica casella non e` piu` un comando separato: e` gia` coperta dai flussi approvati `H-R03-02`/`H-R03-03`. Test asincroni fake gia` verdi. | `MET` |
 | `R03-AC4` Chiusura, eventuale riduzione a icona e riapertura non lasciano console o processi duplicati e conservano configurazione e stato (`H-R03-05`). | Test lifecycle/processi su build installata; collaudo umano di chiusura e riapertura. | `H-R03-05 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Test lifecycle/processi e smoke della build gia` verdi. | `MET` |
@@ -885,8 +886,8 @@ creazione dell'avvio automatico Windows; il gate e` interrotto.
 
 Ripresa del 2026-07-24 sulla build R03-R04 `eaf05fd`, ID
 `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`: `H-R03-06 = PASS` umano e
-`R03-AC5 = MET`. Per chiudere R03 resta la sola evidenza umana non registrata
-`H-R03-01`, collegata a `R03-AC1`.
+`R03-AC5 = MET`. La successiva conferma esplicita `H-R03-01 = PASS` porta
+`R03-AC1 = MET` e chiude `GUI-U-R03 = DONE`.
 
 #### GUI-U-R03-R01 - Verifica collegamento su INBOX
 
@@ -985,6 +986,30 @@ privilegi amministrativi.
 | `R03-R04-AC3` La registrazione avvia `Caronte.exe watch` con configurazione e intervallo installati, senza repository o Python esterno. | Test frozen sul comando e smoke da cartella copiata. | Il test frozen verifica eseguibile copiato, `watch`, configurazione e intervallo senza modulo/Python; lo smoke build avvia anche `watch --help` dalla copia isolata. | `MET` |
 | `R03-R04-AC4` Stato, attivazione, persistenza, rimozione ed errori sono veritieri e azionabili senza dettagli tecnici. | Test servizio/UI su successo, errore e riapertura. | Stato confrontato con il comando atteso, registrazione obsoleta dichiarata inattiva, attiva/disattiva e riapertura fake verdi; i messaggi restano guidati e non tecnici. | `MET` |
 | `R03-R04-AC5` Disinstallazione rimuove la registrazione automatica e test mirati, smoke locale e nuova build identificata sono verdi. | Test installer/disinstallazione, smoke e manifest build. | Pulizia dei due valori `Run` e del task legacy verificata; gruppo mirato `27 passed`, smoke locale `504 passed`; build e installer identificati dal commit conclusivo con smoke `PASS`. | `MET` |
+
+#### GUI-U-R03-R05 - Campi cartella leggibili
+
+Stato: `PROPOSED_WAITING_USER_APPROVAL`.
+Risultato: i campi che mostrano percorsi o nomi di cartelle usano lo spazio
+orizzontale disponibile e permettono di leggere una parte utile del valore
+senza comprimere etichette, selettori o azioni.
+Dipendenze: osservazione umana non bloccante acquisita con
+`H-R03-01 = PASS`; layout R03 approvato.
+Componenti ammessi: campo Limbo del primo avvio, campo Limbo di Impostazioni,
+tre campi cartelle operative avanzate delle caselle, pesi/minimi delle colonne
+dei rispettivi contenitori e test fake/Tk mirati.
+Esclusioni: ridisegno delle viste, modifica della dimensione minima della
+finestra, campi non relativi a cartelle, logica di persistenza, servizi,
+Apps Script e GUI legacy.
+Condizione di blocco: a 960x640 e scala 100%/125% non e` possibile garantire
+la larghezza minima senza rendere inaccessibili etichette, pulsanti o azioni.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-R05-AC1` Il campo Limbo del primo avvio occupa lo spazio disponibile e mostra almeno 48 caratteri a 960x640. | Test Tk a 100%/125% con percorso sintetico lungo e misura del campo. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R05-AC2` Il campo Limbo di Impostazioni rispetta la stessa larghezza e il selettore resta interamente visibile. | Test Tk della vista a 960x640 e 100%/125%. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R05-AC3` I tre campi cartella avanzati delle caselle si espandono in modo uniforme senza comprimere etichette o azioni. | Test fake del layout e prova Tk delle impostazioni avanzate. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R05-AC4` Se il valore supera lo spazio, selezione, scorrimento orizzontale, copia e incolla restano disponibili senza tagli verticali. | Test interazioni su valori sintetici lunghi e inventario visuale. | Non ancora eseguita. | `NOT_MET` |
 
 #### GUI-U-R03-T01 - Prima casella reale senza blocco Google
 

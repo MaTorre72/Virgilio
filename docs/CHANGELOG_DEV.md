@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Chiuso `GUI-U-R03 = DONE` con conferma umana
+  `H-R03-01 = PASS`: selezione, validazione, salvataggio, ritorno, riapertura,
+  persistenza e modifica del Limbo approvati. `H-R03-01`--`H-R03-06 = PASS`
+  e `R03-AC1`--`R03-AC5 = MET`. Osservazione non bloccante: i campi che
+  mostrano percorsi cartella sono troppo piccoli; proposto
+  `GUI-U-R03-R05 - Campi cartella leggibili`, in attesa di approvazione.
+
 - 2026-07-24 +02:00 - Ripresa umana `GUI-U-R03` sulla build R03-R04
   `eaf05fd`, ID `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`: conferma esplicita
   `H-R03-06 = PASS`. Nessun UAC o finestra tecnica; attivazione, stato,
