@@ -6,6 +6,8 @@ from tkinter import Tk
 import pytest
 
 from virgilio_connector.application.configuration import ConfigurationService
+from virgilio_connector.application.account_management import AccountManagementService
+from virgilio_connector.application.credentials import AccountCredentialService, FakeCredentialStore
 from virgilio_connector.user_app import launch_user_app
 from virgilio_connector.user_app.app import USER_VIEWS, WINDOW_TITLE, UserAppShell
 from virgilio_connector.user_app.demo import DemoState
@@ -503,6 +505,37 @@ def test_first_run_demo_fits_real_tk_window_at_960x640_for_supported_scales(tmp_
             assert all(label in text for label in (
                 "Prossima azione", "Attivita recenti", "Problemi", "Controlla ora",
             ))
+            assert root.winfo_reqwidth() <= 960
+            assert root.winfo_reqheight() <= 640
+
+        shell.current_frame.destroy()
+        accounts = AccountManagementService(
+            ConfigurationService.for_file(tmp_path / "real-config.yaml"),
+            AccountCredentialService(FakeCredentialStore()),
+        )
+        real_shell = UserAppShell(root, accounts.configuration, account_service=accounts)
+        real_shell.first_run.continue_forward()
+        limbo = tmp_path / "limbo"
+        limbo.mkdir()
+        real_shell.first_run.current_view.folder_entry.insert(0, str(limbo.resolve()))
+        real_shell.first_run.continue_forward()
+        account_view = real_shell.first_run.current_view
+        account_view.name_entry.insert(0, "Principale")
+        account_view.email_entry.insert(0, "one@example.invalid")
+        account_view.password_entry.insert(0, '{"token": "synthetic", "refresh_token": "synthetic"}')
+        assert real_shell.first_run.add_account().is_valid
+        assert real_shell.first_run.continue_forward().is_valid
+        assert real_shell.first_run.step is WizardStep.SUMMARY
+        for scale in (1.0, 1.25):
+            root.tk.call("tk", "scaling", scale)
+            root.update_idletasks()
+            assert root.winfo_reqwidth() <= 960
+            assert root.winfo_reqheight() <= 640
+        assert real_shell.first_run.continue_forward().is_valid
+        assert real_shell.home is not None
+        for scale in (1.0, 1.25):
+            root.tk.call("tk", "scaling", scale)
+            root.update_idletasks()
             assert root.winfo_reqwidth() <= 960
             assert root.winfo_reqheight() <= 640
     finally:

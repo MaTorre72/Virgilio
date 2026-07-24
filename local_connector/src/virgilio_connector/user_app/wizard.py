@@ -406,11 +406,13 @@ class AccountView:
 
 
 class SummaryView:
-    """Small completion screen used by the isolated demonstration route."""
+    """Review persisted setup details before the user opens Home."""
 
     def __init__(
-        self, parent: Any, *, ttk_module: Any, demo: DemoState,
+        self, parent: Any, *, ttk_module: Any,
         on_back: Callable[[], None], on_continue: Callable[[], None],
+        demo: DemoState | None = None,
+        account_service: AccountManagementService | None = None,
     ) -> None:
         self.frame = ttk_module.Frame(parent, padding=16)
         ttk_module.Label(self.frame, text="Riepilogo").grid(row=0, column=0, sticky="w")
@@ -418,23 +420,51 @@ class SummaryView:
             self.frame,
             text="Controlla i dati prima di aprire la Home.",
         ).grid(row=1, column=0, sticky="w", pady=(12, 0))
+        if demo is not None:
+            limbo_folder = demo.limbo_folder
+            accounts = demo.accounts
+        else:
+            assert account_service is not None
+            model = account_service.configuration.load()
+            limbo_folder = str(model.storage.staging_dir)
+            accounts = account_service.list_accounts()
+        active_accounts = tuple(account for account in accounts if account.enabled)
+        inactive_accounts = tuple(account for account in accounts if not account.enabled)
+        ttk_module.Label(
+            self.frame, text=f"Cartella Limbo: {limbo_folder}", wraplength=640
+        ).grid(
+            row=2, column=0, sticky="w", pady=(12, 0)
+        )
         ttk_module.Label(
             self.frame,
-            text=f"Cartella Limbo: {demo.limbo_folder}",
-        ).grid(row=2, column=0, sticky="w", pady=(12, 0))
-        ttk_module.Label(
-            self.frame,
-            text=f"Caselle pronte: {len(demo.accounts)}",
+            text=f"Caselle configurate: {len(accounts)} ({len(active_accounts)} attive)",
         ).grid(row=3, column=0, sticky="w", pady=(8, 0))
         ttk_module.Label(
             self.frame,
-            text="Per cambiare un dato, scegli Indietro e correggilo nella schermata indicata.",
-        ).grid(row=4, column=0, sticky="w", pady=(12, 0))
-        ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
-            row=5, column=0, sticky="w", pady=(24, 0)
+            text="Caselle: " + ", ".join(account.name for account in accounts),
+            wraplength=640,
+        ).grid(row=4, column=0, sticky="w", pady=(8, 0))
+        correction = (
+            "Caselle da attivare: " + ", ".join(account.name for account in inactive_accounts)
+            if inactive_accounts
+            else "Configurazione completa: tutte le caselle sono attive."
         )
-        ttk_module.Button(self.frame, text="Apri Home", command=on_continue).grid(
-            row=5, column=1, sticky="e", pady=(24, 0)
+        ttk_module.Label(self.frame, text=correction, wraplength=640).grid(
+            row=5, column=0, sticky="w", pady=(8, 0)
+        )
+        ttk_module.Label(
+            self.frame,
+            text="Per cambiare un dato, scegli Indietro e correggilo nella schermata indicata.",
+        ).grid(row=6, column=0, sticky="w", pady=(12, 0))
+        ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
+            row=7, column=0, sticky="w", pady=(24, 0)
+        )
+        ttk_module.Button(
+            self.frame,
+            text="Apri Home" if demo is not None else "Completa configurazione",
+            command=on_continue,
+        ).grid(
+            row=7, column=1, sticky="e", pady=(24, 0)
         )
 
 
@@ -518,10 +548,9 @@ class FirstRunController:
                 result = ValidationResult(False, "Aggiungi almeno una casella.")
                 self.current_view.show_validation(result)
                 return result
-            result = ValidationResult(True, "Configurazione completata.")
+            result = ValidationResult(True, "Configurazione pronta per il riepilogo.")
             self.current_view.show_validation(result)
-            if self._on_complete is not None:
-                self._on_complete()
+            self._show_summary()
             return result
         result = self._account_validator.validate(self.current_view.form_value())
         self.current_view.show_validation(result)
@@ -693,10 +722,13 @@ class FirstRunController:
         self._replace(view, WizardStep.ACCOUNT)
 
     def _show_summary(self) -> None:
-        assert self._demo is not None
         self._replace(
             SummaryView(
-                self.parent, ttk_module=self._ttk, demo=self._demo,
-                on_back=self.go_back, on_continue=self.continue_forward,
+                self.parent,
+                ttk_module=self._ttk,
+                demo=self._demo,
+                account_service=self._account_service,
+                on_back=self.go_back,
+                on_continue=self.continue_forward,
             ), WizardStep.SUMMARY,
         )

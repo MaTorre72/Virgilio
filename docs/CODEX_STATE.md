@@ -13,17 +13,18 @@
 - Esito storico: `GUI-U-R02 = SUPERSEDED_BY_R3` dopo `FAIL` umano del demo
 - Task completato: `GUI-U-R03-T01 - Prima casella reale senza blocco Google`
 - Task completato: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`
-- Task corrente: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home` (`TODO`)
-- Successivo univoco: completare `GUI-U-R03-T03` con il percorso reale Benvenuto -> Limbo -> Caselle -> Riepilogo -> Home
+- Task completato: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home`
+- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`WAITING_HUMAN_REVIEW`)
+- Successivo univoco: collaudo umano unico R03 sulla build operativa, comprendente scenari R3 e requisiti UX R2 trasferiti
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
 - Blocchi aperti: nessuno. Il demo R02 non viene ampliato o ricollaudato, ma i suoi requisiti sono vincolanti in R3 secondo la matrice in `docs/GUI_U_BACKLOG.md`. R03-T01 ha rimosso la dipendenza Google dal primo percorso IMAP. Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
-- Ultima prova nuova mirata: `test_user_app_accounts.py` e `test_user_app_operational_feedback.py` -> `OK` (`12 passed`, fixture fake e basetemp isolato)
+- Ultima prova nuova mirata: quattro moduli `test_user_app*` R03-T03 -> `OK` (`39 passed`, fixture fake, Tk reale e basetemp isolato); corretto il Riepilogo reale che a 125% richiedeva 971 px
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp unico -> `OK` (`491 passed`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp unico -> `OK` (`494 passed`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

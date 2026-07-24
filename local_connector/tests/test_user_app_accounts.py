@@ -6,9 +6,9 @@ from virgilio_connector.application.configuration import ConfigurationService
 from virgilio_connector.application.credentials import AccountCredentialService, FakeCredentialStore
 from virgilio_connector.user_app.app import UserAppShell
 from virgilio_connector.user_app.navigation import UserRoute
-from virgilio_connector.user_app.wizard import AccountView, FirstRunController
+from virgilio_connector.user_app.wizard import AccountView, FirstRunController, SummaryView, WizardStep
 
-from test_user_app import FakeRoot, FakeTtk
+from test_user_app import FakeButton, FakeLabel, FakeRoot, FakeTtk
 
 
 def _open_accounts(tmp_path: Path):
@@ -130,3 +130,37 @@ def test_two_accounts_persist_after_shell_is_closed_and_reopened(tmp_path):
     assert [item.email for item in reopened.list_accounts()] == [
         "one@example.invalid", "two@example.invalid"
     ]
+
+
+def test_real_first_run_keeps_data_through_summary_back_and_home(tmp_path):
+    controller, service, credential_store, config_path = _open_accounts(tmp_path)
+    view = controller.current_view
+    _fill(view, name="Principale", email="one@example.invalid", password="one-secret", host="imap.gmail.com")
+    assert controller.add_account().is_valid
+    _fill(view, name="Archivio", email="two@example.invalid", password="two-secret", host="imap.example.invalid")
+    view.enabled_control.state(("!selected",))
+    view.toggle_enabled()
+    assert controller.add_account().is_valid
+
+    assert controller.continue_forward().is_valid
+    assert controller.step is WizardStep.SUMMARY
+    assert isinstance(controller.current_view, SummaryView)
+    visible = " ".join(widget.kwargs.get("text", "") for widget in (*FakeLabel.created, *FakeButton.created))
+    assert str(tmp_path / "limbo") in visible
+    assert "Caselle configurate: 2 (1 attive)" in visible
+    assert "Caselle da attivare: Archivio" in visible
+    assert "Completa configurazione" in visible
+
+    controller.go_back()
+    assert controller.step is WizardStep.ACCOUNT
+    assert len(controller.current_view.table.rows) == 2
+    assert controller.continue_forward().is_valid
+    assert controller.continue_forward().is_valid
+
+    assert [item.email for item in service.list_accounts()] == [
+        "one@example.invalid", "two@example.invalid"
+    ]
+    reopened = AccountManagementService(
+        ConfigurationService.for_file(config_path), AccountCredentialService(credential_store)
+    )
+    assert len(reopened.list_accounts()) == 2

@@ -812,7 +812,7 @@ operativo reale prima del suo unico collaudo umano.
 
 ### GUI-U-R03 - Collegamento dei servizi
 
-Stato: `IN_PROGRESS`.
+Stato: `WAITING_HUMAN_REVIEW`.
 Risultato: il prototipo visuale approvato usa i servizi applicativi condivisi
 per Limbo, due caselle, controlli operativi, persistenza e controllo automatico,
 con riscontri osservabili nella GUI e senza esporre dettagli tecnici.
@@ -915,7 +915,7 @@ Successivo univoco dopo la chiusura: `GUI-U-R03-T03`.
 
 #### GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home
 
-Stato: `TODO`.
+Stato: `DONE`.
 Risultato: il primo avvio reale percorre Benvenuto, Limbo, Caselle, Riepilogo e
 Home in una sola finestra, conserva i dati e soddisfa i requisiti UX R2 non
 ancora dimostrati sul prodotto operativo.
@@ -929,11 +929,11 @@ applicativa o il percorso non puo` restare utilizzabile a 960x640.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R03-T03-AC1` Il percorso reale attraversa le cinque viste in una finestra e conserva i dati usando Indietro/Continua. | Test di routing/controller con servizi fake persistenti. | Non ancora eseguita. | `NOT_MET` |
-| `R03-T03-AC2` Riepilogo mostra Limbo, caselle, stati, incompletezze e correzioni; `Completa configurazione` apre Home. | Test vista/controller sul modello reale. | Non ancora eseguita. | `NOT_MET` |
-| `R03-T03-AC3` Home mostra stato, caselle, prossima azione, attivita`, problemi e Impostazioni dai servizi condivisi. | Test Home con servizi fake e stati deterministici. | Non ancora eseguita. | `NOT_MET` |
-| `R03-T03-AC4` Le cinque viste restano utilizzabili a 960x640 e scala 100%/125%. | Solo prova Tk/resize interessata dalle nuove viste; riuso delle evidenze invariate. | Non ancora eseguita. | `NOT_MET` |
-| `R03-T03-AC5` Testi ed errori non espongono termini tecnici e indicano sempre problema e azione. | Inventario delle sole stringhe nuove o modificate. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T03-AC1` Il percorso reale attraversa le cinque viste in una finestra e conserva i dati usando Indietro/Continua. | Test di routing/controller con servizi fake persistenti. | `test_real_first_run_keeps_data_through_summary_back_and_home` percorre Benvenuto, Limbo, Caselle, Riepilogo, ritorno a Caselle e Home, poi riapre le due caselle persistite. | `MET` |
+| `R03-T03-AC2` Riepilogo mostra Limbo, caselle, stati, incompletezze e correzioni; `Completa configurazione` apre Home. | Test vista/controller sul modello reale. | Lo stesso test verifica Limbo, due caselle, conteggio/stato attivo, casella da attivare, azione di correzione e `Completa configurazione`; il secondo Continua apre Home. | `MET` |
+| `R03-T03-AC3` Home mostra stato, caselle, prossima azione, attivita`, problemi e Impostazioni dai servizi condivisi. | Test Home con servizi fake e stati deterministici. | `test_home_renders_main_general_states`, `test_home_has_exactly_the_three_primary_actions`, `test_demo_home_makes_status_next_action_activity_and_problems_visible` e `test_home_reopens_existing_configuration_and_returns_after_edit`, rieseguiti nel gruppo mirato, coprono dati e azioni della Home condivisa. | `MET` |
+| `R03-T03-AC4` Le cinque viste restano utilizzabili a 960x640 e scala 100%/125%. | Solo prova Tk/resize interessata dalle nuove viste; riuso delle evidenze invariate. | `test_first_run_demo_fits_real_tk_window_at_960x640_for_supported_scales` ora usa Tk reale anche sul percorso persistente e verifica Riepilogo/Home a 100% e 125%; la prima prova ha rilevato 971 px e ha guidato il wrapping poi verde. | `MET` |
+| `R03-T03-AC5` Testi ed errori non espongono termini tecnici e indicano sempre problema e azione. | Inventario delle sole stringhe nuove o modificate. | `test_complete_visible_text_inventory_has_no_technical_or_legacy_terms`, rieseguito con il Riepilogo reale, esclude i termini vietati nelle stringhe visibili; i riscontri restano azionabili. Gruppo mirato finale: `39 passed`. | `MET` |
 
 ### GUI-U-R04 - Release candidate e collaudo finale
 

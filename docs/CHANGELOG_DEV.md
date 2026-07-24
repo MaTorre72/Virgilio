@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Completato `GUI-U-R03-T03`: il percorso reale conserva
+  Limbo e caselle attraverso Benvenuto -> Limbo -> Caselle -> Riepilogo ->
+  Home; il Riepilogo mostra stati/correzioni e `Completa configurazione`.
+  Una prova Tk reale ha rilevato un Riepilogo di 971 px a 125%, corretto con
+  wrapping dei dettagli; gruppo mirato finale `39 passed`, smoke locale `494 passed`. Prossimo task:
+  collaudo umano unico `GUI-U-R03` sulla build operativa.
+
 - 2026-07-24 +02:00 - Completato `GUI-U-R03-T02`: ripristinata l'esecuzione
   del runtime fuori dal sandbox e le due prove mirate, con base temporanea
   isolata, hanno coperto seconda casella, credenziali distinte, CRUD,

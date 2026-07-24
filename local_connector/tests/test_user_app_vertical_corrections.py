@@ -88,11 +88,13 @@ def test_first_run_finishes_explicitly_on_home_without_restart(tmp_path):
     result = shell.first_run.continue_forward()
 
     assert result.is_valid
-    assert shell.route is UserRoute.HOME
-    assert shell.home is not None
+    assert shell.first_run.step is WizardStep.SUMMARY
     assert "Completa configurazione" in [
         button.kwargs.get("text") for button in FakeButton.created
     ]
+    assert shell.first_run.continue_forward().is_valid
+    assert shell.route is UserRoute.HOME
+    assert shell.home is not None
 
 
 def test_account_view_explains_imap_alternative_when_google_is_not_ready(tmp_path):
@@ -129,6 +131,7 @@ def test_selecting_imap_removes_google_dependency_and_saves_first_mailbox(tmp_pa
     assert shell.first_run.add_account().is_valid
     assert accounts.list_accounts()[0].host == "imap.example.invalid"
     assert shell.first_run.continue_forward().is_valid
+    assert shell.first_run.continue_forward().is_valid
     assert shell.route is UserRoute.HOME
 
 
@@ -140,6 +143,7 @@ def test_home_reopens_existing_configuration_and_returns_after_edit(tmp_path):
     view = _open_account_step(first_shell, tmp_path / "limbo")
     _fill(view)
     first_shell.first_run.add_account()
+    first_shell.first_run.continue_forward()
     first_shell.first_run.continue_forward()
 
     first_shell.open_configuration()
@@ -156,6 +160,7 @@ def test_home_reopens_existing_configuration_and_returns_after_edit(tmp_path):
         "refresh_token": "refresh-changed-secret",
     }))
     assert first_shell.first_run.update_account().is_valid
+    assert first_shell.first_run.continue_forward().is_valid
     assert first_shell.first_run.continue_forward().is_valid
     assert first_shell.route is UserRoute.HOME
     assert accounts.list_accounts()[0].email == "changed@example.invalid"
