@@ -81,12 +81,17 @@ def _service(tmp_path, *, installed=False, bucoliche=None, configured=True):
 
 
 def test_register_is_always_present_and_reports_administrative_configuration(tmp_path):
-    configuration, service, google, _ = _service(tmp_path, configured=False)
+    configuration, service, google, automatic = _service(tmp_path, configured=False)
 
     snapshot = service.load()
 
     assert snapshot.register_configured is False
     assert snapshot.register_message == "Registro non ancora configurato dall'amministratore."
+    assert snapshot.automatic_control_message == "Controllo automatico non attivo."
+    assert service.install_automatic_control() == GuidedStatus(
+        True, "Controllo automatico attivato."
+    )
+    assert automatic.installed is True
     assert service.connect_google() == GuidedStatus(
         False, "Registro non ancora configurato dall'amministratore. Chiedi di configurarlo."
     )

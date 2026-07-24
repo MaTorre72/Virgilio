@@ -18,17 +18,18 @@
 - Task completato: `GUI-U-R03-R02 - Cartelle operative configurabili per casella`
 - Task completato: `GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile`
 - Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL` su `H-R03-06`; `H-R03-02`--`H-R03-05 = PASS` umano sulla build R03-R03)
-- Successivo univoco: attendere approvazione esplicita di `GUI-U-R03-R04 - Controllo automatico per utente`; non modificare codice e non ripetere le evidenze valide
+- Task completato: `GUI-U-R03-R04 - Controllo automatico per utente`
+- Successivo univoco: riprendere soltanto `H-R03-06` sulla build R03-R04 identificata dal commit conclusivo; non ripetere le evidenze umane valide
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: `H-R03-06 = FAIL`. Il gateway usa Task Scheduler dalla GUI ordinaria e non crea `Caronte - controllo automatico`; il Registro assente mostrato nella stessa vista e` un prerequisito amministrativo separato. Proposto `GUI-U-R03-R04`, in attesa di approvazione. `H-R03-02`--`H-R03-05 = PASS` e `R03-AC2`--`R03-AC4 = MET`. Il disinstallatore diretto resta un difetto separato da trattare prima della release
+- Blocchi aperti: gate umano `H-R03-06`. Il controllo automatico usa ora la registrazione del solo utente corrente e resta indipendente dal Registro amministrativo; build R03-R04 e smoke sono pronti. `H-R03-02`--`H-R03-05 = PASS` e `R03-AC2`--`R03-AC4 = MET`. Il disinstallatore diretto resta un difetto separato da trattare prima della release
 - Ultima build operativa: `CaronteSetup-0.11.0-8241325.exe`, commit `8241325bf96d858259a577c87ffaba8c25513a05`, Build ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`, SHA-256 `79BC5677B21B29CAF3F7E07A9394072FBBBA446DA573FF5AF0181B8CFF260FF8`; fascicolo locale ignorato `artifacts/gui-u-r03/7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff/`
-- Ultima prova nuova mirata: R03-R03 core -> `OK` (`37 passed`, fake) e sola prova Tk interessata -> `OK` (`1 passed`, 960x640 a 100%/125%); nessuna rete o credenziale reale
+- Ultima prova nuova mirata: R03-R04 servizio/adapter/installer -> `OK` (`27 passed`); smoke locale finale `OK` (`504 passed`); nessuna rete o credenziale reale
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp unico -> `OK` (`501 passed`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp unico -> `OK` (`504 passed`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

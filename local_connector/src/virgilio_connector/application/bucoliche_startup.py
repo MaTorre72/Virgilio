@@ -6,22 +6,15 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 import re
-import sys
 import tempfile
 from typing import Protocol
 
 from ..bucoliche import BucolicheError, GoogleOAuthLogin, load_bucoliche_config
 from ..pilot_readiness import BucolicheDoctor, has_bucoliche_section
-from ..windows_task import (
-    WindowsTaskError,
-    build_windows_frozen_watch_task,
-    build_windows_watch_task,
-    query_windows_watch_task,
-    register_windows_watch_task,
-    unregister_windows_watch_task,
-)
 from .configuration import ConfigurationService
 from .registry_configuration import RegistryConfigurationService
+from .settings import SettingsValidationError
+from .windows_startup import WindowsAutomaticControlAdapter
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,43 +71,39 @@ class ExistingBucolicheGateway:
 
 
 class WindowsAutomaticControlGateway:
-    """Use the existing Task Scheduler functions behind an injectable port."""
+    """Use the current-user Windows Run key behind an injectable port."""
 
-    TASK_NAME = "Caronte - controllo automatico"
-
-    def __init__(self, configuration: ConfigurationService) -> None:
+    def __init__(
+        self,
+        configuration: ConfigurationService,
+        *,
+        registry: object | None = None,
+        executable: Path | None = None,
+        frozen: bool | None = None,
+    ) -> None:
         self.configuration = configuration
-        self.registry_configuration = RegistryConfigurationService(
-            configuration.store.source
+        self.registry = registry
+        self.executable = executable
+        self.frozen = frozen
+
+    def _adapter(self) -> WindowsAutomaticControlAdapter:
+        model = self.configuration.load()
+        return WindowsAutomaticControlAdapter(
+            self.configuration.store.source,
+            model.preferences.interval_seconds,
+            registry=self.registry,
+            executable=self.executable,
+            frozen=self.frozen,
         )
 
     def is_installed(self) -> bool:
-        return query_windows_watch_task(self.TASK_NAME).installed
+        return self._adapter().is_installed()
 
     def install(self) -> None:
-        model = self.configuration.load()
-        if getattr(sys, "frozen", False):
-            plan = build_windows_frozen_watch_task(
-                config_path=self.configuration.store.source,
-                executable=Path(sys.executable),
-                interval_seconds=model.preferences.interval_seconds,
-                task_name=self.TASK_NAME,
-                force=True,
-            )
-        else:
-            repo_root = Path(__file__).resolve().parents[4]
-            plan = build_windows_watch_task(
-                config_path=self.configuration.store.source,
-                python_exe=Path(sys.executable),
-                repo_root=repo_root,
-                interval_seconds=model.preferences.interval_seconds,
-                task_name=self.TASK_NAME,
-                force=True,
-            )
-        register_windows_watch_task(plan)
+        self._adapter().install()
 
     def remove(self) -> None:
-        unregister_windows_watch_task(self.TASK_NAME)
+        self._adapter().remove()
 
 
 class BucolicheStartupService:
@@ -141,7 +130,7 @@ class BucolicheStartupService:
                 "Controllo automatico attivo."
                 if installed else "Controllo automatico non attivo."
             )
-        except (OSError, WindowsTaskError):
+        except (OSError, SettingsValidationError):
             installed = False
             message = "Stato del controllo automatico non disponibile."
         return BucolicheStartupSnapshot(
@@ -191,14 +180,14 @@ class BucolicheStartupService:
     def install_automatic_control(self) -> GuidedStatus:
         try:
             self.automatic_control.install()
-        except (OSError, WindowsTaskError):
+        except (OSError, SettingsValidationError):
             return GuidedStatus(False, "Attivazione non riuscita. Riprova da Windows.")
         return GuidedStatus(True, "Controllo automatico attivato.")
 
     def remove_automatic_control(self) -> GuidedStatus:
         try:
             self.automatic_control.remove()
-        except (OSError, WindowsTaskError):
+        except (OSError, SettingsValidationError):
             return GuidedStatus(False, "Rimozione non riuscita. Riprova da Windows.")
         return GuidedStatus(True, "Controllo automatico rimosso.")
 

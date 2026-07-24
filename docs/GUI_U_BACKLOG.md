@@ -957,7 +957,8 @@ recuperabile senza esporre o perdere credenziali di altre caselle.
 
 #### GUI-U-R03-R04 - Controllo automatico per utente
 
-Stato: `PROPOSED_WAITING_USER_APPROVAL`.
+Stato: `DONE` (avvio approvato esplicitamente dall'utente e completato il
+2026-07-24).
 Risultato: il controllo automatico si registra e si rimuove dalla build
 installata per il solo utente corrente, senza UAC o privilegi amministrativi e
 senza dipendere dalla configurazione del Registro.
@@ -973,11 +974,11 @@ privilegi amministrativi.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R03-R04-AC1` Registro e controllo automatico restano indipendenti: Registro assente non blocca ne` spiega l'avvio Windows. | Test servizio/vista con Registro assente e gateway automatico disponibile. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R04-AC2` Attiva/Disattiva usa una registrazione del solo utente corrente e non richiede Task Scheduler, UAC o amministratore. | Test adapter Windows iniettato e ispezione del comando registrato. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R04-AC3` La registrazione avvia `Caronte.exe watch` con configurazione e intervallo installati, senza repository o Python esterno. | Test frozen sul comando e smoke da cartella copiata. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R04-AC4` Stato, attivazione, persistenza, rimozione ed errori sono veritieri e azionabili senza dettagli tecnici. | Test servizio/UI su successo, errore e riapertura. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R04-AC5` Disinstallazione rimuove la registrazione automatica e test mirati, smoke locale e nuova build identificata sono verdi. | Test installer/disinstallazione, smoke e manifest build. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R04-AC1` Registro e controllo automatico restano indipendenti: Registro assente non blocca ne` spiega l'avvio Windows. | Test servizio/vista con Registro assente e gateway automatico disponibile. | `test_register_is_always_present_and_reports_administrative_configuration` verifica Registro assente, stato automatico leggibile e attivazione riuscita prima di ogni collegamento Google. | `MET` |
+| `R03-R04-AC2` Attiva/Disattiva usa una registrazione del solo utente corrente e non richiede Task Scheduler, UAC o amministratore. | Test adapter Windows iniettato e ispezione del comando registrato. | `WindowsAutomaticControlAdapter` usa solo `HKEY_CURRENT_USER\...\Run`; il test iniettato verifica aggiunta/rimozione e assenza di `schtasks`. | `MET` |
+| `R03-R04-AC3` La registrazione avvia `Caronte.exe watch` con configurazione e intervallo installati, senza repository o Python esterno. | Test frozen sul comando e smoke da cartella copiata. | Il test frozen verifica eseguibile copiato, `watch`, configurazione e intervallo senza modulo/Python; lo smoke build avvia anche `watch --help` dalla copia isolata. | `MET` |
+| `R03-R04-AC4` Stato, attivazione, persistenza, rimozione ed errori sono veritieri e azionabili senza dettagli tecnici. | Test servizio/UI su successo, errore e riapertura. | Stato confrontato con il comando atteso, registrazione obsoleta dichiarata inattiva, attiva/disattiva e riapertura fake verdi; i messaggi restano guidati e non tecnici. | `MET` |
+| `R03-R04-AC5` Disinstallazione rimuove la registrazione automatica e test mirati, smoke locale e nuova build identificata sono verdi. | Test installer/disinstallazione, smoke e manifest build. | Pulizia dei due valori `Run` e del task legacy verificata; gruppo mirato `27 passed`, smoke locale `504 passed`; build e installer identificati dal commit conclusivo con smoke `PASS`. | `MET` |
 
 #### GUI-U-R03-T01 - Prima casella reale senza blocco Google
 

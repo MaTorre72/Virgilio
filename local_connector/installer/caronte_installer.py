@@ -17,7 +17,7 @@ from typing import Callable, Mapping
 PRODUCT_NAME = "Caronte"
 UNINSTALL_KEY = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\Caronte"
 STARTUP_KEY = r"Software\Microsoft\Windows\CurrentVersion\Run"
-STARTUP_VALUE = "Caronte"
+STARTUP_VALUES = ("Caronte", "Caronte - controllo automatico")
 AUTOMATIC_TASK_NAME = "Caronte - controllo automatico"
 
 
@@ -116,14 +116,15 @@ def _unregister_uninstall() -> None:
 
 
 def _remove_automatic_startup() -> None:
-    """Remove both sign-in integrations, stopping a scheduled worker first."""
+    """Remove current sign-in values and the legacy scheduled worker."""
     try:
         import winreg
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, STARTUP_KEY, 0, winreg.KEY_SET_VALUE) as key:
-            try:
-                winreg.DeleteValue(key, STARTUP_VALUE)
-            except FileNotFoundError:
-                pass
+            for value_name in STARTUP_VALUES:
+                try:
+                    winreg.DeleteValue(key, value_name)
+                except FileNotFoundError:
+                    pass
     except FileNotFoundError:
         pass
     subprocess.run(["schtasks", "/end", "/tn", AUTOMATIC_TASK_NAME], capture_output=True, text=True, check=False,

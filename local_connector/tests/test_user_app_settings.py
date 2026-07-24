@@ -4,7 +4,10 @@ import pytest
 
 from virgilio_connector.application.configuration import ConfigurationService
 from virgilio_connector.application.settings import SettingsService, SettingsValidationError
-from virgilio_connector.application.windows_startup import WindowsStartupAdapter
+from virgilio_connector.application.windows_startup import (
+    WindowsAutomaticControlAdapter,
+    WindowsStartupAdapter,
+)
 from virgilio_connector.multi_account import scaffold_local_config
 from virgilio_connector.user_app.app import UserAppShell
 from virgilio_connector.user_app.navigation import UserRoute
@@ -28,13 +31,22 @@ class FakeRegistryKey:
 class FakeRegistry:
     HKEY_CURRENT_USER = object()
     KEY_SET_VALUE = 1
+    KEY_QUERY_VALUE = 2
     REG_SZ = 1
 
     def __init__(self):
         self.saved = {}
 
     def CreateKeyEx(self, *args): return FakeRegistryKey()
+    def OpenKey(self, *args):
+        if not self.saved:
+            raise FileNotFoundError
+        return FakeRegistryKey()
     def SetValueEx(self, key, name, reserved, kind, value): self.saved[name] = value
+    def QueryValueEx(self, key, name):
+        if name not in self.saved:
+            raise FileNotFoundError
+        return self.saved[name], self.REG_SZ
     def DeleteValue(self, key, name):
         if name not in self.saved: raise FileNotFoundError
         del self.saved[name]
@@ -113,6 +125,49 @@ def test_windows_startup_adapter_uses_installed_executable_when_frozen(tmp_path,
     assert "Caronte.exe" in command
     assert "user-gui" in command
     assert "-m virgilio_connector" not in command
+
+
+def test_automatic_control_uses_current_user_run_key_and_frozen_worker(tmp_path):
+    registry = FakeRegistry()
+    executable = tmp_path / "copied build" / "Caronte.exe"
+    adapter = WindowsAutomaticControlAdapter(
+        tmp_path / "Caronte" / "config.yaml",
+        420,
+        registry=registry,
+        executable=executable,
+        frozen=True,
+    )
+
+    assert adapter.is_installed() is False
+    adapter.install()
+
+    command = registry.saved["Caronte - controllo automatico"]
+    assert adapter.is_installed() is True
+    assert str(executable) in command
+    assert " watch " in command
+    assert "--config" in command
+    assert "--interval-seconds 420" in command
+    assert "-m virgilio_connector" not in command
+    assert "schtasks" not in command.lower()
+    assert "python" not in command.lower()
+
+    adapter.remove()
+    assert adapter.is_installed() is False
+    assert registry.saved == {}
+
+
+def test_automatic_control_reports_stale_registration_as_inactive(tmp_path):
+    registry = FakeRegistry()
+    registry.saved["Caronte - controllo automatico"] = "obsolete command"
+    adapter = WindowsAutomaticControlAdapter(
+        tmp_path / "config.yaml",
+        300,
+        registry=registry,
+        executable=tmp_path / "Caronte.exe",
+        frozen=True,
+    )
+
+    assert adapter.is_installed() is False
 
 
 @pytest.mark.parametrize("value", ("", "zero", "0", "1441"))

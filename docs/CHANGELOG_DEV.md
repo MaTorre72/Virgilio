@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Completato `GUI-U-R03-R04`: il controllo automatico
+  usa `Run` per il solo utente corrente e avvia il worker congelato con
+  configurazione e intervallo installati, senza Task Scheduler, UAC o
+  amministratore. Registro e avvio restano indipendenti; disinstallazione
+  pulisce registrazione nuova e task legacy. Mirati `27 passed`, smoke locale
+  `504 passed`; build e installer identificati con smoke `PASS`.
+
 - 2026-07-24 +02:00 - `H-R03-06 = FAIL` umano sulla build `8241325`:
   `Attivazione non riuscita. Riprova da Windows.` e nessuna attivita
   `Caronte - controllo automatico` creata. Diagnosi read-only: il gateway usa

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -10,6 +11,7 @@ import pytest
 INSTALLER_DIR = Path(__file__).resolve().parents[1] / "installer"
 sys.path.insert(0, str(INSTALLER_DIR))
 
+import caronte_installer  # noqa: E402
 from caronte_installer import InstallLayout, install, uninstall  # noqa: E402
 
 
@@ -102,6 +104,38 @@ def test_uninstall_removes_automatic_startup_before_program_files(tmp_path: Path
 
     assert calls == ["automatic", "unregister"]
     assert not layout.program_dir.exists()
+
+
+def test_automatic_startup_cleanup_removes_gui_worker_and_legacy_task(monkeypatch) -> None:
+    saved = {
+        "Caronte": "Caronte.exe user-gui",
+        "Caronte - controllo automatico": "Caronte.exe watch",
+    }
+    class FakeKey:
+        def __enter__(self): return self
+        def __exit__(self, *args): return None
+
+    fake_winreg = SimpleNamespace(
+        HKEY_CURRENT_USER=object(),
+        KEY_SET_VALUE=1,
+        OpenKey=lambda *args: FakeKey(),
+        DeleteValue=lambda opened, name: saved.pop(name),
+    )
+    calls = []
+    monkeypatch.setitem(sys.modules, "winreg", fake_winreg)
+    monkeypatch.setattr(
+        caronte_installer.subprocess,
+        "run",
+        lambda args, **kwargs: calls.append(args),
+    )
+
+    caronte_installer._remove_automatic_startup()
+
+    assert saved == {}
+    assert calls == [
+        ["schtasks", "/end", "/tn", "Caronte - controllo automatico"],
+        ["schtasks", "/delete", "/tn", "Caronte - controllo automatico", "/f"],
+    ]
 
 
 def test_layout_separates_program_configuration_and_data(tmp_path: Path) -> None:

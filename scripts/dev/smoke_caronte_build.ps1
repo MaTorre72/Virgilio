@@ -32,6 +32,10 @@ try {
     }
     $AboutProcess = Start-Process -FilePath (Join-Path $CopiedBuild "Caronte.exe") -ArgumentList "--smoke-about-available" -PassThru -Wait
     if ($AboutProcess.ExitCode -ne 0) { throw "Informazioni su Caronte non disponibili nella build." }
+    $WorkerHelp = Join-Path $SmokeRoot "worker-help.txt"
+    $WorkerError = Join-Path $SmokeRoot "worker-help.err"
+    $WorkerProcess = Start-Process -FilePath (Join-Path $CopiedBuild "Caronte.exe") -ArgumentList "watch --help" -RedirectStandardOutput $WorkerHelp -RedirectStandardError $WorkerError -PassThru -Wait
+    if ($WorkerProcess.ExitCode -ne 0) { throw "Il controllo automatico non e' avviabile dalla cartella copiata." }
     $Process = Start-Process -FilePath (Join-Path $CopiedBuild "Caronte.exe") -PassThru
     $Deadline = [DateTime]::UtcNow.AddSeconds(20)
     do {
@@ -40,7 +44,7 @@ try {
         if ($Process.HasExited) { throw "Caronte.exe si e' chiuso prima di mostrare la finestra." }
     } while ($Process.MainWindowTitle -ne "Caronte" -and [DateTime]::UtcNow -lt $Deadline)
     if ($Process.MainWindowTitle -ne "Caronte") { throw "La finestra Caronte non e' comparsa entro il tempo previsto." }
-    Write-Output "Smoke build: OK; identita, finestra Caronte e Informazioni verificate"
+    Write-Output "Smoke build: OK; identita, worker, finestra Caronte e Informazioni verificate"
 }
 finally {
     if ($null -ne $Process -and -not $Process.HasExited) { Stop-Process -Id $Process.Id -Force; $Process.WaitForExit() }
