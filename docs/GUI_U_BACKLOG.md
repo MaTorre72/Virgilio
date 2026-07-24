@@ -1140,3 +1140,28 @@ prerequisito R03 non ha ricevuto conferma umana esplicita.
 Esito terminale prima della decisione umana: `WAITING_HUMAN_REVIEW`. R04 e
 l'iniziativa GUI-U possono essere dichiarati completati solo dopo un `PASS`
 umano esplicito conforme a `docs/GUI_U_HUMAN_ACCEPTANCE.md`.
+
+#### GUI-U-R04-R01 - Configurazione amministrativa comprensibile
+
+Stato: `DONE`.
+Risultato: la schermata quotidiana di Caronte non chiede indirizzi o codici
+tecnici; Caronte Manutenzione, raggiungibile dalla GUI e dal menu Start,
+spiega e salva in un solo punto Registro condiviso e servizio di consegna.
+Dipendenze: `GUI-U-R03-R06 = DONE`; `GUI-U-R04 = WAITING_HUMAN_REVIEW`;
+feedback umano del 2026-07-24 con schermata allegata.
+Componenti ammessi: vista `Registro e avvio`, nuova `maintenance_gui`, servizi
+applicativi condivisi, launcher, installer, test e documentazione R04.
+Esclusioni: modifica di Apps Script, nuovi protocolli o segreti versionati,
+campi tecnici nella GUI utente, privilegi amministrativi, legacy `gui`/`gui_*`,
+disinstallatore diretto, `clasp push`, merge e modifica di `main`.
+Condizione di blocco: i dati operativi non possono essere salvati tramite i
+servizi esistenti oppure la manutenzione non puo` essere aperta dalla build
+installata senza terminale.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R04-R01-AC1` La GUI utente non mostra ne` richiede URL, codici o istruzioni amministrative indecifrabili. | Test inventario widget/testi e confronto con la schermata del FAIL. | Rimossi indirizzo, codice e salvataggio dalla vista utente; la pagina mostra soltanto Registro/Consegna pronti o non pronti e una singola azione `Apri Caronte Manutenzione`. Il test vieta anche la vecchia istruzione `chiedi all'amministratore`. | `MET` |
+| `R04-R01-AC2` Caronte Manutenzione spiega origine e significato di Registro, indirizzo del servizio e chiave di accesso e li salva tramite servizi condivisi. | Test GUI con servizi fake e persistenza protetta. | La manutenzione identifica il foglio Google, indica `Gestisci deployment` e l'indirizzo `/exec`, identifica `VIRGILIO_TOKEN` nelle proprieta` dello script e dichiara la protezione Windows. Salvataggio con servizi condivisi verificato; una chiave gia` protetta puo` essere mantenuta lasciando vuoto il campo. | `MET` |
+| `R04-R01-AC3` Dalla schermata utente si apre Caronte Manutenzione senza console e senza privilegi amministrativi. | Test launcher iniettato e comando frozen. | Azione utente e fallimento guidato verificati; il comando frozen richiama lo stesso `Caronte.exe maintenance-gui --config ...`, con `CREATE_NO_WINDOW`, senza Python o elevazione. | `MET` |
+| `R04-R01-AC4` L'installer crea nel menu Start accessi distinti a Caronte e Caronte Manutenzione e li rimuove insieme. | Test installer e smoke installato. | Installer crea `Caronte.lnk` e `Caronte Manutenzione.lnk` con argomenti distinti nella stessa cartella rimossa dalla disinstallazione; lo smoke installato apre entrambe le finestre. | `MET` |
+| `R04-R01-AC5` Test mirati, Tk reale e smoke locale sono verdi e viene prodotta una nuova RC identificata. | Suite mirata, smoke e manifest/hash della RC. | Mirati finali `35 passed`; Tk isolato `1 passed`; smoke locale `532 passed`. La nuova RC con client OAuth locale viene prodotta dal commit conclusivo e identificata dal relativo manifest ignorato. | `MET` |

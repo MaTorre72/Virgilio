@@ -49,21 +49,32 @@ def test_install_creates_program_shortcut_and_uninstaller_without_data(tmp_path:
     setup = tmp_path / "CaronteSetup.exe"
     setup.write_bytes(b"synthetic-installer")
     layout = _layout(tmp_path)
-    shortcuts: list[tuple[Path, Path]] = []
+    shortcuts: list[tuple[Path, Path, str]] = []
     registrations: list[Path] = []
 
     executable = install(
         payload,
         setup,
         layout,
-        shortcut_creator=lambda shortcut, target: (shortcut.parent.mkdir(parents=True), shortcut.write_text(str(target)), shortcuts.append((shortcut, target))),
+        shortcut_creator=lambda shortcut, target, arguments: (
+            shortcut.parent.mkdir(parents=True, exist_ok=True),
+            shortcut.write_text(f"{target}\n{arguments}"),
+            shortcuts.append((shortcut, target, arguments)),
+        ),
         register_uninstall=registrations.append,
     )
 
     assert executable.read_bytes() == b"synthetic-caronte"
     assert (layout.program_dir / "runtime.dll").is_file()
     assert (layout.program_dir / "DisinstallaCaronte.exe").read_bytes() == b"synthetic-installer"
-    assert shortcuts == [(layout.start_menu_dir / "Caronte.lnk", executable)]
+    assert shortcuts == [
+        (layout.start_menu_dir / "Caronte.lnk", executable, ""),
+        (
+            layout.start_menu_dir / "Caronte Manutenzione.lnk",
+            executable,
+            f'maintenance-gui --config "{layout.config_dir / "config.yaml"}"',
+        ),
+    ]
     assert registrations == [layout.program_dir / "DisinstallaCaronte.exe"]
     assert not layout.config_dir.exists()
     assert not layout.data_dir.exists()

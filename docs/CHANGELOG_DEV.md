@@ -1,5 +1,17 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Completato `GUI-U-R04-R01` dopo `FAIL` umano UX
+  della RC `0d46d69`: la pagina utente non espone piu` URL, codici o richieste
+  amministrative senza percorso. Mostra soltanto la prontezza di Registro e
+  consegna e apre Caronte Manutenzione. La presentazione separata spiega e
+  salva il foglio Registro, l'indirizzo `/exec` ottenuto da `Gestisci
+  deployment` e `VIRGILIO_TOKEN` dalle proprieta` dello script, proteggendo la
+  chiave in Windows e mantenendola se il campo resta vuoto. L'installer crea
+  accessi Start distinti a Caronte e Caronte Manutenzione e lo smoke apre
+  entrambe le finestre. Mirati `35 passed`, Tk isolato `1 passed`, smoke locale
+  `532 passed`; stabilizzato il controllo Tk che ereditava la scala della
+  schermata precedente.
+
 - 2026-07-24 +02:00 - Preparata `GUI-U-R04` come
   `WAITING_HUMAN_REVIEW`: costruita la release candidate
   `CaronteSetup-0.11.0-0d46d69.exe` dal commit

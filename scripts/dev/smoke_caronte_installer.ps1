@@ -19,6 +19,7 @@ $StartRoot = Join-Path $RoamingRoot "Start Menu\Caronte"
 $UninstallKey = "Software\VirgilioTests\Caronte-$SmokeId"
 $RegistryPath = "Registry::HKEY_CURRENT_USER\$UninstallKey"
 $Process = $null
+$MaintenanceProcess = $null
 $UninstallProcess = $null
 $PreviousValues = @{
     LOCALAPPDATA = $env:LOCALAPPDATA; APPDATA = $env:APPDATA
@@ -39,6 +40,7 @@ try {
     $InstalledExe = Join-Path $ProgramRoot "Caronte.exe"
     if (-not (Test-Path -LiteralPath $InstalledExe)) { throw "Caronte.exe non installato." }
     if (-not (Test-Path -LiteralPath (Join-Path $StartRoot "Caronte.lnk"))) { throw "Collegamento Start non creato." }
+    if (-not (Test-Path -LiteralPath (Join-Path $StartRoot "Caronte Manutenzione.lnk"))) { throw "Collegamento manutenzione non creato." }
     if (-not (Test-Path -LiteralPath $RegistryPath)) { throw "Disinstallatore non registrato." }
     if ((Get-ItemPropertyValue -LiteralPath $RegistryPath -Name DisplayVersion) -ne $Expected.version) { throw "Versione di disinstallazione divergente." }
     if (Test-Path -LiteralPath (Join-Path $RoamingRoot "Caronte\config.yaml")) { throw "L'installer ha creato configurazione utente." }
@@ -66,6 +68,19 @@ try {
     $Process.WaitForExit()
     $Process = $null
 
+    $MaintenanceConfig = Join-Path $RoamingRoot "Caronte\config.yaml"
+    $MaintenanceProcess = Start-Process -FilePath $InstalledExe -ArgumentList "maintenance-gui","--config",$MaintenanceConfig -PassThru
+    $Deadline = [DateTime]::UtcNow.AddSeconds(20)
+    do {
+        Start-Sleep -Milliseconds 250
+        $MaintenanceProcess.Refresh()
+        if ($MaintenanceProcess.HasExited) { throw "Caronte Manutenzione si e' chiuso prima di mostrare la finestra." }
+    } while ($MaintenanceProcess.MainWindowTitle -ne "Caronte Manutenzione" -and [DateTime]::UtcNow -lt $Deadline)
+    if ($MaintenanceProcess.MainWindowTitle -ne "Caronte Manutenzione") { throw "La finestra Caronte Manutenzione non e' comparsa." }
+    Stop-Process -Id $MaintenanceProcess.Id -Force
+    $MaintenanceProcess.WaitForExit()
+    $MaintenanceProcess = $null
+
     $ConfigRoot = Join-Path $RoamingRoot "Caronte"
     $DataRoot = Join-Path $LocalRoot "Caronte"
     New-Item -ItemType Directory -Path $ConfigRoot,$DataRoot | Out-Null
@@ -85,6 +100,7 @@ try {
 }
 finally {
     if ($null -ne $Process -and -not $Process.HasExited) { Stop-Process -Id $Process.Id -Force }
+    if ($null -ne $MaintenanceProcess -and -not $MaintenanceProcess.HasExited) { Stop-Process -Id $MaintenanceProcess.Id -Force }
     if ($null -ne $UninstallProcess) {
         $Relocated = Join-Path ([IO.Path]::GetTempPath()) ("Caronte-uninstall-" + $UninstallProcess.Id + ".exe")
         if (Test-Path -LiteralPath $Relocated) { Remove-Item -LiteralPath $Relocated -Force }

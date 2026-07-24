@@ -50,14 +50,16 @@ def payload_root() -> Path:
     return bundle_root / "payload" / PRODUCT_NAME
 
 
-def _create_shortcut(shortcut: Path, target: Path) -> None:
+def _create_shortcut(shortcut: Path, target: Path, arguments: str = "") -> None:
     shortcut.parent.mkdir(parents=True, exist_ok=True)
     escaped_shortcut = str(shortcut).replace("'", "''")
     escaped_target = str(target).replace("'", "''")
+    escaped_arguments = arguments.replace("'", "''")
     command = (
         "$shell=New-Object -ComObject WScript.Shell;"
         f"$link=$shell.CreateShortcut('{escaped_shortcut}');"
         f"$link.TargetPath='{escaped_target}';"
+        f"$link.Arguments='{escaped_arguments}';"
         f"$link.WorkingDirectory='{str(target.parent).replace("'", "''")}';"
         "$link.Save()"
     )
@@ -138,7 +140,7 @@ def install(
     installer_executable: Path,
     layout: InstallLayout,
     *,
-    shortcut_creator: Callable[[Path, Path], None] = _create_shortcut,
+    shortcut_creator: Callable[[Path, Path, str], None] = _create_shortcut,
     register_uninstall: Callable[[Path], None] = _register_uninstall,
 ) -> Path:
     executable = source / "Caronte.exe"
@@ -161,7 +163,15 @@ def install(
         staging.replace(layout.program_dir)
         installed_executable = layout.program_dir / "Caronte.exe"
         installed_uninstaller = layout.program_dir / "DisinstallaCaronte.exe"
-        shortcut_creator(layout.start_menu_dir / "Caronte.lnk", installed_executable)
+        shortcut_creator(layout.start_menu_dir / "Caronte.lnk", installed_executable, "")
+        maintenance_arguments = (
+            f'maintenance-gui --config "{layout.config_dir / "config.yaml"}"'
+        )
+        shortcut_creator(
+            layout.start_menu_dir / "Caronte Manutenzione.lnk",
+            installed_executable,
+            maintenance_arguments,
+        )
         register_uninstall(installed_uninstaller)
         return installed_executable
     except Exception:

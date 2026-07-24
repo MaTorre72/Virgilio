@@ -22,11 +22,12 @@
 - Task completato: `GUI-U-R03-R05 - Campi cartella leggibili`
 - Task completato: `GUI-U-R03-R06 - Consegna operativa a Da archiviare`
 - Task corrente: `GUI-U-R04 - Release candidate e collaudo finale` (`WAITING_HUMAN_REVIEW`)
+- Correttivo completato: `GUI-U-R04-R01 - Configurazione amministrativa comprensibile`; il FAIL umano della RC `0d46d69` ha rimosso dalla GUI utente URL/codice e istruzioni senza percorso. Caronte Manutenzione ora configura Registro e servizio, si apre dalla GUI e dal menu Start; mirati `35 passed`, Tk isolato `1 passed`, smoke `532 passed`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
 - Blocchi aperti: il solo gate umano R04; il disinstallatore diretto e` esplicitamente a priorita` molto bassa ed escluso dal collaudo standard corrente. L'osservazione sui campi cartella e` chiusa da `GUI-U-R03-R05`
-- Release candidate: `CaronteSetup-0.11.0-0d46d69.exe`, commit `0d46d69ea3eeb271362b7d2ee61e5184136afd98`, Build ID `fb8018c0-b473-4035-9370-32877a32f72a`, SHA-256 `E920DE1248DB5338581C25B54BFE13D9DD7DA74110613E885EA6F74B6AF34D62`; client OAuth Google locale incluso su autorizzazione utente, build e smoke installer `PASS`, output e fascicolo locali ignorati
+- Release candidate precedente `CaronteSetup-0.11.0-0d46d69.exe`: `FAIL` umano UX e non piu` valida per il collaudo. La sostituta con client OAuth Google locale deve essere prodotta dal commit conclusivo R04-R01; output e fascicolo locali restano ignorati
 - Ultima prova nuova mirata: R03-R06 collegamento protetto/verify/intake/pipeline/completion/Attivita/Home -> `OK` (`92 passed` + Tk reale `1 passed`); smoke locale finale `OK` (`529 passed`); una prima esecuzione ha avuto un errore transitorio Tcl/Tk preesistente dopo `528 passed`, non riprodotto a toolchain libera; nessuna rete o credenziale reale
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3

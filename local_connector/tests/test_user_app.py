@@ -9,7 +9,12 @@ from virgilio_connector.application.configuration import ConfigurationService
 from virgilio_connector.application.account_management import AccountManagementService
 from virgilio_connector.application.credentials import AccountCredentialService, FakeCredentialStore
 from virgilio_connector.user_app import launch_user_app
-from virgilio_connector.user_app.app import USER_VIEWS, WINDOW_TITLE, UserAppShell
+from virgilio_connector.user_app.app import (
+    USER_VIEWS,
+    WINDOW_TITLE,
+    UserAppShell,
+    maintenance_launch_command,
+)
 from virgilio_connector.user_app.demo import DemoState
 from virgilio_connector.user_app.navigation import UserRoute
 from virgilio_connector.user_app.wizard import (
@@ -207,6 +212,22 @@ def test_shell_passes_google_access_to_the_first_run_controller(tmp_path):
     )
 
     assert shell.first_run._google_access is google_access
+
+
+def test_frozen_maintenance_launcher_uses_caronte_without_python_or_console(tmp_path):
+    command = maintenance_launch_command(
+        tmp_path / "config.yaml",
+        executable=Path(r"C:\Program Files\Caronte\Caronte.exe"),
+        frozen=True,
+    )
+
+    assert command == (
+        r"C:\Program Files\Caronte\Caronte.exe",
+        "maintenance-gui",
+        "--config",
+        str((tmp_path / "config.yaml").resolve()),
+    )
+    assert all("python" not in value.lower() for value in command)
 
 
 def test_demo_route_uses_only_synthetic_state_and_reaches_all_five_screens(tmp_path):
@@ -525,6 +546,10 @@ def test_first_run_demo_fits_real_tk_window_at_960x640_for_supported_scales(tmp_
             assert root.winfo_reqheight() <= 640
 
         shell.current_frame.destroy()
+        # Build the second shell from the same canonical baseline used in production.
+        # Leaving Tk at the final demo scale makes widget creation order affect the
+        # requested size and turns this layout check into a process-global flaky test.
+        root.tk.call("tk", "scaling", 1.0)
         accounts = AccountManagementService(
             ConfigurationService.for_file(tmp_path / "real-config.yaml"),
             AccountCredentialService(FakeCredentialStore()),

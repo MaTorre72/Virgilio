@@ -67,8 +67,21 @@ def test_connection_rejects_invalid_endpoint_without_writing_secret(tmp_path, en
 def test_connection_requires_access_code(tmp_path):
     service = OperationalConnectionService(tmp_path / "config.yaml", FakeCredentialStore())
 
-    with pytest.raises(ValueError, match="codice"):
+    with pytest.raises(ValueError, match="chiave"):
         service.configure("https://example.invalid/exec", "")
+
+
+def test_existing_protected_key_is_kept_when_administrator_leaves_field_empty(tmp_path):
+    path = tmp_path / "config.yaml"
+    credentials = FakeCredentialStore()
+    service = OperationalConnectionService(path, credentials)
+    service.configure("https://example.invalid/first", "protected-code")
+
+    result = service.configure("https://example.invalid/second", "")
+
+    assert result.configured
+    assert result.endpoint_url == "https://example.invalid/second"
+    assert credentials.read(CONNECTION_CREDENTIAL) == "protected-code"
 
 
 def test_installed_worker_hydrates_mailbox_and_connection_credentials(

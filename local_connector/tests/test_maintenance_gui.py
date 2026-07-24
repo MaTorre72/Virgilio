@@ -1,8 +1,14 @@
 import ast
 import json
 from pathlib import Path
+from tkinter import Tk
 
 from virgilio_connector.application.maintenance import MaintenanceService
+from virgilio_connector.application.credentials import FakeCredentialStore
+from virgilio_connector.application.operational_connection import (
+    CONNECTION_CREDENTIAL,
+    OperationalConnectionService,
+)
 from virgilio_connector.application.registry_configuration import RegistryConfigurationService
 from virgilio_connector.maintenance_gui import (
     MAINTENANCE_OPERATIONS,
@@ -63,6 +69,9 @@ class FakeEntry(FakeWidget):
 
     def insert(self, index, value):
         self.config["value"] = value
+
+    def delete(self, start, end=None):
+        self.config["value"] = ""
 
 
 class FakeTtk:
@@ -171,18 +180,62 @@ def test_new_maintenance_presentation_has_only_supported_operations_and_no_legac
     assert "selected" in app.confirm_control.states
 
 
-def test_maintenance_administrator_can_persist_selected_register(tmp_path):
+def test_maintenance_explains_and_persists_all_virgilio_services(tmp_path):
     root = FakeRoot()
-    registry = RegistryConfigurationService(tmp_path / "accounts.yaml")
+    path = tmp_path / "accounts.yaml"
+    registry = RegistryConfigurationService(path)
+    credentials = FakeCredentialStore()
+    connection = OperationalConnectionService(path, credentials)
     app = MaintenanceApp(
         root, MaintenanceService(tmp_path / "data"), ttk_module=FakeTtk,
         registry_configuration=registry,
+        operational_connection=connection,
     )
     app.registry_entry.insert(
         0, "https://docs.google.com/spreadsheets/d/abcDEFGhijklmNOPQRST_uvwx/edit"
     )
+    app.connection_endpoint.insert(
+        0, "https://script.google.com/macros/s/deployment/exec"
+    )
+    app.connection_code.insert(0, "protected-code")
 
-    result = app.save_register()
+    result = app.save_services()
 
     assert result is not None and result.configured
     assert registry.load().spreadsheet_id == "abcDEFGhijklmNOPQRST_uvwx"
+    assert connection.load().configured
+    assert credentials.read(CONNECTION_CREDENTIAL) == "protected-code"
+    assert app.connection_code.get() == ""
+    assert "protected-code" not in path.read_text(encoding="utf-8")
+    visible = " ".join(
+        widget.kwargs.get("text", "")
+        for kind in (FakeLabel, FakeButton)
+        for widget in kind.created
+    )
+    assert "Google Fogli" in visible
+    assert "Gestisci deployment" in visible
+    assert "VIRGILIO_TOKEN" in visible
+    assert "protetta da Windows" in visible
+
+
+def test_maintenance_configuration_fits_supported_window_and_scales(tmp_path):
+    path = tmp_path / "accounts.yaml"
+    root = Tk()
+    root.withdraw()
+    try:
+        root.geometry("960x640")
+        MaintenanceApp(
+            root,
+            MaintenanceService(tmp_path / "data"),
+            registry_configuration=RegistryConfigurationService(path),
+            operational_connection=OperationalConnectionService(
+                path, FakeCredentialStore()
+            ),
+        )
+        for scale in (1.0, 1.25):
+            root.tk.call("tk", "scaling", scale)
+            root.update_idletasks()
+            assert root.winfo_reqwidth() <= 960
+            assert root.winfo_reqheight() <= 640
+    finally:
+        root.destroy()

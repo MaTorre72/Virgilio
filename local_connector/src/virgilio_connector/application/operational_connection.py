@@ -59,18 +59,20 @@ class OperationalConnectionService:
     def configure(self, endpoint_url: str, access_code: str) -> OperationalConnectionSnapshot:
         endpoint = _validated_endpoint(endpoint_url)
         code = access_code.strip()
-        if not code:
-            raise ValueError("Inserisci il codice di collegamento.")
         previous_endpoint = _read_endpoint(self.config_path)
         try:
             previous_code = self.credentials.read(CONNECTION_CREDENTIAL)
         except CredentialNotFoundError:
             previous_code = None
-        self._put_code(code, previous_code is not None)
+        if not code and previous_code is None:
+            raise ValueError("Inserisci la chiave di accesso del servizio.")
+        if code:
+            self._put_code(code, previous_code is not None)
         try:
             _write_endpoint(self.config_path, endpoint)
         except Exception:
-            self._restore_code(previous_code)
+            if code:
+                self._restore_code(previous_code)
             if previous_endpoint:
                 _write_endpoint(self.config_path, previous_endpoint)
             raise

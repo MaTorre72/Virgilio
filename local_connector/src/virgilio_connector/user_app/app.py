@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import subprocess
+import sys
 from tkinter import ttk
 from typing import Any
 
@@ -82,6 +84,7 @@ class UserAppShell:
         activity_service: ActivitySource | None = None,
         settings_service: SettingsService | None = None,
         bucoliche_startup_service: BucolicheStartupService | None = None,
+        open_maintenance: Any | None = None,
         demo: DemoState | None = None,
     ) -> None:
         self.root = root
@@ -96,6 +99,7 @@ class UserAppShell:
             else settings_service or SettingsService(configuration, DisabledStartupAdapter())
         )
         self._bucoliche_startup_service = bucoliche_startup_service
+        self._open_maintenance = open_maintenance or (lambda: False)
         self._minimize_on_close = False
         interval_seconds = 300
         if demo is None and configuration.exists() and settings_service is not None:
@@ -195,6 +199,7 @@ class UserAppShell:
                 self._bucoliche_startup_service,
                 ttk_module=self._ttk,
                 go_home=self.show_home,
+                open_maintenance=self._open_maintenance,
             )
             return
         self.home = HomeView(
@@ -338,9 +343,40 @@ def launch_user_app(
             WindowsAutomaticControlGateway(configuration),
             create_operational_connection_service(configuration.store.source),
         ),
+        open_maintenance=lambda: open_maintenance_app(configuration.store.source),
     )
     root.mainloop()
     return 0
+
+
+def maintenance_launch_command(
+    config_path: Path,
+    *,
+    executable: Path | None = None,
+    frozen: bool | None = None,
+) -> tuple[str, ...]:
+    """Build a console-free command for the separate maintenance presentation."""
+
+    is_frozen = bool(getattr(sys, "frozen", False)) if frozen is None else frozen
+    program = str(executable or Path(sys.executable))
+    arguments = ("maintenance-gui", "--config", str(Path(config_path).resolve()))
+    if is_frozen:
+        return (program, *arguments)
+    return (program, "-m", "virgilio_connector", *arguments)
+
+
+def open_maintenance_app(config_path: Path) -> bool:
+    """Open Caronte Manutenzione without exposing a command to the user."""
+
+    try:
+        subprocess.Popen(
+            maintenance_launch_command(config_path),
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            close_fds=True,
+        )
+    except OSError:
+        return False
+    return True
 
 
 def _connection_request(form: AccountForm) -> AccountConnectionRequest:

@@ -8,10 +8,7 @@ from virgilio_connector.application.bucoliche_startup import (
 )
 from virgilio_connector.application.configuration import ConfigurationService
 from virgilio_connector.application.credentials import FakeCredentialStore
-from virgilio_connector.application.operational_connection import (
-    CONNECTION_CREDENTIAL,
-    OperationalConnectionService,
-)
+from virgilio_connector.application.operational_connection import OperationalConnectionService
 from virgilio_connector.application.registry_configuration import RegistryConfigurationService
 from virgilio_connector.multi_account import scaffold_local_config
 from virgilio_connector.user_app.app import UserAppShell
@@ -117,7 +114,8 @@ def test_register_is_always_present_and_reports_administrative_configuration(tmp
     )
     shell.show_bucoliche_startup()
     visible = " ".join(widget.kwargs.get("text", "") for widget in FakeLabel.created)
-    assert "Azione da fare: chiedi all'amministratore" in visible
+    assert "Apri Caronte Manutenzione" in visible
+    assert "configurazione iniziale" in visible
     assert shell.bucoliche_startup.registry_action is None
 
 
@@ -239,52 +237,44 @@ def test_guided_view_shows_clear_steps_and_known_error_messages(tmp_path):
     assert "bucoliche" not in visible
 
 
-def test_guided_view_saves_operational_connection_without_showing_code(tmp_path):
-    configuration, service, _, _ = _service(tmp_path)
+def test_guided_view_hides_administrative_fields_and_opens_maintenance(tmp_path):
+    configuration, service, _, _ = _service(tmp_path, configured=False)
+    calls = []
     shell = UserAppShell(
         FakeRoot(), configuration, ttk_module=FakeTtk,
         bucoliche_startup_service=service,
+        open_maintenance=lambda: calls.append("opened") or True,
     )
     shell.show_bucoliche_startup()
     view = shell.bucoliche_startup
-    view.connection_endpoint.insert(
-        0, "https://script.google.com/macros/s/deployment/exec"
-    )
-    view.connection_code.insert(0, "protected-code")
 
-    result = view.save_connection()
+    assert view.maintenance_action.config["text"] == "Apri Caronte Manutenzione"
+    assert view.open_maintenance() is True
+    assert calls == ["opened"]
 
-    assert result == GuidedStatus(True, "Collegamento a Virgilio configurato.")
-    assert view.connection_message.config["text"] == result.message
-    assert view.connection_code.get() == ""
-    assert "protected-code" not in configuration.store.source.read_text(encoding="utf-8")
-    assert (
-        service.operational_connection.credentials.read(CONNECTION_CREDENTIAL)
-        == "protected-code"
-    )
-
-
-def test_guided_view_rejects_invalid_connection_without_technical_terms(tmp_path):
-    configuration, service, _, _ = _service(tmp_path)
-    shell = UserAppShell(
-        FakeRoot(), configuration, ttk_module=FakeTtk,
-        bucoliche_startup_service=service,
-    )
-    shell.show_bucoliche_startup()
-    view = shell.bucoliche_startup
-    view.connection_endpoint.insert(0, "non-valido")
-    view.connection_code.insert(0, "protected-code")
-
-    result = view.save_connection()
-
-    assert result.ok is False
-    assert "HTTPS" in result.message
     visible = " ".join(
         widget.kwargs.get("text", "")
         for kind in (FakeLabel, FakeButton)
         for widget in kind.created
     ).lower()
-    assert all(term not in visible for term in ("token", "endpoint", ".env", "yaml"))
+    assert "indirizzo di collegamento" not in visible
+    assert "codice di collegamento" not in visible
+    assert "salva collegamento" not in visible
+    assert "chiedi all'amministratore" not in visible
+    assert "configurazione iniziale" in visible
+
+
+def test_guided_view_reports_when_maintenance_cannot_be_opened(tmp_path):
+    configuration, service, _, _ = _service(tmp_path, configured=False)
+    shell = UserAppShell(
+        FakeRoot(), configuration, ttk_module=FakeTtk,
+        bucoliche_startup_service=service,
+        open_maintenance=lambda: False,
+    )
+    shell.show_bucoliche_startup()
+
+    assert shell.bucoliche_startup.open_maintenance() is False
+    assert "Non e` stato possibile" in shell.bucoliche_startup.connection_message.config["text"]
 
 
 def test_registry_and_connection_view_fits_real_tk_at_supported_scales(tmp_path):
@@ -302,8 +292,6 @@ def test_registry_and_connection_view_fits_real_tk_at_supported_scales(tmp_path)
             root.update_idletasks()
             assert root.winfo_reqwidth() <= 960
             assert root.winfo_reqheight() <= 640
-            assert shell.bucoliche_startup.connection_endpoint.winfo_viewable() in {
-                0, 1
-            }
+            assert shell.bucoliche_startup.maintenance_action.winfo_viewable() in {0, 1}
     finally:
         root.destroy()
