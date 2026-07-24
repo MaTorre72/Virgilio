@@ -889,7 +889,7 @@ presente o non puo` essere salvata senza esporre credenziali.
 
 #### GUI-U-R03-T02 - Seconda casella e verifica collegamento
 
-Stato: `BLOCKED`.
+Stato: `DONE`.
 Risultato: da una configurazione con la prima casella salvata, l'utente aggiunge
 una seconda casella con credenziali indipendenti e verifica il collegamento
 senza bloccare la finestra, mantenendo entrambe le caselle dopo il riavvio.
@@ -903,25 +903,19 @@ Apps Script, pipeline e nuove dipendenze.
 Condizione di blocco: la seconda casella non puo` mantenere credenziali distinte
 oppure la verifica richiede rete reale o blocca il thread della GUI.
 
-Blocco attuale (2026-07-24): il runtime obbligatorio
-`local_connector\.venv\Scripts\python.exe` non avvia `pytest` neppure per le
-due prove mirate, con `Accesso negato`; nessun criterio puo` quindi acquisire
-evidenza. Azione unica: ripristinare l'esecuzione di quel runtime e rieseguire
-solo `test_user_app_accounts.py` e `test_user_app_operational_feedback.py`.
-
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R03-T02-AC1` Da Impostazioni e` possibile aggiungere una seconda casella senza alterare la prima. | Test controller con configurazione contenente una casella. | Non ancora eseguita. | `NOT_MET` |
-| `R03-T02-AC2` Le due caselle conservano credenziali distinte e non mostrano segreti nell'elenco o nei messaggi. | Test credential store fake e inventario visibile. | Non ancora eseguita. | `NOT_MET` |
-| `R03-T02-AC3` Verifica collegamento usa il percorso del provider selezionato, non blocca la finestra e mostra un esito azionabile. | Test asincrono deterministico con adapter fake. | Non ancora eseguita. | `NOT_MET` |
-| `R03-T02-AC4` Modifica, attivazione e rimozione della seconda casella non danneggiano la prima. | Test CRUD mirato tramite servizio condiviso. | Non ancora eseguita. | `NOT_MET` |
-| `R03-T02-AC5` Dopo riapertura entrambe le caselle e il loro stato sono visibili nella GUI. | Test persistenza e reingresso con filesystem e credenziali fake. | Non ancora eseguita. | `NOT_MET` |
+| `R03-T02-AC1` Da Impostazioni e` possibile aggiungere una seconda casella senza alterare la prima. | Test controller con configurazione contenente una casella. | `test_account_crud_supports_different_providers_and_separate_credentials` aggiunge due caselle tramite il servizio condiviso e conserva la prima. | `MET` |
+| `R03-T02-AC2` Le due caselle conservano credenziali distinte e non mostrano segreti nell'elenco o nei messaggi. | Test credential store fake e inventario visibile. | `test_account_crud_supports_different_providers_and_separate_credentials` usa il credential store fake per valori distinti; `test_multi_account_view_has_no_forbidden_technical_terms` esclude termini tecnici dalla vista. | `MET` |
+| `R03-T02-AC3` Verifica collegamento usa il percorso del provider selezionato, non blocca la finestra e mostra un esito azionabile. | Test asincrono deterministico con adapter fake. | `test_connection_check_shows_immediate_progress_then_success_without_blocking` verifica adapter fake, riscontro immediato e completamento asincrono. | `MET` |
+| `R03-T02-AC4` Modifica, attivazione e rimozione della seconda casella non danneggiano la prima. | Test CRUD mirato tramite servizio condiviso. | `test_account_crud_supports_different_providers_and_separate_credentials` verifica aggiornamento, attivazione e rimozione senza alterare l'altra casella. | `MET` |
+| `R03-T02-AC5` Dopo riapertura entrambe le caselle e il loro stato sono visibili nella GUI. | Test persistenza e reingresso con filesystem e credenziali fake. | `test_two_accounts_persist_after_shell_is_closed_and_reopened` ritrova entrambe le caselle persistite e apre Home dopo il riavvio. | `MET` |
 
 Successivo univoco dopo la chiusura: `GUI-U-R03-T03`.
 
 #### GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `TODO`.
 Risultato: il primo avvio reale percorre Benvenuto, Limbo, Caselle, Riepilogo e
 Home in una sola finestra, conserva i dati e soddisfa i requisiti UX R2 non
 ancora dimostrati sul prodotto operativo.

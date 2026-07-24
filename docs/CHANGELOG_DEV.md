@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Completato `GUI-U-R03-T02`: ripristinata l'esecuzione
+  del runtime fuori dal sandbox e le due prove mirate, con base temporanea
+  isolata, hanno coperto seconda casella, credenziali distinte, CRUD,
+  persistenza e verifica asincrona (`12 passed`). Nessun codice applicativo
+  modificato; prossimo task `GUI-U-R03-T03`.
+
 - 2026-07-24 +02:00 - `GUI-U-R03-T02` bloccato prima di modifiche: il runtime
   obbligatorio `local_connector\.venv\Scripts\python.exe` restituisce `Accesso
   negato` prima di avviare le due prove mirate. Nessun codice e nessun criterio

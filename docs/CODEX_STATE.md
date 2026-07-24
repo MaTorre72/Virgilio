@@ -12,13 +12,14 @@
 - Task: `GUI-U-R02-T03 - Home dimostrativa ed evidenze installate` (`IMPLEMENTED_NOT_ACCEPTED`)
 - Esito storico: `GUI-U-R02 = SUPERSEDED_BY_R3` dopo `FAIL` umano del demo
 - Task completato: `GUI-U-R03-T01 - Prima casella reale senza blocco Google`
-- Task corrente: `GUI-U-R03-T02 - Seconda casella e verifica collegamento` (`BLOCKED`)
-- Successivo univoco: ripristinare `local_connector\.venv\Scripts\python.exe` e rieseguire soltanto le prove R03-T02
+- Task completato: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`
+- Task corrente: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home` (`TODO`)
+- Successivo univoco: completare `GUI-U-R03-T03` con il percorso reale Benvenuto -> Limbo -> Caselle -> Riepilogo -> Home
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: `GUI-U-R03-T02`; il runtime obbligatorio `local_connector\.venv\Scripts\python.exe` restituisce `Accesso negato` prima di avviare le due prove mirate. Azione unica: ripristinarne l'esecuzione. Il demo R02 non viene ampliato o ricollaudato, ma i suoi requisiti sono vincolanti in R3 secondo la matrice in `docs/GUI_U_BACKLOG.md`. R03-T01 ha rimosso la dipendenza Google dal primo percorso IMAP. Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
-- Ultima prova nuova mirata: `test_selecting_imap_removes_google_dependency_and_saves_first_mailbox` -> `OK` (`1 passed`, verifiche precedenti non ripetute)
+- Blocchi aperti: nessuno. Il demo R02 non viene ampliato o ricollaudato, ma i suoi requisiti sono vincolanti in R3 secondo la matrice in `docs/GUI_U_BACKLOG.md`. R03-T01 ha rimosso la dipendenza Google dal primo percorso IMAP. Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
+- Ultima prova nuova mirata: `test_user_app_accounts.py` e `test_user_app_operational_feedback.py` -> `OK` (`12 passed`, fixture fake e basetemp isolato)
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)
