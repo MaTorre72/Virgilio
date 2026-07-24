@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Ripresa umana `GUI-U-R03` sulla build `8241325`,
+  ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`: conferma esplicita
+  `H-R03-02 = PASS` dopo reinstallazione. I `FAIL` precedenti restano storici;
+  il collaudo prosegue senza ripetizioni da `H-R03-03`.
+
 - 2026-07-24 +02:00 - Prodotta la build operativa R03-R03 identificata
   `CaronteSetup-0.11.0-8241325.exe`, commit
   `8241325bf96d858259a577c87ffaba8c25513a05`, Build ID
