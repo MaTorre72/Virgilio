@@ -1,4 +1,5 @@
 from pathlib import Path
+from tkinter import Tk, ttk
 
 from virgilio_connector.application.account_management import AccountManagementService
 from virgilio_connector.application.configuration import ConfigurationService
@@ -7,7 +8,12 @@ from virgilio_connector.application.settings import SettingsService
 from virgilio_connector.multi_account import scaffold_local_config
 from virgilio_connector.user_app.settings import SettingsView
 from virgilio_connector.user_app.text_controls import bind_text_interactions
-from virgilio_connector.user_app.wizard import FirstRunController, LimboValidator, LimboView
+from virgilio_connector.user_app.wizard import (
+    AccountView,
+    FirstRunController,
+    LimboValidator,
+    LimboView,
+)
 
 from test_user_app import FakeButton, FakeEntry, FakeLabel, FakeRoot, FakeTtk
 
@@ -166,3 +172,113 @@ def test_text_controls_offer_keyboard_and_windows_context_menu_actions():
     assert control.events == ["<<Copy>>", "<<Paste>>"]
     assert control.bindings["<Button-3>"](PointerEvent()) == "break"
     assert control.focused and menu.popup == (10, 20)
+
+
+def test_folder_fields_request_readable_width_and_use_expanding_columns(tmp_path):
+    controller = FirstRunController(FakeRoot(), ttk_module=FakeTtk)
+    controller.continue_forward()
+    limbo = controller.current_view
+
+    assert limbo.folder_entry.kwargs["width"] >= 48
+    assert limbo.frame.column_options[0]["weight"] == 1
+
+    controller.current_view.folder_entry.set(str(tmp_path.resolve()))
+    controller.continue_forward()
+    accounts = controller.current_view
+    assert all(
+        entry.kwargs["width"] >= 48
+        for entry in (
+            accounts.input_folder_entry,
+            accounts.done_folder_entry,
+            accounts.error_folder_entry,
+        )
+    )
+    assert accounts.advanced_frame.column_options[1]["weight"] == 1
+
+    limbo_dir = tmp_path / "limbo"
+    limbo_dir.mkdir()
+    settings = SettingsView(
+        FakeRoot(),
+        SettingsService(_configured_service(tmp_path, limbo_dir), FakeStartup()),
+        ttk_module=FakeTtk,
+        go_home=lambda: None,
+        on_saved=lambda _interval, _minimize: None,
+    )
+    assert settings.limbo_entry.kwargs["width"] >= 48
+    assert settings.frame.column_options[1]["weight"] == 1
+
+
+def test_real_folder_fields_fit_and_scroll_at_supported_scales(tmp_path):
+    root = Tk()
+    root.withdraw()
+    root.geometry("960x640")
+    original_scale = float(root.tk.call("tk", "scaling"))
+    root.tk.call("tk", "scaling", 1.0)
+    container = ttk.Frame(root)
+    container.pack(fill="both", expand=True)
+    try:
+        views = [
+            LimboView(
+                container,
+                ttk_module=ttk,
+                on_back=lambda: None,
+                on_continue=lambda: None,
+            ),
+            AccountView(
+                container,
+                ttk_module=ttk,
+                on_back=lambda: None,
+                on_continue=lambda: None,
+                on_test=lambda: None,
+                on_update=lambda: None,
+                on_remove=lambda: None,
+                on_select=lambda: None,
+            ),
+        ]
+        limbo_dir = tmp_path / "limbo-real"
+        limbo_dir.mkdir()
+        views.append(
+            SettingsView(
+                container,
+                SettingsService(
+                    _configured_service(tmp_path, limbo_dir), FakeStartup()
+                ),
+                ttk_module=ttk,
+                go_home=lambda: None,
+                on_saved=lambda _interval, _minimize: None,
+            )
+        )
+
+        for view in views:
+            view.frame.grid(row=0, column=0, sticky="nsew")
+            entries = (
+                (
+                    view.input_folder_entry,
+                    view.done_folder_entry,
+                    view.error_folder_entry,
+                )
+                if isinstance(view, AccountView)
+                else (
+                    view.folder_entry
+                    if isinstance(view, LimboView)
+                    else view.limbo_entry,
+                )
+            )
+            for scale in (1.0, 1.25):
+                root.tk.call("tk", "scaling", scale)
+                root.update_idletasks()
+                assert all(int(entry.cget("width")) >= 48 for entry in entries)
+                assert root.winfo_reqwidth() <= 960
+                assert root.winfo_reqheight() <= 640
+            long_value = "C:\\" + "\\".join(["cartella-molto-lunga"] * 12)
+            entry = entries[0]
+            entry.delete(0, "end")
+            entry.insert(0, long_value)
+            entry.icursor("end")
+            entry.xview_moveto(1.0)
+            root.update_idletasks()
+            assert entry.xview()[0] > 0
+            view.frame.grid_remove()
+    finally:
+        root.tk.call("tk", "scaling", original_scale)
+        root.destroy()

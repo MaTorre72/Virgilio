@@ -11,7 +11,7 @@ from typing import Any, Callable
 from ..application.account_connection import BackgroundAccountConnectionCheck
 from ..application.account_management import AccountManagementService
 from .demo import DemoState
-from .text_controls import bind_text_interactions
+from .text_controls import FOLDER_ENTRY_WIDTH, bind_text_interactions
 
 
 class WizardStep(str, Enum):
@@ -132,6 +132,7 @@ class LimboView:
         menu_factory: Callable[..., Any] | None = None,
     ) -> None:
         self.frame = ttk_module.Frame(parent, padding=16)
+        self.frame.columnconfigure(0, weight=1)
         ttk_module.Label(self.frame, text="Scegli la cartella Limbo").grid(
             row=0, column=0, columnspan=2, sticky="w"
         )
@@ -146,7 +147,9 @@ class LimboView:
             self.frame,
             text="Cartella del Limbo",
         ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(16, 0))
-        self.folder_entry = ttk_module.Entry(self.frame)
+        self.folder_entry = ttk_module.Entry(
+            self.frame, width=FOLDER_ENTRY_WIDTH
+        )
         self.folder_entry.grid(row=3, column=0, sticky="ew", pady=(6, 0))
         self.folder_entry.insert(0, initial_folder)
         bind_text_interactions(self.folder_entry, menu_factory=menu_factory)
@@ -277,6 +280,8 @@ class AccountView:
         self.advanced_button.grid(row=9, column=0, columnspan=2, sticky="w", pady=(4, 0))
         self.advanced_frame = ttk_module.Frame(self.frame)
         self.advanced_frame.grid(row=10, column=0, columnspan=2, sticky="ew")
+        self.frame.columnconfigure(1, weight=1)
+        self.advanced_frame.columnconfigure(1, weight=1)
         ttk_module.Label(
             self.advanced_frame, text="Server posta in arrivo"
         ).grid(row=0, column=0, sticky="w")
@@ -330,7 +335,9 @@ class AccountView:
         self._ttk.Label(self.advanced_frame, text=label).grid(
             row=row, column=0, sticky="w"
         )
-        entry = self._ttk.Entry(self.advanced_frame)
+        entry = self._ttk.Entry(
+            self.advanced_frame, width=FOLDER_ENTRY_WIDTH
+        )
         bind_text_interactions(entry, menu_factory=self._menu_factory)
         entry.insert(0, initial)
         entry.grid(row=row, column=1, sticky="ew")
@@ -520,6 +527,7 @@ class FirstRunController:
         demo: DemoState | None = None,
     ) -> None:
         self.parent = parent
+        self.parent.columnconfigure(0, weight=1)
         self._ttk = ttk_module
         self.step = WizardStep.WELCOME
         self.current_view: WelcomeView | LimboView | AccountView | SummaryView | None = None

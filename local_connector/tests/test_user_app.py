@@ -31,6 +31,8 @@ class FakeRoot:
         self.protocols = {}
         self.iconified = False
         self.destroyed = False
+        self.column_options = {}
+        self.row_options = {}
 
     def title(self, value):
         self.window_title = value
@@ -47,6 +49,12 @@ class FakeRoot:
     def destroy(self):
         self.destroyed = True
 
+    def columnconfigure(self, index, **kwargs):
+        self.column_options[index] = kwargs
+
+    def rowconfigure(self, index, **kwargs):
+        self.row_options[index] = kwargs
+
 
 class FakeWidget:
     created = []
@@ -59,6 +67,8 @@ class FakeWidget:
         self.config = dict(kwargs)
         self.states = set()
         self.bindings = {}
+        self.column_options = {}
+        self.row_options = {}
         type(self).created.append(self)
 
     def grid(self, **kwargs):
@@ -87,6 +97,12 @@ class FakeWidget:
 
     def event_generate(self, event):
         self.bindings[event](None)
+
+    def columnconfigure(self, index, **kwargs):
+        self.column_options[index] = kwargs
+
+    def rowconfigure(self, index, **kwargs):
+        self.row_options[index] = kwargs
 
 
 class FakeFrame(FakeWidget):

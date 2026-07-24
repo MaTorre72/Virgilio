@@ -5,6 +5,9 @@ from __future__ import annotations
 from typing import Any, Callable
 
 
+FOLDER_ENTRY_WIDTH = 48
+
+
 def bind_text_interactions(
     control: Any,
     *,

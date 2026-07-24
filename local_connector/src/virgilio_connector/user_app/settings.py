@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from ..application.settings import SettingsService, SettingsValidationError
-from .text_controls import bind_text_interactions
+from .text_controls import FOLDER_ENTRY_WIDTH, bind_text_interactions
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,8 +29,10 @@ class SettingsView:
     ) -> None:
         self.service = service
         self._on_saved = on_saved
+        parent.columnconfigure(0, weight=1)
         self.frame = ttk_module.Frame(parent)
         self.frame.grid(row=0, column=0, sticky="nsew")
+        self.frame.columnconfigure(1, weight=1)
         current = service.load()
         self._start_with_windows = current.start_with_windows
         self._minimize_on_close = current.minimize_on_close
@@ -41,7 +43,9 @@ class SettingsView:
         ttk_module.Label(self.frame, text="Cartella Limbo").grid(
             row=1, column=0, sticky="w"
         )
-        self.limbo_entry = ttk_module.Entry(self.frame)
+        self.limbo_entry = ttk_module.Entry(
+            self.frame, width=FOLDER_ENTRY_WIDTH
+        )
         self.limbo_entry.grid(row=1, column=1, sticky="ew")
         self.limbo_entry.insert(0, str(current.limbo))
         bind_text_interactions(self.limbo_entry, menu_factory=menu_factory)

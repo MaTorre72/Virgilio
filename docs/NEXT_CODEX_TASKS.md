@@ -18,8 +18,8 @@
 - Task completato: `GUI-U-R03-R04 - Controllo automatico per utente`. Il worker congelato e` registrato in `Run` per il solo utente corrente, senza Task Scheduler, UAC o privilegi amministrativi; Registro e controllo automatico restano indipendenti e la disinstallazione pulisce registrazioni nuova e legacy. Mirati `27 passed`, smoke locale `504 passed`, build/installer identificati e smoke `PASS`.
 - Ripresa R03-R04: `H-R03-06 = PASS` umano esplicito sulla build `eaf05fd`, ID `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`; attivazione, stato, persistenza dopo nuovo accesso Windows, disattivazione e assenza di finestre tecniche tutti confermati.
 - Chiusura R03: `H-R03-01 = PASS` umano esplicito; selezione, validazione, salvataggio, ritorno, riapertura, persistenza e modifica del Limbo approvati. Osservazione non bloccante: i campi degli indirizzi cartella sono troppo piccoli.
-- Correttivo finito proposto: `GUI-U-R03-R05 - Campi cartella leggibili`, limitato a Limbo primo avvio/Impostazioni e cartelle operative avanzate, con larghezza minima misurabile a 960x640 e scale 100%/125%.
-- Successivo univoco: attendere approvazione esplicita di `GUI-U-R03-R05`; non modificare codice. Il difetto separato del disinstallatore resta da pianificare prima della release.
+- Task completato: `GUI-U-R03-R05 - Campi cartella leggibili`. Limbo nel primo avvio e in Impostazioni e le tre cartelle operative avanzate usano larghezza minima di 48 caratteri e colonne elastiche; valori lunghi scorrono e conservano selezione/copia/incolla. Gruppo mirato `47 passed`, Tk entro 960x640 a 100%/125%, smoke locale `506 passed`.
+- Successivo univoco: definire e sottoporre ad approvazione un correttivo finito per il difetto separato del disinstallatore diretto prima della release; non modificare codice senza approvazione.
 - Le evidenze gia` acquisite restano valide e non devono essere ripetute; ogni run aggiunge soltanto la prova specifica del nuovo criterio.
 - Il collaudo R3 riprende dalla prima evidenza non acquisita solo dopo build identificata del correttivo approvato; le evidenze valide gia` raccolte non vengono ripetute.
 

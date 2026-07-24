@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Completato `GUI-U-R03-R05`: i campi Limbo del primo
+  avvio e di Impostazioni e le tre cartelle operative avanzate usano una
+  larghezza condivisa di 48 caratteri e colonne elastiche. Percorsi lunghi,
+  selezione, scorrimento, copia e incolla restano disponibili; layout entro
+  960x640 a 100%/125%. Regressione rossa acquisita, gruppo mirato finale
+  `47 passed`, smoke locale `506 passed`.
+
 - 2026-07-24 +02:00 - Chiuso `GUI-U-R03 = DONE` con conferma umana
   `H-R03-01 = PASS`: selezione, validazione, salvataggio, ritorno, riapertura,
   persistenza e modifica del Limbo approvati. `H-R03-01`--`H-R03-06 = PASS`

@@ -19,17 +19,18 @@
 - Task completato: `GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile`
 - Task completato: `GUI-U-R03 - Collegamento dei servizi` (`H-R03-01`--`H-R03-06 = PASS` umano; `R03-AC1`--`R03-AC5 = MET`)
 - Task completato: `GUI-U-R03-R04 - Controllo automatico per utente`
-- Successivo univoco: attendere approvazione esplicita di `GUI-U-R03-R05 - Campi cartella leggibili`; non modificare codice fino all'approvazione
+- Task completato: `GUI-U-R03-R05 - Campi cartella leggibili`
+- Successivo univoco: definire e sottoporre ad approvazione un correttivo finito per il difetto separato del disinstallatore diretto prima della release; non modificare codice senza approvazione
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: nessuno su R03. Osservazione non bloccante: i campi dei percorsi cartella sono troppo piccoli; proposto `GUI-U-R03-R05` in attesa di approvazione. Il disinstallatore diretto resta un difetto separato da trattare prima della release
+- Blocchi aperti: il disinstallatore diretto resta un difetto separato da trattare prima della release. L'osservazione sui campi cartella e` chiusa da `GUI-U-R03-R05`
 - Ultima build operativa: `CaronteSetup-0.11.0-eaf05fd.exe`, commit `eaf05fd178257fab9f472725b905b0fbf8320fc9`, Build ID `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`, SHA-256 `96EE42FECB35998290CB9BB6F3B07FAAC809B487ABD666EFC44ED3A104CCD82C`; output locale ignorato `local_connector/build-output/installer/dist/`
-- Ultima prova nuova mirata: R03-R04 servizio/adapter/installer -> `OK` (`27 passed`); smoke locale finale `OK` (`504 passed`); nessuna rete o credenziale reale
+- Ultima prova nuova mirata: R03-R05 layout fake/Tk -> `OK` (`47 passed`, 960x640 a 100%/125%); smoke locale finale `OK` (`506 passed`); nessuna rete o credenziale reale
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp unico -> `OK` (`504 passed`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp unico -> `OK` (`506 passed`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

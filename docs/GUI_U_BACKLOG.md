@@ -989,7 +989,7 @@ privilegi amministrativi.
 
 #### GUI-U-R03-R05 - Campi cartella leggibili
 
-Stato: `PROPOSED_WAITING_USER_APPROVAL`.
+Stato: `DONE` (approvato e completato il 2026-07-24).
 Risultato: i campi che mostrano percorsi o nomi di cartelle usano lo spazio
 orizzontale disponibile e permettono di leggere una parte utile del valore
 senza comprimere etichette, selettori o azioni.
@@ -1006,10 +1006,10 @@ la larghezza minima senza rendere inaccessibili etichette, pulsanti o azioni.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R03-R05-AC1` Il campo Limbo del primo avvio occupa lo spazio disponibile e mostra almeno 48 caratteri a 960x640. | Test Tk a 100%/125% con percorso sintetico lungo e misura del campo. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R05-AC2` Il campo Limbo di Impostazioni rispetta la stessa larghezza e il selettore resta interamente visibile. | Test Tk della vista a 960x640 e 100%/125%. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R05-AC3` I tre campi cartella avanzati delle caselle si espandono in modo uniforme senza comprimere etichette o azioni. | Test fake del layout e prova Tk delle impostazioni avanzate. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R05-AC4` Se il valore supera lo spazio, selezione, scorrimento orizzontale, copia e incolla restano disponibili senza tagli verticali. | Test interazioni su valori sintetici lunghi e inventario visuale. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R05-AC1` Il campo Limbo del primo avvio occupa lo spazio disponibile e mostra almeno 48 caratteri a 960x640. | Test Tk a 100%/125% con percorso sintetico lungo e misura del campo. | `FOLDER_ENTRY_WIDTH = 48`, colonna Limbo elastica; test fake e Tk verificano misura, 960x640 e scale 100%/125%. | `MET` |
+| `R03-R05-AC2` Il campo Limbo di Impostazioni rispetta la stessa larghezza e il selettore resta interamente visibile. | Test Tk della vista a 960x640 e 100%/125%. | Stessa larghezza condivisa e colonna del valore elastica; la vista completa, incluso `Scegli cartella...`, resta entro 960x640 alle due scale. | `MET` |
+| `R03-R05-AC3` I tre campi cartella avanzati delle caselle si espandono in modo uniforme senza comprimere etichette o azioni. | Test fake del layout e prova Tk delle impostazioni avanzate. | I tre campi condividono larghezza 48 e la sola colonna valori avanzati e` elastica; etichette e azioni restano entro 960x640 a 100%/125%. | `MET` |
+| `R03-R05-AC4` Se il valore supera lo spazio, selezione, scorrimento orizzontale, copia e incolla restano disponibili senza tagli verticali. | Test interazioni su valori sintetici lunghi e inventario visuale. | Test Tk con percorso sintetico lungo conferma scorrimento orizzontale; regressione delle interazioni conferma selezione, copia e incolla. Gruppo mirato `47 passed`, smoke locale `506 passed`. | `MET` |
 
 #### GUI-U-R03-T01 - Prima casella reale senza blocco Google
 
