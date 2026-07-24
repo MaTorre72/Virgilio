@@ -479,7 +479,7 @@ def test_first_run_demo_fits_real_tk_window_at_960x640_for_supported_scales(tmp_
         expected = (
             ("Benvenuto in Caronte",),
             ("Scegli la cartella Limbo", "Cartella del Limbo"),
-            ("Configura le caselle", "seconda casella", "Aggiungi casella"),
+            ("Configura le caselle", "seconda casella", "Collega con Google"),
             ("Riepilogo", "Per cambiare un dato", "Apri Home"),
         )
         for labels in expected:

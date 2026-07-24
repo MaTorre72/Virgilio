@@ -80,6 +80,18 @@ class AccountCredentials:
     password: str = field(repr=False)
 
 
+@dataclass(frozen=True, slots=True)
+class _CredentialState:
+    exists: bool
+    value: str = field(default="", repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class _AccountCredentialState:
+    username: _CredentialState
+    password: _CredentialState
+
+
 class AccountCredentialService:
     """Coordinates account credential references without changing configuration."""
 
@@ -94,6 +106,31 @@ class AccountCredentialService:
             self.store.delete(account.username_env)
             raise
 
+    def replace_or_save(
+        self, account: LocalImapAccount, credentials: AccountCredentials
+    ) -> _AccountCredentialState:
+        """Replace orphaned references and return a rollback-safe snapshot."""
+
+        previous = _AccountCredentialState(
+            username=self._state(account.username_env),
+            password=self._state(account.password_env),
+        )
+        try:
+            self._put(account.username_env, credentials.username, previous.username)
+            self._put(account.password_env, credentials.password, previous.password)
+        except Exception:
+            self.restore(account, previous)
+            raise
+        return previous
+
+    def restore(
+        self, account: LocalImapAccount, state: _AccountCredentialState
+    ) -> None:
+        """Restore references captured by replace_or_save after a later failure."""
+
+        self._restore_one(account.username_env, state.username)
+        self._restore_one(account.password_env, state.password)
+
     def read(self, account: LocalImapAccount) -> AccountCredentials:
         return AccountCredentials(
             username=self.store.read(account.username_env),
@@ -107,6 +144,32 @@ class AccountCredentialService:
     def delete(self, account: LocalImapAccount) -> None:
         self.store.delete(account.username_env)
         self.store.delete(account.password_env)
+
+    def _state(self, reference: str) -> _CredentialState:
+        try:
+            return _CredentialState(True, self.store.read(reference))
+        except CredentialNotFoundError:
+            return _CredentialState(False)
+
+    def _put(
+        self, reference: str, value: str, previous: _CredentialState
+    ) -> None:
+        if previous.exists:
+            self.store.update(reference, value)
+        else:
+            self.store.save(reference, value)
+
+    def _restore_one(self, reference: str, state: _CredentialState) -> None:
+        if state.exists:
+            try:
+                self.store.update(reference, state.value)
+            except CredentialNotFoundError:
+                self.store.save(reference, state.value)
+            return
+        try:
+            self.store.delete(reference)
+        except CredentialNotFoundError:
+            pass
 
 
 def _validated_reference(reference: str) -> str:

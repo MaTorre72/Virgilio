@@ -922,7 +922,7 @@ la correzione altera il check read-only su `INBOX`.
 
 #### GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile
 
-Stato: `PROPOSED`, in attesa di approvazione.
+Stato: `DONE` (approvato e completato il 2026-07-24).
 Risultato: ogni provider ha una singola azione comprensibile che verifica e
 salva la casella; il percorso Google completa browser, verifica e inserimento
 nell'elenco senza un secondo pulsante ambiguo.
@@ -937,11 +937,11 @@ recuperabile senza esporre o perdere credenziali di altre caselle.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R03-R03-AC1` Google espone una sola azione che autorizza, verifica e salva; al successo la riga appare con stato chiaro. | Test controller end-to-end con OAuth, IMAP e persistenza fake. | Da acquisire. | `NOT_MET` |
-| `R03-R03-AC2` IMAP espone `Verifica e aggiungi` con lo stesso esito osservabile e senza azioni duplicate. | Test vista/controller per provider generico. | Da acquisire. | `NOT_MET` |
-| `R03-R03-AC3` Riferimenti protetti residui senza configurazione vengono riconciliati in modo atomico; ogni errore lascia stato coerente e mostra problema e azione. | Regressioni su credenziali preesistenti, rollback e messaggio sicuro. | Da acquisire. | `NOT_MET` |
-| `R03-R03-AC4` La verifica comunica soltanto che Caronte puo` leggere la casella oppure dichiara esplicitamente che 25 e` un campione, mai il totale. | Test servizio/testi visibili. | Da acquisire. | `NOT_MET` |
-| `R03-R03-AC5` Il flusso resta leggibile a 960x640, 100%/125%, e non introduce termini tecnici o segreti. | Prova Tk interessata e inventario stringhe. | Da acquisire. | `NOT_MET` |
+| `R03-R03-AC1` Google espone una sola azione che autorizza, verifica e salva; al successo la riga appare con stato chiaro. | Test controller end-to-end con OAuth, IMAP e persistenza fake. | `test_google_single_action_verifies_adds_and_protects_credentials` completa il percorso con `Collega con Google`, salva nel deposito protetto, mostra la riga e rimuove `Aggiungi casella`. | `MET` |
+| `R03-R03-AC2` IMAP espone `Verifica e aggiungi` con lo stesso esito osservabile e senza azioni duplicate. | Test vista/controller per provider generico. | `test_generic_imap_single_action_verifies_and_adds_account` verifica pulsante, check asincrono, salvataggio e riga nell'elenco. | `MET` |
+| `R03-R03-AC3` Riferimenti protetti residui senza configurazione vengono riconciliati in modo atomico; ogni errore lascia stato coerente e mostra problema e azione. | Regressioni su credenziali preesistenti, rollback e messaggio sicuro. | Le regressioni riproducono i due riferimenti reali residui, preservano un'altra casella, ripristinano i valori precedenti se il salvataggio configurazione fallisce e oscurano dettagli dell'eccezione. | `MET` |
+| `R03-R03-AC4` La verifica comunica soltanto che Caronte puo` leggere la casella oppure dichiara esplicitamente che 25 e` un campione, mai il totale. | Test servizio/testi visibili. | `ReadonlyAccountConnectionService` continua la lettura limitata ma restituisce soltanto `Collegamento riuscito. Caronte può leggere la casella.`; test con zero e due messaggi verdi. | `MET` |
+| `R03-R03-AC5` Il flusso resta leggibile a 960x640, 100%/125%, e non introduce termini tecnici o segreti. | Prova Tk interessata e inventario stringhe. | Core mirato finale `37 passed in 0.94s`; sola prova Tk interessata `1 passed in 1.06s`, entro 960x640 a 100%/125%; smoke locale finale `501 passed`; inventario e controlli di non esposizione verdi. | `MET` |
 
 #### GUI-U-R03-T01 - Prima casella reale senza blocco Google
 

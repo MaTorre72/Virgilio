@@ -16,17 +16,18 @@
 - Task completato: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home`
 - Task completato: `GUI-U-R03-R01 - Verifica collegamento su INBOX`
 - Task completato: `GUI-U-R03-R02 - Cartelle operative configurabili per casella`
-- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL` confermato sulla build corretta)
-- Successivo univoco proposto: approvare `GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile`
+- Task completato: `GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile`
+- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL`, da riprendere su nuova build)
+- Successivo univoco: produrre una sola build identificata con R03-R03 e riprendere `H-R03-02`, senza ripetere le evidenze valide
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: build `bb9b16e`, ID `9337fa8d-737e-4b16-8f82-b68cb129c778`, completa OAuth e verifica read-only su `INBOX`, ma `Aggiungi casella` fallisce senza riscontro quando esistono riferimenti protetti residui e non crea la configurazione. Il testo `25 messaggi visibili` descrive il limite del campione come se fosse il totale. L'utente richiede inoltre una sequenza meno astrusa. Il disinstallatore diretto non ha completato la rimozione; Windows 11 `App installate` ha funzionato, difetto separato da trattare prima della release
-- Ultima prova nuova mirata: R03-R02/R03-T02 core -> `OK` (`17 passed`, fake) e sola prova Tk interessata -> `OK` (`1 passed`, 960x640 a 100%/125%); nessuna rete o credenziale reale
+- Blocchi aperti: nessuno per il codice R03-R03. Il flusso ora verifica e salva con una sola azione, riconcilia credenziali orfane con rollback e non presenta il campione come totale. Serve una nuova build identificata prima della ripresa umana. Il disinstallatore diretto non ha completato la rimozione; Windows 11 `App installate` ha funzionato, difetto separato da trattare prima della release
+- Ultima prova nuova mirata: R03-R03 core -> `OK` (`37 passed`, fake) e sola prova Tk interessata -> `OK` (`1 passed`, 960x640 a 100%/125%); nessuna rete o credenziale reale
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp unico -> `OK` (`494 passed`)
+- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp unico -> `OK` (`501 passed`)
 - Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
 - Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
 - Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3

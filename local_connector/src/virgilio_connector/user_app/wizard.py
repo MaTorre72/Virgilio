@@ -78,7 +78,7 @@ class AccountValidator:
             or form.host.strip().lower() == "imap.gmail.com"
         )
         if google_provider and require_google_access and not _is_google_authorization(form.password):
-            return ValidationResult(False, "Accedi con Google per collegare la casella.")
+            return ValidationResult(False, "Collega con Google per aggiungere la casella.")
         if not google_provider and not form.password:
             return ValidationResult(False, "Inserisci la password della casella.")
         if not form.host.strip() or not 1 <= form.port <= 65535:
@@ -208,7 +208,6 @@ class AccountView:
         on_back: Callable[[], None],
         on_continue: Callable[[], None],
         on_test: Callable[[], None],
-        on_add: Callable[[], None],
         on_update: Callable[[], None],
         on_remove: Callable[[], None],
         on_select: Callable[[], None],
@@ -230,8 +229,8 @@ class AccountView:
         self.provider_hint = ttk_module.Label(
             self.frame,
             text=(
-                "Per Gmail/Workspace serve Google; per un'altra casella scegli "
-                "Posta IMAP e inserisci password e server."
+                "Scegli Google oppure Posta IMAP, inserisci i dati richiesti e collegala. "
+                "Caronte la aggiungerà dopo la verifica."
             ),
         )
         self.provider_hint.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
@@ -306,11 +305,10 @@ class AccountView:
         self.message.grid(row=11, column=0, columnspan=2, sticky="w", pady=(4, 0))
         actions = ttk_module.Frame(self.frame)
         actions.grid(row=12, column=0, columnspan=2, sticky="w", pady=(6, 0))
-        ttk_module.Button(actions, text="Aggiungi casella", command=on_add).grid(row=0, column=0)
-        ttk_module.Button(actions, text="Modifica", command=on_update).grid(row=0, column=1)
-        ttk_module.Button(actions, text="Rimuovi", command=on_remove).grid(row=0, column=2)
+        ttk_module.Button(actions, text="Modifica", command=on_update).grid(row=0, column=0)
+        ttk_module.Button(actions, text="Rimuovi", command=on_remove).grid(row=0, column=1)
         self.access_button = ttk_module.Button(
-            self.frame, text="Accedi con Google", command=on_test
+            self.frame, text="Collega con Google", command=on_test
         )
         self.access_button.grid(row=13, column=0, sticky="w", pady=(12, 0))
         ttk_module.Button(self.frame, text="Indietro", command=on_back).grid(
@@ -350,7 +348,7 @@ class AccountView:
         self.provider_button.configure(
             text="Usa Gmail o Workspace", command=self.use_google_provider
         )
-        self.access_button.configure(text="Verifica collegamento")
+        self.access_button.configure(text="Verifica e aggiungi")
         if not self.advanced_visible:
             self.toggle_advanced()
 
@@ -367,9 +365,10 @@ class AccountView:
         self.provider_button.configure(
             text="Scegli Posta IMAP", command=self.use_generic_provider
         )
-        self.access_button.configure(text="Accedi con Google")
+        self.access_button.configure(text="Collega con Google")
         if self.advanced_visible:
             self.toggle_advanced()
+
     def toggle_enabled(self) -> None:
         self._enabled = not self._enabled
 
@@ -530,6 +529,7 @@ class FirstRunController:
         self._readonly_test = readonly_test
         self._google_access = google_access
         self._pending_google_credentials = ""
+        self._save_after_connection = False
         self._connection_check = (
             BackgroundAccountConnectionCheck(self._check_connection)
             if readonly_test is not None
@@ -609,7 +609,9 @@ class FirstRunController:
         self.current_view.show_validation(result)
         return result
 
-    def _save_account(self, *, update: bool) -> ValidationResult:
+    def _save_account(
+        self, *, update: bool, success_message: str | None = None
+    ) -> ValidationResult:
         assert isinstance(self.current_view, AccountView)
         form = self.current_view.form_value()
         result = self._account_validator.validate(form)
@@ -619,25 +621,32 @@ class FirstRunController:
         elif result.is_valid and update and alias is None:
             result = ValidationResult(False, "Seleziona una casella da modificare.")
         elif result.is_valid and self._account_service is not None:
-            if update:
-                self._account_service.update(
-                    alias, email=form.email, password=form.password, host=form.host,
-                    port=form.port, enabled=form.enabled,
-                    input_folder=form.input_folder, done_folder=form.done_folder,
-                    error_folder=form.error_folder,
+            try:
+                if update:
+                    self._account_service.update(
+                        alias, email=form.email, password=form.password, host=form.host,
+                        port=form.port, enabled=form.enabled,
+                        input_folder=form.input_folder, done_folder=form.done_folder,
+                        error_folder=form.error_folder,
+                    )
+                    message = success_message or "Casella modificata."
+                else:
+                    self._account_service.add(
+                        name=form.name, email=form.email, password=form.password,
+                        host=form.host, port=form.port, enabled=form.enabled,
+                        limbo=Path(self._limbo_folder),
+                        input_folder=form.input_folder, done_folder=form.done_folder,
+                        error_folder=form.error_folder,
+                    )
+                    message = success_message or "Casella aggiunta."
+                self.current_view.render_accounts(self._account_service.list_accounts())
+                result = ValidationResult(True, message)
+            except Exception:
+                result = ValidationResult(
+                    False,
+                    "Casella non salvata. Riprova; se il problema continua, "
+                    "chiudi e riapri Caronte.",
                 )
-                message = "Casella modificata."
-            else:
-                self._account_service.add(
-                    name=form.name, email=form.email, password=form.password,
-                    host=form.host, port=form.port, enabled=form.enabled,
-                    limbo=Path(self._limbo_folder),
-                    input_folder=form.input_folder, done_folder=form.done_folder,
-                    error_folder=form.error_folder,
-                )
-                message = "Casella aggiunta."
-            self.current_view.render_accounts(self._account_service.list_accounts())
-            result = ValidationResult(True, message)
         self.current_view.show_validation(result)
         return result
 
@@ -650,6 +659,14 @@ class FirstRunController:
             self._show_account()
 
     def test_account_connection(self) -> ValidationResult:
+        return self._start_account_connection(save_after_success=False)
+
+    def connect_and_add_account(self) -> ValidationResult:
+        return self._start_account_connection(save_after_success=True)
+
+    def _start_account_connection(
+        self, *, save_after_success: bool
+    ) -> ValidationResult:
         assert isinstance(self.current_view, AccountView)
         form = self.current_view.form_value()
         result = self._account_validator.validate(form, require_google_access=False)
@@ -657,9 +674,15 @@ class FirstRunController:
             if self._connection_check is None:
                 result = ValidationResult(False, "Verifica non disponibile.")
             elif not self._connection_check.start(form):
-                result = ValidationResult(False, "Verifica gia` in corso. Attendi il risultato.")
+                result = ValidationResult(False, "Verifica già in corso. Attendi il risultato.")
             else:
-                result = ValidationResult(True, "Verifica avviata per la casella selezionata.")
+                self._save_after_connection = save_after_success
+                result = ValidationResult(
+                    True,
+                    "Collegamento e salvataggio in corso..."
+                    if save_after_success
+                    else "Verifica avviata per la casella selezionata.",
+                )
                 self._schedule_connection_poll()
         self.current_view.show_validation(result)
         return result
@@ -686,6 +709,19 @@ class FirstRunController:
             if feedback.ok and self._pending_google_credentials:
                 self.current_view.password_entry.delete(0, "end")
                 self.current_view.password_entry.insert(0, self._pending_google_credentials)
+                self._pending_google_credentials = ""
+            if feedback.ok and self._save_after_connection:
+                message = (
+                    "Casella collegata e aggiunta."
+                    if self.current_view.provider == "gmail_workspace"
+                    else "Casella verificata e aggiunta."
+                )
+                self._save_after_connection = False
+                result = self._save_account(
+                    update=False, success_message=message
+                )
+            elif not feedback.ok:
+                self._save_after_connection = False
                 self._pending_google_credentials = ""
             self.current_view.show_validation(result)
         return result
@@ -747,8 +783,7 @@ class FirstRunController:
             ttk_module=self._ttk,
             on_back=self.go_back,
             on_continue=self.continue_forward,
-            on_test=self.test_account_connection,
-            on_add=self.add_account,
+            on_test=self.connect_and_add_account,
             on_update=self.update_account,
             on_remove=self.remove_account,
             on_select=self.load_selected_account,

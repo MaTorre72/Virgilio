@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Completato `GUI-U-R03-R03`: Google usa una sola azione
+  per autorizzare, verificare e salvare; IMAP usa `Verifica e aggiungi`.
+  Credenziali orfane riconciliate con rollback, errori resi visibili senza
+  dettagli sensibili e rimosso il conteggio ambiguo del campione. Rosso
+  acquisito `6 failed, 16 passed`; verde core `37 passed`, Tk `1 passed`.
+  Smoke locale finale `501 passed`. Nuova build rinviata alla run successiva.
+
 - 2026-07-24 +02:00 - Seconda ripresa umana `GUI-U-R03`, build `bb9b16e`,
   ID `9337fa8d-737e-4b16-8f82-b68cb129c778`: OAuth e verifica `INBOX`
   riescono, ma `Aggiungi casella` non salva e non mostra errore. Diagnosi

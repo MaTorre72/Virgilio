@@ -45,8 +45,8 @@ class ReadonlyAccountConnectionService:
             ),
             self._local_root,
         )
-        count = len(mailbox.list_pending())
-        return f"Collegamento riuscito: {count} messaggi visibili."
+        mailbox.list_pending()
+        return "Collegamento riuscito. Caronte può leggere la casella."
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,10 +83,9 @@ class BackgroundAccountConnectionCheck:
             feedback = AccountConnectionFeedback(True, str(message))
         except Exception as exc:
             feedback = AccountConnectionFeedback(False, _safe_connection_error(exc))
-        finally:
-            with self._lock:
-                self._running = False
         self._results.put(feedback)
+        with self._lock:
+            self._running = False
 
     def poll(self) -> AccountConnectionFeedback | None:
         try:

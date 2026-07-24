@@ -31,7 +31,7 @@ def test_connection_service_uses_only_readonly_listing(tmp_path: Path):
         port=993,
     ))
 
-    assert message == "Collegamento riuscito: 2 messaggi visibili."
+    assert message == "Collegamento riuscito. Caronte può leggere la casella."
     assert [operation[0] for operation in operations] == ["create", "list_pending"]
     config = operations[0][1]
     assert config.username == "account@example.invalid"
@@ -63,5 +63,5 @@ def test_connection_check_uses_standard_inbox_not_operational_default(tmp_path: 
         auth_mode="oauth2",
     ))
 
-    assert message == "Collegamento riuscito: 0 messaggi visibili."
+    assert message == "Collegamento riuscito. Caronte può leggere la casella."
     assert selected_mailboxes == ["INBOX"]

@@ -1,9 +1,13 @@
 from pathlib import Path
 import json
+import time
 
 from virgilio_connector.application.account_management import AccountManagementService
 from virgilio_connector.application.configuration import ConfigurationService
-from virgilio_connector.application.credentials import AccountCredentialService, FakeCredentialStore
+from virgilio_connector.application.credentials import (
+    AccountCredentialService,
+    FakeCredentialStore,
+)
 from virgilio_connector.user_app.app import UserAppShell
 from virgilio_connector.user_app.navigation import UserRoute
 from virgilio_connector.user_app.wizard import AccountView, FirstRunController, SummaryView, WizardStep
@@ -11,7 +15,7 @@ from virgilio_connector.user_app.wizard import AccountView, FirstRunController, 
 from test_user_app import FakeButton, FakeLabel, FakeRoot, FakeTtk
 
 
-def _open_accounts(tmp_path: Path):
+def _open_accounts(tmp_path: Path, *, readonly_test=None):
     config_path = tmp_path / "config.yaml"
     credential_store = FakeCredentialStore()
     service = AccountManagementService(
@@ -19,7 +23,8 @@ def _open_accounts(tmp_path: Path):
         AccountCredentialService(credential_store),
     )
     controller = FirstRunController(
-        FakeRoot(), ttk_module=FakeTtk, account_service=service
+        FakeRoot(), ttk_module=FakeTtk, account_service=service,
+        readonly_test=readonly_test,
     )
     controller.continue_forward()
     limbo = tmp_path / "limbo"
@@ -51,6 +56,16 @@ def _fill(
     view.input_folder_entry.set(folders[0])
     view.done_folder_entry.set(folders[1])
     view.error_folder_entry.set(folders[2])
+
+
+def _wait_for_connection(controller: FirstRunController):
+    deadline = time.monotonic() + 1
+    while time.monotonic() < deadline:
+        result = controller.poll_account_connection()
+        if result is not None:
+            return result
+        time.sleep(0.005)
+    raise AssertionError("connection feedback not produced")
 
 
 def test_mailbox_table_has_expected_columns_and_two_synthetic_rows(tmp_path):
@@ -193,6 +208,144 @@ def test_operational_folders_are_required(tmp_path):
 
     assert result.is_valid is False
     assert result.message == "Indica le tre cartelle della casella."
+
+
+def test_generic_imap_single_action_verifies_and_adds_account(tmp_path):
+    controller, service, _, _ = _open_accounts(
+        tmp_path,
+        readonly_test=(
+            lambda _form: "Collegamento riuscito. Caronte può leggere la casella."
+        ),
+    )
+    view = controller.current_view
+    _fill(
+        view,
+        name="Archivio",
+        email="imap@example.invalid",
+        password="synthetic-password",
+        host="imap.example.invalid",
+    )
+
+    assert view.access_button.config["text"] == "Verifica e aggiungi"
+    assert controller.connect_and_add_account().is_valid
+    result = _wait_for_connection(controller)
+
+    assert result.is_valid
+    assert result.message == "Casella verificata e aggiunta."
+    assert [item.email for item in service.list_accounts()] == [
+        "imap@example.invalid"
+    ]
+    assert len(view.table.rows) == 1
+
+
+def test_add_reconciles_orphaned_credentials_without_touching_other_accounts(tmp_path):
+    config_path = tmp_path / "config.yaml"
+    store = FakeCredentialStore()
+    store.save("VIRGILIO_PRINCIPALE_USERNAME", "old@example.invalid")
+    store.save("VIRGILIO_PRINCIPALE_PASSWORD", "old-protected-value")
+    store.save("VIRGILIO_OTHER_USERNAME", "other@example.invalid")
+    store.save("VIRGILIO_OTHER_PASSWORD", "other-protected-value")
+    service = AccountManagementService(
+        ConfigurationService.for_file(config_path),
+        AccountCredentialService(store),
+    )
+
+    service.add(
+        name="Principale",
+        email="new@example.invalid",
+        password="new-protected-value",
+        host="imap.example.invalid",
+        port=993,
+        enabled=True,
+        limbo=tmp_path,
+        input_folder="da-traghettare",
+        done_folder="traghettate",
+        error_folder="errore",
+    )
+
+    assert store.read("VIRGILIO_PRINCIPALE_USERNAME") == "new@example.invalid"
+    assert store.read("VIRGILIO_PRINCIPALE_PASSWORD") == "new-protected-value"
+    assert store.read("VIRGILIO_OTHER_USERNAME") == "other@example.invalid"
+    assert store.read("VIRGILIO_OTHER_PASSWORD") == "other-protected-value"
+    assert service.configuration.load().accounts[0].email == "new@example.invalid"
+
+
+def test_add_restores_orphaned_credentials_when_configuration_save_fails(tmp_path):
+    class RejectingConfiguration:
+        def exists(self):
+            return False
+
+        def save(self, _model):
+            raise OSError("synthetic save failure")
+
+    store = FakeCredentialStore()
+    store.save("VIRGILIO_PRINCIPALE_USERNAME", "old@example.invalid")
+    store.save("VIRGILIO_PRINCIPALE_PASSWORD", "old-protected-value")
+    service = AccountManagementService(
+        RejectingConfiguration(),
+        AccountCredentialService(store),
+    )
+
+    try:
+        service.add(
+            name="Principale",
+            email="new@example.invalid",
+            password="new-protected-value",
+            host="imap.example.invalid",
+            port=993,
+            enabled=True,
+            limbo=tmp_path,
+            input_folder="da-traghettare",
+            done_folder="traghettate",
+            error_folder="errore",
+        )
+    except OSError:
+        pass
+    else:
+        raise AssertionError("configuration save should fail")
+
+    assert store.read("VIRGILIO_PRINCIPALE_USERNAME") == "old@example.invalid"
+    assert store.read("VIRGILIO_PRINCIPALE_PASSWORD") == "old-protected-value"
+
+
+def test_single_action_shows_safe_recovery_when_save_fails(tmp_path):
+    class RejectingAccounts:
+        def list_accounts(self):
+            return ()
+
+        def add(self, **_values):
+            raise RuntimeError("token=must-not-be-visible C:\\private\\config.yaml")
+
+    controller = FirstRunController(
+        FakeRoot(),
+        ttk_module=FakeTtk,
+        account_service=RejectingAccounts(),
+        readonly_test=(
+            lambda _form: "Collegamento riuscito. Caronte può leggere la casella."
+        ),
+    )
+    controller.continue_forward()
+    controller.current_view.folder_entry.set(str(tmp_path))
+    controller.continue_forward()
+    view = controller.current_view
+    _fill(
+        view,
+        name="Archivio",
+        email="imap@example.invalid",
+        password="synthetic-password",
+        host="imap.example.invalid",
+    )
+
+    assert controller.connect_and_add_account().is_valid
+    result = _wait_for_connection(controller)
+
+    assert result.is_valid is False
+    assert result.message == (
+        "Casella non salvata. Riprova; se il problema continua, "
+        "chiudi e riapri Caronte."
+    )
+    assert "token" not in view.message.config["text"]
+    assert "config.yaml" not in view.message.config["text"]
 
 
 def test_two_accounts_persist_after_shell_is_closed_and_reopened(tmp_path):

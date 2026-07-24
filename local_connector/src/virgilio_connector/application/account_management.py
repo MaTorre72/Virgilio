@@ -90,11 +90,13 @@ class AccountManagementService:
                 ),
             )
         )
-        self.credentials.save(account, AccountCredentials(email, password))
+        previous_credentials = self.credentials.replace_or_save(
+            account, AccountCredentials(email, password)
+        )
         try:
             self.configuration.save(model)
         except Exception:
-            self.credentials.delete(account)
+            self.credentials.restore(account, previous_credentials)
             raise
         return _managed(account)
 

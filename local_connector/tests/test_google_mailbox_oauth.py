@@ -97,12 +97,12 @@ def test_gmail_view_offers_google_access_without_password_path(tmp_path):
     assert view.password_label.grid_options is None
     assert "Password" not in view.visible_fields()
     assert any(
-        button.kwargs.get("text") == "Accedi con Google"
+        button.kwargs.get("text") == "Collega con Google"
         for button in FakeButton.created
     )
     view.email_entry.set("person@example.invalid")
     assert controller._account_validator.validate(view.form_value()).message == (
-        "Accedi con Google per collegare la casella."
+        "Collega con Google per aggiungere la casella."
     )
 
 
@@ -197,7 +197,7 @@ def test_connection_request_marks_google_access_as_oauth2(tmp_path):
     assert captured[0].auth_mode == "oauth2"
 
 
-def test_google_credentials_are_persisted_only_in_protected_store(tmp_path):
+def test_google_single_action_verifies_adds_and_protects_credentials(tmp_path):
     config_path = tmp_path / "config.yaml"
     store = FakeCredentialStore()
     accounts = AccountManagementService(
@@ -215,7 +215,7 @@ def test_google_credentials_are_persisted_only_in_protected_store(tmp_path):
         ttk_module=FakeTtk,
         account_service=accounts,
         google_access=lambda _form: authorization,
-        readonly_test=lambda _form: "Collegamento riuscito.",
+        readonly_test=lambda _form: "Collegamento riuscito. Caronte può leggere la casella.",
     )
     controller.continue_forward()
     controller.current_view.folder_entry.set(str(tmp_path))
@@ -223,11 +223,10 @@ def test_google_credentials_are_persisted_only_in_protected_store(tmp_path):
     view = controller.current_view
     view.email_entry.set("person@example.invalid")
 
-    assert controller.test_account_connection().is_valid
+    assert controller.connect_and_add_account().is_valid
     deadline = time.monotonic() + 1
     while controller.poll_account_connection() is None and time.monotonic() < deadline:
         time.sleep(0.005)
-    assert controller.add_account().is_valid
 
     account = accounts.configuration.load().accounts[0]
     protected = store.read(account.password_env)
@@ -238,3 +237,8 @@ def test_google_credentials_are_persisted_only_in_protected_store(tmp_path):
     assert "synthetic-refresh-token" not in disk_text
     assert "synthetic-access-token" not in visible_message
     assert "synthetic-refresh-token" not in visible_message
+    assert visible_message == "Casella collegata e aggiunta."
+    assert len(view.table.rows) == 1
+    button_texts = {button.config.get("text") for button in FakeButton.created}
+    assert "Collega con Google" in button_texts
+    assert "Aggiungi casella" not in button_texts
