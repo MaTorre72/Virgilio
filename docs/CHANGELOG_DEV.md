@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Collaudo umano `GUI-U-R03` interrotto con `FAIL` su
+  `H-R03-02`: OAuth interno completa, ma la GUI non aggiunge la prima casella.
+  La diagnosi read-only ha escluso rete e policy Google e ha riprodotto
+  `SELECT READ-ONLY failed` sulla cartella implicita `Virgilio/da-traghettare`;
+  `INBOX`, ricerca e lettura di 100 messaggi riescono. Proposto, in attesa di
+  approvazione, `GUI-U-R03-R01 - Verifica collegamento su INBOX`.
+
 - 2026-07-24 +02:00 - Completato `GUI-U-R03-T03`: il percorso reale conserva
   Limbo e caselle attraverso Benvenuto -> Limbo -> Caselle -> Riepilogo ->
   Home; il Riepilogo mostra stati/correzioni e `Completa configurazione`.

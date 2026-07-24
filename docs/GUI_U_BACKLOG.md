@@ -812,7 +812,7 @@ operativo reale prima del suo unico collaudo umano.
 
 ### GUI-U-R03 - Collegamento dei servizi
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `FAIL`.
 Risultato: il prototipo visuale approvato usa i servizi applicativi condivisi
 per Limbo, due caselle, controlli operativi, persistenza e controllo automatico,
 con riscontri osservabili nella GUI e senza esporre dettagli tecnici.
@@ -850,16 +850,18 @@ passaggio dal demo al servizio reale ne cambia il comportamento osservabile.
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
 | `R03-AC1` Il Limbo reale si seleziona, valida, salva, persiste dopo riapertura e si modifica da Impostazioni (`H-R03-01`). | Test applicativi/UI con filesystem temporaneo; collaudo umano completo del round-trip. | Non ancora eseguita. | `NOT_MET` |
-| `R03-AC2` Prima e seconda casella hanno credenziali distinte, percorsi Google/IMAP corretti e operazioni persistenti di aggiunta, modifica, stato e rimozione (`H-R03-02`, `H-R03-03`). | Test con OAuth/IMAP/credential store fake; collaudo umano su due caselle reali autorizzate. | Non ancora eseguita. | `NOT_MET` |
+| `R03-AC2` Prima e seconda casella hanno credenziali distinte, percorsi Google/IMAP corretti e operazioni persistenti di aggiunta, modifica, stato e rimozione (`H-R03-02`, `H-R03-03`). | Test con OAuth/IMAP/credential store fake; collaudo umano su due caselle reali autorizzate. | `FAIL` umano su build `1ad484b`, build ID `b1a2c354-e1d2-4d72-9d45-1a1ff92a9707`: browser OAuth interno completato, ma la GUI mostra `Verifica non riuscita` e non aggiunge la casella. Diagnosi read-only: rete, OAuth, XOAUTH2, `INBOX`, ricerca e lettura di 100 messaggi riescono; il servizio GUI usa il default nascosto `Virgilio/da-traghettare` e fallisce su `SELECT READ-ONLY`. Screenshot nel fascicolo ignorato R03. | `NOT_MET` |
 | `R03-AC3` Verifica collegamento, Controlla ora, Avvia e Pausa mostrano avvio, stato, esito o errore azionabile e registrano l'attivita (`H-R03-04`). | Test asincroni deterministici su successo/errore; collaudo umano dei quattro comandi. | Non ancora eseguita. | `NOT_MET` |
 | `R03-AC4` Chiusura, eventuale riduzione a icona e riapertura non lasciano console o processi duplicati e conservano configurazione e stato (`H-R03-05`). | Test lifecycle/processi su build installata; collaudo umano di chiusura e riapertura. | Non ancora eseguita. | `NOT_MET` |
 | `R03-AC5` Il controllo automatico si attiva, conferma, espone lo stato, persiste e si disattiva senza finestre tecniche (`H-R03-06`). | Test adapter Windows isolato e persistenza; collaudo umano sulla build installata. | Non ancora eseguita. | `NOT_MET` |
 
-Esito terminale prima della decisione umana: `WAITING_HUMAN_REVIEW`. R03 passa a
-`DONE` solo dopo un'unica conferma umana esplicita sugli scenari R3 e sui
-requisiti R2 trasferiti. Un
-fallimento deve registrare scenario, passaggio, atteso, osservato e screenshot;
-Codex propone un numero finito di correttivi e attende l'approvazione del piano.
+Esito umano del 2026-07-24: `FAIL` su `H-R03-02`; scenario, passaggio, atteso,
+osservato e screenshot sono registrati nel fascicolo ignorato R03. Correttivo
+finito proposto, non ancora approvato: `GUI-U-R03-R01 - Verifica collegamento
+su INBOX`. La verifica di connettivita` deve selezionare esplicitamente la
+cartella standard `INBOX`, restare read-only e non dipendere da cartelle
+operative nascoste. Dopo approvazione, test mirati e nuova build identificata,
+il collaudo riprende senza ripetere le evidenze gia` valide.
 
 #### GUI-U-R03-T01 - Prima casella reale senza blocco Google
 

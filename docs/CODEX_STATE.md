@@ -14,12 +14,12 @@
 - Task completato: `GUI-U-R03-T01 - Prima casella reale senza blocco Google`
 - Task completato: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`
 - Task completato: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home`
-- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`WAITING_HUMAN_REVIEW`)
-- Successivo univoco: collaudo umano unico R03 sulla build operativa, comprendente scenari R3 e requisiti UX R2 trasferiti
+- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL`)
+- Successivo univoco proposto: approvare `GUI-U-R03-R01 - Verifica collegamento su INBOX`; nessuna modifica di codice prima dell'approvazione
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: nessuno. Il demo R02 non viene ampliato o ricollaudato, ma i suoi requisiti sono vincolanti in R3 secondo la matrice in `docs/GUI_U_BACKLOG.md`. R03-T01 ha rimosso la dipendenza Google dal primo percorso IMAP. Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
+- Blocchi aperti: collaudo umano R03 interrotto su `H-R03-02`: OAuth, XOAUTH2, `INBOX`, ricerca e lettura degli ultimi 100 messaggi sono riusciti, ma la verifica della GUI seleziona implicitamente `Virgilio/da-traghettare` e fallisce con `SELECT READ-ONLY` quando la cartella non esiste. Proposto un solo correttivo finito: verificare l'accesso su `INBOX`. Il demo R02 non viene ampliato o ricollaudato; Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
 - Ultima prova nuova mirata: quattro moduli `test_user_app*` R03-T03 -> `OK` (`39 passed`, fixture fake, Tk reale e basetemp isolato); corretto il Riepilogo reale che a 125% richiedeva 971 px
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
