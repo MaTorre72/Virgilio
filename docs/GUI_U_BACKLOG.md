@@ -1113,7 +1113,7 @@ errore e presa in carico idempotente senza ampliare il contratto approvato.
 
 ### GUI-U-R04 - Release candidate e collaudo finale
 
-Stato: `TODO`.
+Stato: `WAITING_HUMAN_REVIEW`.
 Risultato: una release candidate identificata viene installata, usata e rimossa
 con successo su un PC o profilo Windows senza Python utilizzabile dall'utente,
 eseguendo l'intero percorso finale senza terminale o documentazione tecnica.
@@ -1131,11 +1131,11 @@ prerequisito R03 non ha ricevuto conferma umana esplicita.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R04-AC1` Hash e build-info coincidono con il manifest; installazione e avvio dal menu Start riescono su ambiente idoneo. | Smoke release e passi umani 1-4 con installer, hash, commit e build ID registrati. | Non ancora eseguita. | `NOT_MET` |
-| `R04-AC2` Primo avvio, Limbo, due caselle, riapertura, persistenza, controllo manuale, avvio continuo, pausa e attivita` completano il percorso senza strumenti tecnici. | Collaudo umano dei passi 5-13 con evidenze puntuali. | Non ancora eseguita. | `NOT_MET` |
-| `R04-AC3` Controllo automatico, riavvio sessione o simulazione equivalente, verifica stato, disattivazione, Impostazioni e Informazioni funzionano in sequenza. | Collaudo umano dei passi 14-19 e confronto finale dell'identita build. | Non ancora eseguita. | `NOT_MET` |
-| `R04-AC4` Disinstallazione rimuove programma e integrazioni e applica la policy dichiarata di conservazione dati. | Smoke disinstallazione e collaudo umano dei passi 20-22. | Non ancora eseguita. | `NOT_MET` |
-| `R04-AC5` Tutti gli scenari obbligatori sono `PASS`, nessuno e` `FAIL` o `INVALID_BUILD`, e il fascicolo contiene identificazione ed evidenze complete. | Revisione umana della checklist e verifica documentale del fascicolo finale. | Non ancora eseguita; Codex non puo` compilare l'esito umano. | `NOT_MET` |
+| `R04-AC1` Hash e build-info coincidono con il manifest; installazione e avvio dal menu Start riescono su ambiente idoneo. | Smoke release e passi umani 1-4 con installer, hash, commit e build ID registrati. | RC `CaronteSetup-0.11.0-0d46d69.exe`, commit `0d46d69ea3eeb271362b7d2ee61e5184136afd98`, Build ID `fb8018c0-b473-4035-9370-32877a32f72a`, SHA-256 `E920DE1248DB5338581C25B54BFE13D9DD7DA74110613E885EA6F74B6AF34D62`; manifest e release manifest coincidono, build e smoke installer `PASS`. Installazione e avvio umani restano da confermare. | `NOT_MET` |
+| `R04-AC2` Primo avvio, Limbo, due caselle, riapertura, persistenza, controllo manuale, avvio continuo, pausa e attivita` completano il percorso senza strumenti tecnici. | Collaudo umano dei passi 5-13 con evidenze puntuali. | `H-R03-01`--`H-R03-05` sono gia` `PASS`; la RC include, su autorizzazione utente, il client OAuth Google locale. Checklist R04 predisposta per persistenza e percorso reale completo Limbo -> `Da archiviare`, inclusi Attivita, controllo manuale/continuo e pausa. Conferma umana RC pendente. | `NOT_MET` |
+| `R04-AC3` Controllo automatico, riavvio sessione o simulazione equivalente, verifica stato, disattivazione, Impostazioni e Informazioni funzionano in sequenza. | Collaudo umano dei passi 14-19 e confronto finale dell'identita build. | `H-R03-06 = PASS` resta valido; checklist R04 limita la riprova alla persistenza delle nuove credenziali operative protette dopo nuovo accesso Windows e al confronto dell'identita della RC. Conferma umana pendente. | `NOT_MET` |
+| `R04-AC4` Disinstallazione rimuove programma e integrazioni e applica la policy dichiarata di conservazione dati. | Smoke disinstallazione e collaudo umano dei passi 20-22. | Smoke installer/disinstallazione `PASS`; collaudo umano predisposto tramite la disinstallazione standard di Windows, con verifica delle integrazioni e della conservazione dati. L'avvio diretto del disinstallatore resta escluso e rinviato come priorita` molto bassa. | `NOT_MET` |
+| `R04-AC5` Tutti gli scenari obbligatori sono `PASS`, nessuno e` `FAIL` o `INVALID_BUILD`, e il fascicolo contiene identificazione ed evidenze complete. | Revisione umana della checklist e verifica documentale del fascicolo finale. | Fascicolo identificato predisposto in `artifacts/gui-u-r04/fb8018c0-b473-4035-9370-32877a32f72a/`; esito umano non ancora compilato e non deducibile dai test automatici. | `NOT_MET` |
 
 Esito terminale prima della decisione umana: `WAITING_HUMAN_REVIEW`. R04 e
 l'iniziativa GUI-U possono essere dichiarati completati solo dopo un `PASS`

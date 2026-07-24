@@ -1,5 +1,17 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Preparata `GUI-U-R04` come
+  `WAITING_HUMAN_REVIEW`: costruita la release candidate
+  `CaronteSetup-0.11.0-0d46d69.exe` dal commit
+  `0d46d69ea3eeb271362b7d2ee61e5184136afd98`, Build ID
+  `fb8018c0-b473-4035-9370-32877a32f72a`, SHA-256
+  `E920DE1248DB5338581C25B54BFE13D9DD7DA74110613E885EA6F74B6AF34D62`.
+  Il client OAuth Google locale e` incluso su autorizzazione esplicita
+  dell'utente; manifest e release manifest coincidono, build e smoke installer
+  sono `PASS`. Predisposto il fascicolo umano identificato; il gate non e`
+  approvato automaticamente. La disinstallazione standard Windows e` in scope,
+  l'avvio diretto del disinstallatore resta a priorita` molto bassa.
+
 - 2026-07-24 +02:00 - Completato `GUI-U-R03-R06`: la pipeline operativa
   compone i client CLI esistenti `verify-drive-staging` e
   `intake-da-archiviare` tra copia nel Limbo e completamento IMAP. Gli ID Drive
