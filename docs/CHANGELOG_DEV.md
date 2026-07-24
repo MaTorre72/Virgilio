@@ -1,6 +1,11 @@
 # Changelog sviluppo
 
 - 2026-07-24 +02:00 - Prosecuzione umana `GUI-U-R03`: conferma esplicita
+  `H-R03-05 = PASS` sulla build `8241325`. Riduzione a icona, chiusura,
+  riapertura, persistenza, stato e assenza di processi duplicati sono stati
+  approvati; `R03-AC4 = MET` e il collaudo prosegue da `H-R03-06`.
+
+- 2026-07-24 +02:00 - Prosecuzione umana `GUI-U-R03`: conferma esplicita
   `H-R03-04 = PASS` sulla build `8241325`, con tre screenshot di Controlla ora,
   avvio, pausa e Attivita. La verifica casella e` correttamente integrata nel
   collegamento gia` approvato e non e` un pulsante separato. `R03-AC3 = MET`;
