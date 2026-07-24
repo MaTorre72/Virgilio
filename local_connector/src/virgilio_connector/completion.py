@@ -170,11 +170,13 @@ class LocalCompletionRunner:
     def __init__(self, accounts: Sequence[LocalImapAccount], *,
                  paths: LocalDataPaths | None = None,
                  environ: Mapping[str, str] | None = None,
-                 mailbox_factory: Callable[[LocalImapAccount], object] | None = None) -> None:
+                 mailbox_factory: Callable[[LocalImapAccount], object] | None = None,
+                 require_da_archiviare: bool = False) -> None:
         self.accounts = {account.account_alias: account for account in accounts}
         self.paths = paths or LocalDataPaths()
         self.environ = environ
         self.mailbox_factory = mailbox_factory or self._default_mailbox
+        self.require_da_archiviare = require_da_archiviare
 
     def complete(self, *, dry_run: bool) -> tuple[CompletionResult, ...]:
         ensure_state_db(self.paths.root)
@@ -244,6 +246,10 @@ class LocalCompletionRunner:
             return CompletionResult(**base, status="completion_skipped",
                                     ack_strategy=None,
                                     reason="message has no staged_storage attachment")
+        if self.require_da_archiviare and int(row["handoff_missing_count"]) > 0:
+            return CompletionResult(**base, status="completion_skipped",
+                                    ack_strategy=None,
+                                    reason="message has attachments not delivered to Da archiviare")
         if not account.ack_enabled:
             return CompletionResult(**base, status="completion_skipped",
                                     ack_strategy=account.ack_strategy,
@@ -304,6 +310,12 @@ class LocalCompletionRunner:
                 SUM(CASE WHEN a.status='staged_storage' THEN 1 ELSE 0 END) AS staged_count,
                 SUM(CASE WHEN a.status IN ({','.join('?' for _ in BLOCKING_ATTACHMENT_STATES)})
                     THEN 1 ELSE 0 END) AS blocking_count,
+                SUM(CASE WHEN a.status='staged_storage' AND NOT EXISTS (
+                    SELECT 1 FROM audit_events e
+                    WHERE e.entity_id=a.attachment_id
+                      AND e.action='da_archiviare_intake'
+                      AND e.status IN ('created','updated','idempotent')
+                ) THEN 1 ELSE 0 END) AS handoff_missing_count,
                 GROUP_CONCAT(CASE WHEN a.status='staged_storage' THEN a.attachment_id END, '|')
                     AS staged_attachment_ids
                 FROM messages m LEFT JOIN attachments a ON a.message_id=m.id

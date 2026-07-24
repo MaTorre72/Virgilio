@@ -1,5 +1,19 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Completato `GUI-U-R03-R06`: la pipeline operativa
+  compone i client CLI esistenti `verify-drive-staging` e
+  `intake-da-archiviare` tra copia nel Limbo e completamento IMAP. Gli ID Drive
+  gia` restituiti da Apps Script vengono conservati e validati; attesa cloud,
+  errori e rifiuti non completano il messaggio, mentre retry e intake
+  idempotente non duplicano la presa in carico. Attivita espone consegna,
+  sincronizzazione e problema in termini utente. Audit pre-RC: eliminata la
+  dipendenza residua dal `.env` di sviluppo; `Registro e avvio` salva
+  l'indirizzo e protegge il codice nel Gestore credenziali Windows, e i worker
+  installati recuperano autonomamente anche le credenziali delle caselle.
+  Mirati finali `92 passed`, Tk reale `1 passed`, smoke locale `529 passed`;
+  una prima esecuzione aveva raggiunto `528 passed` prima di un errore
+  transitorio Tcl/Tk preesistente, non riprodotto a toolchain libera.
+
 - 2026-07-24 +02:00 - Priorita` riallineata per decisione utente: il
   disinstallatore diretto e` rinviato alla fine con priorita` molto bassa.
   Diagnosi read-only del percorso reale: la pipeline Home copia nel Limbo ma

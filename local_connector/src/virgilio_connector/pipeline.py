@@ -11,6 +11,7 @@ from typing import Callable, Sequence
 from .completion import LocalCompletionRunner
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountImapProcessor, MultiAccountReadonlyScanner
+from .operational_handoff import OperationalHandoffRunner
 from .storage_adapter import LocalFilesystemStorageAdapter
 from .readonly_state import ensure_state_db
 from .time_utils import rome_isoformat, rome_timestamp
@@ -31,6 +32,7 @@ class LocalPipelineRunner:
                  processor_factory: Callable[[], MultiAccountImapProcessor],
                  storage_factory: Callable[[], LocalFilesystemStorageAdapter],
                  completion_factory: Callable[[], LocalCompletionRunner],
+                 handoff_factory: Callable[[], OperationalHandoffRunner] | None = None,
                  scanner_factory: Callable[[], MultiAccountReadonlyScanner] | None = None,
                  config_path: Path | None = None) -> None:
         self.accounts = tuple(accounts)
@@ -38,6 +40,7 @@ class LocalPipelineRunner:
         self.processor_factory = processor_factory
         self.storage_factory = storage_factory
         self.completion_factory = completion_factory
+        self.handoff_factory = handoff_factory
         self.scanner_factory = scanner_factory
         self.config_path = config_path
 
@@ -54,12 +57,37 @@ class LocalPipelineRunner:
                               lambda: self.processor_factory().process(dry_run=dry_run))
         storage = self._phase("storage", phase_times, errors,
                               lambda: self.storage_factory().stage_ready(dry_run=dry_run))
+        handoff = self._phase(
+            "handoff",
+            phase_times,
+            errors,
+            lambda: (
+                self.handoff_factory().deliver(storage, dry_run=dry_run)
+                if self.handoff_factory else ()
+            ),
+        )
+        failed_handoffs = tuple(
+            item for item in handoff if getattr(item, "status", "") == "failed"
+        )
+        waiting_handoffs = tuple(
+            item for item in handoff if getattr(item, "status", "") == "waiting"
+        )
+        if failed_handoffs:
+            errors.append(
+                f"handoff: {len(failed_handoffs)} document(s) not delivered to Da archiviare"
+            )
+        if waiting_handoffs:
+            warnings.append(
+                f"handoff: {len(waiting_handoffs)} document(s) waiting for Limbo synchronization"
+            )
         completion = self._phase("completion", phase_times, errors,
                                  lambda: self.completion_factory().complete(dry_run=dry_run))
         if not storage:
             warnings.append("storage: skipped_no_ready_attachments")
         if not completion:
             warnings.append("completion: skipped_no_staged_messages")
+        if self.handoff_factory and not handoff:
+            warnings.append("handoff: skipped_no_staged_attachments")
         status = ("completed_with_errors" if errors else
                   "completed_with_warnings" if warnings else "completed")
         report = {
@@ -69,6 +97,9 @@ class LocalPipelineRunner:
             "messages_found": sum(getattr(item, "messages_seen", 0) for item in scan),
             "attachments_processed": len(process),
             "attachments_staged": sum(1 for item in storage if getattr(item, "status", "") in {"staged_storage", "already_staged"}),
+            "attachments_delivered": sum(1 for item in handoff if getattr(item, "status", "") in {
+                "created", "updated", "idempotent", "already_delivered"
+            }),
             "messages_completed": sum(1 for item in completion if getattr(item, "status", "") in {"completed", "already_completed", "already_acked"}),
             "messages_skipped": sum(1 for item in completion if getattr(item, "status", "") == "completion_skipped"),
             "errors": errors,
@@ -79,6 +110,7 @@ class LocalPipelineRunner:
                 "scan": [asdict(item) for item in scan],
                 "process": [asdict(item) for item in process],
                 "storage": [asdict(item) for item in storage],
+                "handoff": [asdict(item) for item in handoff],
                 "completion": [asdict(item) for item in completion],
             },
         }

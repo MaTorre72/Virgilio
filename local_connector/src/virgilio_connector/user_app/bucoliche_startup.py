@@ -47,22 +47,46 @@ class BucolicheStartupView:
                 text="Azione da fare: chiedi all'amministratore di configurare il Registro.",
             ).grid(row=3, column=0, columnspan=2, sticky="w", pady=(12, 0))
 
-        ttk_module.Label(self.frame, text="Controllo automatico all'accesso a Windows").grid(
+        ttk_module.Label(self.frame, text="Collegamento a Virgilio").grid(
             row=5, column=0, columnspan=2, sticky="w", pady=(16, 0)
+        )
+        self.connection_message = ttk_module.Label(
+            self.frame, text=snapshot.connection_message
+        )
+        self.connection_message.grid(row=6, column=0, columnspan=2, sticky="w")
+        ttk_module.Label(self.frame, text="Indirizzo di collegamento").grid(
+            row=7, column=0, sticky="w"
+        )
+        self.connection_endpoint = ttk_module.Entry(self.frame, width=48)
+        self.connection_endpoint.grid(row=8, column=0, columnspan=2, sticky="ew")
+        if snapshot.connection_endpoint:
+            self.connection_endpoint.insert(0, snapshot.connection_endpoint)
+        ttk_module.Label(self.frame, text="Codice di collegamento").grid(
+            row=9, column=0, sticky="w"
+        )
+        self.connection_code = ttk_module.Entry(self.frame, show="*")
+        self.connection_code.grid(row=10, column=0, sticky="ew")
+        self.connection_action = ttk_module.Button(
+            self.frame, text="Salva collegamento", command=self.save_connection
+        )
+        self.connection_action.grid(row=10, column=1, sticky="w")
+
+        ttk_module.Label(self.frame, text="Controllo automatico all'accesso a Windows").grid(
+            row=11, column=0, columnspan=2, sticky="w", pady=(16, 0)
         )
         self.automatic_message = ttk_module.Label(
             self.frame, text=snapshot.automatic_control_message
         )
-        self.automatic_message.grid(row=6, column=0, columnspan=2, sticky="w")
+        self.automatic_message.grid(row=12, column=0, columnspan=2, sticky="w")
         self.automatic_action = ttk_module.Button(
             self.frame,
             text=("Disattiva controllo automatico" if snapshot.automatic_control_installed
                   else "Attiva controllo automatico"),
             command=self.toggle_automatic_control,
         )
-        self.automatic_action.grid(row=7, column=0, sticky="w")
+        self.automatic_action.grid(row=13, column=0, sticky="w")
         ttk_module.Button(self.frame, text="Torna alla Home", command=go_home).grid(
-            row=8, column=0, sticky="w", pady=(16, 0)
+            row=14, column=0, sticky="w", pady=(16, 0)
         )
 
     def connect_google(self) -> GuidedStatus:
@@ -73,6 +97,15 @@ class BucolicheStartupView:
     def verify_register(self) -> GuidedStatus:
         result = self.service.verify_register()
         self.registry_status.configure(text=result.message)
+        return result
+
+    def save_connection(self) -> GuidedStatus:
+        result = self.service.configure_operational_connection(
+            self.connection_endpoint.get(), self.connection_code.get()
+        )
+        self.connection_message.configure(text=result.message)
+        if result.ok:
+            self.connection_code.delete(0, "end")
         return result
 
     def toggle_automatic_control(self) -> GuidedStatus:

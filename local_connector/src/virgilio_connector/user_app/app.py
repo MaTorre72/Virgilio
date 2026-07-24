@@ -17,6 +17,7 @@ from ..application.home_status import AccountHomeStatusService, HomeStatus, Home
 from ..application.home_control import HomeRunController
 from ..application.google_oauth import GoogleMailboxOAuthService
 from ..application.operation_runner import ManagedOperationRunner
+from ..application.operational_connection import create_operational_connection_service
 from ..application.settings import DisabledStartupAdapter, SettingsService
 from ..application.bucoliche_startup import (
     BucolicheStartupService,
@@ -335,6 +336,7 @@ def launch_user_app(
             configuration,
             ExistingBucolicheGateway(configuration.store.source),
             WindowsAutomaticControlGateway(configuration),
+            create_operational_connection_service(configuration.store.source),
         ),
     )
     root.mainloop()

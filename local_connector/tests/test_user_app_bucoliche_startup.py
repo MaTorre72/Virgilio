@@ -1,4 +1,5 @@
 from pathlib import Path
+from tkinter import Tk
 
 from virgilio_connector.bucoliche import BucolicheError
 from virgilio_connector.application.bucoliche_startup import (
@@ -6,6 +7,11 @@ from virgilio_connector.application.bucoliche_startup import (
     GuidedStatus,
 )
 from virgilio_connector.application.configuration import ConfigurationService
+from virgilio_connector.application.credentials import FakeCredentialStore
+from virgilio_connector.application.operational_connection import (
+    CONNECTION_CREDENTIAL,
+    OperationalConnectionService,
+)
 from virgilio_connector.application.registry_configuration import RegistryConfigurationService
 from virgilio_connector.multi_account import scaffold_local_config
 from virgilio_connector.user_app.app import UserAppShell
@@ -77,7 +83,15 @@ def _service(tmp_path, *, installed=False, bucoliche=None, configured=True):
         )
     google = bucoliche or FakeBucolicheGateway()
     automatic = FakeAutomaticControl(installed)
-    return configuration, BucolicheStartupService(configuration, google, automatic), google, automatic
+    connection = OperationalConnectionService(
+        configuration.store.source, FakeCredentialStore()
+    )
+    return (
+        configuration,
+        BucolicheStartupService(configuration, google, automatic, connection),
+        google,
+        automatic,
+    )
 
 
 def test_register_is_always_present_and_reports_administrative_configuration(tmp_path):
@@ -223,3 +237,73 @@ def test_guided_view_shows_clear_steps_and_known_error_messages(tmp_path):
     }
     assert all(term not in visible for term in forbidden)
     assert "bucoliche" not in visible
+
+
+def test_guided_view_saves_operational_connection_without_showing_code(tmp_path):
+    configuration, service, _, _ = _service(tmp_path)
+    shell = UserAppShell(
+        FakeRoot(), configuration, ttk_module=FakeTtk,
+        bucoliche_startup_service=service,
+    )
+    shell.show_bucoliche_startup()
+    view = shell.bucoliche_startup
+    view.connection_endpoint.insert(
+        0, "https://script.google.com/macros/s/deployment/exec"
+    )
+    view.connection_code.insert(0, "protected-code")
+
+    result = view.save_connection()
+
+    assert result == GuidedStatus(True, "Collegamento a Virgilio configurato.")
+    assert view.connection_message.config["text"] == result.message
+    assert view.connection_code.get() == ""
+    assert "protected-code" not in configuration.store.source.read_text(encoding="utf-8")
+    assert (
+        service.operational_connection.credentials.read(CONNECTION_CREDENTIAL)
+        == "protected-code"
+    )
+
+
+def test_guided_view_rejects_invalid_connection_without_technical_terms(tmp_path):
+    configuration, service, _, _ = _service(tmp_path)
+    shell = UserAppShell(
+        FakeRoot(), configuration, ttk_module=FakeTtk,
+        bucoliche_startup_service=service,
+    )
+    shell.show_bucoliche_startup()
+    view = shell.bucoliche_startup
+    view.connection_endpoint.insert(0, "non-valido")
+    view.connection_code.insert(0, "protected-code")
+
+    result = view.save_connection()
+
+    assert result.ok is False
+    assert "HTTPS" in result.message
+    visible = " ".join(
+        widget.kwargs.get("text", "")
+        for kind in (FakeLabel, FakeButton)
+        for widget in kind.created
+    ).lower()
+    assert all(term not in visible for term in ("token", "endpoint", ".env", "yaml"))
+
+
+def test_registry_and_connection_view_fits_real_tk_at_supported_scales(tmp_path):
+    configuration, service, _, _ = _service(tmp_path)
+    root = Tk()
+    root.withdraw()
+    try:
+        root.geometry("960x640")
+        shell = UserAppShell(
+            root, configuration, bucoliche_startup_service=service,
+        )
+        shell.show_bucoliche_startup()
+        for scale in (1.0, 1.25):
+            root.tk.call("tk", "scaling", scale)
+            root.update_idletasks()
+            assert root.winfo_reqwidth() <= 960
+            assert root.winfo_reqheight() <= 640
+            assert shell.bucoliche_startup.connection_endpoint.winfo_viewable() in {
+                0, 1
+            }
+    finally:
+        root.destroy()

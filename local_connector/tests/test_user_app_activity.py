@@ -138,3 +138,31 @@ def test_problem_has_recommended_action_and_technical_detail_is_opt_in(tmp_path)
     assert view.technical_label.grid_options is not None
     assert view.technical_label.config["text"].startswith("Tipo evento:")
     assert "{" not in view.technical_label.config["text"]
+
+
+def test_da_archiviare_events_show_delivery_waiting_and_problem_states():
+    delivered = project_activity(_event(
+        event_type="da_archiviare_intake", result="idempotent"
+    ))
+    waiting = project_activity(_event(
+        event_type="da_archiviare_intake", result="waiting"
+    ))
+    failed = project_activity(_event(
+        event_type="da_archiviare_intake", result="failed"
+    ))
+
+    assert delivered.visible_values[-3:] == (
+        "Documento inviato a Da archiviare",
+        "In attesa",
+        "Completa la decisione in Da archiviare.",
+    )
+    assert waiting.visible_values[-3:] == (
+        "Sincronizzazione del Limbo",
+        "In attesa",
+        "Attendi la sincronizzazione; Caronte riprovera automaticamente.",
+    )
+    assert failed.visible_values[-3:] == (
+        "Invio a Da archiviare",
+        "Problema",
+        "Riprova il controllo; se il problema continua, chiedi assistenza.",
+    )

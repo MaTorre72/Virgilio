@@ -20,13 +20,14 @@
 - Task completato: `GUI-U-R03 - Collegamento dei servizi` (`H-R03-01`--`H-R03-06 = PASS` umano; `R03-AC1`--`R03-AC5 = MET`)
 - Task completato: `GUI-U-R03-R04 - Controllo automatico per utente`
 - Task completato: `GUI-U-R03-R05 - Campi cartella leggibili`
-- Successivo univoco: `GUI-U-R03-R06 - Consegna operativa a Da archiviare` (`PROPOSED_WAITING_USER_APPROVAL`); non modificare codice senza approvazione
+- Task completato: `GUI-U-R03-R06 - Consegna operativa a Da archiviare`
+- Successivo univoco: `GUI-U-R04 - Release candidate e collaudo finale`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: il percorso Home oggi termina dopo la copia locale nel Limbo e non compone ancora verifica Drive e presa in carico in `Da archiviare`. Il disinstallatore diretto e` esplicitamente a priorita` molto bassa e rinviato alla fine. L'osservazione sui campi cartella e` chiusa da `GUI-U-R03-R05`
+- Blocchi aperti: nessun blocco operativo noto prima della release candidate. Il disinstallatore diretto e` esplicitamente a priorita` molto bassa e rinviato all'ultima verifica della release. L'osservazione sui campi cartella e` chiusa da `GUI-U-R03-R05`
 - Ultima build operativa: `CaronteSetup-0.11.0-eaf05fd.exe`, commit `eaf05fd178257fab9f472725b905b0fbf8320fc9`, Build ID `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`, SHA-256 `96EE42FECB35998290CB9BB6F3B07FAAC809B487ABD666EFC44ED3A104CCD82C`; output locale ignorato `local_connector/build-output/installer/dist/`
-- Ultima prova nuova mirata: R03-R05 layout fake/Tk -> `OK` (`47 passed`, 960x640 a 100%/125%); smoke locale finale `OK` (`506 passed`); nessuna rete o credenziale reale
+- Ultima prova nuova mirata: R03-R06 collegamento protetto/verify/intake/pipeline/completion/Attivita/Home -> `OK` (`92 passed` + Tk reale `1 passed`); smoke locale finale `OK` (`529 passed`); una prima esecuzione ha avuto un errore transitorio Tcl/Tk preesistente dopo `528 passed`, non riprodotto a toolchain libera; nessuna rete o credenziale reale
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)

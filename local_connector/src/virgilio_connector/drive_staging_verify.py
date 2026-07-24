@@ -33,6 +33,8 @@ class DriveStagingVerifyResponse:
     manifest_found: bool
     manifest_consistent: bool
     cloud_visible: bool
+    drive_file_id: str
+    manifest_file_id: str
     message: str
     errors: tuple[dict[str, Any], ...]
 
@@ -43,7 +45,7 @@ class DriveStagingVerifyResponse:
         required = {
             "ok", "dry_run", "action", "attachment_id", "staged_filename",
             "file_found", "manifest_found", "manifest_consistent",
-            "cloud_visible", "message", "errors",
+            "inbox_preview", "cloud_visible", "message", "errors",
         }
         if not required.issubset(raw):
             raise DriveStagingVerifyError("Drive verify response is missing required fields")
@@ -58,13 +60,33 @@ class DriveStagingVerifyResponse:
             raw["ok"] and raw["file_found"] and raw["manifest_found"] and raw["manifest_consistent"]
         ):
             raise DriveStagingVerifyError("cloud_visible response is inconsistent")
+        preview = raw["inbox_preview"]
+        if preview is not None and not isinstance(preview, dict):
+            raise DriveStagingVerifyError("Drive verify response inbox_preview is invalid")
+        drive_file_id_raw = (preview or {}).get("drive_file_id", "")
+        manifest_file_id_raw = (preview or {}).get("manifest_file_id", "")
+        if not isinstance(drive_file_id_raw, str) or not isinstance(
+            manifest_file_id_raw, str
+        ):
+            raise DriveStagingVerifyError("Drive verify response identifiers are invalid")
+        drive_file_id = drive_file_id_raw.strip()
+        manifest_file_id = manifest_file_id_raw.strip()
+        if raw["cloud_visible"] and (not drive_file_id or not manifest_file_id):
+            raise DriveStagingVerifyError(
+                "cloud-visible response is missing Drive identifiers"
+            )
+        if any("/" in value or "\\" in value for value in (drive_file_id, manifest_file_id)):
+            raise DriveStagingVerifyError("Drive verify response identifiers are invalid")
         return cls(
             ok=raw["ok"], dry_run=True, action=raw["action"],
             attachment_id=str(raw["attachment_id"]),
             staged_filename=str(raw["staged_filename"]),
             file_found=raw["file_found"], manifest_found=raw["manifest_found"],
             manifest_consistent=raw["manifest_consistent"],
-            cloud_visible=raw["cloud_visible"], message=raw["message"],
+            cloud_visible=raw["cloud_visible"],
+            drive_file_id=drive_file_id,
+            manifest_file_id=manifest_file_id,
+            message=raw["message"],
             errors=tuple(raw["errors"]),
         )
 

@@ -2,9 +2,8 @@
 
 Stato: `IN_PROGRESS`
 Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
-Task completato: `GUI-U-R03 - Collegamento dei servizi`
-Successivo proposto: `GUI-U-R03-R06 - Consegna operativa a Da archiviare`
-(`PROPOSED_WAITING_USER_APPROVAL`)
+Task completato: `GUI-U-R03-R06 - Consegna operativa a Da archiviare`
+Successivo: `GUI-U-R04 - Release candidate e collaudo finale`
 
 Obiettivo finale:
 
@@ -1087,7 +1086,7 @@ applicativa o il percorso non puo` restare utilizzabile a 960x640.
 
 #### GUI-U-R03-R06 - Consegna operativa a Da archiviare
 
-Stato: `PROPOSED_WAITING_USER_APPROVAL`.
+Stato: `DONE` (approvato e completato il 2026-07-24).
 Risultato: `Controlla ora` e il controllo continuo portano ogni allegato sicuro
 dal Limbo sincronizzato a una singola presa in carico in `Da archiviare`; il
 messaggio sorgente viene completato soltanto dopo tale presa in carico.
@@ -1106,15 +1105,15 @@ errore e presa in carico idempotente senza ampliare il contratto approvato.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R03-R06-AC1` La verifica cloud conserva e valida gli ID del file e del manifest restituiti nell'anteprima esistente, senza trasferire contenuti o percorsi locali. | Test contratto su risposta valida, ID mancanti/incoerenti e payload metadata-only. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R06-AC2` Per ogni allegato sicuro copiato nel Limbo la pipeline verifica la visibilita` cloud e crea automaticamente una sola voce in `Da archiviare`. | Test verticale con scanner, storage, verify e intake fake su uno o piu` allegati. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R06-AC3` Sincronizzazione non ancora avvenuta, timeout o rifiuto lasciano il lavoro in attesa/riprova e non completano ne` spostano il messaggio sorgente. | Regressioni deterministiche sugli esiti temporanei e permanenti, con verifica dell'ordine delle chiamate. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R06-AC4` Una nuova esecuzione e una risposta di presa in carico gia` esistente non producono duplicati e permettono il completamento sicuro. | Test di ripetizione sulla stessa identita` tecnica e risposta idempotente dell'intake fake. | Non ancora eseguita. | `NOT_MET` |
-| `R03-R06-AC5` Home e Attivita` descrivono in termini utente consegna riuscita, attesa di sincronizzazione o problema azionabile; test mirati e smoke locale sono verdi. | Test dei modelli/testi visibili, inventario termini vietati e smoke locale. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R06-AC1` La verifica cloud conserva e valida gli ID del file e del manifest restituiti nell'anteprima esistente, senza trasferire contenuti o percorsi locali. | Test contratto su risposta valida, ID mancanti/incoerenti e payload metadata-only. | `DriveStagingVerifyResponse` estrae i due ID dall'`inbox_preview` gia` restituito, li richiede quando `cloud_visible=true` e rifiuta tipi o valori assimilabili a percorsi; il test del payload conferma soli metadati. Il codice di collegamento resta nel Gestore credenziali Windows e non entra nel file di configurazione. | `MET` |
+| `R03-R06-AC2` Per ogni allegato sicuro copiato nel Limbo la pipeline verifica la visibilita` cloud e crea automaticamente una sola voce in `Da archiviare`. | Test verticale con scanner, storage, verify e intake fake su uno o piu` allegati. | La nuova fase condivisa `OperationalHandoffRunner` compone i client CLI esistenti tra storage e completion; prove con uno e due allegati verificano verify e intake per ciascun manifest. Il worker installato recupera automaticamente da Windows credenziali caselle e collegamento, mantenendo priorita` alle variabili dei comandi CLI. | `MET` |
+| `R03-R06-AC3` Sincronizzazione non ancora avvenuta, timeout o rifiuto lasciano il lavoro in attesa/riprova e non completano ne` spostano il messaggio sorgente. | Regressioni deterministiche sugli esiti temporanei e permanenti, con verifica dell'ordine delle chiamate. | Verify non visibile produce `waiting` senza intake; eccezione o rifiuto intake producono evento riprovabile; `LocalCompletionRunner(require_da_archiviare=True)` non apre la casella finche` manca un intake riuscito. | `MET` |
+| `R03-R06-AC4` Una nuova esecuzione e una risposta di presa in carico gia` esistente non producono duplicati e permettono il completamento sicuro. | Test di ripetizione sulla stessa identita` tecnica e risposta idempotente dell'intake fake. | Un evento locale `created`, `updated` o `idempotent` rende il retry `already_delivered` senza nuove chiamate; un errore resta riprovabile e il completamento procede dopo l'esito idempotente. | `MET` |
+| `R03-R06-AC5` Home e Attivita` descrivono in termini utente consegna riuscita, attesa di sincronizzazione o problema azionabile; test mirati e smoke locale sono verdi. | Test dei modelli/testi visibili, inventario termini vietati e smoke locale. | Attivita traduce consegna, sincronizzazione e problema con azioni comprensibili; `Registro e avvio` configura indirizzo e codice senza termini tecnici e resta entro 960x640 a 100%/125%. Mirati collegamento/handoff/UI `92 passed`, Tk reale `1 passed`; smoke finale `529 passed` (una prima esecuzione: `528 passed` e un errore transitorio Tcl/Tk preesistente, non riprodotto a toolchain libera). | `MET` |
 
 ### GUI-U-R04 - Release candidate e collaudo finale
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `TODO`.
 Risultato: una release candidate identificata viene installata, usata e rimossa
 con successo su un PC o profilo Windows senza Python utilizzabile dall'utente,
 eseguendo l'intero percorso finale senza terminale o documentazione tecnica.

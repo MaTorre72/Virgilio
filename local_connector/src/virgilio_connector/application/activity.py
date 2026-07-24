@@ -125,7 +125,21 @@ def project_activity(
     result = str(event.get("result", "") or "").strip().lower()
     conflict = event_type.startswith("conflict_") or bool(event.get("conflict_type"))
     failed = conflict or event_type == "failed" or result in {"error", "failed", "failure"}
-    if conflict:
+    if event_type == "da_archiviare_intake" and result in {
+        "created", "updated", "idempotent"
+    }:
+        activity = "Documento inviato a Da archiviare"
+        outcome = "In attesa"
+        recommended_action = "Completa la decisione in Da archiviare."
+    elif event_type == "da_archiviare_intake" and result == "waiting":
+        activity = "Sincronizzazione del Limbo"
+        outcome = "In attesa"
+        recommended_action = "Attendi la sincronizzazione; Caronte riprovera automaticamente."
+    elif event_type == "da_archiviare_intake" and result == "failed":
+        activity = "Invio a Da archiviare"
+        outcome = "Problema"
+        recommended_action = "Riprova il controllo; se il problema continua, chiedi assistenza."
+    elif conflict:
         activity = "Documento da controllare"
         outcome = "Problema"
         recommended_action = "Controlla il documento prima di riprovare."

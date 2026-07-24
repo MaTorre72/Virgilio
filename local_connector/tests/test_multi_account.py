@@ -26,6 +26,7 @@ from virgilio_connector.storage_adapter import (
 )
 from virgilio_connector.bucoliche import BucolicheAppendOnlyAdapter
 from virgilio_connector.pipeline import LocalPipelineRunner
+from virgilio_connector.operational_handoff import OperationalHandoffResult
 from virgilio_connector.doctor import LocalDoctor
 from virgilio_connector.traceability import central_event_rows, load_rules
 
@@ -602,6 +603,52 @@ def controlled_ack(paths, accounts, *, dry_run=False, mailbox_factory=None):
     ).run(dry_run=dry_run)
 
 
+def test_operational_completion_waits_for_da_archiviare_handoff(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    mailbox_calls = []
+
+    def mailbox_factory(account):
+        mailbox_calls.append(account.account_alias)
+        return FakeAckMailbox(account)
+
+    runner = LocalCompletionRunner(
+        accounts,
+        paths=paths,
+        environ={
+            "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+            "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
+        },
+        mailbox_factory=mailbox_factory,
+        require_da_archiviare=True,
+    )
+
+    blocked = runner.complete(dry_run=False)
+
+    assert blocked[0].status == "completion_skipped"
+    assert blocked[0].reason == "message has attachments not delivered to Da archiviare"
+    assert mailbox_calls == []
+
+    with sqlite3.connect(paths.state_db) as db:
+        attachment_id, account_alias, fingerprint = db.execute(
+            """SELECT attachment_id,account_alias,fingerprint
+               FROM attachments WHERE status='staged_storage'"""
+        ).fetchone()
+        db.execute(
+            """INSERT INTO audit_events(
+                 created_at,machine_id,account_alias,entity_type,entity_id,
+                 fingerprint,action,status,details_json
+               ) VALUES(datetime('now'),'caronte-test',?,'attachment',?,?,
+                        'da_archiviare_intake','idempotent','{}')""",
+            (account_alias, attachment_id, fingerprint),
+        )
+        db.commit()
+
+    completed = runner.complete(dry_run=False)
+
+    assert completed[0].status == "completed"
+    assert mailbox_calls == ["account_1"]
+
+
 def mark_candidate_events_exported(paths, accounts, *, leave_pending=0):
     preview = controlled_ack(paths, accounts, dry_run=True)
     attachment_ids = {
@@ -917,6 +964,16 @@ class FakePhase:
         return self.result
 
 
+class FakeHandoffPhase:
+    def __init__(self, log, result=()):
+        self.log = log
+        self.result = result
+
+    def deliver(self, storage_results, dry_run):
+        self.log.append(("handoff", dry_run))
+        return self.result
+
+
 def test_pipeline_dry_run_no_report_and_order(tmp_path):
     accounts = load_multi_account_config(write_config(tmp_path))[:1]
     log = []
@@ -960,6 +1017,38 @@ def test_pipeline_real_report_and_error_collection(tmp_path):
     text = json.dumps(report).lower()
     for forbidden in ("password", "token", "base64", "file_bytes"):
         assert forbidden not in text
+
+
+def test_pipeline_handoff_runs_after_storage_and_before_completion(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    log = []
+    handoff_result = OperationalHandoffResult(
+        attachment_id="att-1",
+        account_alias="account_1",
+        status="waiting",
+        message="waiting",
+    )
+    runner = LocalPipelineRunner(
+        accounts,
+        paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner_factory=lambda: FakePhase("scan", log),
+        processor_factory=lambda: FakePhase("process", log),
+        storage_factory=lambda: FakePhase("storage", log),
+        handoff_factory=lambda: FakeHandoffPhase(log, (handoff_result,)),
+        completion_factory=lambda: FakePhase("completion", log),
+    )
+
+    result = runner.run(dry_run=False)
+
+    assert log == [
+        ("scan", False),
+        ("process", False),
+        ("storage", False),
+        ("handoff", False),
+        ("completion", False),
+    ]
+    assert result.status == "completed_with_warnings"
+    assert any("waiting for Limbo synchronization" in item for item in result.warnings)
 
 
 def test_run_local_pipeline_cli_invalid_config(tmp_path, monkeypatch):

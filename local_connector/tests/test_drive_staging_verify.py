@@ -46,6 +46,10 @@ def response_payload(*, ok=True):
         "file_found": ok,
         "manifest_found": ok,
         "manifest_consistent": ok,
+        "inbox_preview": ({
+            "drive_file_id": "drive-file-123",
+            "manifest_file_id": "manifest-file-123",
+        } if ok else None),
         "cloud_visible": ok,
         "message": "visible" if ok else "not visible",
         "errors": [] if ok else [{"code": "NOT_FOUND", "message": "not visible"}],
@@ -82,6 +86,8 @@ def test_valid_manifest_sends_only_metadata(tmp_path):
     ).verify_manifest(write_manifest(tmp_path))
     payload = json.loads(captured["body"].decode("utf-8"))
     assert result.cloud_visible is True
+    assert result.drive_file_id == "drive-file-123"
+    assert result.manifest_file_id == "manifest-file-123"
     assert captured["timeout"] == 9
     assert set(payload) == {
         "action", "dry_run", "attachment_id", "staged_filename", "sha256", "size_bytes"
@@ -128,6 +134,18 @@ def test_timeout_has_no_retry(tmp_path):
     with pytest.raises(DriveStagingVerifyError, match="timed out"):
         client.verify_manifest(write_manifest(tmp_path))
     assert calls == 1
+
+
+@pytest.mark.parametrize("field", ["drive_file_id", "manifest_file_id"])
+def test_cloud_visible_response_requires_both_drive_identifiers(tmp_path, field):
+    response = response_payload()
+    response["inbox_preview"][field] = ""
+    client = DriveStagingVerifyClient(
+        "https://example.invalid/exec",
+        opener=lambda request, timeout: FakeResponse(response),
+    )
+    with pytest.raises(DriveStagingVerifyError, match="missing Drive identifiers"):
+        client.verify_manifest(write_manifest(tmp_path))
 
 
 def test_client_does_not_modify_sqlite(tmp_path):

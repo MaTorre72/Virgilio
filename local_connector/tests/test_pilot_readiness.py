@@ -738,6 +738,36 @@ def test_watch_cli_runs_controlled_cycles(tmp_path, monkeypatch, capsys):
     assert sleep_calls == [7]
 
 
+def test_watch_single_cycle_returns_failure_when_pipeline_has_errors(
+    tmp_path, monkeypatch, capsys
+):
+    import virgilio_connector.__main__ as cli
+
+    @dataclass
+    class FailedPipelineResult:
+        report_path: str | None = None
+        dry_run: bool = False
+        status: str = "completed_with_errors"
+        errors: tuple[str, ...] = ("handoff failed",)
+        warnings: tuple[str, ...] = ()
+        human_summary: tuple[str, ...] = ("Invio non completato.",)
+
+    class FailedRunner:
+        def run(self, *, dry_run):
+            return FailedPipelineResult(dry_run=dry_run)
+
+    monkeypatch.setattr(
+        cli, "_build_local_pipeline_runner_from_config", lambda config: FailedRunner()
+    )
+    monkeypatch.setattr(sys, "argv", [
+        "virgilio", "watch", "--config", str(tmp_path / "accounts.yaml"),
+        "--human", "--interval-seconds", "7", "--max-cycles", "1",
+    ])
+
+    assert cli.main() == 1
+    assert "Invio non completato." in capsys.readouterr().out
+
+
 def test_init_config_cli_writes_valid_template(tmp_path, monkeypatch, capsys):
     from virgilio_connector.__main__ import main
     output = tmp_path / "accounts.local.yaml"

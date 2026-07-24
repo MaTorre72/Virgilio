@@ -13,6 +13,11 @@ from ..bucoliche import BucolicheError, GoogleOAuthLogin, load_bucoliche_config
 from ..pilot_readiness import BucolicheDoctor, has_bucoliche_section
 from .configuration import ConfigurationService
 from .registry_configuration import RegistryConfigurationService
+from .operational_connection import (
+    OperationalConnectionService,
+    OperationalConnectionSnapshot,
+)
+from .credentials import CredentialStoreError
 from .settings import SettingsValidationError
 from .windows_startup import WindowsAutomaticControlAdapter
 
@@ -29,6 +34,9 @@ class BucolicheStartupSnapshot:
     register_message: str
     automatic_control_installed: bool
     automatic_control_message: str
+    connection_configured: bool = False
+    connection_message: str = "Collegamento a Virgilio non configurato."
+    connection_endpoint: str = ""
 
 
 class BucolicheGateway(Protocol):
@@ -114,6 +122,7 @@ class BucolicheStartupService:
         configuration: ConfigurationService,
         bucoliche: BucolicheGateway,
         automatic_control: AutomaticControlGateway,
+        operational_connection: OperationalConnectionService | None = None,
     ) -> None:
         self.configuration = configuration
         self.registry_configuration = RegistryConfigurationService(
@@ -121,6 +130,7 @@ class BucolicheStartupService:
         )
         self.bucoliche = bucoliche
         self.automatic_control = automatic_control
+        self.operational_connection = operational_connection
 
     def load(self) -> BucolicheStartupSnapshot:
         register = self.registry_configuration.load()
@@ -133,9 +143,38 @@ class BucolicheStartupService:
         except (OSError, SettingsValidationError):
             installed = False
             message = "Stato del controllo automatico non disponibile."
-        return BucolicheStartupSnapshot(
-            register.configured, register.message, installed, message
+        connection = (
+            self.operational_connection.load()
+            if self.operational_connection is not None
+            else OperationalConnectionSnapshot(
+                False, "Collegamento a Virgilio non configurato."
+            )
         )
+        return BucolicheStartupSnapshot(
+            register.configured,
+            register.message,
+            installed,
+            message,
+            connection.configured,
+            connection.message,
+            connection.endpoint_url,
+        )
+
+    def configure_operational_connection(
+        self, endpoint_url: str, access_code: str
+    ) -> GuidedStatus:
+        if self.operational_connection is None:
+            return GuidedStatus(
+                False, "Configurazione non disponibile. Chiedi assistenza."
+            )
+        try:
+            result = self.operational_connection.configure(endpoint_url, access_code)
+        except (ValueError, CredentialStoreError, OSError) as exc:
+            message = str(exc)
+            if not message.startswith(("Inserisci ", "L'indirizzo ")):
+                message = "Collegamento non salvato. Riprova o chiedi assistenza."
+            return GuidedStatus(False, message)
+        return GuidedStatus(True, result.message)
 
     def set_bucoliche_enabled(self, enabled: bool) -> GuidedStatus:
         _write_bucoliche_enabled(self.configuration.store.source, enabled)

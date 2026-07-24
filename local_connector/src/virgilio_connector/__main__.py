@@ -44,6 +44,9 @@ from .da_archiviare_intake import (
 from .doctor import LocalDoctor
 from .application_paths import default_application_paths
 from .application.configuration import ConfigurationService
+from .application.credentials import CredentialStoreError
+from .application.operational_connection import create_operational_connection_service
+from .application.windows_credentials import create_account_credential_service
 from .local_paths import LocalDataPaths
 from .reset_local_state import ResetLocalStateError, reset_local_state
 from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
@@ -63,6 +66,7 @@ from .parser_spike import (compare_parser_fixtures, extract_local_fixtures,
                            extracted_fixtures_human_summary,
                            parser_spike_human_summary)
 from .pipeline import LocalPipelineRunner
+from .operational_handoff import OperationalHandoffRunner
 from .pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup, PilotCheck,
                               PilotPreview, PilotRunV11Runner, PilotSafeRunner,
                               has_bucoliche_section)
@@ -250,20 +254,43 @@ def _pilot_run_v11_human_summary(result) -> list[str]:
     return lines[:20]
 
 
-def _build_local_pipeline_runner(accounts, storage_config, paths, config_path):
+def _build_local_pipeline_runner(
+    accounts, storage_config, paths, config_path, runtime_environment=None
+):
+    runtime = os.environ if runtime_environment is None else runtime_environment
+    timeout_seconds = float(runtime.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15"))
     return LocalPipelineRunner(
         accounts, paths=paths, config_path=config_path,
-        scanner_factory=lambda: MultiAccountReadonlyScanner(accounts, paths=paths),
+        scanner_factory=lambda: MultiAccountReadonlyScanner(
+            accounts, paths=paths, environ=runtime,
+        ),
         processor_factory=lambda: MultiAccountImapProcessor(
-            accounts, paths=paths,
-            scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+            accounts, paths=paths, environ=runtime,
+            scanner=select_scanner(runtime.get("VIRGILIO_SCANNER", "auto")),
             rules=load_rules(config_path),
-            max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
+            max_attachment_bytes=int(runtime.get(
+                "VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400"
+            )),
         ),
         storage_factory=lambda: LocalFilesystemStorageAdapter(
             state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
         ),
-        completion_factory=lambda: LocalCompletionRunner(accounts, paths=paths),
+        handoff_factory=lambda: OperationalHandoffRunner(
+            paths=paths,
+            staging_root=storage_config.staging_dir,
+            verifier=DriveStagingVerifyClient(
+                runtime.get("VIRGILIO_CARONTE_DRIVE_VERIFY_URL"),
+                timeout_seconds=timeout_seconds,
+            ),
+            intake=DaArchiviareIntakeHttpClient(
+                runtime.get("VIRGILIO_CARONTE_INTAKE_URL"),
+                runtime.get("VIRGILIO_TOKEN"),
+                timeout_seconds=timeout_seconds,
+            ),
+        ),
+        completion_factory=lambda: LocalCompletionRunner(
+            accounts, paths=paths, environ=runtime, require_da_archiviare=True,
+        ),
     )
 
 
@@ -272,7 +299,44 @@ def _build_local_pipeline_runner_from_config(config_path: Path) -> LocalPipeline
     accounts = load_multi_account_config(config_path)
     storage_config = load_storage_config(config_path)
     paths = LocalDataPaths(local_root)
-    return _build_local_pipeline_runner(accounts, storage_config, paths, config_path)
+    runtime = _protected_runtime_environment(config_path, accounts)
+    return _build_local_pipeline_runner(
+        accounts, storage_config, paths, config_path, runtime
+    )
+
+
+def _protected_runtime_environment(config_path: Path, accounts) -> dict[str, str]:
+    """Hydrate installed workers from Windows storage while preserving CLI env."""
+
+    runtime = dict(os.environ)
+    missing_accounts = tuple(
+        account for account in accounts
+        if not runtime.get(account.username_env) or not runtime.get(account.password_env)
+    )
+    if missing_accounts:
+        try:
+            credentials = create_account_credential_service()
+            for account in missing_accounts:
+                values = credentials.read(account)
+                runtime.setdefault(account.username_env, values.username)
+                runtime.setdefault(account.password_env, values.password)
+        except (CredentialStoreError, OSError, AttributeError):
+            pass
+    connection_names = (
+        "VIRGILIO_CARONTE_DRIVE_VERIFY_URL",
+        "VIRGILIO_CARONTE_INTAKE_URL",
+        "VIRGILIO_TOKEN",
+    )
+    if any(not runtime.get(name) for name in connection_names):
+        try:
+            protected = create_operational_connection_service(
+                config_path
+            ).runtime_environment()
+            for name, value in protected.items():
+                runtime.setdefault(name, value)
+        except (CredentialStoreError, OSError, AttributeError):
+            pass
+    return runtime
 
 
 def _watch_human_summary(result, *, cycle: int) -> list[str]:
@@ -782,7 +846,9 @@ def main() -> int:
                         **asdict(result),
                     }, ensure_ascii=False, separators=(",", ":")))
                 if args.max_cycles and cycle >= args.max_cycles:
-                    return 0
+                    return 0 if result.status in {
+                        "completed", "completed_with_warnings"
+                    } else 1
                 sleep(args.interval_seconds)
         except KeyboardInterrupt:
             if args.human:
