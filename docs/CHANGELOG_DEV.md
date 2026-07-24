@@ -1,5 +1,13 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Prodotta la build operativa R03-R03 identificata
+  `CaronteSetup-0.11.0-8241325.exe`, commit
+  `8241325bf96d858259a577c87ffaba8c25513a05`, Build ID
+  `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`, SHA-256
+  `79BC5677B21B29CAF3F7E07A9394072FBBBA446DA573FF5AF0181B8CFF260FF8`.
+  Client OAuth Desktop incorporato; smoke build e installer `PASS`. Fascicolo
+  locale ignorato pronto; `H-R03-02` resta `FAIL` fino alla ripresa umana.
+
 - 2026-07-24 +02:00 - Completato `GUI-U-R03-R03`: Google usa una sola azione
   per autorizzare, verificare e salvare; IMAP usa `Verifica e aggiungi`.
   Credenziali orfane riconciliate con rollback, errori resi visibili senza

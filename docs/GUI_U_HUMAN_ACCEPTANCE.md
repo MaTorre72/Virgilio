@@ -88,7 +88,7 @@ o evidenze comuni.
 | Scenario | Verifiche obbligatorie | Esito umano | Evidenza/note |
 | -------- | ---------------------- | ------------ | -------------- |
 | `H-R03-01` Limbo reale | Selezione, validazione, salvataggio, ritorno, riapertura, persistenza e modifica da Impostazioni. | | |
-| `H-R03-02` Prima casella | Google: accesso browser, ritorno e riscontro senza password ordinaria. IMAP: email/password/host/porta, verifica read-only ed esito comprensibile. | `FAIL` | Build `1ad484b`: OAuth completa, ma la GUI non aggiunge la casella e mostra `Verifica non riuscita`. Diagnosi: il check usa implicitamente `Virgilio/da-traghettare`, assente; `INBOX` read-only e OAuth risultano funzionanti. Screenshot nel fascicolo ignorato R03. |
+| `H-R03-02` Prima casella | Google: accesso browser, ritorno e riscontro senza password ordinaria. IMAP: email/password/host/porta, verifica read-only ed esito comprensibile. | `FAIL` | Secondo esito storico sulla build `bb9b16e`: OAuth e verifica `INBOX` riescono, ma la casella non viene salvata per riferimenti protetti residui. Correttivo R03-R03 completato; ripresa umana pronta sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Non ripetere le evidenze valide. |
 | `H-R03-03` Seconda casella | Credenziale distinta, aggiunta, modifica, disattivazione, riattivazione, rimozione e persistenza. | | |
 | `H-R03-04` Feedback | Per Verifica collegamento, Controlla ora, Avvia e Pausa: avvio immediato, stato in corso, esito, errore azionabile e registrazione in Attivita e problemi. | | |
 | `H-R03-05` Chiusura/riapertura | Chiusura, eventuale icona, nessuna console/processo duplicato, riapertura, persistenza e stato coerente. | | |

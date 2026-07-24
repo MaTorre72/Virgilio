@@ -870,6 +870,14 @@ limite di 25 messaggi come conteggio visibile e separa in modo poco chiaro
 autorizzazione, verifica e aggiunta. Collaudo interrotto; nessuna correzione
 applicata durante il gate.
 
+Nuova build R03-R03 pronta per la sola ripresa umana di `H-R03-02`:
+`CaronteSetup-0.11.0-8241325.exe`, commit
+`8241325bf96d858259a577c87ffaba8c25513a05`, Build ID
+`7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`, SHA-256
+`79BC5677B21B29CAF3F7E07A9394072FBBBA446DA573FF5AF0181B8CFF260FF8`.
+Il client OAuth Desktop e` incorporato; smoke build e installer sono `PASS`.
+Lo stato di `R03-AC2` resta `NOT_MET` fino alla conferma umana esplicita.
+
 #### GUI-U-R03-R01 - Verifica collegamento su INBOX
 
 Stato: `DONE` (approvato e completato il 2026-07-24).
