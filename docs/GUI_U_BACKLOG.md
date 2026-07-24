@@ -851,7 +851,7 @@ passaggio dal demo al servizio reale ne cambia il comportamento osservabile.
 | -------- | -------------- | ----------------- | ----- |
 | `R03-AC1` Il Limbo reale si seleziona, valida, salva, persiste dopo riapertura e si modifica da Impostazioni (`H-R03-01`). | Test applicativi/UI con filesystem temporaneo; collaudo umano completo del round-trip. | Non ancora eseguita. | `NOT_MET` |
 | `R03-AC2` Prima e seconda casella hanno credenziali distinte, percorsi Google/IMAP corretti e operazioni persistenti di aggiunta, modifica, stato e rimozione (`H-R03-02`, `H-R03-03`). | Test con OAuth/IMAP/credential store fake; collaudo umano su due caselle reali autorizzate. | `H-R03-02` e `H-R03-03 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Test fake mirati gia` verdi; i due `FAIL` precedenti restano storici. | `MET` |
-| `R03-AC3` Verifica collegamento, Controlla ora, Avvia e Pausa mostrano avvio, stato, esito o errore azionabile e registrano l'attivita (`H-R03-04`). | Test asincroni deterministici su successo/errore; collaudo umano dei quattro comandi. | Non ancora eseguita. | `NOT_MET` |
+| `R03-AC3` La verifica casella integrata nel collegamento, Controlla ora, Avvia e Pausa mostrano avvio, stato, esito o errore azionabile e registrano l'attivita (`H-R03-04`). | Test asincroni deterministici su successo/errore; collaudo umano delle azioni operative. | `H-R03-04 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Tre screenshot mostrano controllo in corso, ultimo controllo aggiornato, avvio periodico, pausa riuscita e righe coerenti in Attivita. La verifica casella non e` piu` un comando separato: e` gia` coperta dai flussi approvati `H-R03-02`/`H-R03-03`. Test asincroni fake gia` verdi. | `MET` |
 | `R03-AC4` Chiusura, eventuale riduzione a icona e riapertura non lasciano console o processi duplicati e conservano configurazione e stato (`H-R03-05`). | Test lifecycle/processi su build installata; collaudo umano di chiusura e riapertura. | Non ancora eseguita. | `NOT_MET` |
 | `R03-AC5` Il controllo automatico si attiva, conferma, espone lo stato, persiste e si disattiva senza finestre tecniche (`H-R03-06`). | Test adapter Windows isolato e persistenza; collaudo umano sulla build installata. | Non ancora eseguita. | `NOT_MET` |
 
@@ -877,7 +877,9 @@ Nuova build R03-R03 pronta per la sola ripresa umana di `H-R03-02`:
 `79BC5677B21B29CAF3F7E07A9394072FBBBA446DA573FF5AF0181B8CFF260FF8`.
 Il client OAuth Desktop e` incorporato; smoke build e installer sono `PASS`.
 Conferme umane esplicite del 2026-07-24: `H-R03-02 = PASS` e
-`H-R03-03 = PASS`. `R03-AC2 = MET`; il collaudo prosegue da `H-R03-04`.
+`H-R03-03 = PASS`. `R03-AC2 = MET`. La prosecuzione ha confermato
+`H-R03-04 = PASS` con tre screenshot; `R03-AC3 = MET` e il collaudo prosegue
+da `H-R03-05`.
 
 #### GUI-U-R03-R01 - Verifica collegamento su INBOX
 

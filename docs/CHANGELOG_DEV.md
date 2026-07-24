@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Prosecuzione umana `GUI-U-R03`: conferma esplicita
+  `H-R03-04 = PASS` sulla build `8241325`, con tre screenshot di Controlla ora,
+  avvio, pausa e Attivita. La verifica casella e` correttamente integrata nel
+  collegamento gia` approvato e non e` un pulsante separato. `R03-AC3 = MET`;
+  il collaudo prosegue da `H-R03-05`.
+
 - 2026-07-24 +02:00 - Prosecuzione umana `GUI-U-R03` sulla build `8241325`,
   ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`: conferma esplicita
   `H-R03-03 = PASS`. Con `H-R03-02` gia` approvato, `R03-AC2 = MET`; il
