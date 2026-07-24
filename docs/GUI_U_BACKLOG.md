@@ -2,7 +2,7 @@
 
 Stato: `IN_PROGRESS`
 Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
-Task corrente: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`
+Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL`)
 
 Obiettivo finale:
 
@@ -850,7 +850,7 @@ passaggio dal demo al servizio reale ne cambia il comportamento osservabile.
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
 | `R03-AC1` Il Limbo reale si seleziona, valida, salva, persiste dopo riapertura e si modifica da Impostazioni (`H-R03-01`). | Test applicativi/UI con filesystem temporaneo; collaudo umano completo del round-trip. | Non ancora eseguita. | `NOT_MET` |
-| `R03-AC2` Prima e seconda casella hanno credenziali distinte, percorsi Google/IMAP corretti e operazioni persistenti di aggiunta, modifica, stato e rimozione (`H-R03-02`, `H-R03-03`). | Test con OAuth/IMAP/credential store fake; collaudo umano su due caselle reali autorizzate. | `FAIL` umano su build `1ad484b`, build ID `b1a2c354-e1d2-4d72-9d45-1a1ff92a9707`: browser OAuth interno completato, ma la GUI mostra `Verifica non riuscita` e non aggiunge la casella. Diagnosi read-only: rete, OAuth, XOAUTH2, `INBOX`, ricerca e lettura di 100 messaggi riescono; il servizio GUI usa il default nascosto `Virgilio/da-traghettare` e fallisce su `SELECT READ-ONLY`. Screenshot nel fascicolo ignorato R03. | `NOT_MET` |
+| `R03-AC2` Prima e seconda casella hanno credenziali distinte, percorsi Google/IMAP corretti e operazioni persistenti di aggiunta, modifica, stato e rimozione (`H-R03-02`, `H-R03-03`). | Test con OAuth/IMAP/credential store fake; collaudo umano su due caselle reali autorizzate. | Secondo `FAIL` umano sulla build corretta `bb9b16e`, ID `9337fa8d-737e-4b16-8f82-b68cb129c778`: OAuth e verifica `INBOX` riescono, poi `Aggiungi casella` non crea la configurazione e non mostra errore. Diagnosi read-only: esistono riferimenti protetti residui; il salvataggio create-only solleva un errore non gestito. Screenshot nel fascicolo ignorato R03. | `NOT_MET` |
 | `R03-AC3` Verifica collegamento, Controlla ora, Avvia e Pausa mostrano avvio, stato, esito o errore azionabile e registrano l'attivita (`H-R03-04`). | Test asincroni deterministici su successo/errore; collaudo umano dei quattro comandi. | Non ancora eseguita. | `NOT_MET` |
 | `R03-AC4` Chiusura, eventuale riduzione a icona e riapertura non lasciano console o processi duplicati e conservano configurazione e stato (`H-R03-05`). | Test lifecycle/processi su build installata; collaudo umano di chiusura e riapertura. | Non ancora eseguita. | `NOT_MET` |
 | `R03-AC5` Il controllo automatico si attiva, conferma, espone lo stato, persiste e si disattiva senza finestre tecniche (`H-R03-06`). | Test adapter Windows isolato e persistenza; collaudo umano sulla build installata. | Non ancora eseguita. | `NOT_MET` |
@@ -862,6 +862,13 @@ su INBOX`. La verifica di connettivita` deve selezionare esplicitamente la
 cartella standard `INBOX`, restare read-only e non dipendere da cartelle
 operative nascoste. Dopo approvazione, test mirati e nuova build identificata,
 il collaudo riprende senza ripetere le evidenze gia` valide.
+
+Ripresa del 2026-07-24 sulla build `bb9b16e`: Build ID e installer identificati
+correttamente; OAuth e verifica read-only su `INBOX` riescono. `H-R03-02`
+resta `FAIL` perche` la casella non viene aggiunta. La GUI presenta inoltre il
+limite di 25 messaggi come conteggio visibile e separa in modo poco chiaro
+autorizzazione, verifica e aggiunta. Collaudo interrotto; nessuna correzione
+applicata durante il gate.
 
 #### GUI-U-R03-R01 - Verifica collegamento su INBOX
 
@@ -912,6 +919,29 @@ la correzione altera il check read-only su `INBOX`.
 | `R03-R02-AC3` Aggiunta, modifica e riapertura conservano tre valori distinti per ciascuna casella. | Test controller/servizio con due account e filesystem temporaneo. | Il test round-trip aggiunge due terne distinte, ricarica la prima nella vista, modifica `Cartella completati` e ritrova i valori con un nuovo servizio. | `MET` |
 | `R03-R02-AC4` `Verifica collegamento` continua a usare `INBOX` e non una cartella operativa. | Regressione R03-R01. | `test_connection_check_uses_standard_inbox_not_operational_default` verde nel gruppo mirato. | `MET` |
 | `R03-R02-AC5` Le sole prove interessate R03-R02/R03-T02 sono verdi con fake. | Test account service/UI, connection e feedback asincrono. | Core mirato `17 passed in 1.08s`; sola prova Tk interessata `1 passed in 2.11s`, pannello avanzato entro 960x640 a 100%/125%. | `MET` |
+
+#### GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile
+
+Stato: `PROPOSED`, in attesa di approvazione.
+Risultato: ogni provider ha una singola azione comprensibile che verifica e
+salva la casella; il percorso Google completa browser, verifica e inserimento
+nell'elenco senza un secondo pulsante ambiguo.
+Dipendenze: `GUI-U-R03-R01/R02 = DONE`; secondo `FAIL` umano `H-R03-02` e
+diagnosi read-only dei riferimenti protetti residui.
+Componenti ammessi: vista Caselle, controller, `AccountManagementService`,
+servizio credenziali Windows, feedback sicuro, test fake/Tk mirati.
+Esclusioni: rete o credenziali reali nei test, nuove dipendenze, redesign delle
+altre schermate, Apps Script, Registro, pipeline e nuova build.
+Condizione di blocco: il salvataggio non puo` essere reso atomico e
+recuperabile senza esporre o perdere credenziali di altre caselle.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-R03-AC1` Google espone una sola azione che autorizza, verifica e salva; al successo la riga appare con stato chiaro. | Test controller end-to-end con OAuth, IMAP e persistenza fake. | Da acquisire. | `NOT_MET` |
+| `R03-R03-AC2` IMAP espone `Verifica e aggiungi` con lo stesso esito osservabile e senza azioni duplicate. | Test vista/controller per provider generico. | Da acquisire. | `NOT_MET` |
+| `R03-R03-AC3` Riferimenti protetti residui senza configurazione vengono riconciliati in modo atomico; ogni errore lascia stato coerente e mostra problema e azione. | Regressioni su credenziali preesistenti, rollback e messaggio sicuro. | Da acquisire. | `NOT_MET` |
+| `R03-R03-AC4` La verifica comunica soltanto che Caronte puo` leggere la casella oppure dichiara esplicitamente che 25 e` un campione, mai il totale. | Test servizio/testi visibili. | Da acquisire. | `NOT_MET` |
+| `R03-R03-AC5` Il flusso resta leggibile a 960x640, 100%/125%, e non introduce termini tecnici o segreti. | Prova Tk interessata e inventario stringhe. | Da acquisire. | `NOT_MET` |
 
 #### GUI-U-R03-T01 - Prima casella reale senza blocco Google
 

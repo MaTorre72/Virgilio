@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Seconda ripresa umana `GUI-U-R03`, build `bb9b16e`,
+  ID `9337fa8d-737e-4b16-8f82-b68cb129c778`: OAuth e verifica `INBOX`
+  riescono, ma `Aggiungi casella` non salva e non mostra errore. Diagnosi
+  read-only: configurazione assente e riferimenti protetti residui incompatibili
+  con il salvataggio create-only; `25 messaggi` e` il limite del campione.
+  Registrata anche la richiesta di semplificare il flusso; proposto R03-R03.
+
 - 2026-07-24 +02:00 - Completato `GUI-U-R03-R02`: Caselle espone nelle
   impostazioni avanzate le cartelle da controllare, completati e problemi,
   obbligatorie, modificabili e persistenti per account. Il caso reale

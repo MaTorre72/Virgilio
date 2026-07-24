@@ -16,12 +16,12 @@
 - Task completato: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home`
 - Task completato: `GUI-U-R03-R01 - Verifica collegamento su INBOX`
 - Task completato: `GUI-U-R03-R02 - Cartelle operative configurabili per casella`
-- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL`, da riprendere su nuova build)
-- Successivo univoco: produrre una sola build identificata con R03-R01/R02 e riprendere il collaudo da `H-R03-02`, senza ripetere le evidenze valide
+- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL` confermato sulla build corretta)
+- Successivo univoco proposto: approvare `GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: nessuno per il codice. R03-R01 verifica su `INBOX`; R03-R02 rende configurabili per casella le cartelle operative e accetta `da-traghettare` senza cartella madre. Serve soltanto una nuova build identificata prima della ripresa umana. Il demo R02 non viene ampliato o ricollaudato; Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
+- Blocchi aperti: build `bb9b16e`, ID `9337fa8d-737e-4b16-8f82-b68cb129c778`, completa OAuth e verifica read-only su `INBOX`, ma `Aggiungi casella` fallisce senza riscontro quando esistono riferimenti protetti residui e non crea la configurazione. Il testo `25 messaggi visibili` descrive il limite del campione come se fosse il totale. L'utente richiede inoltre una sequenza meno astrusa. Il disinstallatore diretto non ha completato la rimozione; Windows 11 `App installate` ha funzionato, difetto separato da trattare prima della release
 - Ultima prova nuova mirata: R03-R02/R03-T02 core -> `OK` (`17 passed`, fake) e sola prova Tk interessata -> `OK` (`1 passed`, 960x640 a 100%/125%); nessuna rete o credenziale reale
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
