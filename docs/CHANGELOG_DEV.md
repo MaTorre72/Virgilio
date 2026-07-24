@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - `H-R03-06 = FAIL` umano sulla build `8241325`:
+  `Attivazione non riuscita. Riprova da Windows.` e nessuna attivita
+  `Caronte - controllo automatico` creata. Diagnosi read-only: il gateway usa
+  `schtasks` dalla GUI ordinaria; il Registro non configurato nella stessa
+  schermata e` un prerequisito separato. Proposto `GUI-U-R03-R04`, senza
+  modifiche di codice in attesa di approvazione.
+
 - 2026-07-24 +02:00 - Prosecuzione umana `GUI-U-R03`: conferma esplicita
   `H-R03-05 = PASS` sulla build `8241325`. Riduzione a icona, chiusura,
   riapertura, persistenza, stato e assenza di processi duplicati sono stati

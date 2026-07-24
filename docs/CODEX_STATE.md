@@ -17,12 +17,12 @@
 - Task completato: `GUI-U-R03-R01 - Verifica collegamento su INBOX`
 - Task completato: `GUI-U-R03-R02 - Cartelle operative configurabili per casella`
 - Task completato: `GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile`
-- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`IN_PROGRESS`; `H-R03-02`--`H-R03-05 = PASS` umano sulla build R03-R03)
-- Successivo univoco: eseguire soltanto `H-R03-06` sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`, senza ripetere le evidenze valide
+- Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL` su `H-R03-06`; `H-R03-02`--`H-R03-05 = PASS` umano sulla build R03-R03)
+- Successivo univoco: attendere approvazione esplicita di `GUI-U-R03-R04 - Controllo automatico per utente`; non modificare codice e non ripetere le evidenze valide
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: gate umano `H-R03-06` e chiusura dei criteri R03 residui. `H-R03-02`--`H-R03-05 = PASS` umano il 2026-07-24 sulla build identificata R03-R03; `R03-AC2`--`R03-AC4 = MET`. Il disinstallatore diretto non ha completato la rimozione; Windows 11 `App installate` ha funzionato, difetto separato da trattare prima della release
+- Blocchi aperti: `H-R03-06 = FAIL`. Il gateway usa Task Scheduler dalla GUI ordinaria e non crea `Caronte - controllo automatico`; il Registro assente mostrato nella stessa vista e` un prerequisito amministrativo separato. Proposto `GUI-U-R03-R04`, in attesa di approvazione. `H-R03-02`--`H-R03-05 = PASS` e `R03-AC2`--`R03-AC4 = MET`. Il disinstallatore diretto resta un difetto separato da trattare prima della release
 - Ultima build operativa: `CaronteSetup-0.11.0-8241325.exe`, commit `8241325bf96d858259a577c87ffaba8c25513a05`, Build ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`, SHA-256 `79BC5677B21B29CAF3F7E07A9394072FBBBA446DA573FF5AF0181B8CFF260FF8`; fascicolo locale ignorato `artifacts/gui-u-r03/7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff/`
 - Ultima prova nuova mirata: R03-R03 core -> `OK` (`37 passed`, fake) e sola prova Tk interessata -> `OK` (`1 passed`, 960x640 a 100%/125%); nessuna rete o credenziale reale
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`

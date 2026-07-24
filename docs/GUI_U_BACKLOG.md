@@ -853,7 +853,7 @@ passaggio dal demo al servizio reale ne cambia il comportamento osservabile.
 | `R03-AC2` Prima e seconda casella hanno credenziali distinte, percorsi Google/IMAP corretti e operazioni persistenti di aggiunta, modifica, stato e rimozione (`H-R03-02`, `H-R03-03`). | Test con OAuth/IMAP/credential store fake; collaudo umano su due caselle reali autorizzate. | `H-R03-02` e `H-R03-03 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Test fake mirati gia` verdi; i due `FAIL` precedenti restano storici. | `MET` |
 | `R03-AC3` La verifica casella integrata nel collegamento, Controlla ora, Avvia e Pausa mostrano avvio, stato, esito o errore azionabile e registrano l'attivita (`H-R03-04`). | Test asincroni deterministici su successo/errore; collaudo umano delle azioni operative. | `H-R03-04 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Tre screenshot mostrano controllo in corso, ultimo controllo aggiornato, avvio periodico, pausa riuscita e righe coerenti in Attivita. La verifica casella non e` piu` un comando separato: e` gia` coperta dai flussi approvati `H-R03-02`/`H-R03-03`. Test asincroni fake gia` verdi. | `MET` |
 | `R03-AC4` Chiusura, eventuale riduzione a icona e riapertura non lasciano console o processi duplicati e conservano configurazione e stato (`H-R03-05`). | Test lifecycle/processi su build installata; collaudo umano di chiusura e riapertura. | `H-R03-05 = PASS` umano esplicito il 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`. Test lifecycle/processi e smoke della build gia` verdi. | `MET` |
-| `R03-AC5` Il controllo automatico si attiva, conferma, espone lo stato, persiste e si disattiva senza finestre tecniche (`H-R03-06`). | Test adapter Windows isolato e persistenza; collaudo umano sulla build installata. | Non ancora eseguita. | `NOT_MET` |
+| `R03-AC5` Il controllo automatico si attiva, conferma, espone lo stato, persiste e si disattiva senza finestre tecniche (`H-R03-06`). | Test adapter Windows isolato e persistenza; collaudo umano sulla build installata. | `H-R03-06 = FAIL` umano il 2026-07-24 sulla build `8241325`: la GUI mostra `Attivazione non riuscita. Riprova da Windows.` e l'attivita `Caronte - controllo automatico` non viene creata. Diagnosi read-only: il gateway usa `schtasks /create` dalla GUI ordinaria; il Registro non configurato mostrato nella stessa vista e` un prerequisito separato. Screenshot acquisito in chat. | `NOT_MET` |
 
 Esito umano del 2026-07-24: `FAIL` su `H-R03-02`; scenario, passaggio, atteso,
 osservato e screenshot sono registrati nel fascicolo ignorato R03. Correttivo
@@ -879,7 +879,8 @@ Il client OAuth Desktop e` incorporato; smoke build e installer sono `PASS`.
 Conferme umane esplicite del 2026-07-24: `H-R03-02 = PASS` e
 `H-R03-03 = PASS`. `R03-AC2 = MET`. La prosecuzione ha confermato
 `H-R03-04 = PASS` con tre screenshot; `R03-AC3 = MET` e il collaudo prosegue
-con `H-R03-05 = PASS`; `R03-AC4 = MET` e il collaudo prosegue da `H-R03-06`.
+con `H-R03-05 = PASS`; `R03-AC4 = MET`. `H-R03-06 = FAIL` per mancata
+creazione dell'avvio automatico Windows; il gate e` interrotto.
 
 #### GUI-U-R03-R01 - Verifica collegamento su INBOX
 
@@ -953,6 +954,30 @@ recuperabile senza esporre o perdere credenziali di altre caselle.
 | `R03-R03-AC3` Riferimenti protetti residui senza configurazione vengono riconciliati in modo atomico; ogni errore lascia stato coerente e mostra problema e azione. | Regressioni su credenziali preesistenti, rollback e messaggio sicuro. | Le regressioni riproducono i due riferimenti reali residui, preservano un'altra casella, ripristinano i valori precedenti se il salvataggio configurazione fallisce e oscurano dettagli dell'eccezione. | `MET` |
 | `R03-R03-AC4` La verifica comunica soltanto che Caronte puo` leggere la casella oppure dichiara esplicitamente che 25 e` un campione, mai il totale. | Test servizio/testi visibili. | `ReadonlyAccountConnectionService` continua la lettura limitata ma restituisce soltanto `Collegamento riuscito. Caronte può leggere la casella.`; test con zero e due messaggi verdi. | `MET` |
 | `R03-R03-AC5` Il flusso resta leggibile a 960x640, 100%/125%, e non introduce termini tecnici o segreti. | Prova Tk interessata e inventario stringhe. | Core mirato finale `37 passed in 0.94s`; sola prova Tk interessata `1 passed in 1.06s`, entro 960x640 a 100%/125%; smoke locale finale `501 passed`; inventario e controlli di non esposizione verdi. | `MET` |
+
+#### GUI-U-R03-R04 - Controllo automatico per utente
+
+Stato: `PROPOSED_WAITING_USER_APPROVAL`.
+Risultato: il controllo automatico si registra e si rimuove dalla build
+installata per il solo utente corrente, senza UAC o privilegi amministrativi e
+senza dipendere dalla configurazione del Registro.
+Dipendenze: `H-R03-06 = FAIL`; `R03-AC2`--`R03-AC4 = MET`.
+Componenti ammessi: servizio condiviso di avvio Windows, gateway del controllo
+automatico, vista `Registro e avvio`, pulizia dell'installer/disinstallatore,
+test fake/Windows isolati e documentazione minima.
+Esclusioni: configurazione reale del Registro, Apps Script, credenziali reali,
+elevazione/UAC, nuove dipendenze, redesign delle altre viste e GUI legacy.
+Condizione di blocco: il worker congelato non puo` essere avviato e rimosso
+tramite una registrazione per-utente senza repository, Python esterno o
+privilegi amministrativi.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-R04-AC1` Registro e controllo automatico restano indipendenti: Registro assente non blocca ne` spiega l'avvio Windows. | Test servizio/vista con Registro assente e gateway automatico disponibile. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R04-AC2` Attiva/Disattiva usa una registrazione del solo utente corrente e non richiede Task Scheduler, UAC o amministratore. | Test adapter Windows iniettato e ispezione del comando registrato. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R04-AC3` La registrazione avvia `Caronte.exe watch` con configurazione e intervallo installati, senza repository o Python esterno. | Test frozen sul comando e smoke da cartella copiata. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R04-AC4` Stato, attivazione, persistenza, rimozione ed errori sono veritieri e azionabili senza dettagli tecnici. | Test servizio/UI su successo, errore e riapertura. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R04-AC5` Disinstallazione rimuove la registrazione automatica e test mirati, smoke locale e nuova build identificata sono verdi. | Test installer/disinstallazione, smoke e manifest build. | Non ancora eseguita. | `NOT_MET` |
 
 #### GUI-U-R03-T01 - Prima casella reale senza blocco Google
 
