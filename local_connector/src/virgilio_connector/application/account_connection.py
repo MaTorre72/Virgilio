@@ -18,6 +18,7 @@ class AccountConnectionRequest:
     host: str = "imap.gmail.com"
     port: int = 993
     auth_mode: str = "password"
+    mailbox: str = "INBOX"
 
 
 class ReadonlyAccountConnectionService:
@@ -39,6 +40,7 @@ class ReadonlyAccountConnectionService:
                 port=request.port,
                 username=request.email,
                 password=request.password,
+                mailbox=request.mailbox,
                 auth_mode=request.auth_mode,
             ),
             self._local_root,

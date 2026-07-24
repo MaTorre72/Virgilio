@@ -863,6 +863,33 @@ cartella standard `INBOX`, restare read-only e non dipendere da cartelle
 operative nascoste. Dopo approvazione, test mirati e nuova build identificata,
 il collaudo riprende senza ripetere le evidenze gia` valide.
 
+#### GUI-U-R03-R01 - Verifica collegamento su INBOX
+
+Stato: `DONE` (approvato e completato il 2026-07-24).
+Risultato: `Accedi con Google` e `Verifica collegamento` dimostrano accesso,
+autenticazione e lettura IMAP usando la cartella standard `INBOX`, senza
+dipendere dalla cartella operativa configurata per acquisire i documenti.
+Dipendenza: `GUI-U-R03 = FAIL` su `H-R03-02`; diagnosi reale con OAuth e IMAP
+read-only completata.
+Componenti ammessi: `AccountConnectionRequest`,
+`ReadonlyAccountConnectionService`, test fake mirati e documentazione minima.
+Esclusioni: rete o credenziali reali nei test, campi GUI, cartelle operative,
+redesign, Apps Script, Registro, pipeline e nuove dipendenze.
+Condizione di blocco: la verifica non puo` selezionare `INBOX` in sola lettura
+oppure la correzione modifica la cartella usata dalle operazioni reali.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-R01-AC1` La richiesta di verifica dichiara `INBOX` e il servizio la passa all'adapter IMAP read-only. | Test unitario su configurazione ricevuta dal mailbox fake. | `AccountConnectionRequest.mailbox` vale `INBOX` e `ReadonlyAccountConnectionService` lo trasferisce esplicitamente a `ImapReadonlyConfig`. | `MET` |
+| `R03-R01-AC2` Il caso riprodotto, in cui manca `Virgilio/da-traghettare` ma `INBOX` e` disponibile, completa la verifica. | Regressione fake che accetta soltanto `INBOX`. | `test_connection_check_uses_standard_inbox_not_operational_default` era rosso sul default operativo ed e` verde dopo il correttivo. | `MET` |
+| `R03-R01-AC3` Le sole prove R03-T02 restano verdi senza rete o credenziali reali. | `test_account_connection.py`, `test_user_app_accounts.py` e `test_user_app_operational_feedback.py`. | Gruppo mirato `15 passed in 0.69s`, con fake e basetemp isolato; nessuna rete o credenziale reale. | `MET` |
+
+Nota fuori ambito confermata dall'utente: la cartella operativa reale e`
+`da-traghettare`, senza cartella madre, mentre `AccountManagementService`
+assegna oggi `Virgilio_Inbox`, `Virgilio_Done` e `Virgilio_Errori`. Proposto
+`GUI-U-R03-R02 - Cartelle operative configurabili per casella`, da approvare
+prima di una nuova build, senza reintrodurre file tecnici nella GUI.
+
 #### GUI-U-R03-T01 - Prima casella reale senza blocco Google
 
 Stato: `DONE`.

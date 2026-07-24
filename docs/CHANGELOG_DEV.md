@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Completato `GUI-U-R03-R01`: la verifica collegamento
+  dichiara e usa `INBOX`, senza dipendere dalla cartella operativa assente;
+  regressione prima rossa e poi verde, gruppo mirato R03-R01/R03-T02
+  `15 passed`. Nessuna rete o credenziale reale nei test. Emerso separatamente
+  che la GUI salva cartelle operative implicite diverse dal caso reale
+  `da-traghettare`; proposto R03-R02 e rinviata la nuova build.
+
 - 2026-07-24 +02:00 - Collaudo umano `GUI-U-R03` interrotto con `FAIL` su
   `H-R03-02`: OAuth interno completa, ma la GUI non aggiunge la prima casella.
   La diagnosi read-only ha escluso rete e policy Google e ha riprodotto

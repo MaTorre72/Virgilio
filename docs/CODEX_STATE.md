@@ -14,13 +14,14 @@
 - Task completato: `GUI-U-R03-T01 - Prima casella reale senza blocco Google`
 - Task completato: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`
 - Task completato: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home`
+- Task completato: `GUI-U-R03-R01 - Verifica collegamento su INBOX`
 - Task corrente: `GUI-U-R03 - Collegamento dei servizi` (`FAIL`)
-- Successivo univoco proposto: approvare `GUI-U-R03-R01 - Verifica collegamento su INBOX`; nessuna modifica di codice prima dell'approvazione
+- Successivo univoco proposto: approvare `GUI-U-R03-R02 - Cartelle operative configurabili per casella`; nessuna nuova build prima di risolvere il valore implicito `Virgilio_Inbox`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
 - Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
 - Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Blocchi aperti: collaudo umano R03 interrotto su `H-R03-02`: OAuth, XOAUTH2, `INBOX`, ricerca e lettura degli ultimi 100 messaggi sono riusciti, ma la verifica della GUI seleziona implicitamente `Virgilio/da-traghettare` e fallisce con `SELECT READ-ONLY` quando la cartella non esiste. Proposto un solo correttivo finito: verificare l'accesso su `INBOX`. Il demo R02 non viene ampliato o ricollaudato; Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
-- Ultima prova nuova mirata: quattro moduli `test_user_app*` R03-T03 -> `OK` (`39 passed`, fixture fake, Tk reale e basetemp isolato); corretto il Riepilogo reale che a 125% richiedeva 971 px
+- Blocchi aperti: R03-R01 ha separato la verifica su `INBOX` dalla cartella operativa (`15 passed`). Il collaudo ha pero` confermato che la casella reale usa `da-traghettare`, mentre la GUI salva implicitamente `Virgilio_Inbox`; serve approvazione del correttivo separato R03-R02 prima di una nuova build e della ripresa del gate. Il demo R02 non viene ampliato o ricollaudato; Python Windows `3.13.14` e la venv locale inizializzano Tcl/Tk `8.6.15`
+- Ultima prova nuova mirata: `test_account_connection.py`, `test_user_app_accounts.py` e `test_user_app_operational_feedback.py` R03-R01/R03-T02 -> `OK` (`15 passed`, fake, nessuna rete o credenziale reale)
 - Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
 - Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
 - Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)
