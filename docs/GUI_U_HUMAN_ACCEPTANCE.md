@@ -88,8 +88,8 @@ o evidenze comuni.
 | Scenario | Verifiche obbligatorie | Esito umano | Evidenza/note |
 | -------- | ---------------------- | ------------ | -------------- |
 | `H-R03-01` Limbo reale | Selezione, validazione, salvataggio, ritorno, riapertura, persistenza e modifica da Impostazioni. | | |
-| `H-R03-02` Prima casella | Google: accesso browser, ritorno e riscontro senza password ordinaria. IMAP: email/password/host/porta, verifica read-only ed esito comprensibile. | `PASS` | Conferma umana esplicita del 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`, dopo reinstallazione della build corretta. I due `FAIL` precedenti restano evidenza storica; il prossimo scenario e` `H-R03-03`. |
-| `H-R03-03` Seconda casella | Credenziale distinta, aggiunta, modifica, disattivazione, riattivazione, rimozione e persistenza. | | |
+| `H-R03-02` Prima casella | Google: accesso browser, ritorno e riscontro senza password ordinaria. IMAP: email/password/host/porta, verifica read-only ed esito comprensibile. | `PASS` | Conferma umana esplicita del 2026-07-24 sulla build `8241325`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`, dopo reinstallazione della build corretta. I due `FAIL` precedenti restano evidenza storica. |
+| `H-R03-03` Seconda casella | Credenziale distinta, aggiunta, modifica, disattivazione, riattivazione, rimozione e persistenza. | `PASS` | Conferma umana esplicita del 2026-07-24 sulla stessa build R03-R03 installata. Il prossimo scenario e` `H-R03-04`. |
 | `H-R03-04` Feedback | Per Verifica collegamento, Controlla ora, Avvia e Pausa: avvio immediato, stato in corso, esito, errore azionabile e registrazione in Attivita e problemi. | | |
 | `H-R03-05` Chiusura/riapertura | Chiusura, eventuale icona, nessuna console/processo duplicato, riapertura, persistenza e stato coerente. | | |
 | `H-R03-06` Automatico | Attivazione/conferma/stato, disattivazione, persistenza e assenza di finestre o percorsi tecnici. | | |

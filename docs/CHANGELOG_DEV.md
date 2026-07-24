@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Prosecuzione umana `GUI-U-R03` sulla build `8241325`,
+  ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`: conferma esplicita
+  `H-R03-03 = PASS`. Con `H-R03-02` gia` approvato, `R03-AC2 = MET`; il
+  collaudo prosegue senza ripetizioni da `H-R03-04`.
+
 - 2026-07-24 +02:00 - Ripresa umana `GUI-U-R03` sulla build `8241325`,
   ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`: conferma esplicita
   `H-R03-02 = PASS` dopo reinstallazione. I `FAIL` precedenti restano storici;
