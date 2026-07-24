@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-24 +02:00 - Priorita` riallineata per decisione utente: il
+  disinstallatore diretto e` rinviato alla fine con priorita` molto bassa.
+  Diagnosi read-only del percorso reale: la pipeline Home copia nel Limbo ma
+  non compone verifica Drive e presa in carico in `Da archiviare`; Apps Script
+  restituisce gia` gli ID necessari, oggi scartati dal client Python. Proposto
+  il task finito `GUI-U-R03-R06 - Consegna operativa a Da archiviare`.
+
 - 2026-07-24 +02:00 - Completato `GUI-U-R03-R05`: i campi Limbo del primo
   avvio e di Impostazioni e le tre cartelle operative avanzate usano una
   larghezza condivisa di 48 caratteri e colonne elastiche. Percorsi lunghi,

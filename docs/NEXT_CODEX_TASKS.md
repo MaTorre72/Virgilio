@@ -19,7 +19,9 @@
 - Ripresa R03-R04: `H-R03-06 = PASS` umano esplicito sulla build `eaf05fd`, ID `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`; attivazione, stato, persistenza dopo nuovo accesso Windows, disattivazione e assenza di finestre tecniche tutti confermati.
 - Chiusura R03: `H-R03-01 = PASS` umano esplicito; selezione, validazione, salvataggio, ritorno, riapertura, persistenza e modifica del Limbo approvati. Osservazione non bloccante: i campi degli indirizzi cartella sono troppo piccoli.
 - Task completato: `GUI-U-R03-R05 - Campi cartella leggibili`. Limbo nel primo avvio e in Impostazioni e le tre cartelle operative avanzate usano larghezza minima di 48 caratteri e colonne elastiche; valori lunghi scorrono e conservano selezione/copia/incolla. Gruppo mirato `47 passed`, Tk entro 960x640 a 100%/125%, smoke locale `506 passed`.
-- Successivo univoco: definire e sottoporre ad approvazione un correttivo finito per il difetto separato del disinstallatore diretto prima della release; non modificare codice senza approvazione.
+- Decisione utente del 2026-07-24: il disinstallatore diretto ha priorita` molto bassa e viene trattato alla fine; la priorita` e` completare il comportamento operativo per cui Caronte e` stato progettato.
+- Diagnosi read-only: `Controlla ora` e il controllo continuo eseguono la pipeline locale fino alla copia nel Limbo sincronizzato e poi completano il messaggio. La verifica cloud e la presa in carico in `Da archiviare` esistono come comandi separati e non sono composte nella pipeline. Apps Script restituisce gia` gli ID Drive dentro `inbox_preview`, ma `DriveStagingVerifyResponse` non li conserva.
+- Successivo univoco: `GUI-U-R03-R06 - Consegna operativa a Da archiviare` (`PROPOSED_WAITING_USER_APPROVAL`); non modificare codice senza approvazione.
 - Le evidenze gia` acquisite restano valide e non devono essere ripetute; ogni run aggiunge soltanto la prova specifica del nuovo criterio.
 - Il collaudo R3 riprende dalla prima evidenza non acquisita solo dopo build identificata del correttivo approvato; le evidenze valide gia` raccolte non vengono ripetute.
 

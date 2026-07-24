@@ -3,7 +3,7 @@
 Stato: `IN_PROGRESS`
 Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
 Task completato: `GUI-U-R03 - Collegamento dei servizi`
-Successivo proposto: `GUI-U-R03-R05 - Campi cartella leggibili`
+Successivo proposto: `GUI-U-R03-R06 - Consegna operativa a Da archiviare`
 (`PROPOSED_WAITING_USER_APPROVAL`)
 
 Obiettivo finale:
@@ -1085,13 +1085,41 @@ applicativa o il percorso non puo` restare utilizzabile a 960x640.
 | `R03-T03-AC4` Le cinque viste restano utilizzabili a 960x640 e scala 100%/125%. | Solo prova Tk/resize interessata dalle nuove viste; riuso delle evidenze invariate. | `test_first_run_demo_fits_real_tk_window_at_960x640_for_supported_scales` ora usa Tk reale anche sul percorso persistente e verifica Riepilogo/Home a 100% e 125%; la prima prova ha rilevato 971 px e ha guidato il wrapping poi verde. | `MET` |
 | `R03-T03-AC5` Testi ed errori non espongono termini tecnici e indicano sempre problema e azione. | Inventario delle sole stringhe nuove o modificate. | `test_complete_visible_text_inventory_has_no_technical_or_legacy_terms`, rieseguito con il Riepilogo reale, esclude i termini vietati nelle stringhe visibili; i riscontri restano azionabili. Gruppo mirato finale: `39 passed`. | `MET` |
 
+#### GUI-U-R03-R06 - Consegna operativa a Da archiviare
+
+Stato: `PROPOSED_WAITING_USER_APPROVAL`.
+Risultato: `Controlla ora` e il controllo continuo portano ogni allegato sicuro
+dal Limbo sincronizzato a una singola presa in carico in `Da archiviare`; il
+messaggio sorgente viene completato soltanto dopo tale presa in carico.
+Dipendenze: `GUI-U-R03-R04 = DONE`; servizi esistenti
+`DriveStagingVerifyClient` e `DaArchiviareIntakeHttpClient`; endpoint Apps
+Script gia` contrattualizzati e cartella Limbo sincronizzata.
+Componenti ammessi: risposta della verifica Drive, orchestrazione della
+pipeline locale, stato/eventi locali, completamento dei messaggi, traduzione
+business delle attivita`, test con adapter fake e documentazione minima.
+Esclusioni: rete o credenziali reali nei test, invio di byte/base64/path locali
+ad Apps Script, modifica del form, sostituzione di Apps Script, nuove
+dipendenze, GUI legacy, redesign delle viste e disinstallatore diretto.
+Condizione di blocco: gli endpoint esistenti non restituiscono ID Drive stabili
+oppure non consentono di distinguere in modo sicuro attesa di sincronizzazione,
+errore e presa in carico idempotente senza ampliare il contratto approvato.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R03-R06-AC1` La verifica cloud conserva e valida gli ID del file e del manifest restituiti nell'anteprima esistente, senza trasferire contenuti o percorsi locali. | Test contratto su risposta valida, ID mancanti/incoerenti e payload metadata-only. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R06-AC2` Per ogni allegato sicuro copiato nel Limbo la pipeline verifica la visibilita` cloud e crea automaticamente una sola voce in `Da archiviare`. | Test verticale con scanner, storage, verify e intake fake su uno o piu` allegati. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R06-AC3` Sincronizzazione non ancora avvenuta, timeout o rifiuto lasciano il lavoro in attesa/riprova e non completano ne` spostano il messaggio sorgente. | Regressioni deterministiche sugli esiti temporanei e permanenti, con verifica dell'ordine delle chiamate. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R06-AC4` Una nuova esecuzione e una risposta di presa in carico gia` esistente non producono duplicati e permettono il completamento sicuro. | Test di ripetizione sulla stessa identita` tecnica e risposta idempotente dell'intake fake. | Non ancora eseguita. | `NOT_MET` |
+| `R03-R06-AC5` Home e Attivita` descrivono in termini utente consegna riuscita, attesa di sincronizzazione o problema azionabile; test mirati e smoke locale sono verdi. | Test dei modelli/testi visibili, inventario termini vietati e smoke locale. | Non ancora eseguita. | `NOT_MET` |
+
 ### GUI-U-R04 - Release candidate e collaudo finale
 
 Stato: `WAITING_FOR_PREVIOUS_TASKS`.
 Risultato: una release candidate identificata viene installata, usata e rimossa
 con successo su un PC o profilo Windows senza Python utilizzabile dall'utente,
 eseguendo l'intero percorso finale senza terminale o documentazione tecnica.
-Dipendenza: `GUI-U-R03 = DONE` dopo conferma umana esplicita.
+Dipendenza: `GUI-U-R03 = DONE` dopo conferma umana esplicita e
+`GUI-U-R03-R06 = DONE`.
 Componenti ammessi: sorgente accettata in R03, pipeline build/installer R01,
 smoke di release, applicazione installata, integrazioni Windows gia` approvate,
 manifest/hash, checklist ed evidenze del collaudo finale.
