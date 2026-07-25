@@ -176,6 +176,7 @@ def test_installer_build_and_smoke_scripts_are_declared() -> None:
     assert "CaronteSetup-$($BuildManifest.version)-$($BuildManifest.git_short_commit)" in build_text
     assert "installer_sha256" in build_text
     assert "smoke_installer_result" in build_text
+    assert "oauth_client_included" in build_text
     assert "HumanAcceptanceBuild" in build_text
     assert "--build-info" in smoke_text
     assert "CARONTE_UNINSTALL_KEY" in smoke_text

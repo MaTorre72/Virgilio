@@ -119,16 +119,19 @@ Chiarimenti per la ripresa:
 - la nuova prova deve partire dalla notifica, aprire il form collegato e
   concludere la decisione umana sul documento.
 
-Eseguire su PC o profilo Windows senza Python utilizzabile dall'utente:
+Checklist del nuovo pilota (solo prove introdotte dai correttivi R04-R03--R04-R05):
 
-1. verificare hash e build-info; installare e avviare dal menu Start;
-2. completare primo avvio, Limbo e due caselle;
-3. chiudere/riaprire e verificare persistenza;
-4. eseguire controllo manuale, avvio continuo, pausa e verifica attivita;
-5. attivare il controllo automatico, riavviare la sessione o simulare in modo
-   equivalente, verificare lo stato e disattivare;
-6. aprire Impostazioni e Informazioni su Caronte;
-7. disinstallare e verificare rimozione programma e policy di conservazione dati.
+1. verificare hash e build-info, installare e avviare dal menu Start;
+2. dopo la pubblicazione Apps Script autorizzata, generare un solo documento
+   sintetico e verificare una sola notifica con il collegamento al form Virgilio;
+3. aprire il collegamento e verificare che porti al lavoro del documento corretto;
+4. durante il controllo osservare fasi e conteggi reali, senza percentuali;
+5. verificare che non compaia `Cartella completati` nel percorso ordinario e che
+   Attivita distingua documento acquisito, lavoro disponibile in Virgilio e
+   pratica archiviata.
+
+Non ripetere primo avvio, persistenza, controllo automatico, Impostazioni,
+Informazioni o disinstallazione: sono gia` `PASS` e non fanno parte del delta.
 
 Il collaudo avviene senza terminale, modifiche manuali di file/YAML/`.env`, avvio
 di Python o consultazione della documentazione tecnica.

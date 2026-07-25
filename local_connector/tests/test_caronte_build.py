@@ -35,6 +35,7 @@ def test_build_configuration_defines_one_folder_caronte() -> None:
     assert "build_manifest.json" in build_text
     assert "pyinstaller_version" in build_text
     assert "build_id" in build_text
+    assert "oauth_client_included" in build_text
     assert "CARONTE_BUILD_MANIFEST_PATH" in spec
     assert (REPO_ROOT / "scripts" / "dev" / "smoke_caronte_build.ps1").is_file()
     assert (REPO_ROOT / "docs" / "BUILD_CARONTE.md").is_file()

@@ -55,6 +55,7 @@ $Manifest = [ordered]@{
     python_version = $PythonVersion
     pyinstaller_version = $PyInstallerVersion
     build_id = [guid]::NewGuid().ToString()
+    oauth_client_included = [bool]$GoogleOAuthClientPath
 }
 $ManifestJson = $Manifest | ConvertTo-Json
 [IO.File]::WriteAllText($ManifestPath, $ManifestJson, (New-Object Text.UTF8Encoding($false)))

@@ -60,6 +60,7 @@ $ReleaseManifest = [ordered]@{
     build_utc = $BuildManifest.build_utc
     build_id = $BuildManifest.build_id
     working_tree = $BuildManifest.working_tree
+    oauth_client_included = $BuildManifest.oauth_client_included
     build_result = "PASS"
     smoke_build_result = "PASS"
     smoke_installer_result = "PASS"

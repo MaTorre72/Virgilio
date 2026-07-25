@@ -1262,7 +1262,7 @@ perdita configurazioni esistenti.
 
 #### GUI-U-R04-R06 - Release candidate del pilota corretto
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `DONE`.
 Risultato: una nuova RC identificata e un fascicolo minimo permettono di
 pubblicare il solo delta Apps Script autorizzato e collaudare notifica, accesso
 al form, progresso e lessico corretto.
@@ -1276,11 +1276,11 @@ smoke non verde o identita della build non univoca.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R04-R06-AC1` Tutti i criteri dei tre correttivi hanno evidenza specifica e i relativi test sono verdi. | Revisione tabelle e prove registrate. | Da acquisire. | `NOT_MET` |
-| `R04-R06-AC2` Il delta Apps Script e` limitato, senza segreti e pronto per approvazione/push umano. | `clasp status`, diff e scansione segreti; nessun push. | Da acquisire. | `NOT_MET` |
-| `R04-R06-AC3` Build e installer autonomi superano gli smoke richiesti. | Build pulita, smoke build e installer. | Da acquisire. | `NOT_MET` |
-| `R04-R06-AC4` Manifest registra installer, SHA-256, commit, build ID e client OAuth incluso. | Confronto automatico artefatti/manifest. | Da acquisire. | `NOT_MET` |
-| `R04-R06-AC5` Checklist pilota riprova solo notifica/link, avanzamento e lessico; i PASS invariati non vengono ripetuti. | Revisione documentale del fascicolo. | Da acquisire. | `NOT_MET` |
+| `R04-R06-AC1` Tutti i criteri dei tre correttivi hanno evidenza specifica e i relativi test sono verdi. | Revisione tabelle e prove registrate. | R04-R03: harness Apps Script puro `OK`, fake `25 passed`, smoke `545 passed`; R04-R04: `113 passed`, Tk `1 passed`, smoke `549 passed`; R04-R05: `44 passed`, smoke `550 passed`. | `MET` |
+| `R04-R06-AC2` Il delta Apps Script e` limitato, senza segreti e pronto per approvazione/push umano. | `clasp status`, diff e scansione segreti; nessun push. | `clasp 3.3.0 status` elenca solo i 12 file attesi in `apps_script/src`, senza untracked; diff limitato ai correttivi R04-R03 e nessun push/pull/deploy eseguito. | `MET` |
+| `R04-R06-AC3` Build e installer autonomi superano gli smoke richiesti. | Build pulita, smoke build e installer. | Pipeline locale da albero pulito, toolchain Windows `3.13.14`/PyInstaller `6.21.0`: build e installer `PASS`, smoke build e installer `PASS`. | `MET` |
+| `R04-R06-AC4` Manifest registra installer, SHA-256, commit, build ID e client OAuth incluso. | Confronto automatico artefatti/manifest. | Il manifest release locale registra installer, SHA-256, commit e build ID; confronto hash verde e `oauth_client_included=true` corrisponde alla risorsa inclusa. Test manifest `13 passed`. | `MET` |
+| `R04-R06-AC5` Checklist pilota riprova solo notifica/link, avanzamento e lessico; i PASS invariati non vengono ripetuti. | Revisione documentale del fascicolo. | Checklist R04 ridotta a notifica/link, fasi/conteggi e lessico cartelle; gli scenari gia` `PASS` non sono inclusi. | `MET` |
 
 Dopo `R04-R06` l'automazione deve fermarsi al gate umano di pubblicazione Apps
 Script. Solo un task esplicito autorizzato puo` eseguire `clasp push`; il

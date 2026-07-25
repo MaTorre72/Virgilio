@@ -1,5 +1,14 @@
 # Changelog sviluppo
 
+- 2026-07-25 +02:00 - Completato `GUI-U-R04-R06`: release candidate locale
+  con build e installer autonomi, manifest release SHA-256/commit/build ID e
+  flag verificabile `oauth_client_included`; risorsa OAuth inclusa e hash
+  confrontato. `clasp 3.3.0 status` e` coerente con i soli file Apps Script
+  attesi, senza push, pull o deploy. Test build/installer `13 passed`; build e
+  smoke installer `PASS`. La checklist umana riprova esclusivamente
+  notifica/link, fasi/conteggi e lessico. Stato successivo:
+  `WAITING_HUMAN_REVIEW` per pubblicazione Apps Script autorizzata e pilota.
+
 - 2026-07-25 +02:00 - Completato `GUI-U-R04-R05`: Caronte non mostra piu`
   `Cartella completati` nel percorso ordinario, perche` il completamento IMAP
   resta disabilitato. Il valore storico viene preservato internamente durante
