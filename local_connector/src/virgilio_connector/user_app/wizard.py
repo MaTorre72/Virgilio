@@ -63,6 +63,9 @@ class AccountForm:
     error_folder: str = "errore"
 
 
+DEFAULT_DONE_FOLDER = "traghettate"
+
+
 class AccountValidator:
     """Validate only values belonging to the mailbox step."""
 
@@ -83,12 +86,8 @@ class AccountValidator:
             return ValidationResult(False, "Inserisci la password della casella.")
         if not form.host.strip() or not 1 <= form.port <= 65535:
             return ValidationResult(False, "Controlla le impostazioni avanzate.")
-        if not all((
-            form.input_folder.strip(),
-            form.done_folder.strip(),
-            form.error_folder.strip(),
-        )):
-            return ValidationResult(False, "Indica le tre cartelle della casella.")
+        if not all((form.input_folder.strip(), form.error_folder.strip())):
+            return ValidationResult(False, "Indica le cartelle della casella.")
         return ValidationResult(True)
 
 
@@ -299,11 +298,12 @@ class AccountView:
         self.input_folder_entry = self._advanced_field(
             2, "Cartella da controllare", "da-traghettare"
         )
-        self.done_folder_entry = self._advanced_field(
-            3, "Cartella completati", "traghettate"
-        )
+        # IMAP completion is not enabled in the ordinary Caronte flow.  Keep
+        # this configuration value private so opening and saving a mailbox
+        # never discards an existing value or suggests an unavailable action.
+        self._done_folder = DEFAULT_DONE_FOLDER
         self.error_folder_entry = self._advanced_field(
-            4, "Cartella problemi", "errore"
+            3, "Cartella problemi", "errore"
         )
         self.advanced_frame.grid_remove()
         self.message = ttk_module.Label(self.frame, text="")
@@ -389,11 +389,11 @@ class AccountView:
             (self.host_entry, account.host),
             (self.port_entry, str(account.port)),
             (self.input_folder_entry, account.input_folder),
-            (self.done_folder_entry, account.done_folder),
             (self.error_folder_entry, account.error_folder),
         ):
             entry.delete(0, "end")
             entry.insert(0, value)
+        self._done_folder = account.done_folder
         self._enabled = account.enabled
         self.enabled_control.state(("selected" if account.enabled else "!selected",))
         if account.host == "imap.gmail.com":
@@ -410,7 +410,7 @@ class AccountView:
             self.advanced_frame.grid_remove()
             self.advanced_button.configure(text="Mostra impostazioni avanzate")
 
-    def form_value(self) -> AccountForm:
+    def form_value(self, *, done_folder: str | None = None) -> AccountForm:
         try:
             port = int(self.port_entry.get())
         except (TypeError, ValueError):
@@ -424,7 +424,7 @@ class AccountView:
             port=port,
             provider=self.provider,
             input_folder=self.input_folder_entry.get(),
-            done_folder=self.done_folder_entry.get(),
+            done_folder=done_folder if done_folder is not None else self._done_folder,
             error_folder=self.error_folder_entry.get(),
         )
 
@@ -621,9 +621,13 @@ class FirstRunController:
         self, *, update: bool, success_message: str | None = None
     ) -> ValidationResult:
         assert isinstance(self.current_view, AccountView)
-        form = self.current_view.form_value()
-        result = self._account_validator.validate(form)
         alias = self.current_view.selected_alias() if update else None
+        done_folder = DEFAULT_DONE_FOLDER
+        if update and alias is not None and self._account_service is not None:
+            existing, _ = self._account_service.get_account(alias)
+            done_folder = existing.done_folder
+        form = self.current_view.form_value(done_folder=done_folder)
+        result = self._account_validator.validate(form)
         if result.is_valid and self._account_service is None:
             result = ValidationResult(False, "Salvataggio non disponibile.")
         elif result.is_valid and update and alias is None:

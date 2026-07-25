@@ -187,11 +187,7 @@ def test_folder_fields_request_readable_width_and_use_expanding_columns(tmp_path
     accounts = controller.current_view
     assert all(
         entry.kwargs["width"] >= 48
-        for entry in (
-            accounts.input_folder_entry,
-            accounts.done_folder_entry,
-            accounts.error_folder_entry,
-        )
+        for entry in (accounts.input_folder_entry, accounts.error_folder_entry)
     )
     assert accounts.advanced_frame.column_options[1]["weight"] == 1
 
@@ -252,11 +248,7 @@ def test_real_folder_fields_fit_and_scroll_at_supported_scales(tmp_path):
         for view in views:
             view.frame.grid(row=0, column=0, sticky="nsew")
             entries = (
-                (
-                    view.input_folder_entry,
-                    view.done_folder_entry,
-                    view.error_folder_entry,
-                )
+                (view.input_folder_entry, view.error_folder_entry)
                 if isinstance(view, AccountView)
                 else (
                     view.folder_entry

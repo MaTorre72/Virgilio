@@ -54,7 +54,6 @@ def _fill(
     view.host_entry.set(host)
     view.port_entry.set("993")
     view.input_folder_entry.set(folders[0])
-    view.done_folder_entry.set(folders[1])
     view.error_folder_entry.set(folders[2])
 
 
@@ -134,14 +133,13 @@ def test_account_crud_supports_different_providers_and_separate_credentials(tmp_
     assert [item.email for item in service.list_accounts()] == ["changed@example.invalid"]
 
 
-def test_operational_folders_are_advanced_validated_and_persist_per_account(tmp_path):
+def test_operational_folders_hide_non_operational_completion_and_preserve_it(tmp_path):
     controller, service, credential_store, config_path = _open_accounts(tmp_path)
     view = controller.current_view
     labels = {widget.kwargs.get("text", "") for widget in FakeTtk.Label.created}
 
-    assert {
-        "Cartella da controllare", "Cartella completati", "Cartella problemi",
-    } <= labels
+    assert {"Cartella da controllare", "Cartella problemi"} <= labels
+    assert "Cartella completati" not in labels
     assert view.advanced_frame.grid_options is None
 
     _fill(
@@ -169,26 +167,24 @@ def test_operational_folders_are_advanced_validated_and_persist_per_account(tmp_
         for item in accounts
     ] == [
         ("da-traghettare", "traghettate", "errore"),
-        ("posta-in", "posta-fatta", "posta-problemi"),
+        ("posta-in", "traghettate", "posta-problemi"),
     ]
 
     view.table.select(accounts[0].account_alias)
     controller.load_selected_account()
-    assert (
-        view.input_folder_entry.get(),
-        view.done_folder_entry.get(),
-        view.error_folder_entry.get(),
-    ) == ("da-traghettare", "traghettate", "errore")
+    assert (view.input_folder_entry.get(), view.error_folder_entry.get()) == (
+        "da-traghettare", "errore",
+    )
 
-    view.done_folder_entry.set("completati-modificati")
+    view.input_folder_entry.set("da-controllare-modificata")
     assert controller.update_account().is_valid
     reopened = AccountManagementService(
         ConfigurationService.for_file(config_path),
         AccountCredentialService(credential_store),
     )
     managed, _ = reopened.get_account(accounts[0].account_alias)
-    assert managed.input_folder == "da-traghettare"
-    assert managed.done_folder == "completati-modificati"
+    assert managed.input_folder == "da-controllare-modificata"
+    assert managed.done_folder == "traghettate"
     assert managed.error_folder == "errore"
 
 
@@ -207,7 +203,7 @@ def test_operational_folders_are_required(tmp_path):
     result = controller.add_account()
 
     assert result.is_valid is False
-    assert result.message == "Indica le tre cartelle della casella."
+    assert result.message == "Indica le cartelle della casella."
 
 
 def test_generic_imap_single_action_verifies_and_adds_account(tmp_path):

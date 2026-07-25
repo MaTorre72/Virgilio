@@ -46,10 +46,10 @@ class ActivityFilters:
 
 
 _EVENT_LABELS = {
-    "attachment_quarantined": ("Allegato acquisito", "Riuscito"),
+    "attachment_quarantined": ("Documento acquisito", "Riuscito"),
     "attachment_staged": ("Documento pronto per la decisione", "Riuscito"),
     "da_archiviare_intake": ("Decisione richiesta", "In attesa"),
-    "message_completed": ("Messaggio completato", "Completato"),
+    "message_completed": ("Pratica archiviata", "Completato"),
     "duplicate_seen": ("Duplicato riconosciuto", "Ignorato"),
     "skipped": ("Elemento ignorato", "Ignorato"),
 }
@@ -128,7 +128,7 @@ def project_activity(
     if event_type == "da_archiviare_intake" and result in {
         "created", "updated", "idempotent"
     }:
-        activity = "Documento inviato a Da archiviare"
+        activity = "Lavoro disponibile in Virgilio"
         outcome = "In attesa"
         recommended_action = "Completa la decisione in Da archiviare."
     elif event_type == "da_archiviare_intake" and result == "waiting":

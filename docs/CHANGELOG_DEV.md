@@ -1,5 +1,14 @@
 # Changelog sviluppo
 
+- 2026-07-25 +02:00 - Completato `GUI-U-R04-R05`: Caronte non mostra piu`
+  `Cartella completati` nel percorso ordinario, perche` il completamento IMAP
+  resta disabilitato. Il valore storico viene preservato internamente durante
+  modifica e riapertura e le nuove caselle ricevono soltanto il default
+  interno; nessuna scrittura IMAP e` stata attivata. Attivita distingue ora
+  documento acquisito, lavoro disponibile in Virgilio e pratica archiviata.
+  Mirati fake `44 passed`, regressione IMAP read-only inclusa; smoke locale
+  `550 passed`, senza rete o credenziali reali.
+
 - 2026-07-25 +02:00 - Completato `GUI-U-R04-R03` dopo il `FAIL` umano
   della RC `bab6e92`: la presa in carico genera un link `/exec` assoluto
   correlato all'`inbox_id` e lo restituisce al connector insieme allo stato

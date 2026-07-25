@@ -1240,7 +1240,7 @@ duplicare la pipeline o bloccare la finestra.
 
 #### GUI-U-R04-R05 - Cartelle della casella coerenti
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `DONE`.
 Risultato: la GUI mostra soltanto le cartelle email realmente usate dal
 percorso ordinario e non promette uno spostamento che la configurazione non
 esegue.
@@ -1254,11 +1254,11 @@ perdita configurazioni esistenti.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R04-R05-AC1` Il percorso ordinario espone la cartella da controllare ma non `Cartella completati` finche il completamento IMAP resta disabilitato. | Test inventario vista primo avvio/Impostazioni. | Da acquisire. | `NOT_MET` |
-| `R04-R05-AC2` Modifica e riapertura preservano internamente i valori esistenti senza abilitarli. | Test round-trip su configurazione precedente. | Da acquisire. | `NOT_MET` |
-| `R04-R05-AC3` Home e Attivita distinguono documento acquisito, lavoro disponibile in Virgilio e pratica archiviata. | Test proiezione eventi e testi visibili. | Da acquisire. | `NOT_MET` |
-| `R04-R05-AC4` Nessun messaggio sorgente viene copiato, mosso o cancellato implicitamente. | Regressione adapter IMAP read-only. | Da acquisire. | `NOT_MET` |
-| `R04-R05-AC5` Test mirati e inventario terminologico sono verdi. | Suite focalizzata senza servizi reali. | Da acquisire. | `NOT_MET` |
+| `R04-R05-AC1` Il percorso ordinario espone la cartella da controllare ma non `Cartella completati` finche il completamento IMAP resta disabilitato. | Test inventario vista primo avvio/Impostazioni. | `test_operational_folders_hide_non_operational_completion_and_preserve_it` e il test di inventario della vista verificano che il campo non sia presente e restino le sole cartelle operative. | `MET` |
+| `R04-R05-AC2` Modifica e riapertura preservano internamente i valori esistenti senza abilitarli. | Test round-trip su configurazione precedente. | La modifica della cartella da controllare e la riapertura mantengono `done_folder` interno; le nuove caselle ricevono il solo default interno. | `MET` |
+| `R04-R05-AC3` Home e Attivita distinguono documento acquisito, lavoro disponibile in Virgilio e pratica archiviata. | Test proiezione eventi e testi visibili. | Nuovo test proietta esplicitamente `Documento acquisito`, `Lavoro disponibile in Virgilio` e `Pratica archiviata`. | `MET` |
+| `R04-R05-AC4` Nessun messaggio sorgente viene copiato, mosso o cancellato implicitamente. | Regressione adapter IMAP read-only. | `test_completion_ack_disabled_skips_without_imap` verde: completamento disabilitato non apre IMAP. | `MET` |
+| `R04-R05-AC5` Test mirati e inventario terminologico sono verdi. | Suite focalizzata senza servizi reali. | Mirati fake `44 passed`; smoke locale `550 passed`, senza servizi o credenziali reali. | `MET` |
 
 #### GUI-U-R04-R06 - Release candidate del pilota corretto
 

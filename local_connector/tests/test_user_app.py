@@ -567,8 +567,9 @@ def test_first_run_demo_fits_real_tk_window_at_960x640_for_supported_scales(tmp_
             root.update_idletasks()
             text = _real_widget_text(root)
             assert all(label in text for label in (
-                "Cartella da controllare", "Cartella completati", "Cartella problemi",
+                "Cartella da controllare", "Cartella problemi",
             ))
+            assert "Cartella completati" not in text
             assert root.winfo_reqwidth() <= 960
             assert root.winfo_reqheight() <= 640
         account_view.use_google_provider()

@@ -152,7 +152,7 @@ def test_da_archiviare_events_show_delivery_waiting_and_problem_states():
     ))
 
     assert delivered.visible_values[-3:] == (
-        "Documento inviato a Da archiviare",
+        "Lavoro disponibile in Virgilio",
         "In attesa",
         "Completa la decisione in Da archiviare.",
     )
@@ -166,3 +166,15 @@ def test_da_archiviare_events_show_delivery_waiting_and_problem_states():
         "Problema",
         "Riprova il controllo; se il problema continua, chiedi assistenza.",
     )
+
+
+def test_activity_labels_distinguish_acquisition_available_work_and_archiving():
+    acquired = project_activity(_event(event_type="attachment_quarantined"))
+    available = project_activity(_event(
+        event_type="da_archiviare_intake", result="created"
+    ))
+    archived = project_activity(_event(event_type="message_completed", result="completed"))
+
+    assert acquired.activity == "Documento acquisito"
+    assert available.activity == "Lavoro disponibile in Virgilio"
+    assert archived.activity == "Pratica archiviata"
