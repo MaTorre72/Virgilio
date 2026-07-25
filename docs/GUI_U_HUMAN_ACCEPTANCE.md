@@ -101,6 +101,24 @@ numero finito di correttivi e si attende approvazione prima di svilupparli.
 
 ## GUI-U-R04 - Collaudo finale
 
+Esito RC `bab6e92`, build ID `e7bd442d-8a34-4181-ba52-5f2d07ebb987`,
+del 2026-07-25: `FAIL`. Installazione, OAuth, persistenza, pipeline, Registro,
+controllo manuale/continuo, Home, Attivita, Manutenzione, Informazioni e
+disinstallazione sono riusciti. Il documento viene registrato nella coda
+`Da archiviare`, ma non viene inviata una notifica e non e` disponibile un
+collegamento operativo al form Virgilio. Osservazioni: controllo lento senza
+fase/conteggio e campo `Cartella completati` visibile pur non essendo usato
+dalla configurazione GUI corrente.
+
+Chiarimenti per la ripresa:
+
+- `Da archiviare` e` la coda umana rappresentata dal tab tecnico
+  `Virgilio_Inbox`; non e` una cartella Drive o email;
+- `Cartella completati` e` una cartella IMAP della casella, non una cartella
+  del Limbo; non va collaudata finche il completamento IMAP resta disabilitato;
+- la nuova prova deve partire dalla notifica, aprire il form collegato e
+  concludere la decisione umana sul documento.
+
 Eseguire su PC o profilo Windows senza Python utilizzabile dall'utente:
 
 1. verificare hash e build-info; installare e avviare dal menu Start;

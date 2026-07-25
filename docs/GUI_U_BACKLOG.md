@@ -3,7 +3,7 @@
 Stato: `IN_PROGRESS`
 Fase attiva: `GUI-U-R - Recupero prodotto e collaudo osservabile`
 Task completato: `GUI-U-R03-R06 - Consegna operativa a Da archiviare`
-Successivo: `GUI-U-R04 - Release candidate e collaudo finale`
+Successivo: `GUI-U-R04-R03 - Notifica operativa e accesso a Virgilio`
 
 Obiettivo finale:
 
@@ -1113,7 +1113,7 @@ errore e presa in carico idempotente senza ampliare il contratto approvato.
 
 ### GUI-U-R04 - Release candidate e collaudo finale
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `IMPLEMENTED_NOT_ACCEPTED`.
 Risultato: una release candidate identificata viene installata, usata e rimossa
 con successo su un PC o profilo Windows senza Python utilizzabile dall'utente,
 eseguendo l'intero percorso finale senza terminale o documentazione tecnica.
@@ -1131,15 +1131,16 @@ prerequisito R03 non ha ricevuto conferma umana esplicita.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R04-AC1` Hash e build-info coincidono con il manifest; installazione e avvio dal menu Start riescono su ambiente idoneo. | Smoke release e passi umani 1-4 con installer, hash, commit e build ID registrati. | RC `CaronteSetup-0.11.0-0d46d69.exe`, commit `0d46d69ea3eeb271362b7d2ee61e5184136afd98`, Build ID `fb8018c0-b473-4035-9370-32877a32f72a`, SHA-256 `E920DE1248DB5338581C25B54BFE13D9DD7DA74110613E885EA6F74B6AF34D62`; manifest e release manifest coincidono, build e smoke installer `PASS`. Installazione e avvio umani restano da confermare. | `NOT_MET` |
-| `R04-AC2` Primo avvio, Limbo, due caselle, riapertura, persistenza, controllo manuale, avvio continuo, pausa e attivita` completano il percorso senza strumenti tecnici. | Collaudo umano dei passi 5-13 con evidenze puntuali. | `H-R03-01`--`H-R03-05` sono gia` `PASS`; la RC include, su autorizzazione utente, il client OAuth Google locale. Checklist R04 predisposta per persistenza e percorso reale completo Limbo -> `Da archiviare`, inclusi Attivita, controllo manuale/continuo e pausa. Conferma umana RC pendente. | `NOT_MET` |
-| `R04-AC3` Controllo automatico, riavvio sessione o simulazione equivalente, verifica stato, disattivazione, Impostazioni e Informazioni funzionano in sequenza. | Collaudo umano dei passi 14-19 e confronto finale dell'identita build. | `H-R03-06 = PASS` resta valido; checklist R04 limita la riprova alla persistenza delle nuove credenziali operative protette dopo nuovo accesso Windows e al confronto dell'identita della RC. Conferma umana pendente. | `NOT_MET` |
-| `R04-AC4` Disinstallazione rimuove programma e integrazioni e applica la policy dichiarata di conservazione dati. | Smoke disinstallazione e collaudo umano dei passi 20-22. | Smoke installer/disinstallazione `PASS`; collaudo umano predisposto tramite la disinstallazione standard di Windows, con verifica delle integrazioni e della conservazione dati. L'avvio diretto del disinstallatore resta escluso e rinviato come priorita` molto bassa. | `NOT_MET` |
-| `R04-AC5` Tutti gli scenari obbligatori sono `PASS`, nessuno e` `FAIL` o `INVALID_BUILD`, e il fascicolo contiene identificazione ed evidenze complete. | Revisione umana della checklist e verifica documentale del fascicolo finale. | Fascicolo identificato predisposto in `artifacts/gui-u-r04/fb8018c0-b473-4035-9370-32877a32f72a/`; esito umano non ancora compilato e non deducibile dai test automatici. | `NOT_MET` |
+| `R04-AC1` Hash e build-info coincidono con il manifest; installazione e avvio dal menu Start riescono su ambiente idoneo. | Smoke release e passi umani 1-4 con installer, hash, commit e build ID registrati. | RC `CaronteSetup-0.11.0-bab6e92.exe`, commit `bab6e920994953cf908b9fc4f09d6d06fc1d5f15`, Build ID `e7bd442d-8a34-4181-ba52-5f2d07ebb987`, SHA-256 `B5B23124ABCEA65ED61A78808961992228C501426A4C08559048A0E9DB4AC238`; build/smoke `PASS` e conferma umana di installazione e avvio acquisita il 2026-07-25. | `MET` |
+| `R04-AC2` Primo avvio, Limbo, due caselle, riapertura, persistenza, controllo manuale, avvio continuo, pausa e attivita` completano il percorso senza strumenti tecnici. | Collaudo umano dei passi 5-13 con evidenze puntuali. | Pipeline, Registro, controllo manuale/continuo, pausa, Home e Attivita funzionano sulla RC `bab6e92`, ma il documento entra nella coda tecnica senza notifica o collegamento al form Virgilio. Il percorso umano resta incompleto; controllo lento senza fase/conteggio e lessico cartelle fuorviante sono consolidati. | `NOT_MET` |
+| `R04-AC3` Controllo automatico, riavvio sessione o simulazione equivalente, verifica stato, disattivazione, Impostazioni e Informazioni funzionano in sequenza. | Collaudo umano dei passi 14-19 e confronto finale dell'identita build. | `H-R03-06 = PASS` resta valido; persistenza OAuth, Manutenzione sempre accessibile, Impostazioni, Informazioni e identita` della RC `bab6e92` confermate dall'utente il 2026-07-25. | `MET` |
+| `R04-AC4` Disinstallazione rimuove programma e integrazioni e applica la policy dichiarata di conservazione dati. | Smoke disinstallazione e collaudo umano dei passi 20-22. | Smoke installer/disinstallazione `PASS`; disinstallazione standard Windows, rimozione integrazioni e conservazione prevista confermate dall'utente il 2026-07-25. L'avvio diretto del disinstallatore resta escluso. | `MET` |
+| `R04-AC5` Tutti gli scenari obbligatori sono `PASS`, nessuno e` `FAIL` o `INVALID_BUILD`, e il fascicolo contiene identificazione ed evidenze complete. | Revisione umana della checklist e verifica documentale del fascicolo finale. | Il fascicolo della RC `bab6e92` identifica correttamente la build, ma il `FAIL` funzionale interrompe il gate. Un nuovo fascicolo verra` prodotto da `R04-R06`. | `NOT_MET` |
 
-Esito terminale prima della decisione umana: `WAITING_HUMAN_REVIEW`. R04 e
-l'iniziativa GUI-U possono essere dichiarati completati solo dopo un `PASS`
-umano esplicito conforme a `docs/GUI_U_HUMAN_ACCEPTANCE.md`.
+Esito umano della RC `bab6e92` del 2026-07-25: `FAIL` funzionale sul percorso
+verso la decisione umana. R04 e l'iniziativa GUI-U possono essere dichiarati
+completati solo dopo i correttivi `R04-R03`--`R04-R06`, la pubblicazione umana
+Apps Script e un nuovo `PASS` umano esplicito.
 
 #### GUI-U-R04-R01 - Configurazione amministrativa comprensibile
 
@@ -1192,3 +1193,95 @@ completamento del messaggio.
 | `R04-R02-AC3` Il controllo manuale/continuo esporta gli eventi nel Registro prima di completare il messaggio e un errore Registro lascia il lavoro riprovabile. | Test pipeline verticale con exporter fake su successo ed errore. | `LocalPipelineRunner` compone l'adapter CLI `BucolicheAppendOnlyAdapter` dopo la consegna e prima del completamento. Successo verifica ordine `handoff -> registry -> completion`; errori/assenza credenziale bloccano completion. Un Registro gia` selezionato ma disabilitato viene migrato automaticamente; sezioni e intestazioni mancanti vengono predisposte dopo l'autorizzazione. | `MET` |
 | `R04-R02-AC4` `Apri Caronte Manutenzione` resta disponibile anche dopo una configurazione completa. | Test inventario e callback della vista configurata. | Pulsante e testo per interventi futuri sono sempre presenti; callback verificata sia su configurazione incompleta sia completa. | `MET` |
 | `R04-R02-AC5` Test mirati, Tk reale, smoke locale e nuova RC identificata sono verdi. | Suite focalizzata, smoke e manifest/hash RC. | Mirati finali `72 passed`; smoke locale finale `540 passed`. Una prima esecuzione aveva completato `539 passed` prima dell'errore intermittente di caricamento `init.tcl`, non riprodotto al secondo smoke. La nuova RC viene prodotta dal commit conclusivo con client OAuth incluso. | `MET` |
+
+#### GUI-U-R04-R03 - Notifica operativa e accesso a Virgilio
+
+Stato: `TODO`.
+Risultato: ogni nuovo documento preso in carico genera un collegamento univoco
+al form Virgilio e una notifica osservabile sui canali configurati, senza
+duplicare righe o messaggi durante i retry.
+Dipendenze: `GUI-U-R04-R02 = DONE`; `FAIL` umano RC `bab6e92`.
+Componenti ammessi: `apps_script/src/virgilio_inbox.gs`,
+`apps_script/src/notifiche.gs`, contratto intake locale, test puri Apps Script
+e Python, documentazione del task.
+Esclusioni: modifica invasiva del form, nuovi canali, servizi o credenziali
+reali nei test, `clasp push`, deploy, segreti versionati e GUI legacy.
+Condizione di blocco: l'URL `/exec` del form non puo` produrre un link con
+`inbox_id`, oppure i canali esistenti non possono restituire un esito
+osservabile senza cambiare protocollo.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R04-R03-AC1` Una nuova riga riceve e restituisce un `form_url` assoluto costruito dall'URL del deployment e dal proprio `inbox_id`. | Test puro Apps Script su URL valido, parametri esistenti, caratteri speciali e configurazione assente. | Da acquisire. | `NOT_MET` |
+| `R04-R03-AC2` La creazione invia ai canali configurati un messaggio leggibile con documento, provenienza e azione `Apri in Virgilio`, senza dati tecnici o segreti. | Test con adapter Chat/Telegram fake e inventario del testo. | Da acquisire. | `NOT_MET` |
+| `R04-R03-AC3` Retry idempotenti non duplicano riga o notifica; un invio non riuscito resta osservabile e riprovabile. | Test deterministico su creazione, retry riuscito e fallimento/ripresa della notifica. | Da acquisire. | `NOT_MET` |
+| `R04-R03-AC4` Il client locale conserva link ed esito notifica nel contratto metadata-only e non completa il passaggio se il lavoro non e` raggiungibile. | Test verticale Python con risposte fake valide, incomplete e idempotenti. | Da acquisire. | `NOT_MET` |
+| `R04-R03-AC5` Prove mirate Apps Script/Python, diff e scansione segreti sono verdi senza rete reale. | Harness locale e test mirati; nessun `clasp push`. | Da acquisire. | `NOT_MET` |
+
+#### GUI-U-R04-R04 - Avanzamento del controllo osservabile
+
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Risultato: durante un controllo lento la Home mostra sempre che Caronte sta
+procedendo, la fase corrente e un conteggio utile, restando reattiva.
+Dipendenza: `GUI-U-R04-R03 = DONE`.
+Componenti ammessi: runner e feedback applicativi condivisi, Home, Attivita e
+test fake/Tk.
+Esclusioni: nuove finestre, log tecnici, stime temporali inventate, GUI legacy.
+Condizione di blocco: il runner non puo` emettere avanzamenti intermedi senza
+duplicare la pipeline o bloccare la finestra.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R04-R04-AC1` `Controlla ora` mostra immediatamente attivita e fase corrente fino all'esito finale. | Test asincrono con runner lento e fasi deterministiche. | Da acquisire. | `NOT_MET` |
+| `R04-R04-AC2` La Home mostra documenti trovati, elaborati e rimanenti quando noti, senza fingere percentuali. | Test su zero, uno e piu documenti. | Da acquisire. | `NOT_MET` |
+| `R04-R04-AC3` Controllo continuo e pausa aggiornano lo stesso segnale senza processi duplicati. | Test avvio, ciclo, pausa durante una fase e riapertura. | Da acquisire. | `NOT_MET` |
+| `R04-R04-AC4` Errori e attese sostituiscono il progresso con un messaggio e un'azione comprensibili. | Test su sincronizzazione, rete e Registro fake. | Da acquisire. | `NOT_MET` |
+| `R04-R04-AC5` GUI reattiva, testi consentiti e layout 960x640 a 100%/125% sono verificati. | Test Tk interessato e inventario stringhe. | Da acquisire. | `NOT_MET` |
+
+#### GUI-U-R04-R05 - Cartelle della casella coerenti
+
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Risultato: la GUI mostra soltanto le cartelle email realmente usate dal
+percorso ordinario e non promette uno spostamento che la configurazione non
+esegue.
+Dipendenza: `GUI-U-R04-R04 = DONE`.
+Componenti ammessi: modello/presentazione caselle, migrazione non distruttiva
+della configurazione, testi Home/Attivita e test.
+Esclusioni: attivare automaticamente scritture IMAP, cancellare o spostare
+messaggi, cambiare il Limbo, GUI legacy.
+Condizione di blocco: nascondere il campo non consente di preservare senza
+perdita configurazioni esistenti.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R04-R05-AC1` Il percorso ordinario espone la cartella da controllare ma non `Cartella completati` finche il completamento IMAP resta disabilitato. | Test inventario vista primo avvio/Impostazioni. | Da acquisire. | `NOT_MET` |
+| `R04-R05-AC2` Modifica e riapertura preservano internamente i valori esistenti senza abilitarli. | Test round-trip su configurazione precedente. | Da acquisire. | `NOT_MET` |
+| `R04-R05-AC3` Home e Attivita distinguono documento acquisito, lavoro disponibile in Virgilio e pratica archiviata. | Test proiezione eventi e testi visibili. | Da acquisire. | `NOT_MET` |
+| `R04-R05-AC4` Nessun messaggio sorgente viene copiato, mosso o cancellato implicitamente. | Regressione adapter IMAP read-only. | Da acquisire. | `NOT_MET` |
+| `R04-R05-AC5` Test mirati e inventario terminologico sono verdi. | Suite focalizzata senza servizi reali. | Da acquisire. | `NOT_MET` |
+
+#### GUI-U-R04-R06 - Release candidate del pilota corretto
+
+Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Risultato: una nuova RC identificata e un fascicolo minimo permettono di
+pubblicare il solo delta Apps Script autorizzato e collaudare notifica, accesso
+al form, progresso e lessico corretto.
+Dipendenze: `GUI-U-R04-R03`--`R04-R05 = DONE`.
+Componenti ammessi: build/installer, smoke release, manifest/hash, checklist,
+diff Apps Script pronto per revisione e documentazione operativa.
+Esclusioni: `clasp push` automatico, deploy automatico, credenziali reali nei
+test, merge, `main`, disinstallatore diretto.
+Condizione di blocco: diff Apps Script non riconciliato col progetto collegato,
+smoke non verde o identita della build non univoca.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R04-R06-AC1` Tutti i criteri dei tre correttivi hanno evidenza specifica e i relativi test sono verdi. | Revisione tabelle e prove registrate. | Da acquisire. | `NOT_MET` |
+| `R04-R06-AC2` Il delta Apps Script e` limitato, senza segreti e pronto per approvazione/push umano. | `clasp status`, diff e scansione segreti; nessun push. | Da acquisire. | `NOT_MET` |
+| `R04-R06-AC3` Build e installer autonomi superano gli smoke richiesti. | Build pulita, smoke build e installer. | Da acquisire. | `NOT_MET` |
+| `R04-R06-AC4` Manifest registra installer, SHA-256, commit, build ID e client OAuth incluso. | Confronto automatico artefatti/manifest. | Da acquisire. | `NOT_MET` |
+| `R04-R06-AC5` Checklist pilota riprova solo notifica/link, avanzamento e lessico; i PASS invariati non vengono ripetuti. | Revisione documentale del fascicolo. | Da acquisire. | `NOT_MET` |
+
+Dopo `R04-R06` l'automazione deve fermarsi al gate umano di pubblicazione Apps
+Script. Solo un task esplicito autorizzato puo` eseguire `clasp push`; il
+successivo collaudo reale della RC resta una decisione umana.

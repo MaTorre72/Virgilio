@@ -404,3 +404,11 @@ Registro avanzamento storico spostato fuori dal backlog attivo.
 - 2026-07-03 - Completato `V113-E4-T03`: il local connector crea o aggiorna il record `Da archiviare` con `intake-da-archiviare`, `DaArchiviareIntakeHttpClient.create_record()` e dispatch `doPost` dedicato; test mirati, suite `pytest local_connector` e smoke locali verdi.
 - 2026-07-03 20:35 Europe/Rome - Completato `V113-E5-T02`: il submit mantiene il legame con il record `Virgilio_Inbox` corretto; backlog e next tasks riallineati sul passo successivo `V113-E5-T03`.
 - 2026-07-03 23:15 +02:00 - Completato `V113-E5-T03`: `doPost` espone ora `inbox_status=archiviato`, la notifica archiviazione include lo stato finale e la schermata di successo mostra l'esito inbox; backlog, next tasks e state riallineati su `V113-E6-T01`; test mirati Apps Script e parsing HTML locale verdi.
+# 2026-07-25
+
+- Consolidato il `FAIL` umano della RC `bab6e92`: il percorso locale crea la
+  coda tecnica ma non notifica ne` rende raggiungibile il lavoro in Virgilio;
+  registrate inoltre lentezza senza avanzamento osservabile e semantica
+  fuorviante di `Cartella completati`. Pianificati quattro task autonomi
+  `GUI-U-R04-R03`--`R04-R06` e due gate umani finali (pubblicazione Apps Script
+  e pilota reale).
