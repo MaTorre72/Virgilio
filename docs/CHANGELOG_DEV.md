@@ -1,5 +1,17 @@
 # Changelog sviluppo
 
+- 2026-07-25 +02:00 - Completato `GUI-U-R04-R02` dopo `FAIL` umano della
+  RC `24d54be`: il Registro usava ancora file OAuth della CLI e non veniva
+  aggiornato dalla pipeline Home. Il nuovo servizio usa il client Desktop
+  incluso con scope Sheets, apre il browser e conserva/rinnova l'autorizzazione
+  nel Gestore credenziali Windows. Un Registro selezionato viene abilitato
+  automaticamente e, dopo il consenso, Caronte crea sezioni/intestazioni
+  mancanti senza sovrascrivere strutture incompatibili. La pipeline compone
+  `handoff -> registry -> completion`; un errore Registro lascia il messaggio
+  riprovabile. Il pulsante Manutenzione resta sempre disponibile. Mirati
+  `72 passed`, smoke finale `540 passed`; una prima esecuzione aveva raggiunto
+  `539 passed` prima dell'errore intermittente `init.tcl`, non riprodotto.
+
 - 2026-07-24 +02:00 - Completato `GUI-U-R04-R01` dopo `FAIL` umano UX
   della RC `0d46d69`: la pagina utente non espone piu` URL, codici o richieste
   amministrative senza percorso. Mostra soltanto la prontezza di Registro e

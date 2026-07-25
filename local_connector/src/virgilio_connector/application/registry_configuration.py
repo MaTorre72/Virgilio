@@ -44,6 +44,13 @@ class RegistryConfigurationService:
             True, "Registro configurato dall'amministratore.", identifier
         )
 
+    def ensure_enabled(self) -> None:
+        """Migrate an already selected Register to the operational enabled state."""
+
+        identifier = _read_spreadsheet_id(self.config_path)
+        if identifier and not _read_enabled(self.config_path):
+            _write_spreadsheet_id(self.config_path, identifier)
+
 
 def _extract_spreadsheet_id(reference: str) -> str:
     value = reference.strip()
@@ -71,6 +78,22 @@ def _read_spreadsheet_id(path: Path) -> str:
     return ""
 
 
+def _read_enabled(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    active = False
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        text = raw.split("#", 1)[0].strip()
+        if text == "bucoliche:":
+            active = True
+            continue
+        if active and raw[:1] not in {" ", "\t"}:
+            break
+        if active and text.startswith("enabled:"):
+            return text.split(":", 1)[1].strip().casefold() == "true"
+    return False
+
+
 def _write_spreadsheet_id(path: Path, identifier: str) -> None:
     text = path.read_text(encoding="utf-8") if path.exists() else ""
     section = re.search(r"(?ms)^bucoliche:\s*\n(?P<body>(?:^[ \t]+.*\n?)*)", text)
@@ -83,6 +106,15 @@ def _write_spreadsheet_id(path: Path, identifier: str) -> None:
                 body += "\n"
         else:
             body = line + body
+        if re.search(r"(?m)^[ \t]+enabled:\s*.*$", body):
+            body = re.sub(
+                r"(?m)^([ \t]+enabled:)\s*.*$",
+                r"\1 true",
+                body,
+                count=1,
+            )
+        else:
+            body = "  enabled: true\n" + body
         text = text[:section.start("body")] + body + text[section.end("body"):]
     else:
         if text and not text.endswith("\n"):

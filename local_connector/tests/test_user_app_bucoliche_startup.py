@@ -4,6 +4,7 @@ from tkinter import Tk
 from virgilio_connector.bucoliche import BucolicheError
 from virgilio_connector.application.bucoliche_startup import (
     BucolicheStartupService,
+    ExistingBucolicheGateway,
     GuidedStatus,
 )
 from virgilio_connector.application.configuration import ConfigurationService
@@ -72,7 +73,14 @@ def _configuration(tmp_path: Path):
     return ConfigurationService.for_file(path)
 
 
-def _service(tmp_path, *, installed=False, bucoliche=None, configured=True):
+def _service(
+    tmp_path,
+    *,
+    installed=False,
+    bucoliche=None,
+    configured=True,
+    connection_configured=False,
+):
     configuration = _configuration(tmp_path)
     if configured:
         RegistryConfigurationService(configuration.store.source).select_register(
@@ -83,6 +91,8 @@ def _service(tmp_path, *, installed=False, bucoliche=None, configured=True):
     connection = OperationalConnectionService(
         configuration.store.source, FakeCredentialStore()
     )
+    if connection_configured:
+        connection.configure("https://example.invalid/exec", "synthetic-code")
     return (
         configuration,
         BucolicheStartupService(configuration, google, automatic, connection),
@@ -126,6 +136,89 @@ def test_google_connection_is_a_guided_step_using_only_the_injected_adapter(tmp_
 
     assert result == GuidedStatus(True, "Collegamento Google completato.")
     assert google.calls == ["connect"]
+
+
+def test_existing_gateway_uses_protected_sheets_service_without_external_paths(tmp_path):
+    configuration = _configuration(tmp_path)
+    RegistryConfigurationService(configuration.store.source).select_register(
+        "abcDEFGhijklmNOPQRST_uvwx"
+    )
+
+    class FakeSheets:
+        def __init__(self):
+            self.calls = []
+            self.client_instance = type(
+                "Client",
+                (),
+                {
+                    "inspect_sheets": lambda self: {
+                        "Bucoliche_Eventi": (),
+                        "Bucoliche_Conflitti": (),
+                        "Bucoliche_Stato": (),
+                    },
+                    "create_sheet": lambda self, name: None,
+                    "write_header": lambda self, name, columns: None,
+                },
+            )()
+
+        def authorize(self):
+            self.calls.append("authorize")
+
+        def client(self, spreadsheet_id):
+            self.calls.append(("client", spreadsheet_id))
+            return self.client_instance
+
+    sheets = FakeSheets()
+    gateway = ExistingBucolicheGateway(configuration.store.source, sheets)
+
+    assert gateway.connect_google() == GuidedStatus(
+        True, "Google collegato. Registro pronto."
+    )
+    assert gateway.verify_register() == GuidedStatus(
+        True, "Registro verificato e pronto."
+    )
+    assert sheets.calls == [
+        "authorize",
+        ("client", "abcDEFGhijklmNOPQRST_uvwx"),
+        ("client", "abcDEFGhijklmNOPQRST_uvwx"),
+    ]
+
+
+def test_google_connection_prepares_missing_register_sections(tmp_path):
+    configuration = _configuration(tmp_path)
+    RegistryConfigurationService(configuration.store.source).select_register(
+        "abcDEFGhijklmNOPQRST_uvwx"
+    )
+    operations = []
+
+    class Client:
+        def inspect_sheets(self):
+            return {"Foglio1": ()}
+
+        def create_sheet(self, name):
+            operations.append(("create", name))
+
+        def write_header(self, name, columns):
+            operations.append(("header", name, len(columns)))
+
+    class Sheets:
+        def authorize(self):
+            operations.append(("authorize",))
+
+        def client(self, spreadsheet_id):
+            operations.append(("client", spreadsheet_id))
+            return Client()
+
+    result = ExistingBucolicheGateway(
+        configuration.store.source, Sheets()
+    ).connect_google()
+
+    assert result == GuidedStatus(True, "Google collegato. Registro pronto.")
+    assert [item[:2] for item in operations if item[0] == "create"] == [
+        ("create", "Bucoliche_Eventi"),
+        ("create", "Bucoliche_Conflitti"),
+        ("create", "Bucoliche_Stato"),
+    ]
 
 
 def test_register_verification_is_read_only_through_the_injected_adapter(tmp_path):
@@ -226,7 +319,8 @@ def test_guided_view_shows_clear_steps_and_known_error_messages(tmp_path):
         for widget in kind.created
     ).lower()
     assert "registro delle attivita" in visible
-    assert "collega il tuo account google per aggiornare il registro" in visible
+    assert "si aprira` il browser" in visible
+    assert "account google che puo` modificare il foglio" in visible
     forbidden = {
         "python", "venv", "cli", "yaml", ".env", "doctor", "pilot", "dry-run",
         "watch", "staging", "ack", "manifest", "sqlite", "exit code",
@@ -262,6 +356,27 @@ def test_guided_view_hides_administrative_fields_and_opens_maintenance(tmp_path)
     assert "salva collegamento" not in visible
     assert "chiedi all'amministratore" not in visible
     assert "configurazione iniziale" in visible
+
+
+def test_guided_view_keeps_maintenance_available_after_complete_configuration(tmp_path):
+    configuration, service, _, _ = _service(
+        tmp_path, configured=True, connection_configured=True
+    )
+    calls = []
+    shell = UserAppShell(
+        FakeRoot(),
+        configuration,
+        ttk_module=FakeTtk,
+        bucoliche_startup_service=service,
+        open_maintenance=lambda: calls.append("opened") or True,
+    )
+    shell.show_bucoliche_startup()
+
+    assert shell.bucoliche_startup.maintenance_action.config["text"] == (
+        "Apri Caronte Manutenzione"
+    )
+    assert shell.bucoliche_startup.open_maintenance()
+    assert calls == ["opened"]
 
 
 def test_guided_view_reports_when_maintenance_cannot_be_opened(tmp_path):

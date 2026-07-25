@@ -33,6 +33,7 @@ class LocalPipelineRunner:
                  storage_factory: Callable[[], LocalFilesystemStorageAdapter],
                  completion_factory: Callable[[], LocalCompletionRunner],
                  handoff_factory: Callable[[], OperationalHandoffRunner] | None = None,
+                 registry_export_factory: Callable[[], object] | None = None,
                  scanner_factory: Callable[[], MultiAccountReadonlyScanner] | None = None,
                  config_path: Path | None = None) -> None:
         self.accounts = tuple(accounts)
@@ -41,6 +42,7 @@ class LocalPipelineRunner:
         self.storage_factory = storage_factory
         self.completion_factory = completion_factory
         self.handoff_factory = handoff_factory
+        self.registry_export_factory = registry_export_factory
         self.scanner_factory = scanner_factory
         self.config_path = config_path
 
@@ -80,14 +82,39 @@ class LocalPipelineRunner:
             warnings.append(
                 f"handoff: {len(waiting_handoffs)} document(s) waiting for Limbo synchronization"
             )
-        completion = self._phase("completion", phase_times, errors,
-                                 lambda: self.completion_factory().complete(dry_run=dry_run))
+        registry_errors_before = len(errors)
+        registry = self._phase(
+            "registry",
+            phase_times,
+            errors,
+            lambda: (
+                (self.registry_export_factory().export(dry_run=dry_run),)
+                if self.registry_export_factory else ()
+            ),
+        )
+        registry_failed = len(errors) > registry_errors_before or any(
+            getattr(item, "status", "") in {"blocked", "completed_with_errors"}
+            or bool(getattr(item, "errors", ()))
+            for item in registry
+        )
+        if registry_failed:
+            errors.append("registry: activity Register update did not complete")
+            completion = ()
+        else:
+            completion = self._phase(
+                "completion",
+                phase_times,
+                errors,
+                lambda: self.completion_factory().complete(dry_run=dry_run),
+            )
         if not storage:
             warnings.append("storage: skipped_no_ready_attachments")
         if not completion:
             warnings.append("completion: skipped_no_staged_messages")
         if self.handoff_factory and not handoff:
             warnings.append("handoff: skipped_no_staged_attachments")
+        if self.registry_export_factory and not registry:
+            warnings.append("registry: skipped_no_result")
         status = ("completed_with_errors" if errors else
                   "completed_with_warnings" if warnings else "completed")
         report = {
@@ -111,6 +138,7 @@ class LocalPipelineRunner:
                 "process": [asdict(item) for item in process],
                 "storage": [asdict(item) for item in storage],
                 "handoff": [asdict(item) for item in handoff],
+                "registry": [asdict(item) for item in registry],
                 "completion": [asdict(item) for item in completion],
             },
         }

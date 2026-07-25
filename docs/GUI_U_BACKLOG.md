@@ -1165,3 +1165,30 @@ installata senza terminale.
 | `R04-R01-AC3` Dalla schermata utente si apre Caronte Manutenzione senza console e senza privilegi amministrativi. | Test launcher iniettato e comando frozen. | Azione utente e fallimento guidato verificati; il comando frozen richiama lo stesso `Caronte.exe maintenance-gui --config ...`, con `CREATE_NO_WINDOW`, senza Python o elevazione. | `MET` |
 | `R04-R01-AC4` L'installer crea nel menu Start accessi distinti a Caronte e Caronte Manutenzione e li rimuove insieme. | Test installer e smoke installato. | Installer crea `Caronte.lnk` e `Caronte Manutenzione.lnk` con argomenti distinti nella stessa cartella rimossa dalla disinstallazione; lo smoke installato apre entrambe le finestre. | `MET` |
 | `R04-R01-AC5` Test mirati, Tk reale e smoke locale sono verdi e viene prodotta una nuova RC identificata. | Suite mirata, smoke e manifest/hash della RC. | Mirati finali `35 passed`; Tk isolato `1 passed`; smoke locale `532 passed`. La nuova RC con client OAuth locale viene prodotta dal commit conclusivo e identificata dal relativo manifest ignorato. | `MET` |
+
+#### GUI-U-R04-R02 - Registro Google realmente operativo
+
+Stato: `DONE`.
+Risultato: `Collega Google` usa il client OAuth incluso, apre il consenso nel
+browser e conserva l'autorizzazione Sheets nel Gestore credenziali Windows; i
+controlli Home aggiornano il Registro tramite il servizio CLI gia` esistente e
+Caronte Manutenzione resta sempre raggiungibile.
+Dipendenze: `GUI-U-R04-R01 = DONE`; feedback umano del 2026-07-25 sulla RC
+`24d54be`.
+Componenti ammessi: OAuth Google condiviso, credenziali Windows, gateway
+Bucoliche, pipeline locale, vista `Registro e avvio`, test, build e documenti
+R04.
+Esclusioni: credenziali o rete reali nei test, token su file, modifica Apps
+Script, nuovi protocolli, legacy `gui`/`gui_*`, disinstallatore diretto,
+`clasp push`, merge e modifica di `main`.
+Condizione di blocco: il client OAuth incluso non supporta lo scope Google
+Sheets oppure l'export Bucoliche esistente non puo` essere composto prima del
+completamento del messaggio.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| -------- | -------------- | ----------------- | ----- |
+| `R04-R02-AC1` `Collega Google` usa il client Desktop incluso e apre il browser con lo scope Google Sheets, senza file o variabili esterne. | Test del flusso con client e flow fake. | `GoogleSheetsOAuthService` carica la stessa risorsa Desktop inclusa nella build e avvia il loopback su `127.0.0.1` con browser e solo scope Sheets. La vista spiega prima del click che si aprira` il browser e richiede un account capace di modificare il foglio. | `MET` |
+| `R04-R02-AC2` L'autorizzazione Sheets viene salvata, riletta e rinnovata soltanto nel Gestore credenziali Windows. | Test con credential store fake, refresh e scansione persistenza. | Autorizzazione opaca salvata in `VIRGILIO_BUCOLICHE_GOOGLE_OAUTH` tramite il `CredentialStore`; lettura, refresh e sostituzione protetta verificati senza token su configurazione o file. | `MET` |
+| `R04-R02-AC3` Il controllo manuale/continuo esporta gli eventi nel Registro prima di completare il messaggio e un errore Registro lascia il lavoro riprovabile. | Test pipeline verticale con exporter fake su successo ed errore. | `LocalPipelineRunner` compone l'adapter CLI `BucolicheAppendOnlyAdapter` dopo la consegna e prima del completamento. Successo verifica ordine `handoff -> registry -> completion`; errori/assenza credenziale bloccano completion. Un Registro gia` selezionato ma disabilitato viene migrato automaticamente; sezioni e intestazioni mancanti vengono predisposte dopo l'autorizzazione. | `MET` |
+| `R04-R02-AC4` `Apri Caronte Manutenzione` resta disponibile anche dopo una configurazione completa. | Test inventario e callback della vista configurata. | Pulsante e testo per interventi futuri sono sempre presenti; callback verificata sia su configurazione incompleta sia completa. | `MET` |
+| `R04-R02-AC5` Test mirati, Tk reale, smoke locale e nuova RC identificata sono verdi. | Suite focalizzata, smoke e manifest/hash RC. | Mirati finali `72 passed`; smoke locale finale `540 passed`. Una prima esecuzione aveva completato `539 passed` prima dell'errore intermittente di caricamento `init.tcl`, non riprodotto al secondo smoke. La nuova RC viene prodotta dal commit conclusivo con client OAuth incluso. | `MET` |

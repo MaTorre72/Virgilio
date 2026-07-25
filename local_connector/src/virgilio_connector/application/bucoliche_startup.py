@@ -9,9 +9,20 @@ import re
 import tempfile
 from typing import Protocol
 
-from ..bucoliche import BucolicheError, GoogleOAuthLogin, load_bucoliche_config
-from ..pilot_readiness import BucolicheDoctor, has_bucoliche_section
+from ..bucoliche import (
+    CONFLICT_COLUMNS,
+    EVENT_COLUMNS,
+    STATE_COLUMNS,
+    BucolicheError,
+    load_bucoliche_config,
+)
 from .configuration import ConfigurationService
+from .google_oauth import (
+    GoogleOAuthConfigurationError,
+    GoogleOAuthError,
+    GoogleSheetsOAuthService,
+    create_google_sheets_oauth_service,
+)
 from .registry_configuration import RegistryConfigurationService
 from .operational_connection import (
     OperationalConnectionService,
@@ -53,29 +64,76 @@ class AutomaticControlGateway(Protocol):
 class ExistingBucolicheGateway:
     """Adapt the existing OAuth and read-only checks to user-facing outcomes."""
 
-    def __init__(self, config_path: Path) -> None:
+    def __init__(
+        self,
+        config_path: Path,
+        sheets: GoogleSheetsOAuthService | None = None,
+    ) -> None:
         self.config_path = Path(config_path)
+        self.sheets = sheets or create_google_sheets_oauth_service()
 
     def connect_google(self) -> GuidedStatus:
-        result = GoogleOAuthLogin(load_bucoliche_config(self.config_path)).run()
-        if result.status in {"token_created", "token_refreshed"}:
-            return GuidedStatus(True, "Collegamento Google completato.")
-        if result.status == "blocked":
+        try:
+            self.sheets.authorize()
+        except GoogleOAuthConfigurationError:
             return GuidedStatus(
                 False,
                 "Collegamento Google non disponibile. Chiedi all'amministratore di completare la configurazione di Caronte.",
             )
-        return GuidedStatus(False, "Collegamento Google non completato. Riprova.")
+        except (GoogleOAuthError, CredentialStoreError, OSError, PermissionError):
+            return GuidedStatus(False, "Collegamento Google non completato. Riprova.")
+        try:
+            prepared = self._prepare_register()
+        except Exception:
+            return GuidedStatus(
+                False,
+                "Google collegato, ma il Registro non e` stato predisposto. "
+                "Controlla di poter modificare il foglio.",
+            )
+        if not prepared:
+            return GuidedStatus(
+                False,
+                "Google collegato, ma la struttura del Registro non e` compatibile.",
+            )
+        return GuidedStatus(True, "Google collegato. Registro pronto.")
 
     def verify_register(self) -> GuidedStatus:
         config = load_bucoliche_config(self.config_path)
-        result = BucolicheDoctor(
-            config,
-            config_has_section=has_bucoliche_section(self.config_path),
-        ).run()
-        if result.status == "READY":
-            return GuidedStatus(True, "Registro verificato e pronto.")
-        return GuidedStatus(False, "Registro non pronto. Completa prima il collegamento Google.")
+        try:
+            sheets = self.sheets.client(config.spreadsheet_id).inspect_sheets()
+        except Exception:
+            return GuidedStatus(
+                False, "Registro non pronto. Completa prima il collegamento Google."
+            )
+        required = {config.events_sheet, config.conflicts_sheet, config.state_sheet}
+        if not required.issubset(sheets):
+            return GuidedStatus(
+                False,
+                "Registro collegato, ma non ancora predisposto completamente.",
+            )
+        return GuidedStatus(True, "Registro verificato e pronto.")
+
+    def _prepare_register(self) -> bool:
+        config = load_bucoliche_config(self.config_path)
+        client = self.sheets.client(config.spreadsheet_id)
+        existing = client.inspect_sheets()
+        definitions = (
+            (config.events_sheet, EVENT_COLUMNS),
+            (config.conflicts_sheet, CONFLICT_COLUMNS),
+            (config.state_sheet, STATE_COLUMNS),
+        )
+        for name, columns in definitions:
+            header = tuple(existing.get(name, ()))
+            if header and header[: len(columns)] != tuple(columns):
+                return False
+        for name, columns in definitions:
+            header = tuple(existing.get(name, ()))
+            if name not in existing:
+                client.create_sheet(name)
+                client.write_header(name, columns)
+            elif not header:
+                client.write_header(name, columns)
+        return True
 
 
 class WindowsAutomaticControlGateway:
@@ -128,6 +186,7 @@ class BucolicheStartupService:
         self.registry_configuration = RegistryConfigurationService(
             configuration.store.source
         )
+        self.registry_configuration.ensure_enabled()
         self.bucoliche = bucoliche
         self.automatic_control = automatic_control
         self.operational_connection = operational_connection

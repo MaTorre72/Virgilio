@@ -36,10 +36,18 @@ class BucolicheStartupView:
         self.registry_action = None
         if snapshot.register_configured:
             ttk_module.Label(
-                self.frame, text="Collega il tuo account Google per aggiornare il Registro"
+                self.frame,
+                text=(
+                    "Autorizza Caronte ad aggiungere le attivita` al Registro. "
+                    "Si aprira` il browser: scegli un account Google che puo` "
+                    "modificare il foglio."
+                ),
+                wraplength=680,
             ).grid(row=2, column=0, columnspan=2, sticky="w", pady=(8, 0))
             self.registry_action = ttk_module.Button(
-                self.frame, text="Collega Google", command=self.connect_google
+                self.frame,
+                text="Autorizza aggiornamento Registro",
+                command=self.connect_google,
             )
             self.registry_action.grid(row=3, column=0, sticky="w")
 
@@ -55,22 +63,27 @@ class BucolicheStartupView:
             ),
         )
         self.connection_message.grid(row=5, column=0, columnspan=2, sticky="w")
-        self.maintenance_action = None
         self._open_maintenance = open_maintenance
-        if not snapshot.register_configured or not snapshot.connection_configured:
-            ttk_module.Label(
-                self.frame,
-                text=(
+        ttk_module.Label(
+            self.frame,
+            text=(
+                (
                     "Apri Caronte Manutenzione per completare la configurazione "
                     "iniziale. Va eseguita una sola volta da chi gestisce Virgilio."
-                ),
-            ).grid(row=6, column=0, columnspan=2, sticky="w", pady=(8, 0))
-            self.maintenance_action = ttk_module.Button(
-                self.frame,
-                text="Apri Caronte Manutenzione",
-                command=self.open_maintenance,
-            )
-            self.maintenance_action.grid(row=7, column=0, sticky="w")
+                )
+                if not snapshot.register_configured or not snapshot.connection_configured
+                else (
+                    "Caronte Manutenzione resta disponibile per future modifiche "
+                    "da parte di chi gestisce Virgilio."
+                )
+            ),
+        ).grid(row=6, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        self.maintenance_action = ttk_module.Button(
+            self.frame,
+            text="Apri Caronte Manutenzione",
+            command=self.open_maintenance,
+        )
+        self.maintenance_action.grid(row=7, column=0, sticky="w")
 
         ttk_module.Label(self.frame, text="Controllo automatico all'accesso a Windows").grid(
             row=8, column=0, columnspan=2, sticky="w", pady=(16, 0)

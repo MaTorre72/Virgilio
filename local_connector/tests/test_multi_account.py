@@ -1,4 +1,5 @@
 from pathlib import Path
+from dataclasses import dataclass
 import sqlite3
 import json
 import sys
@@ -974,6 +975,22 @@ class FakeHandoffPhase:
         return self.result
 
 
+@dataclass(frozen=True)
+class FakeRegistryResult:
+    status: str
+    errors: tuple[str, ...] = ()
+
+
+class FakeRegistryPhase:
+    def __init__(self, log, result):
+        self.log = log
+        self.result = result
+
+    def export(self, dry_run):
+        self.log.append(("registry", dry_run))
+        return self.result
+
+
 def test_pipeline_dry_run_no_report_and_order(tmp_path):
     accounts = load_multi_account_config(write_config(tmp_path))[:1]
     log = []
@@ -1049,6 +1066,61 @@ def test_pipeline_handoff_runs_after_storage_and_before_completion(tmp_path):
     ]
     assert result.status == "completed_with_warnings"
     assert any("waiting for Limbo synchronization" in item for item in result.warnings)
+
+
+def test_pipeline_updates_registry_after_handoff_and_before_completion(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    log = []
+    runner = LocalPipelineRunner(
+        accounts,
+        paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner_factory=lambda: FakePhase("scan", log),
+        processor_factory=lambda: FakePhase("process", log),
+        storage_factory=lambda: FakePhase("storage", log),
+        handoff_factory=lambda: FakeHandoffPhase(log),
+        registry_export_factory=lambda: FakeRegistryPhase(
+            log, FakeRegistryResult("completed")
+        ),
+        completion_factory=lambda: FakePhase("completion", log),
+    )
+
+    result = runner.run(dry_run=False)
+
+    assert result.status == "completed_with_warnings"
+    assert log == [
+        ("scan", False),
+        ("process", False),
+        ("storage", False),
+        ("handoff", False),
+        ("registry", False),
+        ("completion", False),
+    ]
+
+
+def test_pipeline_registry_failure_keeps_message_uncompleted_for_retry(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    log = []
+    runner = LocalPipelineRunner(
+        accounts,
+        paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner_factory=lambda: FakePhase("scan", log),
+        processor_factory=lambda: FakePhase("process", log),
+        storage_factory=lambda: FakePhase("storage", log),
+        registry_export_factory=lambda: FakeRegistryPhase(
+            log,
+            FakeRegistryResult(
+                "completed_with_errors", ("synthetic registry failure",)
+            ),
+        ),
+        completion_factory=lambda: FakePhase("completion", log),
+    )
+
+    result = runner.run(dry_run=False)
+
+    assert result.status == "completed_with_errors"
+    assert ("completion", False) not in log
+    assert ("registry", False) in log
+    assert any("Register update did not complete" in item for item in result.errors)
 
 
 def test_run_local_pipeline_cli_invalid_config(tmp_path, monkeypatch):

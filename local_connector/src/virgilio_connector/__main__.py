@@ -45,7 +45,12 @@ from .doctor import LocalDoctor
 from .application_paths import default_application_paths
 from .application.configuration import ConfigurationService
 from .application.credentials import CredentialStoreError
+from .application.google_oauth import (
+    GoogleOAuthConfigurationError,
+    create_google_sheets_oauth_service,
+)
 from .application.operational_connection import create_operational_connection_service
+from .application.registry_configuration import RegistryConfigurationService
 from .application.windows_credentials import create_account_credential_service
 from .local_paths import LocalDataPaths
 from .reset_local_state import ResetLocalStateError, reset_local_state
@@ -288,9 +293,39 @@ def _build_local_pipeline_runner(
                 timeout_seconds=timeout_seconds,
             ),
         ),
+        registry_export_factory=lambda: _build_protected_registry_exporter(
+            config_path, paths, runtime
+        ),
         completion_factory=lambda: LocalCompletionRunner(
             accounts, paths=paths, environ=runtime, require_da_archiviare=True,
         ),
+    )
+
+
+def _build_protected_registry_exporter(
+    config_path: Path,
+    paths: LocalDataPaths,
+    runtime: dict[str, str],
+) -> BucolicheAppendOnlyAdapter:
+    RegistryConfigurationService(config_path).ensure_enabled()
+    config = load_bucoliche_config(config_path)
+    client = None
+    try:
+        client = create_google_sheets_oauth_service().client(config.spreadsheet_id)
+    except (
+        GoogleOAuthConfigurationError,
+        CredentialStoreError,
+        OSError,
+        PermissionError,
+        ValueError,
+    ):
+        # Explicit CLI environment remains a supported fallback.
+        pass
+    return BucolicheAppendOnlyAdapter(
+        state_db=paths.state_db,
+        config=config,
+        environ=runtime,
+        client=client,
     )
 
 
