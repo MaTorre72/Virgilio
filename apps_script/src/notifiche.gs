@@ -100,6 +100,42 @@ function avvisaArchiviazioneVirgilioInbox(esito) {
   }
 }
 
+/** Notifica un documento disponibile nel form Virgilio con esito osservabile. */
+function avvisaPresaInCaricoVirgilioInbox(entry, options) {
+  const payload = entry && typeof entry === 'object' && !Array.isArray(entry) ? entry : {};
+  const settings = options && typeof options === 'object' && !Array.isArray(options) ? options : {};
+  const configuration = settings.config || CONFIG;
+  const sendChat = typeof settings.send_chat === 'function' ? settings.send_chat : avvisaChat;
+  const sendTelegram = typeof settings.send_telegram === 'function' ? settings.send_telegram : avvisaTelegram;
+  const chatMessage = _costruisciPresaInCaricoVirgilioInboxChat_(payload);
+  const telegramMessage = _costruisciPresaInCaricoVirgilioInboxTelegram_(payload);
+  const channels = [];
+  if (configuration.WEBHOOK_CHAT) {
+    try { sendChat(chatMessage); channels.push('chat_sent'); }
+    catch (err) { Logger.log(`[Notifiche] Chat presa in carico fallita: ${err.message}`); channels.push('chat_retry'); }
+  }
+  if (configuration.TELEGRAM_TOKEN && configuration.TELEGRAM_CHAT_ID) {
+    try { sendTelegram(telegramMessage); channels.push('telegram_sent'); }
+    catch (err) { Logger.log(`[Notifiche] Telegram presa in carico fallita: ${err.message}`); channels.push('telegram_retry'); }
+  }
+  if (!channels.length) return { status: 'not_configured', channels: [] };
+  return { status: channels.some(item => item.indexOf('_retry') >= 0) ? 'retry' : 'sent', channels: channels };
+}
+
+function _costruisciPresaInCaricoVirgilioInboxChat_(entry) {
+  return `Documento disponibile\nDocumento: ${entry.original_filename || 'documento'}\n` +
+    `Provenienza: ${entry.source_sender || entry.source_email || 'casella collegata'}\n` +
+    `Apri in Virgilio: ${entry.form_url}`;
+}
+
+function _costruisciPresaInCaricoVirgilioInboxTelegram_(entry) {
+  const documentName = _escapeTelegramHtml(entry.original_filename || 'documento');
+  const source = _escapeTelegramHtml(entry.source_sender || entry.source_email || 'casella collegata');
+  const link = _escapeTelegramHtml(entry.form_url);
+  return `Documento disponibile\nDocumento: ${documentName}\nProvenienza: ${source}\n` +
+    `<a href="${link}">Apri in Virgilio</a>`;
+}
+
 
 /**
  * Invia un messaggio al webhook Google Chat dello spazio team Sigma+.

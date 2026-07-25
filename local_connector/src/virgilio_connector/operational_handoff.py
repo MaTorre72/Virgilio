@@ -35,6 +35,8 @@ class OperationalHandoffResult:
     inbox_id: str = ""
     drive_file_id: str = ""
     manifest_file_id: str = ""
+    form_url: str = ""
+    notification_status: str = ""
 
 
 class OperationalHandoffRunner:
@@ -130,6 +132,8 @@ class OperationalHandoffRunner:
                 "idempotent": intake_result.idempotent,
                 "message": intake_result.message,
                 "errors": [dict(item) for item in intake_result.errors],
+                "form_url": intake_result.form_url,
+                "notification_status": intake_result.notification_status,
             }, fingerprint=identity["fingerprint"])
             if not intake_result.ok:
                 results.append(self._result(
@@ -145,6 +149,8 @@ class OperationalHandoffRunner:
                 inbox_id=intake_result.inbox_id,
                 drive_file_id=verified.drive_file_id,
                 manifest_file_id=verified.manifest_file_id,
+                form_url=intake_result.form_url,
+                notification_status=intake_result.notification_status,
             ))
         return tuple(results)
 
@@ -232,6 +238,8 @@ class OperationalHandoffRunner:
         inbox_id: str = "",
         drive_file_id: str = "",
         manifest_file_id: str = "",
+        form_url: str = "",
+        notification_status: str = "",
     ) -> OperationalHandoffResult:
         return OperationalHandoffResult(
             attachment_id=staged.attachment_id,
@@ -241,4 +249,6 @@ class OperationalHandoffRunner:
             inbox_id=inbox_id,
             drive_file_id=drive_file_id,
             manifest_file_id=manifest_file_id,
+            form_url=form_url,
+            notification_status=notification_status,
         )

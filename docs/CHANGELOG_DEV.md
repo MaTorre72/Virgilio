@@ -1,5 +1,16 @@
 # Changelog sviluppo
 
+- 2026-07-25 +02:00 - Completato `GUI-U-R04-R03` dopo il `FAIL` umano
+  della RC `bab6e92`: la presa in carico genera un link `/exec` assoluto
+  correlato all'`inbox_id` e lo restituisce al connector insieme allo stato
+  della notifica. Chat e Telegram ricevono, quando configurati, un messaggio
+  leggibile con documento, provenienza e azione `Apri in Virgilio`; il retry
+  riusa la riga e non reinvia un esito gia` `sent`, mentre un problema resta
+  riprovabile. Il contratto resta metadata-only e il connector blocca il
+  completamento se manca il link o lo stato osservabile. Harness Apps Script
+  puro `OK`, test fake Python `25 passed`, smoke locale `545 passed`; nessuna
+  rete reale, push o deploy.
+
 - 2026-07-25 +02:00 - Completato `GUI-U-R04-R02` dopo `FAIL` umano della
   RC `24d54be`: il Registro usava ancora file OAuth della CLI e non veniva
   aggiornato dalla pipeline Home. Il nuovo servizio usa il client Desktop

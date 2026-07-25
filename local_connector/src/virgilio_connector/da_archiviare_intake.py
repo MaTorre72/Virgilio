@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Any, Callable, Mapping
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 from urllib.request import Request, urlopen
 
 
@@ -45,6 +45,8 @@ class DaArchiviareIntakeResponse:
     row: int
     message: str
     errors: tuple[dict[str, Any], ...]
+    form_url: str
+    notification_status: str
 
     @classmethod
     def from_mapping(cls, raw: Any) -> "DaArchiviareIntakeResponse":
@@ -52,7 +54,8 @@ class DaArchiviareIntakeResponse:
             raise DaArchiviareIntakeClientError("Da archiviare response must be a JSON object")
         required = {
             "ok", "action", "inbox_id", "created", "updated",
-            "idempotent", "row", "message", "errors",
+            "idempotent", "row", "message", "errors", "form_url",
+            "notification_status",
         }
         if not required.issubset(raw):
             raise DaArchiviareIntakeClientError(
@@ -73,6 +76,8 @@ class DaArchiviareIntakeResponse:
             raise DaArchiviareIntakeClientError("Da archiviare response field row is invalid")
         if not isinstance(raw["message"], str) or not isinstance(raw["errors"], list):
             raise DaArchiviareIntakeClientError("Da archiviare response error fields are invalid")
+        if not isinstance(raw["form_url"], str) or not isinstance(raw["notification_status"], str):
+            raise DaArchiviareIntakeClientError("Da archiviare operational response fields are invalid")
         if raw["ok"] and not raw["inbox_id"]:
             raise DaArchiviareIntakeClientError("successful Da archiviare response is inconsistent")
         if raw["ok"] and raw["row"] < 1:
@@ -83,6 +88,18 @@ class DaArchiviareIntakeResponse:
             raise DaArchiviareIntakeClientError("idempotent response is inconsistent")
         if raw["ok"] and not (raw["created"] or raw["updated"] or raw["idempotent"]):
             raise DaArchiviareIntakeClientError("successful Da archiviare response is incomplete")
+        if raw["ok"]:
+            parsed_form_url = urlparse(raw["form_url"])
+            inbox_id = raw["inbox_id"]
+            if (
+                parsed_form_url.scheme != "https"
+                or not parsed_form_url.netloc
+                or parse_qs(parsed_form_url.query).get("inbox_id") != [inbox_id]
+                or not raw["notification_status"].strip()
+            ):
+                raise DaArchiviareIntakeClientError(
+                    "successful Da archiviare response has no operational link or notification state"
+                )
         return cls(
             ok=raw["ok"],
             action=raw["action"],
@@ -93,6 +110,8 @@ class DaArchiviareIntakeResponse:
             row=raw["row"],
             message=raw["message"],
             errors=tuple(raw["errors"]),
+            form_url=raw["form_url"].strip(),
+            notification_status=raw["notification_status"].strip(),
         )
 
 

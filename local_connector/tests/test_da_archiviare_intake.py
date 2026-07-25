@@ -58,7 +58,9 @@ class FakeResponse:
 
 
 def response_payload(*, ok=True, inbox_id="inbox-fixed-1", created=True, updated=False,
-                     idempotent=False, row=2, message="registrato"):
+                     idempotent=False, row=2, message="registrato",
+                     form_url="https://example.invalid/exec?inbox_id=inbox-fixed-1",
+                     notification_status="sent"):
     return {
         "ok": ok,
         "action": DA_ARCHIVIARE_INTAKE_ACTION,
@@ -67,6 +69,8 @@ def response_payload(*, ok=True, inbox_id="inbox-fixed-1", created=True, updated
         "updated": updated if ok else False,
         "idempotent": idempotent if ok else False,
         "row": row if ok else 0,
+        "form_url": form_url if ok else "",
+        "notification_status": notification_status if ok else "",
         "message": message if ok else "rifiutato",
         "errors": [] if ok else [{"code": "INVALID", "message": "rifiutato"}],
     }
@@ -223,6 +227,64 @@ def test_response_parsing_accepts_idempotent_retry(tmp_path):
     assert result.updated is False
 
 
+def test_response_requires_reachable_form_url_and_observable_notification(tmp_path):
+    client = DaArchiviareIntakeHttpClient(
+        "https://example.invalid/exec",
+        "token-123",
+        opener=lambda request, timeout: FakeResponse(response_payload()),
+    )
+
+    result = client.create_record(
+        write_manifest(tmp_path),
+        drive_file_id="drive-123",
+        manifest_file_id="manifest-123",
+    )
+
+    assert result.form_url == "https://example.invalid/exec?inbox_id=inbox-fixed-1"
+    assert result.notification_status == "sent"
+
+
+def test_response_accepts_url_encoded_inbox_id(tmp_path):
+    inbox_id = "inbox fixed&1"
+    client = DaArchiviareIntakeHttpClient(
+        "https://example.invalid/exec",
+        "token-123",
+        opener=lambda request, timeout: FakeResponse(response_payload(
+            inbox_id=inbox_id,
+            form_url="https://example.invalid/exec?inbox_id=inbox%20fixed%261",
+        )),
+    )
+
+    assert client.create_record(
+        write_manifest(tmp_path),
+        drive_file_id="drive-123",
+        manifest_file_id="manifest-123",
+    ).inbox_id == inbox_id
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"form_url": ""},
+        {"form_url": "https://example.invalid/exec"},
+        {"notification_status": ""},
+    ],
+)
+def test_response_rejects_missing_operational_link_or_notification_state(tmp_path, changes):
+    client = DaArchiviareIntakeHttpClient(
+        "https://example.invalid/exec",
+        "token-123",
+        opener=lambda request, timeout: FakeResponse(response_payload(**changes)),
+    )
+
+    with pytest.raises(DaArchiviareIntakeClientError, match="operational"):
+        client.create_record(
+            write_manifest(tmp_path),
+            drive_file_id="drive-123",
+            manifest_file_id="manifest-123",
+        )
+
+
 def test_invalid_response_action_is_rejected(tmp_path):
     client = DaArchiviareIntakeHttpClient(
         "https://example.invalid/exec",
@@ -283,6 +345,8 @@ def test_cli_intake_da_archiviare_uses_env_and_prints_json(tmp_path, monkeypatch
                 row=2,
                 message="registrato",
                 errors=(),
+                form_url="https://example.invalid/exec?inbox_id=inbox-fixed-1",
+                notification_status="sent",
             )
 
     monkeypatch.setattr(sys, "argv", [
@@ -332,6 +396,8 @@ def test_cli_intake_da_archiviare_writes_audit_event(tmp_path, monkeypatch, caps
                 row=2,
                 message="registrato",
                 errors=(),
+                form_url="https://example.invalid/exec?inbox_id=inbox-fixed-1",
+                notification_status="sent",
             )
 
     monkeypatch.setattr(sys, "argv", [

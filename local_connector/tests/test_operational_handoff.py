@@ -81,6 +81,8 @@ class FakeIntake:
             row=2,
             message="created",
             errors=(),
+            form_url="https://example.invalid/exec?inbox_id=inbox-123",
+            notification_status="sent",
         )
         self.error = error
         self.calls = []
@@ -118,6 +120,8 @@ def test_handoff_verifies_then_intakes_and_retry_is_local_idempotent(tmp_path):
 
     assert first[0].status == "created"
     assert first[0].inbox_id == "inbox-123"
+    assert first[0].form_url == "https://example.invalid/exec?inbox_id=inbox-123"
+    assert first[0].notification_status == "sent"
     assert second[0].status == "already_delivered"
     assert len(verifier.calls) == 1
     assert len(intake.calls) == 1
@@ -130,6 +134,7 @@ def test_handoff_verifies_then_intakes_and_retry_is_local_idempotent(tmp_path):
     assert len(rows) == 1
     assert rows[0][0] == "created"
     assert json.loads(rows[0][1])["inbox_id"] == "inbox-123"
+    assert json.loads(rows[0][1])["form_url"] == "https://example.invalid/exec?inbox_id=inbox-123"
 
 
 def test_handoff_waits_for_cloud_without_calling_intake(tmp_path):
@@ -174,6 +179,8 @@ def test_handoff_rejected_intake_is_a_failure(tmp_path):
         row=0,
         message="rejected",
         errors=({"code": "REJECTED"},),
+        form_url="",
+        notification_status="failed",
     ))
     runner, _, staged = _runner(tmp_path, verifier, intake)
 

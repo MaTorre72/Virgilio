@@ -82,13 +82,16 @@ function caronteRegistraVirgilioInbox(payload) {
     const result = _virgilioInboxUpsertDraft_(sheet, draft, {
       now: new Date(),
     });
+    const access = _virgilioInboxFinalizeOperationalAccess_(sheet, result, {
+      deployment_url: _virgilioInboxResolveFormDeploymentUrl_(),
+    });
     return _virgilioInboxIntakeResponse_(
       payload, true, result.inbox_id, result.created, result.updated,
       result.idempotent, result.row,
       result.idempotent
         ? 'Presa in carico inbox gia registrata; nessuna duplicazione creata.'
         : 'Presa in carico inbox registrata senza contenuti binari o path locali.',
-      []
+      [], access
     );
   } catch (err) {
     return _virgilioInboxIntakeResponse_(
@@ -131,6 +134,9 @@ function caronteRegistraVirgilioInboxDaGmail(payload) {
       now: new Date(),
       inboxIdFactory: validation.payload.inboxIdFactory,
     });
+    const access = _virgilioInboxFinalizeOperationalAccess_(sheet, result, {
+      deployment_url: _virgilioInboxResolveFormDeploymentUrl_(),
+    });
     return _virgilioInboxIntakeResponse_(
       validation.payload,
       true,
@@ -142,7 +148,7 @@ function caronteRegistraVirgilioInboxDaGmail(payload) {
       result.idempotent
         ? 'Presa in carico inbox Gmail gia registrata; nessuna duplicazione creata.'
         : 'Presa in carico inbox Gmail registrata nel tab Da archiviare.',
-      []
+      [], access
     );
   } catch (err) {
     return _virgilioInboxIntakeResponse_(
@@ -577,6 +583,60 @@ function _virgilioInboxUpsertDraft_(sheet, draft, options) {
   };
 }
 
+function _virgilioInboxFinalizeOperationalAccess_(sheet, result, options) {
+  const settings = options && typeof options === 'object' && !Array.isArray(options)
+    ? options
+    : {};
+  const current = _virgilioInboxEntryFromRow_(
+    sheet.getRange(result.row, 1, 1, VIRGILIO_INBOX_FIELDS.length).getValues()[0]
+  );
+  const formUrl = current.form_url || _virgilioInboxBuildFormUrl_(
+    settings.deployment_url,
+    result.inbox_id
+  );
+  if (!formUrl) return { form_url: '', notification_status: 'waiting_link' };
+
+  const previousStatus = _virgilioInboxReadNote_(current.notes, 'notification_status');
+  if (previousStatus === 'sent') {
+    if (!current.form_url) {
+      current.form_url = formUrl;
+      _virgilioInboxWriteEntry_(sheet, result.row, current);
+    }
+    return { form_url: formUrl, notification_status: 'sent' };
+  }
+  current.form_url = formUrl;
+  const notifier = typeof settings.notifier === 'function'
+    ? settings.notifier
+    : avvisaPresaInCaricoVirgilioInbox;
+  const notification = notifier(current);
+  const status = _virgilioInboxStringOrEmpty_(notification && notification.status) || 'retry';
+  current.notes = _virgilioInboxUpsertNotes_(current.notes, { notification_status: status });
+  _virgilioInboxWriteEntry_(sheet, result.row, current);
+  return { form_url: formUrl, notification_status: status };
+}
+
+function _virgilioInboxResolveFormDeploymentUrl_() {
+  const serviceUrl = typeof ScriptApp !== 'undefined' && ScriptApp.getService
+    ? _virgilioInboxStringOrEmpty_(ScriptApp.getService().getUrl())
+    : '';
+  if (serviceUrl) return serviceUrl;
+  return typeof _getUrlForm === 'function' ? _virgilioInboxStringOrEmpty_(_getUrlForm()) : '';
+}
+
+function _virgilioInboxBuildFormUrl_(deploymentUrl, inboxId) {
+  const base = _virgilioInboxStringOrEmpty_(deploymentUrl);
+  const id = _virgilioInboxStringOrEmpty_(inboxId);
+  if (!id || !/^https:\/\/[^\s]+\/exec(?:[?#].*)?$/i.test(base)) return '';
+  return `${base}${base.indexOf('?') >= 0 ? '&' : '?'}inbox_id=${encodeURIComponent(id)}`;
+}
+
+function _virgilioInboxReadNote_(notes, key) {
+  const prefix = `${key}=`;
+  return _virgilioInboxStringOrEmpty_(notes).split(';').map(item => item.trim())
+    .filter(item => item.indexOf(prefix) === 0)
+    .map(item => _virgilioInboxStringOrEmpty_(item.slice(prefix.length)))[0] || '';
+}
+
 function _virgilioInboxFindExistingRow_(sheet, key, sha256) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return { row: 0, entry: null, conflict: '' };
@@ -929,7 +989,8 @@ function _virgilioInboxGenerateId_(now, customFactory) {
 }
 
 function _virgilioInboxIntakeResponse_(payload, ok, inboxId, created, updated,
-                                       idempotent, row, message, errors) {
+                                       idempotent, row, message, errors, access) {
+  const operational = access && typeof access === 'object' ? access : {};
   return {
     ok: ok,
     action: payload && payload.action || '',
@@ -940,6 +1001,8 @@ function _virgilioInboxIntakeResponse_(payload, ok, inboxId, created, updated,
     row: Number.isInteger(row) ? row : 0,
     message: message,
     errors: Array.isArray(errors) ? errors : [],
+    form_url: _virgilioInboxStringOrEmpty_(operational.form_url),
+    notification_status: _virgilioInboxStringOrEmpty_(operational.notification_status),
   };
 }
 
@@ -1142,6 +1205,42 @@ function testVirgilioInboxSchema() {
     { inboxIdFactory: () => 'inbox-gmail-2' }
   );
   _driveStagingAssert_(gmailRetry.idempotent && gmailRows.length === 2, 'gmail retry idempotente');
+
+  let notificationCalls = 0;
+  const access = _virgilioInboxFinalizeOperationalAccess_(fakeSheet, createdEntry, {
+    deployment_url: 'https://script.google.com/macros/s/fake/exec',
+    notifier: entry => {
+      notificationCalls += 1;
+      _driveStagingAssert_(entry.original_filename === 'documento.pdf', 'notifica riceve documento');
+      return { status: 'sent' };
+    },
+  });
+  _driveStagingAssert_(access.form_url === 'https://script.google.com/macros/s/fake/exec?inbox_id=inbox-fixed-1',
+    'form url assoluto con inbox id');
+  _driveStagingAssert_(access.notification_status === 'sent' && notificationCalls === 1,
+    'notifica osservabile inviata');
+  const retryAccess = _virgilioInboxFinalizeOperationalAccess_(fakeSheet, createdEntry, {
+    deployment_url: 'https://script.google.com/macros/s/fake/exec',
+    notifier: () => { notificationCalls += 1; return { status: 'sent' }; },
+  });
+  _driveStagingAssert_(retryAccess.notification_status === 'sent' && notificationCalls === 1,
+    'retry non duplica notifica');
+  _driveStagingAssert_(_virgilioInboxBuildFormUrl_('', 'inbox-fixed-1') === '',
+    'deployment assente non produce link');
+  _driveStagingAssert_(_virgilioInboxBuildFormUrl_('https://example.invalid/exec', 'inbox a&b')
+    .indexOf('inbox_id=inbox%20a%26b') >= 0, 'inbox id viene codificato');
+  const notificationText = _costruisciPresaInCaricoVirgilioInboxChat_(_virgilioInboxEntryFromRow_(rows[1]));
+  _driveStagingAssert_(notificationText.indexOf('Documento: documento.pdf') >= 0 &&
+    notificationText.indexOf('Apri in Virgilio') >= 0 &&
+    notificationText.indexOf('inbox-fixed-1') < 0, 'notifica leggibile senza dettagli tecnici');
+  const notificationMessages = [];
+  const notificationResult = avvisaPresaInCaricoVirgilioInbox(_virgilioInboxEntryFromRow_(rows[1]), {
+    config: { WEBHOOK_CHAT: 'fake', TELEGRAM_TOKEN: 'fake', TELEGRAM_CHAT_ID: 'fake' },
+    send_chat: message => notificationMessages.push(`chat:${message}`),
+    send_telegram: message => notificationMessages.push(`telegram:${message}`),
+  });
+  _driveStagingAssert_(notificationResult.status === 'sent' && notificationMessages.length === 2,
+    'notifica inviata ai canali configurati fake');
   Logger.log('testVirgilioInboxSchema: OK');
 }
 

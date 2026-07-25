@@ -1196,7 +1196,7 @@ completamento del messaggio.
 
 #### GUI-U-R04-R03 - Notifica operativa e accesso a Virgilio
 
-Stato: `TODO`.
+Stato: `DONE`.
 Risultato: ogni nuovo documento preso in carico genera un collegamento univoco
 al form Virgilio e una notifica osservabile sui canali configurati, senza
 duplicare righe o messaggi durante i retry.
@@ -1212,11 +1212,11 @@ osservabile senza cambiare protocollo.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R04-R03-AC1` Una nuova riga riceve e restituisce un `form_url` assoluto costruito dall'URL del deployment e dal proprio `inbox_id`. | Test puro Apps Script su URL valido, parametri esistenti, caratteri speciali e configurazione assente. | Da acquisire. | `NOT_MET` |
-| `R04-R03-AC2` La creazione invia ai canali configurati un messaggio leggibile con documento, provenienza e azione `Apri in Virgilio`, senza dati tecnici o segreti. | Test con adapter Chat/Telegram fake e inventario del testo. | Da acquisire. | `NOT_MET` |
-| `R04-R03-AC3` Retry idempotenti non duplicano riga o notifica; un invio non riuscito resta osservabile e riprovabile. | Test deterministico su creazione, retry riuscito e fallimento/ripresa della notifica. | Da acquisire. | `NOT_MET` |
-| `R04-R03-AC4` Il client locale conserva link ed esito notifica nel contratto metadata-only e non completa il passaggio se il lavoro non e` raggiungibile. | Test verticale Python con risposte fake valide, incomplete e idempotenti. | Da acquisire. | `NOT_MET` |
-| `R04-R03-AC5` Prove mirate Apps Script/Python, diff e scansione segreti sono verdi senza rete reale. | Harness locale e test mirati; nessun `clasp push`. | Da acquisire. | `NOT_MET` |
+| `R04-R03-AC1` Una nuova riga riceve e restituisce un `form_url` assoluto costruito dall'URL del deployment e dal proprio `inbox_id`. | Test puro Apps Script su URL valido, parametri esistenti, caratteri speciali e configurazione assente. | Harness Node/VM locale: `/exec?x=1` + `inbox_id` codificato, configurazione assente rifiutata; nessuna rete. | `MET` |
+| `R04-R03-AC2` La creazione invia ai canali configurati un messaggio leggibile con documento, provenienza e azione `Apri in Virgilio`, senza dati tecnici o segreti. | Test con adapter Chat/Telegram fake e inventario del testo. | Harness puro con adapter Chat/Telegram fake: due invii, testo con documento/provenienza/`Apri in Virgilio`, senza `inbox_id`. | `MET` |
+| `R04-R03-AC3` Retry idempotenti non duplicano riga o notifica; un invio non riuscito resta osservabile e riprovabile. | Test deterministico su creazione, retry riuscito e fallimento/ripresa della notifica. | Fake Sheet/adapter: seconda presa in carico riusa la riga e `notification_status=sent` evita il secondo invio; esiti `retry` restano nel metadata per il ciclo successivo. | `MET` |
+| `R04-R03-AC4` Il client locale conserva link ed esito notifica nel contratto metadata-only e non completa il passaggio se il lavoro non e` raggiungibile. | Test verticale Python con risposte fake valide, incomplete e idempotenti. | `25 passed`: contratto conserva URL/stato, accetta URL codificato e rifiuta link/stato assenti; handoff registra URL/stato e tratta l'errore come riprovabile. | `MET` |
+| `R04-R03-AC5` Prove mirate Apps Script/Python, diff e scansione segreti sono verdi senza rete reale. | Harness locale e test mirati; nessun `clasp push`. | Harness Apps Script puro `OK`; pytest mirato `25 passed`; smoke locale `545 passed`; diff/check e scansione segreti finali verdi; nessun push/deploy. | `MET` |
 
 #### GUI-U-R04-R04 - Avanzamento del controllo osservabile
 
