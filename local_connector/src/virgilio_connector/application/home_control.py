@@ -96,6 +96,22 @@ class HomeRunController:
         return accepted
 
     def _translate(self, event: RunnerEvent) -> HomeFeedback:
+        if event.kind == "progress":
+            if event.state == "error":
+                return HomeFeedback(
+                    "Richiede attenzione",
+                    "Non riesco a completare il controllo. Riprova; se il problema continua, chiedi assistenza.",
+                    activity="Controllo richiede attenzione",
+                )
+            if event.phase == "In attesa del Registro":
+                return HomeFeedback(
+                    "Controllo in corso", "In attesa del Registro. Attendi oppure riprova tra poco.",
+                    activity=event.phase,
+                )
+            counts = _format_counts(event)
+            return HomeFeedback(
+                "Controllo in corso", f"{event.phase}.{counts}", activity=event.phase,
+            )
         if event.kind == "started":
             message = (
                 "Controllo delle caselle in corso."
@@ -143,9 +159,20 @@ class HomeRunController:
             "--config",
             str(self._config_path),
             "--human",
+            "--progress-events",
             "--interval-seconds",
             str(self._interval_seconds),
         ]
         if max_cycles is not None:
             args.extend(("--max-cycles", str(max_cycles)))
         return args
+
+
+def _format_counts(event: RunnerEvent) -> str:
+    values = (
+        ("Documenti trovati", event.found),
+        ("elaborati", event.processed),
+        ("rimanenti", event.remaining),
+    )
+    known = [f"{label}: {value}" for label, value in values if value is not None]
+    return " " + "; ".join(known) + "." if known else ""

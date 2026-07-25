@@ -1220,7 +1220,7 @@ osservabile senza cambiare protocollo.
 
 #### GUI-U-R04-R04 - Avanzamento del controllo osservabile
 
-Stato: `WAITING_FOR_PREVIOUS_TASKS`.
+Stato: `DONE`.
 Risultato: durante un controllo lento la Home mostra sempre che Caronte sta
 procedendo, la fase corrente e un conteggio utile, restando reattiva.
 Dipendenza: `GUI-U-R04-R03 = DONE`.
@@ -1232,11 +1232,11 @@ duplicare la pipeline o bloccare la finestra.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
-| `R04-R04-AC1` `Controlla ora` mostra immediatamente attivita e fase corrente fino all'esito finale. | Test asincrono con runner lento e fasi deterministiche. | Da acquisire. | `NOT_MET` |
-| `R04-R04-AC2` La Home mostra documenti trovati, elaborati e rimanenti quando noti, senza fingere percentuali. | Test su zero, uno e piu documenti. | Da acquisire. | `NOT_MET` |
-| `R04-R04-AC3` Controllo continuo e pausa aggiornano lo stesso segnale senza processi duplicati. | Test avvio, ciclo, pausa durante una fase e riapertura. | Da acquisire. | `NOT_MET` |
-| `R04-R04-AC4` Errori e attese sostituiscono il progresso con un messaggio e un'azione comprensibili. | Test su sincronizzazione, rete e Registro fake. | Da acquisire. | `NOT_MET` |
-| `R04-R04-AC5` GUI reattiva, testi consentiti e layout 960x640 a 100%/125% sono verificati. | Test Tk interessato e inventario stringhe. | Da acquisire. | `NOT_MET` |
+| `R04-R04-AC1` `Controlla ora` mostra immediatamente attivita e fase corrente fino all'esito finale. | Test asincrono con runner lento e fasi deterministiche. | Runner in background emette eventi strutturati di fase; Home li traduce durante il controllo. `test_user_app_operational_feedback.py` e `test_user_app_home_control.py` verdi. | `MET` |
+| `R04-R04-AC2` La Home mostra documenti trovati, elaborati e rimanenti quando noti, senza fingere percentuali. | Test su zero, uno e piu documenti. | La pipeline pubblica soltanto i conteggi realmente disponibili; test fake verifica zero e Home mostra i tre campi senza percentuali. | `MET` |
+| `R04-R04-AC3` Controllo continuo e pausa aggiornano lo stesso segnale senza processi duplicati. | Test avvio, ciclo, pausa durante una fase e riapertura. | Il runner posseduto resta unico; test di avvio continuo, doppio avvio, pausa e chiusura verde. | `MET` |
+| `R04-R04-AC4` Errori e attese sostituiscono il progresso con un messaggio e un'azione comprensibili. | Test su sincronizzazione, rete e Registro fake. | Attesa Registro ed errore di collegamento hanno messaggi azionabili e senza dettagli runtime; fake test verde. | `MET` |
+| `R04-R04-AC5` GUI reattiva, testi consentiti e layout 960x640 a 100%/125% sono verificati. | Test Tk interessato e inventario stringhe. | Tk reale a 960x640/100%/125% `1 passed`; inventario delle stringhe utente e smoke `549 passed` verdi. | `MET` |
 
 #### GUI-U-R04-R05 - Cartelle della casella coerenti
 

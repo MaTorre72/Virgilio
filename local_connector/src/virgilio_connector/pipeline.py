@@ -46,7 +46,7 @@ class LocalPipelineRunner:
         self.scanner_factory = scanner_factory
         self.config_path = config_path
 
-    def run(self, *, dry_run: bool) -> PipelineResult:
+    def run(self, *, dry_run: bool, progress: Callable[[dict[str, object]], None] | None = None) -> PipelineResult:
         started = perf_counter()
         phase_times: dict[str, float] = {}
         errors: list[str] = []
@@ -54,11 +54,11 @@ class LocalPipelineRunner:
         warnings: list[str] = list(initial_warnings)
         scan = self._phase("scan", phase_times, errors, lambda: (
             self.scanner_factory().scan(dry_run=dry_run) if self.scanner_factory else ()
-        ))
+        ), progress)
         process = self._phase("process", phase_times, errors,
-                              lambda: self.processor_factory().process(dry_run=dry_run))
+                              lambda: self.processor_factory().process(dry_run=dry_run), progress)
         storage = self._phase("storage", phase_times, errors,
-                              lambda: self.storage_factory().stage_ready(dry_run=dry_run))
+                              lambda: self.storage_factory().stage_ready(dry_run=dry_run), progress)
         handoff = self._phase(
             "handoff",
             phase_times,
@@ -67,6 +67,7 @@ class LocalPipelineRunner:
                 self.handoff_factory().deliver(storage, dry_run=dry_run)
                 if self.handoff_factory else ()
             ),
+            progress,
         )
         failed_handoffs = tuple(
             item for item in handoff if getattr(item, "status", "") == "failed"
@@ -91,6 +92,7 @@ class LocalPipelineRunner:
                 (self.registry_export_factory().export(dry_run=dry_run),)
                 if self.registry_export_factory else ()
             ),
+            progress,
         )
         registry_failed = len(errors) > registry_errors_before or any(
             getattr(item, "status", "") in {"blocked", "completed_with_errors"}
@@ -105,7 +107,7 @@ class LocalPipelineRunner:
                 "completion",
                 phase_times,
                 errors,
-                lambda: self.completion_factory().complete(dry_run=dry_run),
+                lambda: self.completion_factory().complete(dry_run=dry_run), progress,
             )
         if not storage:
             warnings.append("storage: skipped_no_ready_attachments")
@@ -115,6 +117,9 @@ class LocalPipelineRunner:
             warnings.append("handoff: skipped_no_staged_attachments")
         if self.registry_export_factory and not registry:
             warnings.append("registry: skipped_no_result")
+        if progress is not None:
+            progress({"phase": "Elaborazione dei documenti", "found": len(process),
+                      "processed": len(process), "remaining": 0})
         status = ("completed_with_errors" if errors else
                   "completed_with_warnings" if warnings else "completed")
         report = {
@@ -148,12 +153,17 @@ class LocalPipelineRunner:
                               tuple(report["human_summary"]))
 
     @staticmethod
-    def _phase(name: str, timings: dict[str, float], errors: list[str], call):
+    def _phase(name: str, timings: dict[str, float], errors: list[str], call,
+               progress: Callable[[dict[str, object]], None] | None = None):
         start = perf_counter()
+        if progress is not None:
+            progress({"phase": _progress_phase(name)})
         try:
             return tuple(call())
         except Exception as exc:
             errors.append(f"{name}: {type(exc).__name__}: {exc}")
+            if progress is not None:
+                progress({"phase": "Errore di collegamento", "error": True})
             return ()
         finally:
             timings[name] = round(perf_counter() - start, 3)
@@ -188,3 +198,14 @@ class LocalPipelineRunner:
         else:
             lines.append("Azione consigliata: report pulito, pronto per il passo successivo.")
         return lines
+
+
+def _progress_phase(name: str) -> str:
+    return {
+        "scan": "Controllo delle caselle",
+        "process": "Elaborazione dei documenti",
+        "storage": "Preparazione dei documenti",
+        "handoff": "Consegna dei documenti",
+        "registry": "Aggiornamento del Registro",
+        "completion": "Conclusione del controllo",
+    }[name]

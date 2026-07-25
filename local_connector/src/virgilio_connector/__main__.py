@@ -124,6 +124,11 @@ def _print_human(lines) -> None:
     print("\n".join(lines))
 
 
+def _print_progress_event(progress: dict[str, object]) -> None:
+    """Emit a small private event stream consumed only by the user application."""
+    print(json.dumps({"caronte_progress": progress}, ensure_ascii=False), flush=True)
+
+
 def _pilot_safe_human_summary(result, *, label: str = "Esito pilot") -> list[str]:
     lines = [f"{label}: {result.status} ({'dry-run' if result.dry_run else 'run reale'})",
              f"Pilot check: {result.pilot_check}"]
@@ -517,6 +522,7 @@ def main() -> int:
     watch.add_argument("--human", action="store_true")
     watch.add_argument("--interval-seconds", type=int, default=300)
     watch.add_argument("--max-cycles", type=int, default=0)
+    watch.add_argument("--progress-events", action="store_true", help=argparse.SUPPRESS)
     doctor = commands.add_parser("doctor")
     doctor.add_argument("--config", type=Path, required=True)
     doctor.add_argument("--human", action="store_true")
@@ -870,7 +876,11 @@ def main() -> int:
         try:
             while True:
                 cycle += 1
-                result = runner.run(dry_run=args.dry_run)
+                progress = _print_progress_event if args.progress_events else None
+                result = (
+                    runner.run(dry_run=args.dry_run, progress=progress)
+                    if progress is not None else runner.run(dry_run=args.dry_run)
+                )
                 if args.human:
                     if cycle > 1:
                         print()

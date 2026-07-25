@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from queue import Empty, Queue
 import subprocess
 import sys
@@ -17,6 +18,10 @@ class RunnerEvent:
     state: str
     message: str = ""
     returncode: int | None = None
+    phase: str = ""
+    found: int | None = None
+    processed: int | None = None
+    remaining: int | None = None
 
 
 class ManagedOperationRunner:
@@ -85,7 +90,7 @@ class ManagedOperationRunner:
                 process.terminate()
             else:
                 self._events.put(RunnerEvent("started", "running", "Caronte avviato."))
-            stdout, stderr = process.communicate()
+            stdout, stderr = self._collect_output(process)
             returncode = process.returncode
             combined = stdout.strip()
             if stderr.strip():
@@ -102,6 +107,36 @@ class ManagedOperationRunner:
                 self._process = None
                 self._state = "error"
             self._events.put(RunnerEvent("error", "error", str(exc)))
+
+    def _collect_output(self, process: object) -> tuple[str, str]:
+        """Read optional progress lines without exposing them as user output."""
+        stdout = getattr(process, "stdout", None)
+        if stdout is None:
+            return process.communicate()
+        output: list[str] = []
+        for line in stdout:
+            if not self._emit_progress(line):
+                output.append(line)
+        stderr_stream = getattr(process, "stderr", None)
+        stderr = stderr_stream.read() if stderr_stream is not None else ""
+        process.wait()
+        return "".join(output), stderr
+
+    def _emit_progress(self, line: str) -> bool:
+        try:
+            payload = json.loads(line)
+            progress = payload["caronte_progress"]
+            phase = str(progress["phase"])
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            return False
+        self._events.put(RunnerEvent(
+            "progress", "error" if progress.get("error") else "running",
+            phase=phase,
+            found=_optional_count(progress.get("found")),
+            processed=_optional_count(progress.get("processed")),
+            remaining=_optional_count(progress.get("remaining")),
+        ))
+        return True
 
     def stop(self) -> bool:
         with self._lock:
@@ -146,3 +181,7 @@ def _runtime_command(args: list[str]) -> list[str]:
     if getattr(sys, "frozen", False):
         return [sys.executable, *args]
     return [sys.executable, "-m", "virgilio_connector", *args]
+
+
+def _optional_count(value: object) -> int | None:
+    return value if isinstance(value, int) and value >= 0 else None

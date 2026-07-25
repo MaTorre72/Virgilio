@@ -119,6 +119,41 @@ def test_check_now_reports_acceptance_and_final_result():
     assert "do-not-show" not in completed.message
 
 
+def test_check_now_shows_current_phase_and_known_counts_before_completion():
+    runner = FakeRunner()
+    controller = HomeRunController("config.yaml", runner)
+
+    controller.check_now()
+    controller.drain_feedback()
+    runner.events.append(RunnerEvent(
+        "progress", "running", phase="Elaborazione dei documenti",
+        found=3, processed=1, remaining=2,
+    ))
+
+    progress = controller.drain_feedback()[0]
+
+    assert progress.state == "Controllo in corso"
+    assert progress.message == "Elaborazione dei documenti. Documenti trovati: 3; elaborati: 1; rimanenti: 2."
+    assert progress.activity == "Elaborazione dei documenti"
+
+
+def test_progress_wait_and_error_are_actionable_without_raw_details():
+    runner = FakeRunner()
+    controller = HomeRunController("config.yaml", runner)
+    controller.start()
+    controller.drain_feedback()
+    runner.events.extend((
+        RunnerEvent("progress", "running", phase="In attesa del Registro"),
+        RunnerEvent("progress", "error", phase="Errore di collegamento"),
+    ))
+
+    waiting, error = controller.drain_feedback()
+
+    assert waiting.message == "In attesa del Registro. Attendi oppure riprova tra poco."
+    assert error.state == "Richiede attenzione"
+    assert error.message == "Non riesco a completare il controllo. Riprova; se il problema continua, chiedi assistenza."
+
+
 def test_start_double_start_and_pause_have_visible_coherent_feedback():
     runner = FakeRunner()
     controller = HomeRunController("config.yaml", runner)

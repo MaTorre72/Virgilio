@@ -417,6 +417,11 @@ Registro avanzamento storico spostato fuori dal backlog attivo.
 - 2026-07-03 23:15 +02:00 - Completato `V113-E5-T03`: `doPost` espone ora `inbox_status=archiviato`, la notifica archiviazione include lo stato finale e la schermata di successo mostra l'esito inbox; backlog, next tasks e state riallineati su `V113-E6-T01`; test mirati Apps Script e parsing HTML locale verdi.
 # 2026-07-25
 
+- Completato `GUI-U-R04-R04`: il controllo Home riceve avanzamenti strutturati
+  dalla pipeline senza duplicarla, mostra fase e soli conteggi noti, mantiene un
+  unico runner per controllo/pause e redige attese/errori in messaggi azionabili.
+  Test mirati `113 passed`, Tk reale `1 passed`, smoke locale `549 passed`.
+
 - Consolidato il `FAIL` umano della RC `bab6e92`: il percorso locale crea la
   coda tecnica ma non notifica ne` rende raggiungibile il lavoro in Virgilio;
   registrate inoltre lentezza senza avanzamento osservabile e semantica

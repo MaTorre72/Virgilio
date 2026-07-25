@@ -72,6 +72,18 @@ def test_continuous_start_returns_before_slow_worker_finishes(tmp_path):
     controller.pause()
 
 
+def test_slow_runner_keeps_an_intermediate_progress_event_observable(tmp_path):
+    process = SlowProcess()
+    controller = _controller(tmp_path, process)
+
+    assert controller.check_now() is True
+    _wait_for(controller, "running")
+    # The acceptance feedback remains available while the worker has not completed.
+    assert controller.drain_feedback()[0].state == "Controllo in corso"
+    assert process.released.is_set() is False
+    controller.pause()
+
+
 def test_pause_stops_active_worker_and_reaches_final_state(tmp_path):
     process = SlowProcess()
     controller = _controller(tmp_path, process)

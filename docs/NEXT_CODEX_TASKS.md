@@ -33,7 +33,8 @@
 - Sequenza autonoma stimata, un task per run: `R04-R03` notifica/link Virgilio; `R04-R04` avanzamento visibile; `R04-R05` lessico cartelle coerente; `R04-R06` RC e fascicolo pilota.
 - Dopo i quattro task restano due passaggi umani obbligatori: autorizzare e pubblicare Apps Script secondo `docs/CLASP_WORKFLOW.md`, poi collaudare il pilota reale. Stima totale: sei passaggi; quattro run autonome, normalmente quattro cicli orari, piu` due gate umani.
 - Task completato: `GUI-U-R04-R03 - Notifica operativa e accesso a Virgilio`. L'intake genera il link `/exec` dal deployment e dall'`inbox_id`, conserva il suo esito e invia una sola notifica osservabile ai canali configurati; il connector rifiuta risposte senza lavoro raggiungibile. Harness Apps Script puro `OK`, mirati fake `25 passed`, smoke `545 passed`; nessuna rete reale, push o deploy.
-- Azione successiva unica: eseguire `GUI-U-R04-R04 - Avanzamento del controllo osservabile`.
+- Task completato: `GUI-U-R04-R04 - Avanzamento del controllo osservabile`. Il runner in background riceve fasi e conteggi reali della pipeline tramite eventi strutturati; la Home resta reattiva, non mostra percentuali e rende azionabili attese/errori. Mirati `113 passed`, Tk reale `1 passed`, smoke `549 passed`.
+- Azione successiva unica: eseguire `GUI-U-R04-R05 - Cartelle della casella coerenti`.
 - Il correttivo del disinstallatore avviato direttamente resta l'ultima attivita` a priorita` molto bassa ed e` escluso dalla verifica standard corrente.
 - Le evidenze gia` acquisite restano valide e non devono essere ripetute; ogni run aggiunge soltanto la prova specifica del nuovo criterio.
 - Il collaudo R3 riprende dalla prima evidenza non acquisita solo dopo build identificata del correttivo approvato; le evidenze valide gia` raccolte non vengono ripetute.

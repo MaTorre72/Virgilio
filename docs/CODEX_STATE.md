@@ -23,7 +23,8 @@
 - Task completato: `GUI-U-R03-R06 - Consegna operativa a Da archiviare`
 - Task padre: `GUI-U-R04 - Release candidate e collaudo finale` (`IMPLEMENTED_NOT_ACCEPTED` dopo il `FAIL` umano della RC `bab6e92`)
 - Task completato: `GUI-U-R04-R03 - Notifica operativa e accesso a Virgilio`; link `/exec` per `inbox_id`, notifica idempotente osservabile e contratto metadata-only sono verificati con fake (`25 passed`, harness Apps Script puro, smoke `545 passed`)
-- Task corrente: `GUI-U-R04-R04 - Avanzamento del controllo osservabile` (`TODO`)
+- Task completato: `GUI-U-R04-R04 - Avanzamento del controllo osservabile`; eventi strutturati della pipeline mostrano fase e conteggi reali nella Home senza percentuali, con runner unico e messaggi azionabili (`113 passed`, Tk `1 passed`, smoke `549 passed`)
+- Task corrente: `GUI-U-R04-R05 - Cartelle della casella coerenti` (`TODO`)
 - Correttivo completato: `GUI-U-R04-R01 - Configurazione amministrativa comprensibile`; il FAIL umano della RC `0d46d69` ha rimosso dalla GUI utente URL/codice e istruzioni senza percorso. Caronte Manutenzione ora configura Registro e servizio, si apre dalla GUI e dal menu Start; mirati `35 passed`, Tk isolato `1 passed`, smoke `532 passed`
 - Correttivo completato: `GUI-U-R04-R02 - Registro Google realmente operativo`; il FAIL umano della RC `24d54be` ha rilevato OAuth Sheets ancora dipendente da file CLI ed export assente dalla Home. Client incluso + credenziale Windows, predisposizione foglio, migrazione enabled ed export `handoff -> registry -> completion` completati; manutenzione sempre accessibile; mirati `72 passed`, smoke finale `540 passed`
 - Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`

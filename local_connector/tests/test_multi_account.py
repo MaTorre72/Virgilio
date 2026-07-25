@@ -1010,6 +1010,27 @@ def test_pipeline_dry_run_no_report_and_order(tmp_path):
     assert (tmp_path / ".local_data" / "state.db").is_file()
 
 
+def test_pipeline_reports_real_phase_changes_and_counts_when_known(tmp_path):
+    log = []
+    runner = LocalPipelineRunner(
+        (), paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner_factory=lambda: FakePhase("scan", log),
+        processor_factory=lambda: FakePhase("process", log),
+        storage_factory=lambda: FakePhase("storage", log),
+        completion_factory=lambda: FakePhase("completion", log),
+    )
+    progress = []
+
+    runner.run(dry_run=True, progress=progress.append)
+
+    assert [item["phase"] for item in progress[:3]] == [
+        "Controllo delle caselle", "Elaborazione dei documenti", "Preparazione dei documenti",
+    ]
+    assert progress[-1] == {
+        "phase": "Elaborazione dei documenti", "found": 0, "processed": 0, "remaining": 0,
+    }
+
+
 def test_pipeline_real_report_and_error_collection(tmp_path):
     accounts = load_multi_account_config(write_config(tmp_path))[:1]
     log = []
