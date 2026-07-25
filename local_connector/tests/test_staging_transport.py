@@ -130,7 +130,7 @@ def test_ready_file_and_manifest_are_copied_with_verified_hash(tmp_path):
 
 def test_existing_name_is_not_overwritten(tmp_path):
     transport, _, staging, _, _ = fixture(tmp_path)
-    existing = staging / f"att-123-42-1-{DIGEST[:12]}-report.pdf"
+    existing = staging / "att-123-42-1-report.pdf"
     existing.write_bytes(b"keep-me")
     result = transport.stage_ready_files(dry_run=False)[0]
     assert existing.read_bytes() == b"keep-me"

@@ -11,6 +11,7 @@ import shutil
 import sqlite3
 from typing import Callable
 
+from .attachment_identity import canonical_attachment_id
 from .readonly_state import ReadonlyStateStore
 from .time_utils import rome_isoformat
 
@@ -208,11 +209,9 @@ class LocalDriveStagingTransport:
 
 
 def _attachment_id(row: sqlite3.Row) -> str:
-    raw_uidvalidity = str(row["uidvalidity"] or "").strip()
-    uidvalidity = "unknown" if not raw_uidvalidity or raw_uidvalidity.lower() == "none" else raw_uidvalidity
-    uidvalidity = uidvalidity.replace("/", "_").replace("\\", "_")
-    uid = str(row["resolved_source_message_uid"]).replace("/", "_").replace("\\", "_")
-    return f"att-{uidvalidity}-{uid}-{int(row['ordinal'])}-{str(row['sha256'])[:12]}"
+    return canonical_attachment_id(
+        row["uidvalidity"], row["resolved_source_message_uid"], row["ordinal"]
+    )
 
 
 def _sha256(path: Path) -> str:

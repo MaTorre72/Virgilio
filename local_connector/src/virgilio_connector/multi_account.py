@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 from typing import Callable, Mapping, Sequence
 
+from .attachment_identity import canonical_attachment_id
 from .files import sanitize_filename
 from .imap_readonly import ImapReadonlyConfig, ImapReadonlyMailbox
 from .local_paths import LocalDataPaths
@@ -414,7 +415,7 @@ class MultiAccountImapProcessor:
         digest = hashlib.sha256(payload).hexdigest()
         sanitized = (sanitize_filename(attachment.original_filename)
                      if attachment.original_filename else None)
-        attachment_id = _attachment_id(account.account_alias, message, attachment.ordinal)
+        attachment_id = _attachment_id(message, attachment.ordinal)
         fingerprint = global_fingerprint(account.account_alias, message.message_id,
                                          message.message_uid, attachment_id, digest)
         included, rule_name, rule_reason = self.rules.decide(
@@ -599,10 +600,8 @@ class MultiAccountImapProcessor:
         )
 
 
-def _attachment_id(account_alias: str, message: MessageReference, ordinal: int) -> str:
-    uidvalidity = sanitize_filename(message.uidvalidity or "unknown")
-    uid = sanitize_filename(message.message_uid)
-    return f"{account_alias}-{uidvalidity}-{uid}-{ordinal}"
+def _attachment_id(message: MessageReference, ordinal: int) -> str:
+    return canonical_attachment_id(message.uidvalidity, message.message_uid, ordinal)
 
 
 def _account_from_mapping(raw: Mapping[str, object]) -> LocalImapAccount:

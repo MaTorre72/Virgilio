@@ -30,6 +30,7 @@ from virgilio_connector.pipeline import LocalPipelineRunner
 from virgilio_connector.operational_handoff import OperationalHandoffResult
 from virgilio_connector.doctor import LocalDoctor
 from virgilio_connector.traceability import central_event_rows, load_rules
+from virgilio_connector.attachment_identity import canonical_attachment_id
 
 
 def write_config(tmp_path: Path) -> Path:
@@ -174,6 +175,12 @@ def test_loads_multi_account_yaml_without_secret_values(tmp_path):
     assert accounts[0].email == "account.1@example.invalid"
     assert accounts[0].max_messages == 7
     assert accounts[0].password_env == "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD"
+
+
+def test_attachment_identity_is_canonical_when_uidvalidity_is_missing():
+    attachment_id = canonical_attachment_id(None, "20", 1)
+
+    assert attachment_id == "att-unknown-20-1"
 
 
 def test_scaffold_local_config_is_valid_and_secret_free(tmp_path):
