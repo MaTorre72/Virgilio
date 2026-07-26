@@ -147,12 +147,13 @@ vengono ripetuti:
 3. eseguire il collaudo reale della RC identificata sul percorso completo e
    registrare esplicitamente l'esito umano.
 
-Stato al 2026-07-26: punto 1 completato su autorizzazione esplicita; i 14 file
+Stato al 2026-07-26: punti 1 e 2 completati su autorizzazione esplicita. I 14 file
 canonici sono stati pubblicati e il deployment web esistente e` alla versione
-`31` (`GUI-U-R05 62846a8`). Il punto 2 e` autorizzato ma
-`BLOCKED_BY_ENVIRONMENT`: l'anteprima non ha eseguito backup o modifiche perche`
-Registro e Da archiviare TEST condividono lo stesso spreadsheet e manca il marker
-ambiente TEST. Il punto 3 resta un gate umano separato.
+`32`. La topologia riusa lo spreadsheet TEST esistente per Registro e Da
+archiviare su tab distinti, con Limbo separato; il reset coordinato
+`reset-r05-20260726-1848` ha creato backup locale e remoti e ha verificato
+Registro, Inbox e Limbo vuoti con schema preservato. Il punto 3 resta il solo
+gate umano, senza esito compilato da Codex.
 
 ## Esiti e regole di giudizio
 

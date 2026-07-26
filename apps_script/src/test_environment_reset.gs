@@ -79,8 +79,14 @@ function _testResetAssertTargets_(targets) {
       throw new Error('Ogni asset deve essere identificato e marcato TEST.');
     }
   });
-  if (new Set(assets.map(asset => asset.id)).size !== assets.length) {
-    throw new Error('Gli identificativi degli asset TEST devono essere univoci.');
+  if (targets.limbo.id === targets.registry.id || targets.limbo.id === targets.inbox.id) {
+    throw new Error('Il Limbo TEST deve avere un identificativo distinto dagli spreadsheet TEST.');
+  }
+  if (targets.registry.id === targets.inbox.id) {
+    const registrySheets = new Set((targets.registry.schema || []).map(item => item.sheet));
+    if (!targets.inbox.sheet_name || registrySheets.has(targets.inbox.sheet_name)) {
+      throw new Error('Registro e Da archiviare TEST condivisi devono usare tab distinti.');
+    }
   }
 }
 
@@ -230,8 +236,12 @@ function testTestEnvironmentReset() {
     _testResetAssertTargets_(Object.assign({}, target, { environment: 'PROD' }));
     throw new Error('Ambiente PROD accettato.');
   } catch (err) { if (String(err.message).indexOf('non marcato TEST') < 0) throw err; }
+  const sharedSpreadsheet = JSON.parse(JSON.stringify(target));
+  sharedSpreadsheet.inbox.id = sharedSpreadsheet.registry.id;
+  sharedSpreadsheet.inbox.sheet_name = 'Inbox TEST';
+  _testResetAssertTargets_(sharedSpreadsheet);
   try {
-    const duplicate = JSON.parse(JSON.stringify(target)); duplicate.inbox.id = duplicate.registry.id;
-    _testResetAssertTargets_(duplicate); throw new Error('ID duplicati accettati.');
-  } catch (err) { if (String(err.message).indexOf('univoci') < 0) throw err; }
+    const duplicate = JSON.parse(JSON.stringify(target)); duplicate.limbo.id = duplicate.registry.id;
+    _testResetAssertTargets_(duplicate); throw new Error('Limbo duplicato accettato.');
+  } catch (err) { if (String(err.message).indexOf('distinto') < 0) throw err; }
 }

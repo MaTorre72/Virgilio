@@ -9,9 +9,9 @@ Le run automatiche successive escono senza modifiche.
 
 Nessun task automatico.
 
-Pubblicazione/deploy Apps Script completata alla versione `31`. Il reset TEST
-reale e` autorizzato ma `BLOCKED_BY_ENVIRONMENT`: Registro e Da archiviare TEST
-condividono lo stesso spreadsheet e manca `VIRGILIO_ENVIRONMENT=TEST`.
+Pubblicazione/deploy Apps Script completata alla versione `32`. La topologia TEST
+riusa lo spreadsheet esistente per Registro e Da archiviare su tab distinti, con
+Limbo separato; il reset reale coordinato e i backup sono completati.
 
-Azione unica necessaria: autorizzare un task di riallineamento della topologia
-TEST a tre asset con ID distinti; poi riprendere il reset e il collaudo finale.
+Successore unico: collaudo finale umano della RC. Nessun task automatico deve
+modificare codice, asset TEST o documentazione senza un nuovo esito esplicito.
