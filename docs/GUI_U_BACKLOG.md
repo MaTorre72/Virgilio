@@ -1338,7 +1338,7 @@ Prove automatiche: test mirati `75 passed`; smoke locale `563 passed`.
 
 ### GUI-U-R05-T03 - Azzeramento coerente ambiente TEST
 
-Stato: `TODO`. Priorita`: `P0`.
+Stato: `DONE`. Priorita`: `P0`.
 Risultato: una sola operazione amministrativa, costruita sugli helper CLI/GAS
 esistenti, riallinea stato locale, Registro TEST, `Da archiviare` TEST e Limbo
 TEST con backup e ripresa idempotente.
@@ -1350,11 +1350,11 @@ mancanza di autorizzazione umana per pubblicazione/esecuzione reale.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | --- | --- | --- | --- |
-| `R05-T03-AC1` Anteprima elenca esattamente righe, file e stato locale coinvolti. | Harness fake locale/GAS. | - | `TODO` |
-| `R05-T03-AC2` Backup locale, copia Registro e cartella Drive datata precedono l'azzeramento. | Test ordine chiamate e fallimenti. | - | `TODO` |
-| `R05-T03-AC3` Solo asset marcati TEST possono essere modificati. | Test rifiuto ID/ambiente non TEST. | - | `TODO` |
-| `R05-T03-AC4` Lo stesso `reset_id` riprende senza duplicazioni. | Test interruzione dopo ogni fase. | - | `TODO` |
-| `R05-T03-AC5` Dopo il reset i quattro stati sono vuoti e coerenti, con schema preservato. | Harness integrato senza servizi reali. | - | `TODO` |
+| `R05-T03-AC1` Anteprima elenca esattamente righe, file e stato locale coinvolti. | Harness fake locale/GAS. | Client metadata-only e servizio espongono file e conteggi tabelle locali; GAS espone righe, file e schema dei tre asset TEST. Test mirato e harness puri verdi. | `MET` |
+| `R05-T03-AC2` Backup locale, copia Registro e cartella Drive datata precedono l'azzeramento. | Test ordine chiamate e fallimenti. | `prepare` crea/reusa prima le copie Registro/Limbo; solo dopo il reset locale canonico parte `execute`. Harness verifica l'ordine completo. | `MET` |
+| `R05-T03-AC3` Solo asset marcati TEST possono essere modificati. | Test rifiuto ID/ambiente non TEST. | GAS richiede ambiente `TEST`, nome TEST per ogni asset e tre ID univoci; harness rifiuta PROD e ID duplicati. | `MET` |
+| `R05-T03-AC4` Lo stesso `reset_id` riprende senza duplicazioni. | Test interruzione dopo ogni fase. | Stato GAS persistito dopo ogni fase, nomi backup deterministici e marker locale atomico rendono retry idempotente; harness riparte da tutte le sei fasi. | `MET` |
+| `R05-T03-AC5` Dopo il reset i quattro stati sono vuoti e coerenti, con schema preservato. | Harness integrato senza servizi reali. | Il coordinatore accetta il completamento solo con righe Registro/Inbox e file Limbo vuoti e header invariati; DB/quarantena locali sono ricreati vuoti. `91 passed`, harness GAS `OK`, smoke `571 passed`. | `MET` |
 
 ### GUI-U-R05-T04 - Audit stabile e release finale
 

@@ -44,6 +44,23 @@ def test_reset_local_state_creates_backup_and_rebuilds_baseline(tmp_path):
     assert result.reset == ("state.db", "quarantine")
 
 
+def test_reset_local_state_same_reset_id_is_idempotent(tmp_path):
+    root = tmp_path / ".local_data"
+    seed_local_root(root)
+
+    first = reset_local_state(
+        root, backup=True, confirm=True, reset_id="reset-test-12345678"
+    )
+    second = reset_local_state(
+        root, backup=True, confirm=True, reset_id="reset-test-12345678"
+    )
+
+    assert first.status == "completed"
+    assert second.status == "idempotent"
+    assert second.backup_path == first.backup_path
+    assert len(tuple(tmp_path.glob(".local_data.backup-*"))) == 1
+
+
 def test_reset_refuses_active_worker_lock_without_changing_data(tmp_path):
     root = tmp_path / ".local_data"
     seed_local_root(root)

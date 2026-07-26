@@ -3,7 +3,7 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`IN_PROGRESS`).
-- Task corrente: `GUI-U-R05-T03 - Azzeramento coerente ambiente TEST`.
+- Task corrente: `GUI-U-R05-T04 - Audit stabile e release finale`.
 - `GUI-U-R05-T01` e` `DONE`: un duplicato viene riusato solo con file e SHA-256 validi;
   file assenti o corrotti sono riacquisiti dal processor esistente; gli errori storage sono
   persistiti, visibili e bloccano handoff/completion. Prove: mirati `79 passed`, smoke `558 passed`.
@@ -11,10 +11,13 @@
   posseduto viene fermato, il backup e` verificato prima delle modifiche, configurazione e
   credenziali restano, DB/quarantena sono ricreati e il ciclo fake successivo riacquisisce/copia.
   Prove: mirati `75 passed`, smoke `563 passed`.
+- `GUI-U-R05-T03` e` `DONE`: una sola operazione coordinata espone l'anteprima esatta,
+  prepara backup locali/Registro/Limbo, rifiuta asset non TEST o ID duplicati, riprende per
+  `reset_id` senza duplicazioni e verifica i quattro stati vuoti con schema preservato.
+  Prove: mirati `91 passed`, harness GAS puro `OK`, smoke `571 passed`.
 - Principio vincolante: CLI, servizi applicativi e GAS precedenti restano canonici e vanno riusati;
   non si ricostruiscono downloader, storage, verify, intake, Registro, backup o reset gia` esistenti.
-- Sequenza residua: `R05-T03` azzeramento coerente ambiente TEST; `R05-T04` audit non
-  ripetitivo e RC finale.
+- Sequenza residua: solo `R05-T04` audit non ripetitivo e RC finale.
 - Gate umani futuri: autorizzazione `clasp push`/deploy, autorizzazione reset remoto reale e collaudo
   finale. Codex non puo` approvarli.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.

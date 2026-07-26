@@ -97,6 +97,11 @@ function caronteStatoConfigurazione() {
   const props = PropertiesService.getScriptProperties();
   const controlli = [
     {
+      chiave: 'VIRGILIO_ENVIRONMENT',
+      etichetta: 'Ambiente',
+      hint: "Il reset coordinato e' ammesso soltanto con valore TEST.",
+    },
+    {
       chiave: 'VIRGILIO_BUCOLICHE_SPREADSHEET_ID',
       etichetta: 'Spreadsheet Bucoliche',
       hint: "Impostare l'ID del workbook condiviso nelle Script Properties.",

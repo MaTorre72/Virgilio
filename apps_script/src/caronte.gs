@@ -128,6 +128,12 @@ function doPost(e) {
     return _rispostaJSON({ status: 'error', messaggio: 'Non autorizzato' });
   }
 
+  // Operazione amministrativa autenticata e protetta da lock/idempotenza propri.
+  // Non applicare il rate limit del form alle tre fasi preview/prepare/execute.
+  if (dati.action === TEST_ENVIRONMENT_RESET_ACTION) {
+    return _rispostaJSON(caronteResetTestEnvironment(dati));
+  }
+
   // 2b. Rate limiting — max 1 richiesta ogni 10 secondi
   try {
     _verificaRateLimit();

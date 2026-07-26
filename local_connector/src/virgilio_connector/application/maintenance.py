@@ -110,7 +110,7 @@ class MaintenanceService:
         temporary.replace(target)
         return DiagnosticReportResult(target, "Report diagnostico creato.")
 
-    def reset(self, *, confirmed: bool) -> MaintenanceResetResult:
+    def reset(self, *, confirmed: bool, reset_id: str | None = None) -> MaintenanceResetResult:
         if not confirmed:
             return MaintenanceResetResult(
                 "cancelled", None, (), (),
@@ -123,7 +123,9 @@ class MaintenanceService:
                 "blocked", None, (), (), "Reset non avviato: Caronte e` ancora attivo.",
             )
         try:
-            result = reset_local_state(self.data_root, backup=True, confirm=True)
+            result = reset_local_state(
+                self.data_root, backup=True, confirm=True, reset_id=reset_id
+            )
         except LocalOperationBusyError:
             return MaintenanceResetResult(
                 "blocked", None, (), (), "Reset non avviato: Caronte e` ancora attivo.",

@@ -34,7 +34,13 @@ class ResetLocalStateResult:
         return json.dumps(asdict(self), ensure_ascii=False, separators=(",", ":"))
 
 
-def reset_local_state(local_root: str | Path, *, backup: bool, confirm: bool) -> ResetLocalStateResult:
+def reset_local_state(
+    local_root: str | Path,
+    *,
+    backup: bool,
+    confirm: bool,
+    reset_id: str | None = None,
+) -> ResetLocalStateResult:
     root = Path(local_root)
     if not backup:
         raise ResetLocalStateError("reset-local-state requires --backup")
@@ -45,6 +51,15 @@ def reset_local_state(local_root: str | Path, *, backup: bool, confirm: bool) ->
         raise ResetLocalStateError(f"local data root is not a directory: {root}")
 
     with LocalOperationLock(root):
+        marker = _read_reset_marker(root, reset_id)
+        if marker is not None:
+            return ResetLocalStateResult(
+                status="idempotent", local_root=str(root),
+                backup_path=marker.get("backup_path"),
+                machine_id_preserved=bool(marker.get("machine_id_preserved")),
+                preserved=("configuration", "credentials", "machine_id"),
+                reset=(), message="local data reset already completed for reset_id",
+            )
         if not root.exists():
             return ResetLocalStateResult(
                 status="noop", local_root=str(root), backup_path=None,
@@ -71,6 +86,9 @@ def reset_local_state(local_root: str | Path, *, backup: bool, confirm: bool) ->
             load_machine_id(root)
             machine_id_preserved = False
 
+        if reset_id is not None:
+            _write_reset_marker(root, reset_id, str(backup_path), machine_id_preserved)
+
         return ResetLocalStateResult(
             status="completed", local_root=str(root), backup_path=str(backup_path),
             machine_id_preserved=machine_id_preserved,
@@ -78,6 +96,30 @@ def reset_local_state(local_root: str | Path, *, backup: bool, confirm: bool) ->
             reset=("state.db", "quarantine"),
             message="local data reset completed after verified backup",
         )
+
+
+def _read_reset_marker(root: Path, reset_id: str | None) -> dict[str, object] | None:
+    if reset_id is None:
+        return None
+    marker = root / ".last_test_reset.json"
+    try:
+        payload = json.loads(marker.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) and payload.get("reset_id") == reset_id else None
+
+
+def _write_reset_marker(
+    root: Path, reset_id: str, backup_path: str, machine_id_preserved: bool
+) -> None:
+    marker = root / ".last_test_reset.json"
+    temporary = marker.with_suffix(".tmp")
+    temporary.write_text(json.dumps({
+        "reset_id": reset_id,
+        "backup_path": backup_path,
+        "machine_id_preserved": machine_id_preserved,
+    }, sort_keys=True), encoding="utf-8")
+    temporary.replace(marker)
 
 
 def _read_machine_id(path: Path) -> str | None:

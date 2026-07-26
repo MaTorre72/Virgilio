@@ -35,7 +35,7 @@ class NoNetworkImplementationTests(unittest.TestCase):
                     if name.startswith("urllib") and path.name in {
                         "caronte_http.py", "drive_staging_verify.py",
                         "drive_staging_intake_test.py", "da_archiviare_intake.py",
-                        "bucoliche.py",
+                        "bucoliche.py", "test_environment_reset.py",
                     }:
                         continue
                     if any(name == item or name.startswith(f"{item}.") for item in FORBIDDEN_IMPORTS):
