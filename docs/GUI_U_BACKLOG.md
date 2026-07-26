@@ -1447,3 +1447,9 @@ RC per il collaudo prodotta dal commit `2294efa`: installer
 `34eafb2f-6974-4153-bb94-07e0e078a77f`, SHA-256
 `C483221148B619C18C36E99F55B23B4078D287A89AF24194B198F273A42C872E`;
 client OAuth incluso, smoke build e installer `PASS`.
+
+Evidenza TEST reale del 2026-07-26: RC installata e collegamento protetto
+configurato; reset coordinato `reset-r05-20260726-2112` completato con backup
+locale/Registro/Limbo. `bucoliche`, `Virgilio_Inbox` e Limbo risultano vuoti;
+il foglio contiene soltanto i due tab canonici, dopo la rimozione post-backup
+dei tre tab legacy `Bucoliche_*`.

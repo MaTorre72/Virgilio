@@ -3,8 +3,8 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: `GUI-U-R05-T06` Registro unico completato; reset TEST reale in attesa
-  della sola chiave di collegamento nel deposito protetto locale.
+- Task corrente: `GUI-U-R05-T06` Registro unico e reset TEST reale completati;
+  resta il solo collaudo finale umano.
 - `GUI-U-R05-T01` e` `DONE`: un duplicato viene riusato solo con file e SHA-256 validi;
   file assenti o corrotti sono riacquisiti dal processor esistente; gli errori storage sono
   persistiti, visibili e bloccano handoff/completion. Prove: mirati `79 passed`, smoke `558 passed`.
@@ -34,12 +34,14 @@
   stato e conflitti tecnici restano locali e non producono tab cloud paralleli.
   `Virgilio_Inbox` resta la sola coda operativa.
   `Staging_Local_Test` e le relative proprieta` non fanno piu` parte della topologia live.
-- Il reset precedente non e` evidenza valida per la topologia corretta. L'unico trigger
-  TEST e` stato fermato; il nuovo reset e` bloccato prima di backup/mutazioni perche`
-  `Caronte/VIRGILIO_TOKEN` manca dal Credential Manager locale. Azione unica: reinserire
-  la chiave nella schermata locale di collegamento, poi rieseguire il reset coordinato.
-- Gate residui: installazione umana della RC, ripetizione del reset TEST sulla
-  topologia corretta e collaudo finale umano. Codex non puo` approvare il collaudo.
+- RC installata e `VIRGILIO_TOKEN` salvato nel deposito protetto locale su conferma
+  umana del 2026-07-26.
+- Reset TEST reale `reset-r05-20260726-2112` completato: backup locale, backup Registro
+  e backup Limbo verificati; `bucoliche`, `Virgilio_Inbox` e Limbo sono vuoti con
+  intestazioni preservate. Dopo il backup completo sono stati rimossi i soli tab legacy
+  `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti`; il foglio reale contiene
+  soltanto `bucoliche` e `Virgilio_Inbox`. Trigger TEST fermo.
+- Gate residuo: collaudo finale umano. Codex non puo` approvarlo.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.

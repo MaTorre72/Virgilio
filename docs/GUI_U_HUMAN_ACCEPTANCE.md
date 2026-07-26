@@ -153,10 +153,10 @@ Build ID `34eafb2f-6974-4153-bb94-07e0e078a77f`, SHA-256
 `C483221148B619C18C36E99F55B23B4078D287A89AF24194B198F273A42C872E`.
 GAS e Local connector scrivono nello stesso `bucoliche` umano a 17 colonne; i
 tre `Bucoliche_*` non sono registri cloud paralleli e `Virgilio_Inbox` e` la
-sola coda. Il punto 2 deve essere ripetuto
-sulla topologia corretta: il trigger e` fermo, ma il servizio si e` arrestato prima
-di backup/mutazioni perche` la chiave manca dal deposito protetto locale. Dopo il
-reset restano il punto 3 e l'esito umano, mai compilato da Codex.
+sola coda. Il punto 2 e` stato completato con reset
+`reset-r05-20260726-2112`: backup locale/Registro/Limbo verificati, dati azzerati,
+intestazioni preservate e tab legacy rimossi dal foglio TEST dopo il backup. Il
+trigger resta fermo. Resta il punto 3 e l'esito umano, mai compilato da Codex.
 
 ## Esiti e regole di giudizio
 
