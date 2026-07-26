@@ -76,6 +76,26 @@ def test_audit_sqlite_export_and_no_secrets(tmp_path):
     assert not any(word in text for word in ("password", "token", "base64", "file_bytes"))
 
 
+def test_audit_records_only_real_transitions(tmp_path):
+    db = tmp_path / "state.db"
+    store = ReadonlyStateStore(db); store.initialize()
+    event = dict(machine_id="machine-test", account_alias="box", entity_type="message",
+                 entity_id="message-1", fingerprint=None, action="message_scanned",
+                 details={"mailbox": "INBOX"})
+
+    first = store.add_audit_event(**event, status="detected")
+    unchanged = store.add_audit_event(**event, status="detected")
+    transitioned = store.add_audit_event(**event, status="processed")
+
+    assert unchanged == first
+    assert transitioned != first
+    with sqlite3.connect(db) as conn:
+        assert conn.execute("SELECT action,status FROM audit_events ORDER BY id").fetchall() == [
+            ("message_scanned", "detected"),
+            ("message_scanned", "processed"),
+        ]
+
+
 def test_registro_export_maps_local_connector_rows_to_unified_schema(tmp_path):
     db = tmp_path / "state.db"
     store = ReadonlyStateStore(db); store.initialize()

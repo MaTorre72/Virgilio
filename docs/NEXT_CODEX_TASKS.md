@@ -1,13 +1,13 @@
 # Next Codex Tasks
 
-## CORRENTE - GUI-U-R05-T04
+## CORRENTE - WAITING_HUMAN_REVIEW
 
-Risultato: audit senza eventi invariati duplicati, RC identificata e collaudo finale.
-Eseguire esclusivamente criteri, prove, riusi, esclusioni e blocco della scheda
-`GUI-U-R05-T04` in `docs/GUI_U_BACKLOG.md`.
+`GUI-U-R05-T04` e l'intera sequenza R05 sono `DONE`.
+Le run automatiche successive escono senza modifiche.
 
 ## CODA
 
-Nessun task automatico dopo `GUI-U-R05-T04`: registrare `WAITING_HUMAN_REVIEW`.
+Nessun task automatico.
 
-Una run non anticipa task in coda.
+Azioni esclusivamente umane: autorizzare pubblicazione/deploy Apps Script,
+autorizzare il reset TEST reale e svolgere il collaudo finale della RC.

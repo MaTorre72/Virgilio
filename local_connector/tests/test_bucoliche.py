@@ -22,6 +22,7 @@ from virgilio_connector.multi_account import (
     load_multi_account_config,
     load_storage_config,
 )
+from virgilio_connector.operational_handoff import OperationalHandoffRunner
 from virgilio_connector.pipeline import LocalPipelineRunner
 from virgilio_connector.readonly_state import ReadonlyStateStore
 from virgilio_connector.storage_adapter import LocalFilesystemStorageAdapter
@@ -34,6 +35,7 @@ from test_multi_account import (
     ScanVerdict,
     write_storage_config,
 )
+from test_operational_handoff import FakeIntake, FakeVerifier
 
 
 class FakeSheets:
@@ -350,7 +352,7 @@ def test_refresh_state_uses_latest_event_so_completed_wins_on_staged(tmp_path):
     assert row["notes"] == '{"step":"completed"}'
 
 
-def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
+def test_end_to_end_transitions_export_once_and_unchanged_retry_is_stable(tmp_path):
     class IsolatedScanMailbox(FakeMailbox):
         instances = []
 
@@ -366,6 +368,8 @@ def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
     accounts = load_multi_account_config(config)[:1]
     storage_config = load_storage_config(config)
     paths = LocalDataPaths(tmp_path / ".local_data")
+
+    fake = FakeSheets()
 
     def runner():
         return LocalPipelineRunner(
@@ -396,6 +400,18 @@ def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
                 local_data_root=paths.root,
                 config=storage_config,
             ),
+            handoff_factory=lambda: OperationalHandoffRunner(
+                paths=paths,
+                staging_root=staging,
+                verifier=FakeVerifier(),
+                intake=FakeIntake(),
+            ),
+            registry_export_factory=lambda: BucolicheAppendOnlyAdapter(
+                state_db=paths.state_db,
+                config=BucolicheConfig(enabled=True),
+                client=fake,
+                environ={},
+            ),
             completion_factory=lambda: LocalCompletionRunner(
                 accounts,
                 paths=paths,
@@ -404,31 +420,33 @@ def test_end_to_end_retry_does_not_append_duplicate_bucoliche_events(tmp_path):
                     "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
                 },
                 mailbox_factory=lambda account: IsolatedAckMailbox(account),
+                require_da_archiviare=True,
             ),
         )
 
-    fake = FakeSheets()
     first_pipeline = runner().run(dry_run=False)
-    first_export = BucolicheAppendOnlyAdapter(
-        state_db=paths.state_db,
-        config=BucolicheConfig(enabled=True),
-        client=fake,
-        environ={},
-    ).export(dry_run=False)
+    with sqlite3.connect(paths.state_db) as db:
+        after_first = db.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
     second_pipeline = runner().run(dry_run=False)
-    second_export = BucolicheAppendOnlyAdapter(
-        state_db=paths.state_db,
-        config=BucolicheConfig(enabled=True),
-        client=fake,
-        environ={},
-    ).export(dry_run=False)
+    with sqlite3.connect(paths.state_db) as db:
+        after_second = db.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
+    third_pipeline = runner().run(dry_run=False)
+    with sqlite3.connect(paths.state_db) as db:
+        after_third = db.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
+        actions = [row[0] for row in db.execute(
+            "SELECT action FROM audit_events ORDER BY id"
+        )]
 
     assert first_pipeline.status == "completed"
     assert second_pipeline.status == "completed"
-    assert first_export.events_exported == 6
-    assert second_export.events_exported == 0
-    assert second_export.already_exported == 6
-    assert [call[0] for call in fake.calls].count("Bucoliche_Eventi") == 6
+    assert third_pipeline.status == "completed"
+    assert after_first == after_second == after_third == 10
+    assert actions.count("message_scanned") == 2
+    assert actions.count("attachment_quarantined") == 2
+    assert actions.count("attachment_staged") == 2
+    assert actions.count("da_archiviare_intake") == 2
+    assert actions.count("message_completed") == 2
+    assert [call[0] for call in fake.calls].count("Bucoliche_Eventi") == 8
     state_replace = fake.calls[-1]
     assert state_replace[:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
     assert len(state_replace[3]) == 2

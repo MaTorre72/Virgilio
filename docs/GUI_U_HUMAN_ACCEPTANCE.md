@@ -136,6 +136,17 @@ Informazioni o disinstallazione: sono gia` `PASS` e non fanno parte del delta.
 Il collaudo avviene senza terminale, modifiche manuali di file/YAML/`.env`, avvio
 di Python o consultazione della documentazione tecnica.
 
+## GUI-U-R05 - Gate finali
+
+Questa e` l'intera checklist residua. Le prove automatiche e i PASS storici non
+vengono ripetuti:
+
+1. autorizzare e verificare la pubblicazione/deploy del solo delta Apps Script;
+2. autorizzare ed eseguire il reset dell'ambiente TEST reale, verificando backup
+   e stato finale vuoto senza coinvolgere asset di produzione;
+3. eseguire il collaudo reale della RC identificata sul percorso completo e
+   registrare esplicitamente l'esito umano.
+
 ## Esiti e regole di giudizio
 
 Esiti ammessi: `PASS`, `FAIL`, `NOT_TESTED`, `BLOCKED_BY_ENVIRONMENT`,

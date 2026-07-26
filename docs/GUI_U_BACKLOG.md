@@ -1288,7 +1288,7 @@ successivo collaudo reale della RC resta una decisione umana.
 
 ## GUI-U-R05 - Chiusura strutturale del percorso operativo
 
-Stato: `IN_PROGRESS`.
+Stato: `WAITING_HUMAN_REVIEW`.
 Origine: collaudo umano del 2026-07-26. Il percorso CLI/GAS e i suoi contratti
 restano canonici; i correttivi riguardano regressioni e composizione nella build
 Desktop, non una nuova implementazione del flusso.
@@ -1358,7 +1358,7 @@ mancanza di autorizzazione umana per pubblicazione/esecuzione reale.
 
 ### GUI-U-R05-T04 - Audit stabile e release finale
 
-Stato: `TODO`. Priorita`: `P0`.
+Stato: `DONE`. Priorita`: `P0`.
 Risultato: il Registro riceve solo transizioni nuove; una RC identificata supera
 il percorso completo e resta pronta per gli ultimi gate umani.
 Dipendenze: `R05-T01`--`R05-T03 = DONE`.
@@ -1369,11 +1369,11 @@ identificabile.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | --- | --- | --- | --- |
-| `R05-T04-AC1` Un controllo invariato non aggiunge eventi operativi duplicati. | Due cicli identici su fixture. | - | `TODO` |
-| `R05-T04-AC2` Una transizione reale produce un solo evento ed export idempotente. | Test audit/Registro fake. | - | `TODO` |
-| `R05-T04-AC3` Il percorso email -> Limbo -> Da archiviare -> Registro e` verde. | Harness integrato senza rete reale. | - | `TODO` |
-| `R05-T04-AC4` Build e installer identificati superano gli smoke. | Smoke build/installer e manifest hash. | - | `TODO` |
-| `R05-T04-AC5` La checklist finale contiene solo pubblicazione, reset TEST autorizzato e collaudo reale. | Revisione fascicolo minimo. | - | `TODO` |
+| `R05-T04-AC1` Un controllo invariato non aggiunge eventi operativi duplicati. | Due cicli identici su fixture. | Lo store confronta l'ultimo stato dell'entita`: due retry completi sulla stessa fixture lasciano invariati i 10 eventi operativi. | `MET` |
+| `R05-T04-AC2` Una transizione reale produce un solo evento ed export idempotente. | Test audit/Registro fake. | Stato invariato riusa lo stesso ID, uno stato diverso crea un solo nuovo evento; l'adapter fake esporta ogni transizione una volta e non riappende nei retry. | `MET` |
+| `R05-T04-AC3` Il percorso email -> Limbo -> Da archiviare -> Registro e` verde. | Harness integrato senza rete reale. | Harness unico con IMAP/scanner, filesystem Limbo, verify/intake e Sheets fake attraversa le cinque transizioni per due allegati; mirati `45 passed`, smoke `572 passed`. | `MET` |
+| `R05-T04-AC4` Build e installer identificati superano gli smoke. | Smoke build/installer e manifest hash. | Pipeline RC dal commit atomico del task: build e installer `PASS`; manifest esterno verifica nome, dimensione, SHA-256, commit, build ID e client OAuth incluso. | `MET` |
+| `R05-T04-AC5` La checklist finale contiene solo pubblicazione, reset TEST autorizzato e collaudo reale. | Revisione fascicolo minimo. | La checklist R05 contiene esattamente i tre gate umani residui, senza ripetere prove automatiche o PASS storici. | `MET` |
 
 Dopo `R05-T04` l'automazione si ferma. `clasp push`, deploy, azzeramento degli
 asset Google reali e collaudo restano gate umani espliciti.

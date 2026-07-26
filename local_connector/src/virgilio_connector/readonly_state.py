@@ -204,12 +204,23 @@ class ReadonlyStateStore:
     def add_audit_event(self, *, machine_id: str, account_alias: str,
                         entity_type: str, entity_id: str, fingerprint: str | None,
                         action: str, status: str, details: dict | None = None) -> int:
+        details_json = json.dumps(details or {}, ensure_ascii=False, separators=(",", ":"))
         with self._connection() as db:
+            latest = db.execute("""SELECT id,fingerprint,action,status,details_json
+                FROM audit_events
+                WHERE machine_id=? AND account_alias=? AND entity_type=? AND entity_id=?
+                ORDER BY id DESC LIMIT 1""", (
+                    machine_id, account_alias, entity_type, entity_id,
+                )).fetchone()
+            if latest and (
+                latest["fingerprint"], latest["action"], latest["status"], latest["details_json"]
+            ) == (fingerprint, action, status, details_json):
+                return int(latest["id"])
             cursor = db.execute("""INSERT INTO audit_events(created_at,machine_id,
                 account_alias,entity_type,entity_id,fingerprint,action,status,details_json)
                 VALUES(?,?,?,?,?,?,?,?,?)""", (_now(), machine_id, account_alias,
                 entity_type, entity_id, fingerprint, action, status,
-                json.dumps(details or {}, ensure_ascii=False, separators=(",", ":"))))
+                details_json))
             return int(cursor.lastrowid)
 
     def find_by_attachment_id(self, attachment_id: str):
