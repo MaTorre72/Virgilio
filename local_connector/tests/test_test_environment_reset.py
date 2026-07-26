@@ -184,6 +184,17 @@ def test_gas_reset_targets_operational_assets_and_one_shared_register_tab():
     assert "VIRGILIO_DRIVE_STAGING_FOLDER_ID" not in verify_source
 
 
+def test_gas_reset_backs_up_and_removes_legacy_limbo_subfolders():
+    source = (Path(__file__).parents[2] / "apps_script" / "src" /
+              "test_environment_reset.gs").read_text(encoding="utf-8")
+
+    assert "deve contenere soltanto file" not in source
+    assert "_testResetCollectFiles_(child, childPrefix, values)" in source
+    assert "_testResetCopyFolderContents_(sourceChild, targetChild)" in source
+    assert "_testResetClearFolderContents_(child)" in source
+    assert "child.setTrashed(true)" in source
+
+
 def test_completed_remote_reset_must_be_empty_and_preserve_schema(tmp_path):
     class InconsistentRemote(FakeRemote):
         def request(self, reset_id, mode):

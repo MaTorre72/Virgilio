@@ -175,7 +175,7 @@ Default prudente: la cartella di destinazione deve gia' esistere.
 storage:
   adapter: local_filesystem
   staging_dir: C:\Percorso\Virgilio\Limbo
-  use_account_subfolders: true
+  use_account_subfolders: false
   copy_manifest: true
   overwrite: false
   create_staging_dir: false

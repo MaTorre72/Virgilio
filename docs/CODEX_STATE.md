@@ -14,16 +14,18 @@
   Prove: mirati `75 passed`, smoke `563 passed`.
 - `GUI-U-R05-T03` e` `DONE`: una sola operazione coordinata espone l'anteprima esatta,
   prepara backup locali/Registro/Limbo, rifiuta asset non TEST o ID duplicati, riprende per
-  `reset_id` senza duplicazioni e verifica i quattro stati vuoti con schema preservato.
-  Prove: mirati `91 passed`, harness GAS puro `OK`, smoke `571 passed`.
+  `reset_id` senza duplicazioni e verifica i quattro stati vuoti con schema preservato. Il
+  Limbo canonico e` piatto: i nomi includono gia` alias e attachment ID; il reset ricorsivo
+  salva e rimuove eventuali sottocartelle pregresse. Regressione: mirati `71 passed`, smoke
+  `577 passed`.
 - Principio vincolante: CLI, servizi applicativi e GAS precedenti restano canonici e vanno riusati;
   non si ricostruiscono downloader, storage, verify, intake, Registro, backup o reset gia` esistenti.
 - `GUI-U-R05-T04` e` `DONE`: audit a transizioni, export idempotente e percorso integrato
   email -> Limbo -> Da archiviare -> Registro sono verificati; prove `45 passed`, smoke `572 passed`.
 - Sequenza automatica residua: nessuna.
 - Pubblicazione Apps Script autorizzata esplicitamente dall'utente e completata il 2026-07-26:
-  push dei 14 file canonici e deployment web esistente aggiornato alla versione `34`,
-  senza cambiare URL; la versione `33` con Registro separato e` superata.
+  push dei 14 file canonici e deployment web esistente aggiornato alla versione `35`,
+  senza cambiare URL; la versione `34` e` superata dal reset Limbo ricorsivo.
 - RC desktop prodotta e verificata dal commit `2294efa`: installer
   `CaronteSetup-0.11.0-2294efa.exe`, Build ID
   `34eafb2f-6974-4153-bb94-07e0e078a77f`, SHA-256
@@ -36,9 +38,11 @@
   `Staging_Local_Test` e le relative proprieta` non fanno piu` parte della topologia live.
 - RC installata e `VIRGILIO_TOKEN` salvato nel deposito protetto locale su conferma
   umana del 2026-07-26.
-- Reset TEST reale `reset-r05-20260726-2112` completato: backup locale, backup Registro
+- Reset TEST reale `reset-r05-20260726-2139` completato: backup locale, backup Registro
   e backup Limbo verificati; `bucoliche`, `Virgilio_Inbox` e Limbo sono vuoti con
-  intestazioni preservate. Dopo il backup completo sono stati rimossi i soli tab legacy
+  intestazioni preservate; la configurazione installata scrive direttamente nella radice
+  Limbo e la sottocartella pregressa `principale` e` stata rimossa. Dopo il backup completo
+  precedente sono stati rimossi i soli tab legacy
   `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti`; il foglio reale contiene
   soltanto `bucoliche` e `Virgilio_Inbox`. Trigger TEST fermo.
 - Gate residuo: collaudo finale umano. Codex non puo` approvarlo.

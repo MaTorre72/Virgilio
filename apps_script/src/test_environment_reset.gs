@@ -147,11 +147,24 @@ function _testResetSchema_(spreadsheet, names) {
 }
 
 function _testResetFiles_(folder) {
-  const values = []; const files = folder.getFiles();
-  while (files.hasNext()) { const file = files.next(); values.push({ id: file.getId(), name: file.getName() }); }
+  const values = [];
+  _testResetCollectFiles_(folder, '', values);
+  return values.sort((a, b) => a.relative_name.localeCompare(b.relative_name));
+}
+
+function _testResetCollectFiles_(folder, prefix, values) {
+  const files = folder.getFiles();
+  while (files.hasNext()) {
+    const file = files.next(); const name = file.getName();
+    values.push({ id: file.getId(), name: name,
+      relative_name: prefix ? `${prefix}/${name}` : name });
+  }
   const folders = folder.getFolders();
-  if (folders.hasNext()) throw new Error('La cartella Limbo TEST deve contenere soltanto file.');
-  return values.sort((a, b) => a.name.localeCompare(b.name));
+  while (folders.hasNext()) {
+    const child = folders.next();
+    const childPrefix = prefix ? `${prefix}/${child.getName()}` : child.getName();
+    _testResetCollectFiles_(child, childPrefix, values);
+  }
 }
 
 function _testResetBackupFile_(fileId, resetId, stamp) {
@@ -169,10 +182,20 @@ function _testResetBackupFolder_(folderId, resetId, stamp) {
   const existing = parent.getFoldersByName(name); let target;
   if (existing.hasNext()) target = existing.next();
   else target = parent.createFolder(name);
+  _testResetCopyFolderContents_(source, target);
+  return target.getId();
+}
+
+function _testResetCopyFolderContents_(source, target) {
   const files = source.getFiles();
   while (files.hasNext()) { const file = files.next(); const copies = target.getFilesByName(file.getName());
     if (!copies.hasNext()) file.makeCopy(file.getName(), target); }
-  return target.getId();
+  const folders = source.getFolders();
+  while (folders.hasNext()) {
+    const sourceChild = folders.next(); const matches = target.getFoldersByName(sourceChild.getName());
+    const targetChild = matches.hasNext() ? matches.next() : target.createFolder(sourceChild.getName());
+    _testResetCopyFolderContents_(sourceChild, targetChild);
+  }
 }
 
 function _testResetClearSheets_(spreadsheetId, names) {
@@ -186,8 +209,18 @@ function _testResetClearSheets_(spreadsheetId, names) {
 }
 
 function _testResetClearFolder_(folderId) {
-  const files = DriveApp.getFolderById(folderId).getFiles();
+  _testResetClearFolderContents_(DriveApp.getFolderById(folderId));
+}
+
+function _testResetClearFolderContents_(folder) {
+  const files = folder.getFiles();
   while (files.hasNext()) files.next().setTrashed(true);
+  const folders = folder.getFolders();
+  while (folders.hasNext()) {
+    const child = folders.next();
+    _testResetClearFolderContents_(child);
+    child.setTrashed(true);
+  }
 }
 
 function _testResetResponse_(payload, ok, phase, completed, targets, backups, errors) {

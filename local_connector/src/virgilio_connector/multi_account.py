@@ -126,7 +126,7 @@ class LocalImapAccount:
 class LocalStorageConfig:
     adapter: str
     staging_dir: Path | None
-    use_account_subfolders: bool = True
+    use_account_subfolders: bool = False
     copy_manifest: bool = True
     overwrite: bool = False
     create_staging_dir: bool = False
@@ -219,7 +219,7 @@ def scaffold_local_config(*, email: str, staging_dir: Path, account_alias: str |
         "storage:",
         "  adapter: local_filesystem",
         f"  staging_dir: {_quoted(str(staging_dir))}",
-        "  use_account_subfolders: true",
+        "  use_account_subfolders: false",
         "  copy_manifest: true",
         "  overwrite: false",
         "  create_staging_dir: false",
@@ -273,7 +273,7 @@ def load_storage_config(path: str | Path,
     return LocalStorageConfig(
         adapter=str(raw_storage.get("adapter", "local_filesystem")),
         staging_dir=Path(staging_dir) if staging_dir else None,
-        use_account_subfolders=_to_bool(raw_storage.get("use_account_subfolders", True)),
+        use_account_subfolders=_to_bool(raw_storage.get("use_account_subfolders", False)),
         copy_manifest=_to_bool(raw_storage.get("copy_manifest", True)),
         overwrite=_to_bool(raw_storage.get("overwrite", False)),
         create_staging_dir=_to_bool(raw_storage.get("create_staging_dir", False)),

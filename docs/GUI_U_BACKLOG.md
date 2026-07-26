@@ -1351,11 +1351,11 @@ pubblicazione/esecuzione reale.
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | --- | --- | --- | --- |
-| `R05-T03-AC1` Anteprima elenca esattamente righe, file e stato locale coinvolti. | Harness fake locale/GAS. | Client metadata-only e servizio espongono file e conteggi tabelle locali; GAS espone righe, file e schema dei tre asset TEST. Test mirato e harness puri verdi. | `MET` |
-| `R05-T03-AC2` Backup locale, copia Registro e cartella Drive datata precedono l'azzeramento. | Test ordine chiamate e fallimenti. | `prepare` crea/reusa prima le copie Registro/Limbo; solo dopo il reset locale canonico parte `execute`. Harness verifica l'ordine completo. | `MET` |
+| `R05-T03-AC1` Anteprima elenca esattamente righe, file e stato locale coinvolti. | Harness fake locale/GAS. | Client metadata-only e servizio espongono file e conteggi tabelle locali; GAS espone ricorsivamente i file Limbo con nome relativo, oltre a righe e schema dei tre asset TEST. | `MET` |
+| `R05-T03-AC2` Backup locale, copia Registro e cartella Drive datata precedono l'azzeramento. | Test ordine chiamate e fallimenti. | `prepare` crea/reusa prima le copie Registro/Limbo, incluse eventuali sottocartelle pregresse; solo dopo il reset locale canonico parte `execute`. | `MET` |
 | `R05-T03-AC3` Solo asset marcati TEST possono essere modificati. | Test rifiuto ID/ambiente non TEST. | GAS richiede ambiente `TEST` e nome TEST per ogni asset; il Limbo deve avere ID distinto, mentre Registro e Inbox possono riusare uno spreadsheet solo su tab distinti. Harness rifiuta PROD, collisione col Limbo e collisione tra tab. | `MET` |
 | `R05-T03-AC4` Lo stesso `reset_id` riprende senza duplicazioni. | Test interruzione dopo ogni fase. | Stato GAS persistito dopo ogni fase, nomi backup deterministici e marker locale atomico rendono retry idempotente; harness riparte da tutte le sei fasi. | `MET` |
-| `R05-T03-AC5` Dopo il reset i quattro stati sono vuoti e coerenti, con schema preservato. | Harness integrato senza servizi reali. | Il coordinatore accetta il completamento solo con righe Registro/Inbox e file Limbo vuoti e header invariati; DB/quarantena locali sono ricreati vuoti. `91 passed`, harness GAS `OK`, smoke `571 passed`. | `MET` |
+| `R05-T03-AC5` Dopo il reset i quattro stati sono vuoti e coerenti, con schema preservato. | Harness integrato senza servizi reali. | Il coordinatore accetta il completamento solo con righe Registro/Inbox e file Limbo vuoti e header invariati; il reset rimuove anche le sottocartelle Limbo pregresse. Regressione: `71 passed`, smoke `577 passed`. | `MET` |
 
 ### GUI-U-R05-T04 - Audit stabile e release finale
 
@@ -1453,3 +1453,9 @@ configurato; reset coordinato `reset-r05-20260726-2112` completato con backup
 locale/Registro/Limbo. `bucoliche`, `Virgilio_Inbox` e Limbo risultano vuoti;
 il foglio contiene soltanto i due tab canonici, dopo la rimozione post-backup
 dei tre tab legacy `Bucoliche_*`.
+
+Secondo reset autorizzato `reset-r05-20260726-2139`: deployment esistente
+aggiornato alla versione `35`; backup locale/Registro/Limbo presenti, stati finali
+a zero e schema preservato. Il Limbo e` ora piatto (`use_account_subfolders: false`):
+i nomi sono gia` univoci per alias e attachment ID, e la sottocartella pregressa
+`principale` e` stata inclusa nel backup e rimossa senza creare nuovi asset.

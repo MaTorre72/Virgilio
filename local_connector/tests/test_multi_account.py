@@ -202,6 +202,7 @@ def test_scaffold_local_config_is_valid_and_secret_free(tmp_path):
     assert "password-app-o-token" in content
     assert "TOP_SECRET" not in content
     assert "client_secret.json" in content
+    assert "use_account_subfolders: false" in content
 
 
 def test_scaffold_local_config_requires_absolute_staging_dir():
@@ -545,6 +546,20 @@ def test_storage_account_subfolders_can_be_disabled(tmp_path):
     staging.mkdir()
     result = stage(paths, staging, use_account_subfolders=False)[0]
     assert "/" not in result.staged_path
+    assert (staging / result.staged_path).is_file()
+
+
+def test_storage_defaults_to_flat_limbo_with_collision_safe_filename(tmp_path):
+    _, paths = ready_fixture(tmp_path)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    result = LocalFilesystemStorageAdapter(
+        state_db=paths.state_db,
+        local_data_root=paths.root,
+        config=LocalStorageConfig("local_filesystem", staging),
+    ).stage_ready(dry_run=False)[0]
+    assert "/" not in result.staged_path
+    assert result.staged_path.startswith(f"{result.account_alias}__{result.attachment_id}__")
     assert (staging / result.staged_path).is_file()
 
 
