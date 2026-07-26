@@ -11,6 +11,7 @@ from typing import Any, Callable, Mapping
 import uuid
 
 from ..reset_local_state import reset_local_state
+from ..operation_lock import LocalOperationBusyError
 from ..state_db import StateStore
 from ..time_utils import rome_isoformat, rome_timestamp
 
@@ -40,6 +41,8 @@ class DiagnosticReportResult:
 class MaintenanceResetResult:
     status: str
     backup_path: Path | None
+    preserved: tuple[str, ...]
+    reset: tuple[str, ...]
     message: str
 
 
@@ -54,10 +57,12 @@ class MaintenanceService:
         *,
         details_provider: Callable[[], Mapping[str, Any]] = lambda: {},
         redact: Callable[[str], str] = lambda value: value,
+        runner: object | None = None,
     ) -> None:
         self.data_root = Path(data_root)
         self._details_provider = details_provider
         self._redact = redact
+        self._runner = runner
 
     def create_backup(self) -> BackupResult:
         if not self.data_root.exists():
@@ -108,12 +113,26 @@ class MaintenanceService:
     def reset(self, *, confirmed: bool) -> MaintenanceResetResult:
         if not confirmed:
             return MaintenanceResetResult(
-                "cancelled", None, "Reset annullato: serve la conferma esplicita.",
+                "cancelled", None, (), (),
+                "Reset annullato: serve la conferma esplicita.",
             )
-        result = reset_local_state(self.data_root, backup=True, confirm=True)
+        if self._runner is not None and getattr(self._runner, "running", False):
+            self._runner.close()
+        if self._runner is not None and getattr(self._runner, "running", False):
+            return MaintenanceResetResult(
+                "blocked", None, (), (), "Reset non avviato: Caronte e` ancora attivo.",
+            )
+        try:
+            result = reset_local_state(self.data_root, backup=True, confirm=True)
+        except LocalOperationBusyError:
+            return MaintenanceResetResult(
+                "blocked", None, (), (), "Reset non avviato: Caronte e` ancora attivo.",
+            )
         return MaintenanceResetResult(
             result.status,
             Path(result.backup_path) if result.backup_path else None,
+            result.preserved,
+            result.reset,
             "Reset completato con backup verificabile."
             if result.backup_path else "Nessun dato locale da azzerare.",
         )

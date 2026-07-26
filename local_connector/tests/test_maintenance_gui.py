@@ -16,6 +16,7 @@ from virgilio_connector.maintenance_gui import (
     MaintenanceApp,
 )
 from virgilio_connector.state_db import StateStore
+from virgilio_connector.operation_lock import LocalOperationLock
 
 
 class FakeRoot:
@@ -155,6 +156,46 @@ def test_reset_requires_confirmation_and_creates_backup(tmp_path):
     assert completed.backup_path is not None
     assert (completed.backup_path / "quarantine" / "incoming" / "document.txt").is_file()
     assert not (root / "quarantine" / "incoming" / "document.txt").exists()
+
+
+def test_reset_stops_runner_and_preserves_configuration_and_fake_credentials(tmp_path):
+    class FakeRunner:
+        running = True
+
+        def close(self):
+            self.running = False
+
+    data_root = tmp_path / "data"
+    seed_data(data_root)
+    configuration = tmp_path / "config" / "config.yaml"
+    configuration.parent.mkdir()
+    configuration.write_text("accounts: []\n", encoding="utf-8")
+    credentials = FakeCredentialStore()
+    credentials.save("mailbox-password", "synthetic-secret")
+    runner = FakeRunner()
+
+    result = MaintenanceService(data_root, runner=runner).reset(confirmed=True)
+
+    assert not runner.running
+    assert configuration.read_text(encoding="utf-8") == "accounts: []\n"
+    assert credentials.read("mailbox-password") == "synthetic-secret"
+    assert result.preserved == ("configuration", "credentials", "machine_id")
+    assert result.reset == ("state.db", "quarantine")
+    assert result.backup_path is not None
+    assert (data_root / "state.db").is_file()
+    assert (data_root / "quarantine" / "incoming").is_dir()
+
+
+def test_reset_reports_blocked_when_an_external_worker_holds_the_lock(tmp_path):
+    data_root = tmp_path / "data"
+    seed_data(data_root)
+
+    with LocalOperationLock(data_root):
+        result = MaintenanceService(data_root).reset(confirmed=True)
+
+    assert result.status == "blocked"
+    assert result.backup_path is None
+    assert (data_root / "quarantine" / "incoming" / "document.txt").is_file()
 
 
 def test_new_maintenance_presentation_has_only_supported_operations_and_no_legacy_import(tmp_path):

@@ -54,6 +54,7 @@ from .application.registry_configuration import RegistryConfigurationService
 from .application.windows_credentials import create_account_credential_service
 from .local_paths import LocalDataPaths
 from .reset_local_state import ResetLocalStateError, reset_local_state
+from .operation_lock import LocalOperationBusyError
 from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
                               LiteLLMGatewayConfig, LiteLLMGatewayError,
                               LiteLLMRequest)
@@ -189,6 +190,8 @@ def _reset_local_state_human_summary(result) -> list[str]:
         f"Root locale: {result.local_root}",
         f"Backup automatico: {result.backup_path or 'nessuno'}",
         f"Machine ID preservato: {'sì' if result.machine_id_preserved else 'no'}",
+        f"Conservato: {', '.join(result.preserved) or 'nessuno'}",
+        f"Azzerato: {', '.join(result.reset) or 'nessuno'}",
         f"Messaggio: {result.message}",
     ]
     return lines
@@ -1227,7 +1230,7 @@ def main() -> int:
         local_root = _local_data_root()
         try:
             result = reset_local_state(local_root, backup=args.backup, confirm=args.confirm)
-        except (ResetLocalStateError, OSError) as exc:
+        except (ResetLocalStateError, LocalOperationBusyError, OSError) as exc:
             parser.exit(2, f"error: {exc}\n")
         if args.human:
             _print_human(_reset_local_state_human_summary(result))

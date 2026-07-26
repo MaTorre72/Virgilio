@@ -28,6 +28,7 @@ from virgilio_connector.storage_adapter import (
 )
 from virgilio_connector.bucoliche import BucolicheAppendOnlyAdapter
 from virgilio_connector.pipeline import LocalPipelineRunner
+from virgilio_connector.reset_local_state import reset_local_state
 from virgilio_connector.operational_handoff import OperationalHandoffResult
 from virgilio_connector.doctor import LocalDoctor
 from virgilio_connector.traceability import central_event_rows, load_rules
@@ -1187,6 +1188,45 @@ def test_missing_local_file_is_reacquired_staged_and_handed_off(tmp_path):
     assert len(delivered) == 2
     assert all(item.status == "staged_storage" for item in delivered)
     assert all((staging / item.staged_path).is_file() for item in delivered)
+
+
+def test_first_pipeline_cycle_reacquires_and_copies_after_local_reset(tmp_path):
+    config_path = write_config(tmp_path / "config")
+    accounts = load_multi_account_config(config_path)[:1]
+    paths = LocalDataPaths(tmp_path / ".local_data")
+    paths.create()
+    (paths.incoming / "obsolete.pdf").write_bytes(b"old")
+    environ = {
+        "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+        "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "synthetic-secret",
+    }
+    reset = reset_local_state(paths.root, backup=True, confirm=True)
+    staging = (tmp_path / "staging").resolve()
+    staging.mkdir()
+    storage_config = LocalStorageConfig("local_filesystem", staging)
+
+    runner = LocalPipelineRunner(
+        accounts, paths=paths,
+        processor_factory=lambda: MultiAccountImapProcessor(
+            accounts, paths=paths, environ=environ,
+            mailbox_factory=lambda config, root: FakeProcessMailbox(config, root),
+            scanner=FakeScanner(ScanVerdict.CLEAN),
+        ),
+        storage_factory=lambda: LocalFilesystemStorageAdapter(
+            state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
+        ),
+        completion_factory=lambda: FakePhase("completion", []),
+        config_path=config_path,
+    )
+
+    result = runner.run(dry_run=False)
+
+    assert reset.backup_path is not None
+    assert config_path.is_file()
+    assert environ["VIRGILIO_IMAP_ACCOUNT_1_PASSWORD"] == "synthetic-secret"
+    assert result.status != "completed_with_errors"
+    staged_files = tuple(path for path in staging.rglob("*") if path.is_file())
+    assert any(path.read_bytes() == b"%PDF" for path in staged_files)
 
 
 def test_pipeline_handoff_runs_after_storage_and_before_completion(tmp_path):

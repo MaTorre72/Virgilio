@@ -1318,7 +1318,7 @@ Condizione di blocco: la correzione richiede mutazioni IMAP o un nuovo protocoll
 
 ### GUI-U-R05-T02 - Ripristino locale coordinato
 
-Stato: `TODO`. Priorita`: `P0`.
+Stato: `DONE`. Priorita`: `P0`.
 Risultato: il reset locale esistente viene composto con stop runner, lock,
 backup verificato e successiva nuova acquisizione.
 Dipendenze: `R05-T01 = DONE`.
@@ -1328,11 +1328,13 @@ Condizione di blocco: impossibile garantire esclusione reciproca tra worker e re
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | --- | --- | --- | --- |
-| `R05-T02-AC1` Nessun reset parte con un runner attivo. | Test lock e worker concorrente. | - | `TODO` |
-| `R05-T02-AC2` Il backup precede ogni modifica ed e` verificato. | Fixture filesystem e controllo inventario. | - | `TODO` |
-| `R05-T02-AC3` Configurazione e credenziali restano; DB/quarantena sono ricreati. | Round-trip servizi con credenziali fake. | - | `TODO` |
-| `R05-T02-AC4` L'esito espone conservato, azzerato e percorso backup. | Test servizio e presentazione tecnica. | - | `TODO` |
-| `R05-T02-AC5` Il primo ciclo successivo riacquisisce e copia. | Test verticale con fake IMAP/storage. | - | `TODO` |
+| `R05-T02-AC1` Nessun reset parte con un runner attivo. | Test lock e worker concorrente. | Lock interprocesso condiviso da pipeline/reset; worker posseduto fermato prima del reset e reset concorrente rifiutato senza modifiche. | `MET` |
+| `R05-T02-AC2` Il backup precede ogni modifica ed e` verificato. | Fixture filesystem e controllo inventario. | Inventari relativi, dimensioni e SHA-256 di sorgente/copia coincidono prima della rimozione; mismatch lascia la radice invariata. | `MET` |
+| `R05-T02-AC3` Configurazione e credenziali restano; DB/quarantena sono ricreati. | Round-trip servizi con credenziali fake. | Config esterna e `FakeCredentialStore` invariati; `state.db` canonico e quarantena vuota ricreati. | `MET` |
+| `R05-T02-AC4` L'esito espone conservato, azzerato e percorso backup. | Test servizio e presentazione tecnica. | Risultati servizio/CLI espongono `preserved`, `reset` e `backup_path`; summary tecnico mostra conservato e azzerato. | `MET` |
+| `R05-T02-AC5` Il primo ciclo successivo riacquisisce e copia. | Test verticale con fake IMAP/storage. | Dopo reset, processor fake IMAP riacquisisce PDF e storage fake lo copia fuori dalla radice locale. | `MET` |
+
+Prove automatiche: test mirati `75 passed`; smoke locale `563 passed`.
 
 ### GUI-U-R05-T03 - Azzeramento coerente ambiente TEST
 

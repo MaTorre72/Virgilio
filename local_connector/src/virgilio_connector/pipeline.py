@@ -12,6 +12,7 @@ from .completion import LocalCompletionRunner
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountImapProcessor, MultiAccountReadonlyScanner
 from .operational_handoff import OperationalHandoffRunner
+from .operation_lock import LocalOperationLock
 from .storage_adapter import LocalFilesystemStorageAdapter
 from .readonly_state import ensure_state_db
 from .time_utils import rome_isoformat, rome_timestamp
@@ -47,6 +48,11 @@ class LocalPipelineRunner:
         self.config_path = config_path
 
     def run(self, *, dry_run: bool, progress: Callable[[dict[str, object]], None] | None = None) -> PipelineResult:
+        with LocalOperationLock(self.paths.root):
+            return self._run_locked(dry_run=dry_run, progress=progress)
+
+    def _run_locked(self, *, dry_run: bool,
+                    progress: Callable[[dict[str, object]], None] | None = None) -> PipelineResult:
         started = perf_counter()
         phase_times: dict[str, float] = {}
         errors: list[str] = []
