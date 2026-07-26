@@ -149,7 +149,10 @@ vengono ripetuti:
 
 Stato al 2026-07-26: punto 1 completato su autorizzazione esplicita; i 14 file
 canonici sono stati pubblicati e il deployment web esistente e` alla versione
-`31` (`GUI-U-R05 62846a8`). I punti 2 e 3 restano gate umani separati.
+`31` (`GUI-U-R05 62846a8`). Il punto 2 e` autorizzato ma
+`BLOCKED_BY_ENVIRONMENT`: l'anteprima non ha eseguito backup o modifiche perche`
+Registro e Da archiviare TEST condividono lo stesso spreadsheet e manca il marker
+ambiente TEST. Il punto 3 resta un gate umano separato.
 
 ## Esiti e regole di giudizio
 

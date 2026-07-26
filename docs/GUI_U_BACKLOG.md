@@ -1383,3 +1383,11 @@ release, delta limitato a `caronte.gs`, `setup.gs` e
 `test_environment_reset.gs`; push dei 14 file canonici completato e deployment
 web esistente aggiornato dalla versione `30` alla `31` (`GUI-U-R05 62846a8`).
 Reset TEST reale e collaudo finale restano `WAITING_HUMAN_REVIEW`.
+
+Tentativo reset reale autorizzato il 2026-07-26: `preview` rifiutata prima di
+backup o modifiche (`RESET_FAILED: Argomento non valido: id`). Diagnosi redatta:
+`VIRGILIO_ENVIRONMENT` e `VIRGILIO_BUCOLICHE_SPREADSHEET_ID` assenti; il foglio
+`Virgilio_Bucoliche_TEST` risulta configurato sia come inbox sia come intake TEST,
+in violazione del requisito di tre ID distinti. Stato `BLOCKED_BY_ENVIRONMENT`.
+Azione unica: riallineare Registro, Da archiviare e Limbo TEST su asset distinti,
+configurare i riferimenti e riprendere lo stesso reset.

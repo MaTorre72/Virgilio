@@ -23,7 +23,13 @@
 - Pubblicazione Apps Script autorizzata esplicitamente dall'utente e completata il 2026-07-26:
   push dei 14 file canonici e deployment web esistente aggiornato alla versione `31`
   (`GUI-U-R05 62846a8`), senza cambiare URL.
-- Gate umani residui: reset TEST reale autorizzato e collaudo finale. Codex non puo` approvarli.
+- Reset TEST reale autorizzato il 2026-07-26 ma `BLOCKED_BY_ENVIRONMENT`: mancano
+  `VIRGILIO_ENVIRONMENT=TEST` e un ID Registro TEST separato; il foglio
+  `Virgilio_Bucoliche_TEST` e` configurato contemporaneamente come Registro,
+  inbox e intake TEST, mentre il reset richiede tre asset con ID distinti.
+- Azione unica necessaria: riallineare la topologia TEST a Registro, Da archiviare
+  e Limbo distinti e configurare i relativi riferimenti; poi riprendere lo stesso reset.
+- Gate umano residuo dopo il reset: collaudo finale. Codex non puo` approvarlo.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.

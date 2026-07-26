@@ -9,6 +9,9 @@ Le run automatiche successive escono senza modifiche.
 
 Nessun task automatico.
 
-Pubblicazione/deploy Apps Script completata alla versione `31` su autorizzazione
-esplicita dell'utente. Azioni residue esclusivamente umane: autorizzare il reset
-TEST reale e svolgere il collaudo finale della RC.
+Pubblicazione/deploy Apps Script completata alla versione `31`. Il reset TEST
+reale e` autorizzato ma `BLOCKED_BY_ENVIRONMENT`: Registro e Da archiviare TEST
+condividono lo stesso spreadsheet e manca `VIRGILIO_ENVIRONMENT=TEST`.
+
+Azione unica necessaria: autorizzare un task di riallineamento della topologia
+TEST a tre asset con ID distinti; poi riprendere il reset e il collaudo finale.
