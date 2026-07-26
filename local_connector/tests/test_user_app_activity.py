@@ -1,5 +1,7 @@
 from datetime import date
 
+import pytest
+
 from virgilio_connector.application.activity import (
     ActivityFilters,
     ActivityService,
@@ -165,6 +167,16 @@ def test_da_archiviare_events_show_delivery_waiting_and_problem_states():
         "Invio a Da archiviare",
         "Problema",
         "Riprova il controllo; se il problema continua, chiedi assistenza.",
+    )
+
+
+@pytest.mark.parametrize("event_type", ["staging_failed", "staging_conflict"])
+def test_storage_failures_are_actionable_in_activity(event_type):
+    row = project_activity(_event(event_type=event_type, result=event_type))
+
+    assert row.outcome == "Problema"
+    assert row.recommended_action == (
+        "Riprova il controllo; se il problema continua, chiedi assistenza."
     )
 
 

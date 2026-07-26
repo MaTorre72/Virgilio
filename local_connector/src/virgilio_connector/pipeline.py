@@ -57,18 +57,31 @@ class LocalPipelineRunner:
         ), progress)
         process = self._phase("process", phase_times, errors,
                               lambda: self.processor_factory().process(dry_run=dry_run), progress)
+        storage_errors_before = len(errors)
         storage = self._phase("storage", phase_times, errors,
                               lambda: self.storage_factory().stage_ready(dry_run=dry_run), progress)
-        handoff = self._phase(
-            "handoff",
-            phase_times,
-            errors,
-            lambda: (
-                self.handoff_factory().deliver(storage, dry_run=dry_run)
-                if self.handoff_factory else ()
-            ),
-            progress,
-        )
+        failed_storage = tuple(item for item in storage if getattr(item, "status", "") in {
+            "staging_failed", "staging_conflict"
+        })
+        for item in failed_storage:
+            errors.append(
+                f"storage: {getattr(item, 'status', 'failed')}: "
+                f"{getattr(item, 'attachment_id', 'unknown')}: {getattr(item, 'message', '')}"
+            )
+        storage_failed = len(errors) > storage_errors_before
+        if storage_failed:
+            handoff = ()
+        else:
+            handoff = self._phase(
+                "handoff",
+                phase_times,
+                errors,
+                lambda: (
+                    self.handoff_factory().deliver(storage, dry_run=dry_run)
+                    if self.handoff_factory else ()
+                ),
+                progress,
+            )
         failed_handoffs = tuple(
             item for item in handoff if getattr(item, "status", "") == "failed"
         )
@@ -101,6 +114,7 @@ class LocalPipelineRunner:
         )
         if registry_failed:
             errors.append("registry: activity Register update did not complete")
+        if storage_failed or registry_failed:
             completion = ()
         else:
             completion = self._phase(

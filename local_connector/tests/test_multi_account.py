@@ -23,6 +23,7 @@ from virgilio_connector.ports import MessageReference
 from virgilio_connector.scanner import LocalScanResult, ScanVerdict
 from virgilio_connector.storage_adapter import (
     LocalFilesystemStorageAdapter,
+    StorageStageResult,
     StorageAdapterError,
 )
 from virgilio_connector.bucoliche import BucolicheAppendOnlyAdapter
@@ -406,6 +407,32 @@ def test_process_is_idempotent_for_same_attachment_id_and_sha(tmp_path):
         assert db.execute("SELECT COUNT(*) FROM attachments").fetchone()[0] == 2
 
 
+@pytest.mark.parametrize("damage", ["missing", "corrupt"])
+def test_process_reacquires_duplicate_when_local_file_is_not_valid(tmp_path, damage):
+    first, paths = process(tmp_path, scanner=FakeScanner(ScanVerdict.CLEAN))
+    with sqlite3.connect(paths.state_db) as db:
+        relative_path = db.execute(
+            "SELECT relative_path FROM attachments WHERE attachment_id=?",
+            (first[0].attachment_id,),
+        ).fetchone()[0]
+    local_file = paths.root / relative_path
+    if damage == "missing":
+        local_file.unlink()
+    else:
+        local_file.write_bytes(b"corrupt")
+
+    recovered, _ = process(tmp_path, scanner=FakeScanner(ScanVerdict.CLEAN))
+
+    assert recovered[0].saved is True
+    assert recovered[0].reason == "fake clean"
+    assert local_file.read_bytes() == b"%PDF"
+    with sqlite3.connect(paths.state_db) as db:
+        assert db.execute("SELECT COUNT(*) FROM attachments").fetchone()[0] == 2
+        row = db.execute("""SELECT status,relative_path,sha256 FROM attachments
+            WHERE attachment_id=?""", (first[0].attachment_id,)).fetchone()
+    assert row == ("ready_for_caronte", relative_path, first[0].sha256)
+
+
 def test_process_detects_attachment_id_sha_conflict(tmp_path):
     result1, paths = process(tmp_path, scanner=FakeScanner(ScanVerdict.CLEAN))
     FakeProcessMailbox.attachments = (DetectedAttachment(1, "report.pdf", "application/pdf", b"different"),)
@@ -541,6 +568,27 @@ def test_storage_idempotency_and_conflict(tmp_path):
     assert conflict.status == "staging_conflict"
     with sqlite3.connect(paths.state_db) as db:
         assert db.execute("SELECT status FROM attachments WHERE id=1").fetchone()[0] == "staging_conflict"
+        assert db.execute("""SELECT COUNT(*) FROM audit_events
+            WHERE action='staging_conflict' AND status='staging_conflict'""").fetchone()[0] == 1
+
+
+def test_storage_failure_is_persisted_as_actionable_audit_event(tmp_path):
+    ready, paths = ready_fixture(tmp_path)
+    staging = tmp_path / "staging"
+    staging.mkdir()
+    with sqlite3.connect(paths.state_db) as db:
+        relative_path = db.execute("SELECT relative_path FROM attachments WHERE id=1").fetchone()[0]
+    (paths.root / relative_path).unlink()
+
+    failed = stage(paths, staging)[0]
+
+    assert failed.status == "staging_failed"
+    with sqlite3.connect(paths.state_db) as db:
+        assert db.execute("SELECT status FROM attachments WHERE id=1").fetchone()[0] == "staging_failed"
+        event = db.execute("""SELECT action,status,details_json FROM audit_events
+            WHERE action='staging_failed' ORDER BY id DESC LIMIT 1""").fetchone()
+    assert event[:2] == ("staging_failed", "staging_failed")
+    assert "quarantine source file is missing" in event[2]
 
 
 def test_stage_ready_attachments_cli_dry_run(tmp_path, monkeypatch, capsys):
@@ -1062,6 +1110,83 @@ def test_pipeline_real_report_and_error_collection(tmp_path):
     text = json.dumps(report).lower()
     for forbidden in ("password", "token", "base64", "file_bytes"):
         assert forbidden not in text
+
+
+def test_pipeline_storage_failure_blocks_handoff_and_completion(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    log = []
+    failed = StorageStageResult(
+        "att-1", "account_1", "missing.pdf", "", None, "a" * 64, 4,
+        False, False, "staging_failed", "quarantine source file is missing",
+    )
+    runner = LocalPipelineRunner(
+        accounts, paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner_factory=lambda: FakePhase("scan", log),
+        processor_factory=lambda: FakePhase("process", log),
+        storage_factory=lambda: FakePhase("storage", log, (failed,)),
+        handoff_factory=lambda: FakeHandoffPhase(log),
+        completion_factory=lambda: FakePhase("completion", log),
+    )
+
+    result = runner.run(dry_run=False)
+
+    assert result.status == "completed_with_errors"
+    assert ("handoff", False) not in log
+    assert ("completion", False) not in log
+    assert any("staging_failed" in error for error in result.errors)
+
+
+def test_missing_local_file_is_reacquired_staged_and_handed_off(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    paths = LocalDataPaths(tmp_path / ".local_data")
+    environ = {
+        "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+        "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
+    }
+    initial = MultiAccountImapProcessor(
+        accounts, paths=paths, environ=environ,
+        mailbox_factory=lambda config, root: FakeProcessMailbox(config, root),
+        scanner=FakeScanner(ScanVerdict.CLEAN),
+    ).process(dry_run=False)
+    for item in initial:
+        with sqlite3.connect(paths.state_db) as db:
+            relative_path = db.execute(
+                "SELECT relative_path FROM attachments WHERE attachment_id=?",
+                (item.attachment_id,),
+            ).fetchone()[0]
+        (paths.root / relative_path).unlink()
+    staging = (tmp_path / "staging").resolve()
+    staging.mkdir()
+    storage_config = LocalStorageConfig("local_filesystem", staging)
+    delivered = []
+
+    class CapturingHandoff:
+        def deliver(self, storage_results, dry_run):
+            delivered.extend(storage_results)
+            return tuple(OperationalHandoffResult(
+                item.attachment_id, item.account_alias, "created", "delivered"
+            ) for item in storage_results)
+
+    runner = LocalPipelineRunner(
+        accounts, paths=paths,
+        processor_factory=lambda: MultiAccountImapProcessor(
+            accounts, paths=paths, environ=environ,
+            mailbox_factory=lambda config, root: FakeProcessMailbox(config, root),
+            scanner=FakeScanner(ScanVerdict.CLEAN),
+        ),
+        storage_factory=lambda: LocalFilesystemStorageAdapter(
+            state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
+        ),
+        handoff_factory=CapturingHandoff,
+        completion_factory=lambda: FakePhase("completion", []),
+    )
+
+    result = runner.run(dry_run=False)
+
+    assert result.status != "completed_with_errors"
+    assert len(delivered) == 2
+    assert all(item.status == "staged_storage" for item in delivered)
+    assert all((staging / item.staged_path).is_file() for item in delivered)
 
 
 def test_pipeline_handoff_runs_after_storage_and_before_completion(tmp_path):

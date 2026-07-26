@@ -124,7 +124,10 @@ def project_activity(
     event_type = str(event.get("event_type", "") or "").strip()
     result = str(event.get("result", "") or "").strip().lower()
     conflict = event_type.startswith("conflict_") or bool(event.get("conflict_type"))
-    failed = conflict or event_type == "failed" or result in {"error", "failed", "failure"}
+    failed = (
+        conflict or event_type in {"failed", "staging_failed", "staging_conflict"}
+        or result in {"error", "failed", "failure", "staging_failed", "staging_conflict"}
+    )
     if event_type == "da_archiviare_intake" and result in {
         "created", "updated", "idempotent"
     }:

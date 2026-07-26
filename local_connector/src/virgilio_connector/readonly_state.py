@@ -177,6 +177,30 @@ class ReadonlyStateStore:
         with self._connection() as db:
             db.execute("UPDATE attachments SET fingerprint=? WHERE id=?", (fingerprint, attachment_row_id))
 
+    def recover_attachment(self, attachment_row_id: int, *, message_id: int, ordinal: int,
+                           original_filename: str | None, sanitized_filename: str | None,
+                           declared_mime_type: str, size_bytes: int, sha256: str,
+                           status: str, relative_path: str | None, reason: str,
+                           scanner_engine: str | None, scan_result: str | None,
+                           account_alias: str, attachment_id: str,
+                           source_email: str | None, manifest_path: str | None) -> None:
+        """Repair an existing identity after its local quarantine artifact was lost."""
+        if status not in ATTACHMENT_STATES:
+            raise ValueError(f"invalid attachment status: {status}")
+        with self._connection() as db:
+            db.execute("""UPDATE attachments SET message_id=?,account_alias=?,attachment_id=?,
+                source_email=?,ordinal=?,original_filename=?,sanitized_filename=?,
+                declared_mime_type=?,size_bytes=?,sha256=?,status=?,relative_path=?,
+                duplicate_of_id=NULL,reason=?,scanner_engine=?,scan_result=?,scanned_at=?,
+                manifest_path=?,storage_adapter=NULL,staged_path=NULL,
+                staging_manifest_path=NULL,staged_filename=NULL,staged_at=NULL
+                WHERE id=?""", (
+                message_id, account_alias, attachment_id, source_email, ordinal,
+                original_filename, sanitized_filename, declared_mime_type, size_bytes,
+                sha256, status, relative_path, reason, scanner_engine, scan_result,
+                _now() if scanner_engine else None, manifest_path, attachment_row_id,
+            ))
+
     def add_audit_event(self, *, machine_id: str, account_alias: str,
                         entity_type: str, entity_id: str, fingerprint: str | None,
                         action: str, status: str, details: dict | None = None) -> int:

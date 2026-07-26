@@ -1300,7 +1300,7 @@ riscrittura del form, sostituzione del GAS, servizi reali nei test.
 
 ### GUI-U-R05-T01 - Recupero artefatti locali e fallimento storage osservabile
 
-Stato: `TODO`. Priorita`: `P0`.
+Stato: `DONE`. Priorita`: `P0`.
 Risultato: un riferimento SQLite privo del file locale viene riparato dal
 processor IMAP esistente e un errore storage blocca realmente la pipeline.
 Dipendenze: nessuna.
@@ -1310,11 +1310,11 @@ Condizione di blocco: la correzione richiede mutazioni IMAP o un nuovo protocoll
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | --- | --- | --- | --- |
-| `R05-T01-AC1` Il duplicato e` valido solo con file e SHA-256 coerenti. | Fixture con record presente e file assente/corrotto. | - | `TODO` |
-| `R05-T01-AC2` Il file mancante viene riacquisito tramite il downloader esistente. | Fake IMAP read-only e verifica file/manifest. | - | `TODO` |
-| `R05-T01-AC3` `staging_failed` e `staging_conflict` sono persistiti e leggibili. | Test storage, audit e proiezione attivita`. | - | `TODO` |
-| `R05-T01-AC4` Un errore storage rende la pipeline fallita e impedisce completion/handoff. | Test pipeline con factory fake. | - | `TODO` |
-| `R05-T01-AC5` Il percorso riparato arriva alla consegna. | Test verticale file mancante -> copia -> handoff; smoke. | - | `TODO` |
+| `R05-T01-AC1` Il duplicato e` valido solo con file e SHA-256 coerenti. | Fixture con record presente e file assente/corrotto. | Prova parametrica su file assente e corrotto: entrambi sono riscritti con SHA-256 atteso; il duplicato valido resta idempotente. | `MET` |
+| `R05-T01-AC2` Il file mancante viene riacquisito tramite il downloader esistente. | Fake IMAP read-only e verifica file/manifest. | `MultiAccountImapProcessor` riusa `detect_attachments`, scanner e manifest esistenti e ripara la riga senza crearne una seconda. | `MET` |
+| `R05-T01-AC3` `staging_failed` e `staging_conflict` sono persistiti e leggibili. | Test storage, audit e proiezione attivita`. | Entrambi gli stati sono salvati in SQLite, producono audit con motivo e sono proiettati come `Problema` azionabile. | `MET` |
+| `R05-T01-AC4` Un errore storage rende la pipeline fallita e impedisce completion/handoff. | Test pipeline con factory fake. | Factory fake `staging_failed`: esito `completed_with_errors`, handoff e completion non invocati, errore descritto nel report. | `MET` |
+| `R05-T01-AC5` Il percorso riparato arriva alla consegna. | Test verticale file mancante -> copia -> handoff; smoke. | Verticale fake read-only riacquisisce due file mancanti, li copia nel Limbo e li consegna; mirati `79 passed`, smoke `558 passed`. | `MET` |
 
 ### GUI-U-R05-T02 - Ripristino locale coordinato
 

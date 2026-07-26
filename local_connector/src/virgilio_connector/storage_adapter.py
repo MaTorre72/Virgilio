@@ -66,12 +66,18 @@ class LocalFilesystemStorageAdapter:
                     entity_id=str(row["attachment_id"]), fingerprint=row["fingerprint"],
                     action="attachment_staged", status=result.status,
                     details={"staged_filename": Path(result.staged_path).name})
-            elif result.status == "staging_conflict":
-                store.update_storage(int(row["id"]), status="staging_conflict",
+            elif result.status in {"staging_failed", "staging_conflict"}:
+                store.update_storage(int(row["id"]), status=result.status,
                     reason=result.message, storage_adapter=self.config.adapter,
                     staged_path=result.staged_path,
                     staged_manifest_path=result.staged_manifest_path,
                     staged_filename=Path(result.staged_path).name)
+                store.add_audit_event(machine_id=load_machine_id(self.local_data_root),
+                    account_alias=str(row["account_alias"]), entity_type="attachment",
+                    entity_id=str(row["attachment_id"]), fingerprint=row["fingerprint"],
+                    action=result.status, status=result.status,
+                    details={"reason": result.message,
+                             "staged_filename": Path(result.staged_path).name})
         return tuple(results)
 
     def _validate_configuration(self) -> Path:

@@ -1,32 +1,31 @@
 # Next Codex Tasks
 
-## CORRENTE - GUI-U-R05-T01
+## CORRENTE - GUI-U-R05-T02
 
-Risultato: se SQLite conosce un allegato ma il file locale e` assente, il processor esistente lo
-riacquisisce; ogni `staging_failed`/`staging_conflict` blocca e descrive la pipeline.
+Risultato: il reset locale esistente viene composto con stop runner, lock, backup verificato e
+successiva nuova acquisizione.
 
 Riuso obbligatorio:
 
-- `MultiAccountImapProcessor` e `ReadonlyStateStore`;
-- `LocalFilesystemStorageAdapter` e stati storage gia` definiti;
-- `LocalPipelineRunner`, `ActivityService` e progressi Home esistenti;
-- fixture/fake in `test_multi_account.py`, `test_pipeline.py`, `test_storage_adapter.py` e test Home.
+- servizi runner/startup gia` esistenti;
+- `reset_local_state`, backup e lock canonici;
+- `MaintenanceService` e CLI condivisa;
+- fixture filesystem, credenziali sintetiche e fake IMAP/storage esistenti.
 
 Criteri binari:
 
-1. Un record duplicato e` riusato solo se file locale e SHA-256 sono validi.
-2. File assente o non valido provoca riacquisizione sicura, senza nuova pipeline parallela.
-3. Lo storage persiste un evento azionabile per `staging_failed` e `staging_conflict`.
-4. La pipeline termina `completed_with_errors` e non completa/consegna il messaggio coinvolto.
-5. Test verticale fake: file mancante -> riacquisizione -> copia -> handoff; test mirati e smoke verdi.
+1. Nessun reset parte con un runner attivo.
+2. Il backup precede ogni modifica ed e` verificato.
+3. Configurazione e credenziali restano; DB e quarantena sono ricreati.
+4. L'esito espone conservato, azzerato e percorso backup.
+5. Il primo ciclo successivo riacquisisce e copia con fake IMAP/storage.
 
-Esclusioni: GAS, rete reale, reset, retention, build/installer, modifiche estetiche. Blocco: il recupero
-richiederebbe mutazioni IMAP o un nuovo protocollo invece del download read-only gia` esistente.
+Esclusioni: GAS, rete reale, reset remoto, retention, build/installer, modifiche estetiche. Blocco:
+impossibile garantire esclusione reciproca tra worker e reset.
 
 ## CODA
 
-1. `GUI-U-R05-T02` - ripristino locale coordinato riusando reset, backup e runner esistenti.
-2. `GUI-U-R05-T03` - azzeramento coerente e recuperabile dell'ambiente TEST locale/Registro/Limbo.
-3. `GUI-U-R05-T04` - soppressione eventi invariati, RC identificata e collaudo finale.
+1. `GUI-U-R05-T03` - azzeramento coerente e recuperabile dell'ambiente TEST locale/Registro/Limbo.
+2. `GUI-U-R05-T04` - soppressione eventi invariati, RC identificata e collaudo finale.
 
 Una run non anticipa task in coda.

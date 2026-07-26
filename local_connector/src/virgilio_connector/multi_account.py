@@ -11,7 +11,7 @@ import re
 from typing import Callable, Mapping, Sequence
 
 from .attachment_identity import canonical_attachment_id
-from .files import sanitize_filename
+from .files import sanitize_filename, sha256_file
 from .imap_readonly import ImapReadonlyConfig, ImapReadonlyMailbox
 from .local_paths import LocalDataPaths
 from .policy import AttachmentPolicy, PolicyDecision
@@ -439,6 +439,7 @@ class MultiAccountImapProcessor:
         if store is None or message_row_id is None:
             raise RuntimeError("state store is required outside dry-run")
         existing = store.find_by_attachment_id(attachment_id)
+        recovered_row_id = None
         if existing:
             if str(existing["sha256"]) != digest:
                 return self._result(account, message, attachment, attachment_id, sanitized,
@@ -446,12 +447,14 @@ class MultiAccountImapProcessor:
                     source_email=source_email,
                     error="attachment_id already exists with different sha256",
                     fingerprint=fingerprint)
-            return self._result(account, message, attachment, attachment_id, sanitized,
-                digest, str(existing["status"]), None, None, False,
-                str(existing["manifest_path"]) if existing["manifest_path"] else None,
-                source_email=source_email,
-                fingerprint=fingerprint, rule_name=rule_name,
-                reason="duplicate_seen")
+            if self._existing_file_is_valid(existing, digest):
+                return self._result(account, message, attachment, attachment_id, sanitized,
+                    digest, str(existing["status"]), None, None, False,
+                    str(existing["manifest_path"]) if existing["manifest_path"] else None,
+                    source_email=source_email,
+                    fingerprint=fingerprint, rule_name=rule_name,
+                    reason="duplicate_seen")
+            recovered_row_id = int(existing["id"])
         if status == "quarantined_unverified" and sanitized:
             quarantine = account_root / "quarantine"
             incoming = quarantine / "incoming" / sanitize_filename(message.message_uid)
@@ -505,14 +508,22 @@ class MultiAccountImapProcessor:
             manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2),
                                      encoding="utf-8")
             manifest_relative = manifest_path.relative_to(self.paths.root).as_posix()
-        attachment_row_id = store.add_attachment(message_row_id, ordinal=attachment.ordinal,
+        attachment_values = dict(
+            message_id=message_row_id, ordinal=attachment.ordinal,
             original_filename=attachment.original_filename, sanitized_filename=sanitized,
             declared_mime_type=attachment.declared_mime_type, size_bytes=len(payload),
             sha256=digest, status=status, relative_path=relative_path,
-            duplicate_of_id=None, reason=reason, scanner_engine=scan_engine,
-            scan_result=scan_result, account_alias=account.account_alias,
-            attachment_id=attachment_id, source_email=source_email,
-            manifest_path=manifest_relative)
+            reason=reason, scanner_engine=scan_engine, scan_result=scan_result,
+            account_alias=account.account_alias, attachment_id=attachment_id,
+            source_email=source_email, manifest_path=manifest_relative,
+        )
+        if recovered_row_id is None:
+            attachment_row_id = store.add_attachment(
+                duplicate_of_id=None, **attachment_values,
+            )
+        else:
+            store.recover_attachment(recovered_row_id, **attachment_values)
+            attachment_row_id = recovered_row_id
         store.set_fingerprint(attachment_row_id, fingerprint)
         machine_id = load_machine_id(self.paths.root)
         action = "skipped" if not included else "attachment_quarantined"
@@ -525,6 +536,14 @@ class MultiAccountImapProcessor:
                             manifest_relative, source_email=source_email,
                             fingerprint=fingerprint, included=included,
                             rule_name=rule_name, reason=reason)
+
+    def _existing_file_is_valid(self, existing, digest: str) -> bool:
+        relative_path = str(existing["relative_path"] or "").strip()
+        if not relative_path:
+            return False
+        path = (self.paths.root / relative_path).resolve()
+        root = self.paths.root.resolve()
+        return path.is_relative_to(root) and path.is_file() and sha256_file(path) == digest
 
     def _decision(self, filename: str | None, size_bytes: int) -> tuple[str, str]:
         if size_bytes > self.max_attachment_bytes:
