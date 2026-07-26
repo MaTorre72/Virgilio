@@ -1441,3 +1441,9 @@ dettagli tecnici necessari alla tracciabilita`.
 
 Prove automatiche: mirati `104 passed`, harness GAS Registro/reset `OK`, smoke
 locale `574 passed`.
+
+RC per il collaudo prodotta dal commit `2294efa`: installer
+`CaronteSetup-0.11.0-2294efa.exe`, Build ID
+`34eafb2f-6974-4153-bb94-07e0e078a77f`, SHA-256
+`C483221148B619C18C36E99F55B23B4078D287A89AF24194B198F273A42C872E`;
+client OAuth incluso, smoke build e installer `PASS`.

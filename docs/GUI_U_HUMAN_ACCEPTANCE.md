@@ -147,10 +147,13 @@ vengono ripetuti:
 3. eseguire il collaudo reale della RC identificata sul percorso completo e
    registrare esplicitamente l'esito umano.
 
-Stato al 2026-07-26: la versione `33` e` superata dal correttivo Registro unico
-ancora da pubblicare. GAS e Local connector scrivono nello stesso `bucoliche`
-umano a 17 colonne; i tre `Bucoliche_*` non sono registri cloud paralleli e
-`Virgilio_Inbox` e` la sola coda. Il punto 2 deve essere ripetuto
+Stato al 2026-07-26: il correttivo Registro unico e` pubblicato come versione
+Apps Script `34`. La RC desktop verificata e` `CaronteSetup-0.11.0-2294efa.exe`,
+Build ID `34eafb2f-6974-4153-bb94-07e0e078a77f`, SHA-256
+`C483221148B619C18C36E99F55B23B4078D287A89AF24194B198F273A42C872E`.
+GAS e Local connector scrivono nello stesso `bucoliche` umano a 17 colonne; i
+tre `Bucoliche_*` non sono registri cloud paralleli e `Virgilio_Inbox` e` la
+sola coda. Il punto 2 deve essere ripetuto
 sulla topologia corretta: il trigger e` fermo, ma il servizio si e` arrestato prima
 di backup/mutazioni perche` la chiave manca dal deposito protetto locale. Dopo il
 reset restano il punto 3 e l'esito umano, mai compilato da Codex.

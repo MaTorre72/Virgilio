@@ -24,6 +24,11 @@
 - Pubblicazione Apps Script autorizzata esplicitamente dall'utente e completata il 2026-07-26:
   push dei 14 file canonici e deployment web esistente aggiornato alla versione `34`,
   senza cambiare URL; la versione `33` con Registro separato e` superata.
+- RC desktop prodotta e verificata dal commit `2294efa`: installer
+  `CaronteSetup-0.11.0-2294efa.exe`, Build ID
+  `34eafb2f-6974-4153-bb94-07e0e078a77f`, SHA-256
+  `C483221148B619C18C36E99F55B23B4078D287A89AF24194B198F273A42C872E`;
+  client OAuth incluso, smoke build e installer `PASS`.
 - Topologia TEST riallineata senza nuovi asset: GAS e Local connector usano lo
   stesso Registro umano append-only `bucoliche` con le stesse 17 colonne;
   stato e conflitti tecnici restano locali e non producono tab cloud paralleli.
@@ -33,8 +38,8 @@
   TEST e` stato fermato; il nuovo reset e` bloccato prima di backup/mutazioni perche`
   `Caronte/VIRGILIO_TOKEN` manca dal Credential Manager locale. Azione unica: reinserire
   la chiave nella schermata locale di collegamento, poi rieseguire il reset coordinato.
-- Gate residui: ripetizione del reset TEST sulla topologia corretta e collaudo
-  finale umano. Codex non puo` approvare il collaudo.
+- Gate residui: installazione umana della RC, ripetizione del reset TEST sulla
+  topologia corretta e collaudo finale umano. Codex non puo` approvare il collaudo.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.
