@@ -1,22 +1,11 @@
-Leggi `AGENTS.md`, `docs/DEV_BACKLOG.md`, `docs/DEFINITION_OF_DONE.md` e `docs/AUTONOMOUS_DEVELOPMENT.md`.
-Verifica branch `codex/v1.1-development` e working tree. Se il gate fallisce, fermati senza modifiche.
+Avanza Virgilio di un solo task chiudibile in questa run di 30 minuti.
 
-Questo prompt e` per il run orario di "Virgilio sviluppo autonomo": esegui un solo task per run e non
-avviare un secondo task se il precedente non e` chiuso.
+1. Leggi solo `AGENTS.md`, `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md`.
+2. Verifica branch `codex/v1.1-development` e working tree pulito; altrimenti fermati.
+3. Esegui esclusivamente il task `CORRENTE` indicato in `NEXT_CODEX_TASKS.md`.
+4. Prima di scrivere codice, individua e riusa le funzioni CLI, GAS e i test gia` citati dal task. Non reimplementare capacita` esistenti; correggi solo il collegamento o la regressione provata.
+5. Implementa il minimo percorso verticale che chiude tutti i criteri. Niente UX, refactor, pulizie o documentazione estranei.
+6. Esegui prima i test mirati; esegui lo smoke richiesto solo dopo il loro successo.
+7. Aggiorna solo la scheda del task e i due puntatori operativi; massimo un commit atomico, working tree pulito.
 
-Se in `docs/DEV_BACKLOG.md` esiste il Task 0.0, esegui prima quello e non passare ai task v1.1.3 finche`
-la separazione tra sorgente Apps Script e snapshot `clasp` non e` completata e verificata.
-
-Altrimenti scegli il primo task P0/P1 `TODO` non bloccato, coerente con l`ordine operativo e con le
-dipendenze gia` soddisfatte. Implementa la minima modifica sicura.
-
-Se tocchi codice, esegui test mirati e smoke. Se tocchi solo documentazione, verifica i file aggiornati.
-Aggiorna backlog e documentazione minima, crea un commit atomico e lascia il working tree pulito.
-
-Non usare mail, Google o credenziali reali.
-Non riscrivere il form, non sostituire Apps Script con Python, non introdurre AI/RAG/Docling/LiteLLM,
-database remoti, server web o nuove GUI.
-
-Se non ci sono task eleggibili o il backlog della milestone e` chiuso, limita l`output a una nota concisa
-e non avviare nuovi lavori.
-Se incontri credenziali, dipendenze esterne o limiti di accesso, registra il blocco in modo conciso e fermati.
+Non usare servizi, mail, Google o credenziali reali. Non eseguire `clasp push`, deploy, reset remoto o gate umani senza autorizzazione esplicita. Se il task e` bloccato, registra una sola causa e una sola azione necessaria, poi fermati. Output finale: massimo 8 righe.

@@ -1,52 +1,19 @@
 # Codex State
 
-- Branch attesa: `codex/v1.1-development`
-- Modalita: run autonoma/oraria, seriale, un task per run
-- Iniziativa attiva: `GUI-U = IN_PROGRESS`
-- Fase corrente: `GUI-U-R - Recupero prodotto e collaudo osservabile`
-- Task 0.0: chiuso
-- Vecchia implementazione GUI: `ABANDONED_LEGACY`; `gui` e `gui_*` non sono supportati, distribuiti o sviluppati e restano fuori dalle nuove presentazioni
-- Task completato: `GUI-U-R01 - Identita certa della build e dell'installer`
-- Task: `GUI-U-R02-T01 - Percorso dimostrativo isolato` (`IMPLEMENTED_NOT_ACCEPTED`)
-- Task completato: `GUI-U-R02-T02 - Schermate del primo avvio osservabili`
-- Task: `GUI-U-R02-T03 - Home dimostrativa ed evidenze installate` (`IMPLEMENTED_NOT_ACCEPTED`)
-- Esito storico: `GUI-U-R02 = SUPERSEDED_BY_R3` dopo `FAIL` umano del demo
-- Task completato: `GUI-U-R03-T01 - Prima casella reale senza blocco Google`
-- Task completato: `GUI-U-R03-T02 - Seconda casella e verifica collegamento`
-- Task completato: `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home`
-- Task completato: `GUI-U-R03-R01 - Verifica collegamento su INBOX`
-- Task completato: `GUI-U-R03-R02 - Cartelle operative configurabili per casella`
-- Task completato: `GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile`
-- Task completato: `GUI-U-R03 - Collegamento dei servizi` (`H-R03-01`--`H-R03-06 = PASS` umano; `R03-AC1`--`R03-AC5 = MET`)
-- Task completato: `GUI-U-R03-R04 - Controllo automatico per utente`
-- Task completato: `GUI-U-R03-R05 - Campi cartella leggibili`
-- Task completato: `GUI-U-R03-R06 - Consegna operativa a Da archiviare`
-- Task padre: `GUI-U-R04 - Release candidate e collaudo finale` (`IMPLEMENTED_NOT_ACCEPTED` dopo il `FAIL` umano della RC `bab6e92`)
-- Task completato: `GUI-U-R04-R03 - Notifica operativa e accesso a Virgilio`; link `/exec` per `inbox_id`, notifica idempotente osservabile e contratto metadata-only sono verificati con fake (`25 passed`, harness Apps Script puro, smoke `545 passed`)
-- Task completato: `GUI-U-R04-R04 - Avanzamento del controllo osservabile`; eventi strutturati della pipeline mostrano fase e conteggi reali nella Home senza percentuali, con runner unico e messaggi azionabili (`113 passed`, Tk `1 passed`, smoke `549 passed`)
-- Task completato: `GUI-U-R04-R05 - Cartelle della casella coerenti`; la GUI non promette piu` una cartella completati non operativa, preserva il valore interno e Attivita distingue acquisizione, lavoro in Virgilio e pratica archiviata (`44 passed`, smoke `550 passed`)
-- Task completato: `GUI-U-R04-R06 - Release candidate del pilota corretto`; manifest release con SHA-256, commit, build ID e client OAuth incluso verificato, build/installer smoke `PASS`
-- Correttivo completato: `GUI-U-R04-R01 - Configurazione amministrativa comprensibile`; il FAIL umano della RC `0d46d69` ha rimosso dalla GUI utente URL/codice e istruzioni senza percorso. Caronte Manutenzione ora configura Registro e servizio, si apre dalla GUI e dal menu Start; mirati `35 passed`, Tk isolato `1 passed`, smoke `532 passed`
-- Correttivo completato: `GUI-U-R04-R02 - Registro Google realmente operativo`; il FAIL umano della RC `24d54be` ha rilevato OAuth Sheets ancora dipendente da file CLI ed export assente dalla Home. Client incluso + credenziale Windows, predisposizione foglio, migrazione enabled ed export `handoff -> registry -> completion` completati; manutenzione sempre accessibile; mirati `72 passed`, smoke finale `540 passed`
-- Nomi fissati: prodotto `Caronte`, modulo `virgilio_connector.user_app`, comando `user-gui`, eseguibile `Caronte.exe`; applicazione tecnica target `Caronte Manutenzione`, entry point `virgilio_connector.maintenance_gui`, comando `maintenance-gui`, eventuale eseguibile `CaronteManutenzione.exe`
-- Gate storico: secondo `GATE U-H3 = FAIL` il 2026-07-20; `GUI-U-E3-T07` - `T14` sono `IMPLEMENTED_NOT_ACCEPTED`
-- Gate futuro: un solo collaudo umano R03 sulla build operativa comprende anche tutti gli scenari `H-R02-01`--`H-R02-08`; Codex non puo` dichiarare `PASS`
-- Esito umano RC `bab6e92`, build ID `e7bd442d-8a34-4181-ba52-5f2d07ebb987`: installazione, OAuth incluso, persistenza, pipeline, Registro, Home, Attivita, Manutenzione, Informazioni e disinstallazione funzionano; `FAIL` funzionale per assenza della notifica e del collegamento al lavoro in Virgilio. Osservazioni UX: controllo lento senza fase/conteggio e `Cartella completati` visibile ma non operativa con la configurazione GUI corrente
-- Blocco aperto: `WAITING_HUMAN_REVIEW` per autorizzazione/push Apps Script e successivo collaudo umano del nuovo pilota; nessun push, deploy o pilota reale e` autorizzato. Il disinstallatore diretto resta a priorita` molto bassa ed escluso
-- Release candidate `0d46d69`, `24d54be` e `bab6e92`: `FAIL` umano e non piu` valide per il collaudo finale; output e fascicoli locali restano ignorati
-- Ultima prova nuova mirata: R03-R06 collegamento protetto/verify/intake/pipeline/completion/Attivita/Home -> `OK` (`92 passed` + Tk reale `1 passed`); smoke locale finale `OK` (`529 passed`); una prima esecuzione ha avuto un errore transitorio Tcl/Tk preesistente dopo `528 passed`, non riprodotto a toolchain libera; nessuna rete o credenziale reale
-- Architettura GUI: `docs/GUI_U_ARCHITETTURA.md`; separa `user_app`, nuova presentazione `maintenance_gui`, servizi condivisi, supervisore in background, dominio/porte, adapter e packaging ed esclude `gui`/`gui_*`
-- Mappa codice GUI: `docs/GUI_U_CODE_MAP.md`; classifica gli otto moduli esistenti, assegna i servizi target e delimita le lacune E1-E3
-- Ultima suite locale: `local_connector\.venv\Scripts\python.exe -m pytest -o addopts='' -p no:cacheprovider --basetemp local_connector\.pytest-tmp-r02-t03-full local_connector -q` -> `OK` (`492 passed`)
-- Ultimo smoke locale: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1` con basetemp unico -> `OK` (`506 passed`)
-- Ultimo report test: `docs/TEST_REPORT_20260704.md` -> `PASS_WITH_WARNINGS`; blocchi pratici: install editable offline non autosufficiente, mentre i collaudi reali sul mailbox di test e l'idempotenza sono stati confermati
-- Ultima readiness test: `docs/TEST_READINESS_20260704.md`; documentazione riallineata sul runtime `local_connector\.venv\Scripts\python.exe`, toolchain locale `node/npm/clasp` verificata via percorsi completi, `clasp status` confermato, collaudi Bucoliche e run reale del pilot confermati; resta solo il limite packaging offline
-- Ultima readiness GAS: `docs/GAS_PUSH_REPORT_20260705.md` -> `GO`; `clasp` ora punta direttamente a `apps_script/src` e la distribuzione `@28` resta la base live v1.1.3
-- Ultima verifica configurazione: `docs/CONFIG_ALIGNMENT_VIRGILIO_V1_1.md` -> `PRONTO_CON_RISERVE`; nomi e contratti allineati, con sola conferma live residua per Script Properties e ID Google
-- Ultima normalizzazione config: `apps_script/src/caronte.gs`, `apps_script/src/virgilio_inbox.gs`, `apps_script/src/setup.gs`, `apps_script/src/test.gs`, `apps_script/src/appsscript.json` e `local_connector/.env.example` parlano ora la stessa lingua sugli ID operativi; live GAS non ancora ripubblicato in questa run
-- Archivio GAS: eliminato; nessuna cartella `apps_script/archive` resta nel repository
-- Policy permanente: `AGENTS.md`
-- Contesto minimo obbligatorio per ogni run GUI-U: `AGENTS.md`, `docs/CODEX_STATE.md` e la sola scheda del task corrente in `docs/GUI_U_BACKLOG.md`
-- Leggere `docs/DEFINITION_OF_DONE.md`: all'apertura di una sotto-epica, quando un task viene suddiviso, in caso di dubbio e prima di un gate
-- Non rileggere a ogni run file gia` indicizzati qui. Leggere on demand solo il riferimento necessario a un dubbio concreto: `docs/DEFINITION_OF_DONE.md`, `docs/NEXT_CODEX_TASKS.md`, `docs/DEV_BACKLOG.md`, `docs/DEV_BACKLOG_ARCHIVE.md`, `docs/CHANGELOG_DEV.md`, `docs/ARCHITETTURA_UNIFICATA.md`, `docs/CLASP_WORKFLOW.md`
-- Fine run: aggiornare questo file solo se cambia il task corrente o uno dei blocchi
+- Branch attesa: `codex/v1.1-development`.
+- Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
+- Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`IN_PROGRESS`).
+- Task corrente: `GUI-U-R05-T01 - Recupero artefatti locali e fallimento storage osservabile`.
+- Diagnosi reale del 2026-07-26: 4 messaggi/5 allegati trovati; file di quarantena mancanti;
+  `duplicate_seen` impedisce il nuovo download; storage restituisce `staging_failed` ma la pipeline
+  termina senza errore; Limbo vuoto e nessun nuovo record `Da archiviare`.
+- Principio vincolante: CLI, servizi applicativi e GAS precedenti restano canonici e vanno riusati;
+  non si ricostruiscono downloader, storage, verify, intake, Registro, backup o reset gia` esistenti.
+- Sequenza: `R05-T01` recupero e propagazione errore; `R05-T02` ripristino locale coordinato;
+  `R05-T03` azzeramento coerente ambiente TEST; `R05-T04` audit non ripetitivo e RC finale.
+- Gate umani futuri: autorizzazione `clasp push`/deploy, autorizzazione reset remoto reale e collaudo
+  finale. Codex non puo` approvarli.
+- `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
+- Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
+  `docs/GUI_U_BACKLOG.md`.
+- Contesto normale per una run: `AGENTS.md`, questo file e `docs/NEXT_CODEX_TASKS.md`.

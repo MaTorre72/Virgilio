@@ -1,45 +1,32 @@
 # Next Codex Tasks
 
-- Iniziativa: `GUI-U = IN_PROGRESS`.
-- Fase: `GUI-U-R - Recupero prodotto e collaudo osservabile`.
-- Task completati: `GUI-U-R01`, `GUI-U-R02-T02`, `GUI-U-R03-T01`. `GUI-U-R02-T01` e `T03` restano evidenze storiche `IMPLEMENTED_NOT_ACCEPTED`.
-- R02: `SUPERSEDED_BY_R3` dopo il `FAIL` umano del demo. Il demo non viene ampliato o ricollaudato; tutti i requisiti `H-R02-01`--`H-R02-08` sono trasferiti a R3 e restano obbligatori.
-- Fascicolo: `artifacts/gui-u-r02/f7eb037d-924e-4a04-b9a9-3f2751137a42/` (ignorato): build/release manifest, SHA-256, dieci screenshot installati, checklist e istruzioni.
-- Riscontro: con installazione pulita Caselle non permette di aggiungere dati demo e non consente di arrivare a Riepilogo/Home; il pulsante osservato e` `Termina configurazione` invece di `Completa configurazione`. Google non e` configurato per scelta e non deve esserlo in R02.
-- Decisione: il demo non viene ampliato; viene mantenuto solo per evidenze interne. La priorita` e` un percorso operativo reale.
-- Task completati: `GUI-U-R03-T01 - Prima casella reale senza blocco Google`, `GUI-U-R03-T02 - Seconda casella e verifica collegamento` e `GUI-U-R03-T03 - Percorso reale completo, Riepilogo e Home`; il Riepilogo reale conserva Limbo/caselle, indica correzioni e porta a Home (`39 passed`, fixture fake e Tk reale).
-- Esito corrente: `GUI-U-R03 - Collaudo umano unico della build operativa` = `DONE`. `H-R03-01`--`H-R03-06 = PASS` umano; `R03-AC1`--`R03-AC5 = MET`.
-- Task completato: `GUI-U-R03-R01 - Verifica collegamento su INBOX`. `AccountConnectionRequest` dichiara `INBOX`, il servizio la passa all'adapter read-only e la regressione che rifiuta la cartella operativa implicita e` verde; gruppo mirato R03-R01/R03-T02 `15 passed`.
-- Task completato: `GUI-U-R03-R02 - Cartelle operative configurabili per casella`. La GUI espone nelle impostazioni avanzate cartella da controllare, completati e problemi; valori obbligatori, distinti per casella e persistenti su aggiunta/modifica/riapertura. Caso `da-traghettare` senza cartella madre verde; check R03-R01 ancora su `INBOX`; core `17 passed`, Tk interessato `1 passed`.
-- Diagnosi read-only: configurazione assente, entrambi i riferimenti protetti `Principale` gia` presenti. Il percorso `add` create-only solleva un errore non gestito e lascia in GUI il precedente successo. `25 messaggi visibili` e` il limite del campione, non il totale. L'utente giudica astrusa la sequenza verifica/aggiunta.
-- Task completato: `GUI-U-R03-R03 - Collegamento casella guidato e salvataggio recuperabile`. Google usa `Collega con Google`, IMAP usa `Verifica e aggiungi`; al successo la casella viene salvata e appare nell'elenco. Riferimenti orfani riconciliati con rollback, errori sicuri e testo del campione rimosso; core `37 passed`, Tk interessato `1 passed`.
-- Build R03-R03 pronta: `CaronteSetup-0.11.0-8241325.exe`, commit `8241325bf96d858259a577c87ffaba8c25513a05`, ID `7dcae8b2-5bd2-47b6-9c89-f53b4cf4c1ff`, SHA-256 `79BC5677B21B29CAF3F7E07A9394072FBBBA446DA573FF5AF0181B8CFF260FF8`; client OAuth Desktop incorporato, smoke build e installer `PASS`.
-- Diagnosi `H-R03-06`: Registro non configurato e attivazione automatica sono indipendenti. La configurazione utente non contiene ancora il Registro; il controllo automatico fallisce invece creando con `schtasks` un'attivita che non risulta installata.
-- Task completato: `GUI-U-R03-R04 - Controllo automatico per utente`. Il worker congelato e` registrato in `Run` per il solo utente corrente, senza Task Scheduler, UAC o privilegi amministrativi; Registro e controllo automatico restano indipendenti e la disinstallazione pulisce registrazioni nuova e legacy. Mirati `27 passed`, smoke locale `504 passed`, build/installer identificati e smoke `PASS`.
-- Ripresa R03-R04: `H-R03-06 = PASS` umano esplicito sulla build `eaf05fd`, ID `0c40a31d-ee7a-4d8c-9f0d-5ff795fb5b39`; attivazione, stato, persistenza dopo nuovo accesso Windows, disattivazione e assenza di finestre tecniche tutti confermati.
-- Chiusura R03: `H-R03-01 = PASS` umano esplicito; selezione, validazione, salvataggio, ritorno, riapertura, persistenza e modifica del Limbo approvati. Osservazione non bloccante: i campi degli indirizzi cartella sono troppo piccoli.
-- Task completato: `GUI-U-R03-R05 - Campi cartella leggibili`. Limbo nel primo avvio e in Impostazioni e le tre cartelle operative avanzate usano larghezza minima di 48 caratteri e colonne elastiche; valori lunghi scorrono e conservano selezione/copia/incolla. Gruppo mirato `47 passed`, Tk entro 960x640 a 100%/125%, smoke locale `506 passed`.
-- Decisione utente del 2026-07-24: il disinstallatore diretto ha priorita` molto bassa e viene trattato alla fine; la priorita` e` completare il comportamento operativo per cui Caronte e` stato progettato.
-- Diagnosi read-only: `Controlla ora` e il controllo continuo eseguono la pipeline locale fino alla copia nel Limbo sincronizzato e poi completano il messaggio. La verifica cloud e la presa in carico in `Da archiviare` esistono come comandi separati e non sono composte nella pipeline. Apps Script restituisce gia` gli ID Drive dentro `inbox_preview`, ma `DriveStagingVerifyResponse` non li conserva.
-- Task completato: `GUI-U-R03-R06 - Consegna operativa a Da archiviare`. La pipeline Home compone i client CLI esistenti dopo la copia nel Limbo, conserva gli ID Drive restituiti dalla verify, crea una sola presa in carico e completa il messaggio soltanto dopo un intake riuscito/idempotente. `Registro e avvio` salva l'indirizzo e protegge il codice in Windows; i worker Home/accesso Windows recuperano autonomamente credenziali caselle e collegamento, mentre i comandi CLI conservano priorita` alle variabili esistenti. Mirati `92 passed`, Tk reale `1 passed`, smoke locale `529 passed`.
-- Task padre: `GUI-U-R04 - Release candidate e collaudo finale` (`IMPLEMENTED_NOT_ACCEPTED`).
-- Esito umano RC `0d46d69`: `FAIL` UX. Registro non configurato senza percorso amministrativo e campi `Indirizzo di collegamento`/`Codice di collegamento` privi di significato, origine e responsabilita`; questa RC non e` piu` valida per il collaudo.
-- Task completato: `GUI-U-R04-R01 - Configurazione amministrativa comprensibile`. La GUI utente mostra solo prontezza e apre Caronte Manutenzione; la manutenzione spiega e salva foglio Registro, URL `/exec` da `Gestisci deployment` e `VIRGILIO_TOKEN` dalle proprieta` dello script. Installer con due accessi Start; mirati `35 passed`, Tk isolato `1 passed`, smoke locale `532 passed`.
-- Esito umano RC `24d54be`: `FAIL`. Il Registro risulta selezionato, ma `Collega Google` usa ancora percorsi OAuth esterni della CLI; inoltre Home non compone l'export Bucoliche. Osservazione accolta: Manutenzione deve restare sempre raggiungibile.
-- Task completato: `GUI-U-R04-R02 - Registro Google realmente operativo`. Il browser OAuth usa il client incluso e lo scope Sheets, l'autorizzazione resta nel Gestore credenziali Windows, un Registro selezionato viene abilitato/predisposto automaticamente e la pipeline esegue `handoff -> registry -> completion`, bloccando il completamento su errore Registro. Manutenzione sempre disponibile; mirati `72 passed`, smoke finale `540 passed`.
-- RC R04-R02 prodotta e collaudata: `CaronteSetup-0.11.0-bab6e92.exe`, commit `bab6e920994953cf908b9fc4f09d6d06fc1d5f15`, build ID `e7bd442d-8a34-4181-ba52-5f2d07ebb987`, SHA-256 `B5B23124ABCEA65ED61A78808961992228C501426A4C08559048A0E9DB4AC238`.
-- Esito umano RC `bab6e92`: installazione, OAuth, persistenza, pipeline Limbo/Registro, controllo manuale e continuo, Home, Attivita, Manutenzione, Informazioni e disinstallazione sono riusciti. `FAIL` funzionale: l'intake crea la riga tecnica `Virgilio_Inbox`, ma non genera la notifica ne` un collegamento operativo al form Virgilio; l'utente non vede messaggi da lavorare.
-- Osservazioni consolidate: `Da archiviare` e` una coda, non una cartella; il controllo lento non espone fase o conteggio; `Cartella completati` e` una cartella IMAP ma gli account creati dalla GUI hanno completamento disabilitato, quindi il campo e` fuorviante.
-- Sequenza autonoma stimata, un task per run: `R04-R03` notifica/link Virgilio; `R04-R04` avanzamento visibile; `R04-R05` lessico cartelle coerente; `R04-R06` RC e fascicolo pilota.
-- Dopo i quattro task restano due passaggi umani obbligatori: autorizzare e pubblicare Apps Script secondo `docs/CLASP_WORKFLOW.md`, poi collaudare il pilota reale. Stima totale: sei passaggi; quattro run autonome, normalmente quattro cicli orari, piu` due gate umani.
-- Task completato: `GUI-U-R04-R03 - Notifica operativa e accesso a Virgilio`. L'intake genera il link `/exec` dal deployment e dall'`inbox_id`, conserva il suo esito e invia una sola notifica osservabile ai canali configurati; il connector rifiuta risposte senza lavoro raggiungibile. Harness Apps Script puro `OK`, mirati fake `25 passed`, smoke `545 passed`; nessuna rete reale, push o deploy.
-- Task completato: `GUI-U-R04-R04 - Avanzamento del controllo osservabile`. Il runner in background riceve fasi e conteggi reali della pipeline tramite eventi strutturati; la Home resta reattiva, non mostra percentuali e rende azionabili attese/errori. Mirati `113 passed`, Tk reale `1 passed`, smoke `549 passed`.
-- Task completato: `GUI-U-R04-R05 - Cartelle della casella coerenti`. La GUI espone soltanto le cartelle operative, conserva internamente `done_folder` senza attivare scritture IMAP e Attivita distingue documento acquisito, lavoro disponibile in Virgilio e pratica archiviata. Mirati `44 passed`, smoke `550 passed`.
-- Task completato: `GUI-U-R04-R06 - Release candidate del pilota corretto`. La RC locale ha manifest con SHA-256, commit, build ID e client OAuth incluso; build e smoke installer sono `PASS`. Il delta Apps Script e` riconciliato in sola lettura e pronto per revisione, senza push o deploy.
-- Azione successiva unica: `WAITING_HUMAN_REVIEW` — autorizzare pubblicazione Apps Script, poi collaudare soltanto notifica/link, fasi/conteggi e lessico della RC.
-- Il correttivo del disinstallatore avviato direttamente resta l'ultima attivita` a priorita` molto bassa ed e` escluso dalla verifica standard corrente.
-- Le evidenze gia` acquisite restano valide e non devono essere ripetute; ogni run aggiunge soltanto la prova specifica del nuovo criterio.
-- Il collaudo R3 riprende dalla prima evidenza non acquisita solo dopo build identificata del correttivo approvato; le evidenze valide gia` raccolte non vengono ripetute.
+## CORRENTE - GUI-U-R05-T01
 
-Dettagli, criteri ed evidenze: `docs/GUI_U_BACKLOG.md` e
-`docs/GUI_U_HUMAN_ACCEPTANCE.md`.
+Risultato: se SQLite conosce un allegato ma il file locale e` assente, il processor esistente lo
+riacquisisce; ogni `staging_failed`/`staging_conflict` blocca e descrive la pipeline.
+
+Riuso obbligatorio:
+
+- `MultiAccountImapProcessor` e `ReadonlyStateStore`;
+- `LocalFilesystemStorageAdapter` e stati storage gia` definiti;
+- `LocalPipelineRunner`, `ActivityService` e progressi Home esistenti;
+- fixture/fake in `test_multi_account.py`, `test_pipeline.py`, `test_storage_adapter.py` e test Home.
+
+Criteri binari:
+
+1. Un record duplicato e` riusato solo se file locale e SHA-256 sono validi.
+2. File assente o non valido provoca riacquisizione sicura, senza nuova pipeline parallela.
+3. Lo storage persiste un evento azionabile per `staging_failed` e `staging_conflict`.
+4. La pipeline termina `completed_with_errors` e non completa/consegna il messaggio coinvolto.
+5. Test verticale fake: file mancante -> riacquisizione -> copia -> handoff; test mirati e smoke verdi.
+
+Esclusioni: GAS, rete reale, reset, retention, build/installer, modifiche estetiche. Blocco: il recupero
+richiederebbe mutazioni IMAP o un nuovo protocollo invece del download read-only gia` esistente.
+
+## CODA
+
+1. `GUI-U-R05-T02` - ripristino locale coordinato riusando reset, backup e runner esistenti.
+2. `GUI-U-R05-T03` - azzeramento coerente e recuperabile dell'ambiente TEST locale/Registro/Limbo.
+3. `GUI-U-R05-T04` - soppressione eventi invariati, RC identificata e collaudo finale.
+
+Una run non anticipa task in coda.

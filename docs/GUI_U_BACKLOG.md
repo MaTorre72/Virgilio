@@ -1285,3 +1285,93 @@ smoke non verde o identita della build non univoca.
 Dopo `R04-R06` l'automazione deve fermarsi al gate umano di pubblicazione Apps
 Script. Solo un task esplicito autorizzato puo` eseguire `clasp push`; il
 successivo collaudo reale della RC resta una decisione umana.
+
+## GUI-U-R05 - Chiusura strutturale del percorso operativo
+
+Stato: `IN_PROGRESS`.
+Origine: collaudo umano del 2026-07-26. Il percorso CLI/GAS e i suoi contratti
+restano canonici; i correttivi riguardano regressioni e composizione nella build
+Desktop, non una nuova implementazione del flusso.
+Obiettivo: ottenere una sola build in cui acquisizione, quarantena, Limbo, `Da
+archiviare` e Registro avanzano coerentemente anche dopo ripristino o nuova
+installazione.
+Esclusioni comuni: redesign UX, refactor preventivi, nuovi server o database,
+riscrittura del form, sostituzione del GAS, servizi reali nei test.
+
+### GUI-U-R05-T01 - Recupero artefatti locali e fallimento storage osservabile
+
+Stato: `TODO`. Priorita`: `P0`.
+Risultato: un riferimento SQLite privo del file locale viene riparato dal
+processor IMAP esistente e un errore storage blocca realmente la pipeline.
+Dipendenze: nessuna.
+Componenti ammessi: `multi_account`, `readonly_state`, `storage_adapter`,
+`pipeline`, proiezione Attivita/Home e test interessati.
+Condizione di blocco: la correzione richiede mutazioni IMAP o un nuovo protocollo.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T01-AC1` Il duplicato e` valido solo con file e SHA-256 coerenti. | Fixture con record presente e file assente/corrotto. | - | `TODO` |
+| `R05-T01-AC2` Il file mancante viene riacquisito tramite il downloader esistente. | Fake IMAP read-only e verifica file/manifest. | - | `TODO` |
+| `R05-T01-AC3` `staging_failed` e `staging_conflict` sono persistiti e leggibili. | Test storage, audit e proiezione attivita`. | - | `TODO` |
+| `R05-T01-AC4` Un errore storage rende la pipeline fallita e impedisce completion/handoff. | Test pipeline con factory fake. | - | `TODO` |
+| `R05-T01-AC5` Il percorso riparato arriva alla consegna. | Test verticale file mancante -> copia -> handoff; smoke. | - | `TODO` |
+
+### GUI-U-R05-T02 - Ripristino locale coordinato
+
+Stato: `TODO`. Priorita`: `P0`.
+Risultato: il reset locale esistente viene composto con stop runner, lock,
+backup verificato e successiva nuova acquisizione.
+Dipendenze: `R05-T01 = DONE`.
+Componenti ammessi: servizi runner/startup, `reset_local_state`,
+`MaintenanceService`, CLI condivisa e test fake.
+Condizione di blocco: impossibile garantire esclusione reciproca tra worker e reset.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T02-AC1` Nessun reset parte con un runner attivo. | Test lock e worker concorrente. | - | `TODO` |
+| `R05-T02-AC2` Il backup precede ogni modifica ed e` verificato. | Fixture filesystem e controllo inventario. | - | `TODO` |
+| `R05-T02-AC3` Configurazione e credenziali restano; DB/quarantena sono ricreati. | Round-trip servizi con credenziali fake. | - | `TODO` |
+| `R05-T02-AC4` L'esito espone conservato, azzerato e percorso backup. | Test servizio e presentazione tecnica. | - | `TODO` |
+| `R05-T02-AC5` Il primo ciclo successivo riacquisisce e copia. | Test verticale con fake IMAP/storage. | - | `TODO` |
+
+### GUI-U-R05-T03 - Azzeramento coerente ambiente TEST
+
+Stato: `TODO`. Priorita`: `P0`.
+Risultato: una sola operazione amministrativa, costruita sugli helper CLI/GAS
+esistenti, riallinea stato locale, Registro TEST, `Da archiviare` TEST e Limbo
+TEST con backup e ripresa idempotente.
+Dipendenze: `R05-T02 = DONE`.
+Componenti ammessi: servizi manutenzione, client HTTP metadata-only, setup e
+harness GAS esistenti, foglio e cartelle esclusivamente TEST.
+Condizione di blocco: ambiente non marcato TEST, identificativi non univoci o
+mancanza di autorizzazione umana per pubblicazione/esecuzione reale.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T03-AC1` Anteprima elenca esattamente righe, file e stato locale coinvolti. | Harness fake locale/GAS. | - | `TODO` |
+| `R05-T03-AC2` Backup locale, copia Registro e cartella Drive datata precedono l'azzeramento. | Test ordine chiamate e fallimenti. | - | `TODO` |
+| `R05-T03-AC3` Solo asset marcati TEST possono essere modificati. | Test rifiuto ID/ambiente non TEST. | - | `TODO` |
+| `R05-T03-AC4` Lo stesso `reset_id` riprende senza duplicazioni. | Test interruzione dopo ogni fase. | - | `TODO` |
+| `R05-T03-AC5` Dopo il reset i quattro stati sono vuoti e coerenti, con schema preservato. | Harness integrato senza servizi reali. | - | `TODO` |
+
+### GUI-U-R05-T04 - Audit stabile e release finale
+
+Stato: `TODO`. Priorita`: `P0`.
+Risultato: il Registro riceve solo transizioni nuove; una RC identificata supera
+il percorso completo e resta pronta per gli ultimi gate umani.
+Dipendenze: `R05-T01`--`R05-T03 = DONE`.
+Componenti ammessi: audit/export esistenti, test end-to-end, build/installer,
+manifest e documentazione di collaudo minima.
+Condizione di blocco: suite non verde, delta GAS non riconciliato o build non
+identificabile.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T04-AC1` Un controllo invariato non aggiunge eventi operativi duplicati. | Due cicli identici su fixture. | - | `TODO` |
+| `R05-T04-AC2` Una transizione reale produce un solo evento ed export idempotente. | Test audit/Registro fake. | - | `TODO` |
+| `R05-T04-AC3` Il percorso email -> Limbo -> Da archiviare -> Registro e` verde. | Harness integrato senza rete reale. | - | `TODO` |
+| `R05-T04-AC4` Build e installer identificati superano gli smoke. | Smoke build/installer e manifest hash. | - | `TODO` |
+| `R05-T04-AC5` La checklist finale contiene solo pubblicazione, reset TEST autorizzato e collaudo reale. | Revisione fascicolo minimo. | - | `TODO` |
+
+Dopo `R05-T04` l'automazione si ferma. `clasp push`, deploy, azzeramento degli
+asset Google reali e collaudo restano gate umani espliciti.
