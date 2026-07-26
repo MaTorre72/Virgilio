@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 import sqlite3
@@ -89,9 +90,34 @@ def test_append_and_event_id_idempotency(tmp_path):
     first = adapter(db, fake).export(dry_run=False)
     retry = adapter(db, fake).export(dry_run=False)
     assert first.events_exported == 1 and retry.already_exported == 1
-    assert [call[0] for call in fake.calls] == ["Bucoliche_Eventi", "replace", "replace"]
+    assert [call[0] for call in fake.calls] == ["bucoliche"]
     assert fake.calls[0][1] == EVENT_COLUMNS
-    assert fake.calls[1][2] == STATE_COLUMNS
+
+
+def test_unified_register_keeps_human_bucoliche_schema_and_excludes_local_paths(tmp_path):
+    fake = FakeSheets()
+    adapter(state_with_event(tmp_path), fake).export(dry_run=False)
+    assert EVENT_COLUMNS == (
+        "timestamp", "origine", "cliente", "sito", "pratica", "anno", "tecnici",
+        "note", "url_cartella", "id_drive", "mittente_dominio", "oggetto_email",
+        "nome_file", "estensione", "dimensione_kb", "stato",
+        "timestamp_archiviazione",
+    )
+    assert fake.calls[0][0] == "bucoliche"
+    assert "staged_path" not in fake.calls[0][1]
+    assert "manifest_path" not in fake.calls[0][1]
+
+
+def test_gas_and_python_share_the_exact_bucoliche_columns():
+    gas_source = (
+        Path(__file__).parents[2] / "apps_script" / "src" / "bucoliche.gs"
+    ).read_text(encoding="utf-8")
+    header_block = re.search(
+        r"const intestazioni = \[(.*?)\];", gas_source, flags=re.DOTALL
+    )
+    assert header_block is not None
+    gas_columns = tuple(re.findall(r"'([^']+)'", header_block.group(1)))
+    assert gas_columns == EVENT_COLUMNS
 
 
 def test_failed_event_is_recorded_and_retried(tmp_path):
@@ -100,25 +126,25 @@ def test_failed_event_is_recorded_and_retried(tmp_path):
     good = FakeSheets(); retried = adapter(db, good).export(dry_run=False)
     assert failed.status == "completed_with_errors"
     assert retried.events_exported == 1
-    assert [call[0] for call in good.calls] == ["Bucoliche_Eventi", "replace"]
+    assert [call[0] for call in good.calls] == ["bucoliche"]
     with closing(sqlite3.connect(db)) as conn:
         assert conn.execute("SELECT export_result FROM local_export_status").fetchone()[0] == "exported"
 
 
-def test_conflicts_are_appended_to_conflicts_sheet(tmp_path):
+def test_conflicts_are_appended_once_to_the_unified_register(tmp_path):
     fake = FakeSheets()
     result = adapter(state_with_event(tmp_path, "conflict_hash_mismatch"), fake).export(dry_run=False)
     assert result.conflicts_pending == 1
-    assert [call[0] for call in fake.calls] == ["Bucoliche_Eventi", "Bucoliche_Conflitti", "replace"]
-    assert fake.calls[1][1] == CONFLICT_COLUMNS
+    assert [call[0] for call in fake.calls] == ["bucoliche"]
+    assert fake.calls[0][1] == EVENT_COLUMNS
 
 
-def test_partial_conflict_failure_does_not_duplicate_event_append(tmp_path):
+def test_conflict_retry_does_not_duplicate_unified_register_append(tmp_path):
     db = state_with_event(tmp_path, "conflict_hash_mismatch")
-    first = FailConflictOnce(); adapter(db, first).export(dry_run=False)
+    first = FakeSheets(); adapter(db, first).export(dry_run=False)
     retry = FakeSheets(); adapter(db, retry).export(dry_run=False)
-    assert [call[0] for call in first.calls] == ["Bucoliche_Eventi", "Bucoliche_Conflitti", "replace"]
-    assert [call[0] for call in retry.calls] == ["Bucoliche_Conflitti", "replace"]
+    assert [call[0] for call in first.calls] == ["bucoliche"]
+    assert retry.calls == []
 
 
 def test_state_sheet_is_rebuilt_from_latest_event_without_reappending_events(tmp_path):
@@ -134,13 +160,7 @@ def test_state_sheet_is_rebuilt_from_latest_event_without_reappending_events(tmp
     adapter(db, fake).export(dry_run=False)
     retry = adapter(db, fake).export(dry_run=False)
     assert retry.already_exported == 2
-    replace = fake.calls[-1]
-    assert replace[:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
-    assert len(replace[3]) == 1
-    row = replace[3][0]
-    assert row["current_global_state"] == "completed"
-    assert row["last_result"] == "ok"
-    assert row["notes"] == '{"step":"done"}'
+    assert [call[0] for call in fake.calls] == ["bucoliche", "bucoliche"]
 
 
 def test_second_export_of_already_exported_event_skips_append_and_rebuilds_state(tmp_path):
@@ -168,11 +188,7 @@ def test_second_export_of_already_exported_event_skips_append_and_rebuilds_state
     assert result.events_pending == 0
     assert result.events_exported == 0
     assert result.already_exported == 1
-    assert len(fake.calls) == 1
-    replace = fake.calls[0]
-    assert replace[:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
-    assert len(replace[3]) == 1
-    assert replace[3][0]["fingerprint"] == "f" * 64
+    assert fake.calls == []
 
 
 def test_dry_run_can_preview_same_fingerprint_from_two_machine_ids(tmp_path):
@@ -206,7 +222,7 @@ def test_dry_run_can_preview_same_fingerprint_from_two_machine_ids(tmp_path):
     assert {row["fingerprint"] for row in preview} == {"f" * 64}
 
 
-def test_state_sheet_consolidates_same_fingerprint_from_two_machine_ids(tmp_path):
+def test_local_state_consolidates_same_fingerprint_from_two_machine_ids(tmp_path):
     db = tmp_path / "state.db"
     store = ReadonlyStateStore(db); store.initialize()
     for machine_id, suffix, action, status in (
@@ -233,11 +249,10 @@ def test_state_sheet_consolidates_same_fingerprint_from_two_machine_ids(tmp_path
             entity_type="attachment", entity_id=f"att-{suffix}", fingerprint="f" * 64,
             action=action, status=status, details={"machine": machine_id})
     fake = FakeSheets()
-    adapter(db, fake).export(dry_run=False)
-    replace = fake.calls[-1]
-    assert replace[:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
-    assert len(replace[3]) == 1
-    row = replace[3][0]
+    state = adapter(db, fake).refresh_state(dry_run=False)
+    assert state.status == "local_only" and len(state.preview) == 1
+    assert fake.calls == []
+    row = state.preview[0]
     assert row["fingerprint"] == "f" * 64
     assert row["machine_id"] == "machine-a,machine-b"
     assert row["current_global_state"] == "completed"
@@ -248,7 +263,7 @@ def test_state_sheet_consolidates_same_fingerprint_from_two_machine_ids(tmp_path
     }
 
 
-def test_state_sheet_marks_cross_machine_conflict_for_terminal_state_collision(tmp_path):
+def test_local_state_marks_cross_machine_conflict_for_terminal_state_collision(tmp_path):
     db = tmp_path / "state.db"
     store = ReadonlyStateStore(db); store.initialize()
     for machine_id, suffix, action, status in (
@@ -275,8 +290,9 @@ def test_state_sheet_marks_cross_machine_conflict_for_terminal_state_collision(t
             entity_type="attachment", entity_id=f"att-{suffix}", fingerprint="f" * 64,
             action=action, status=status, details={"machine": machine_id})
     fake = FakeSheets()
-    adapter(db, fake).export(dry_run=False)
-    row = fake.calls[-1][3][0]
+    state = adapter(db, fake).refresh_state(dry_run=False)
+    assert state.status == "local_only" and fake.calls == []
+    row = state.preview[0]
     assert row["current_global_state"] == "conflict"
     assert row["conflict_type"] == "conflict_cross_machine"
     assert row["machine_id"] == "machine-a,machine-b"
@@ -446,11 +462,7 @@ def test_end_to_end_transitions_export_once_and_unchanged_retry_is_stable(tmp_pa
     assert actions.count("attachment_staged") == 2
     assert actions.count("da_archiviare_intake") == 2
     assert actions.count("message_completed") == 2
-    assert [call[0] for call in fake.calls].count("Bucoliche_Eventi") == 8
-    state_replace = fake.calls[-1]
-    assert state_replace[:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
-    assert len(state_replace[3]) == 2
-    assert all(row["current_global_state"] == "completed" for row in state_replace[3])
+    assert [call[0] for call in fake.calls].count("bucoliche") == 8
 
 
 def test_output_never_contains_credentials(tmp_path):
@@ -493,9 +505,14 @@ def test_load_config_defaults_and_explicit_values(tmp_path):
   enabled: false
   append_only: true
   dry_run_default: true
+  events_sheet: Bucoliche_Eventi
+  state_sheet: Bucoliche_Stato
+  conflicts_sheet: Bucoliche_Conflitti
 """, encoding="utf-8")
     config = load_bucoliche_config(path)
     assert config.enabled is False and config.append_only is True
+    assert config.events_sheet == "bucoliche"
+    assert not hasattr(config, "state_sheet") and not hasattr(config, "conflicts_sheet")
 
 
 def test_export_to_bucoliche_cli_dry_run(tmp_path, monkeypatch, capsys):
@@ -538,14 +555,13 @@ def test_refresh_bucoliche_state_dry_run_returns_state_preview_without_event_app
     assert fake.calls == []
 
 
-def test_refresh_bucoliche_state_real_run_replaces_only_state_sheet(tmp_path):
+def test_refresh_bucoliche_state_real_run_stays_local(tmp_path):
     db = state_with_event(tmp_path)
     fake = FakeSheets()
     result = adapter(db, fake).refresh_state(dry_run=False)
-    assert result.status == "completed"
-    assert len(fake.calls) == 1
-    assert fake.calls[0][:3] == ("replace", "Bucoliche_Stato", STATE_COLUMNS)
-    assert len(fake.calls[0][3]) == 1
+    assert result.status == "local_only"
+    assert result.state_rows_total == 1
+    assert fake.calls == []
     with closing(sqlite3.connect(db)) as conn:
         assert conn.execute("SELECT COUNT(*) FROM local_export_status").fetchone()[0] == 0
 

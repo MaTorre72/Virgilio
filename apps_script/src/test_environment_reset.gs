@@ -104,8 +104,7 @@ function _testResetGasAdapter_() {
     backupLimbo: (resetId, targets, stamp) => _testResetBackupFolder_(
       targets.limbo.id, resetId, stamp),
     clearRegistry: targets => _testResetClearSheets_(targets.registry.id,
-      [CONFIG.BUCOLICHE_TAB, CONFIG.BUCOLICHE_EVENTS_SHEET, CONFIG.BUCOLICHE_STATE_SHEET,
-       CONFIG.BUCOLICHE_CONFLICTS_SHEET]),
+      [CONFIG.BUCOLICHE_TAB]),
     clearInbox: targets => _testResetClearSheets_(targets.inbox.id, [targets.inbox.sheet_name]),
     clearLimbo: targets => _testResetClearFolder_(targets.limbo.id)
   };
@@ -119,8 +118,7 @@ function _testResetInspectGas_(props) {
   const registry = SpreadsheetApp.openById(registryId);
   const inbox = SpreadsheetApp.openById(inboxId);
   const limbo = DriveApp.getFolderById(limboId);
-  const registrySheets = [CONFIG.BUCOLICHE_TAB, CONFIG.BUCOLICHE_EVENTS_SHEET, CONFIG.BUCOLICHE_STATE_SHEET,
-    CONFIG.BUCOLICHE_CONFLICTS_SHEET];
+  const registrySheets = [CONFIG.BUCOLICHE_TAB];
   return {
     environment: props.getProperty('VIRGILIO_ENVIRONMENT') || '',
     registry: { id: registryId, name: registry.getName(),

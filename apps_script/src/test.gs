@@ -345,6 +345,13 @@ function testBucolicheRegistroEventi() {
   _driveStagingAssert_(errore[7].indexOf('fase=errore') >= 0, 'nota fase errore');
   _driveStagingAssert_(errore[7].indexOf('correlazioni=') >= 0, 'nota correlazioni errore');
   _driveStagingAssert_(errore[15] === 'errore', 'stato errore compatibile');
+  const erroreRetry = errore.slice();
+  erroreRetry[0] = '2026-07-27 10:00:00';
+  erroreRetry[16] = '2026-07-27 10:01:00';
+  _driveStagingAssert_(
+    _bucolicheEventoKey_(errore) === _bucolicheEventoKey_(erroreRetry),
+    'retry invariato non duplica il Registro'
+  );
 
   const conflitto = _bucolicheEventoRegistroRow_('conflitto', 'virgilioInboxUpsertDraft', 'Chiave inbox duplicata', {
     source_sender: 'noreply@example.com',
@@ -357,5 +364,9 @@ function testBucolicheRegistroEventi() {
   _driveStagingAssert_(conflitto[7].indexOf('fase=conflitto') >= 0, 'nota fase conflitto');
   _driveStagingAssert_(conflitto[7].indexOf('attachment_id=att-1') >= 0, 'nota correlazioni conflitto');
   _driveStagingAssert_(conflitto[15] === 'errore', 'stato conflitto compatibile');
+  _driveStagingAssert_(
+    _bucolicheEventoKey_(errore) !== _bucolicheEventoKey_(conflitto),
+    'transizioni differenti restano distinte'
+  );
   Logger.log('testBucolicheRegistroEventi: OK');
 }

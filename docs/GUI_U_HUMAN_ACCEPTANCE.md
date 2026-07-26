@@ -147,9 +147,10 @@ vengono ripetuti:
 3. eseguire il collaudo reale della RC identificata sul percorso completo e
    registrare esplicitamente l'esito umano.
 
-Stato al 2026-07-26: il punto 1 e` completato alla versione `33`. La correzione
-ripristina la separazione storica: GAS scrive in `bucoliche`, la CLI nei tre tab
-`Bucoliche_*` e `Virgilio_Inbox` e` la sola coda. Il punto 2 deve essere ripetuto
+Stato al 2026-07-26: la versione `33` e` superata dal correttivo Registro unico
+ancora da pubblicare. GAS e Local connector scrivono nello stesso `bucoliche`
+umano a 17 colonne; i tre `Bucoliche_*` non sono registri cloud paralleli e
+`Virgilio_Inbox` e` la sola coda. Il punto 2 deve essere ripetuto
 sulla topologia corretta: il trigger e` fermo, ma il servizio si e` arrestato prima
 di backup/mutazioni perche` la chiave manca dal deposito protetto locale. Dopo il
 reset restano il punto 3 e l'esito umano, mai compilato da Codex.

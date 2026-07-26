@@ -1414,3 +1414,30 @@ alterare gli schemi canonici.
 
 Prove automatiche: test mirati `8 passed`, harness GAS reset/Registro `OK`,
 smoke locale `573 passed`.
+
+Nota successiva: la separazione tra tab GAS e tab CLI e` stata respinta
+esplicitamente dall'utente perche` costituisce duplicazione del Registro. La
+decisione corretta e` formalizzata in `GUI-U-R05-T06`.
+
+### GUI-U-R05-T06 - Registro umano unico condiviso
+
+Stato: `DONE`. Priorita`: `P0`.
+Risultato: GAS, CLI e GUI condividono un solo Registro cloud `bucoliche`, con
+le 17 informazioni umane storiche e regole append-only comuni.
+Dipendenze: `R05-T05 = DONE`.
+Componenti ammessi: adapter Bucoliche locale, writer/reset GAS, setup/verifica
+Registro, test e documentazione pertinente.
+Esclusioni: nuovi tab, nuovi registri, duplicazione eventi, riscrittura del form.
+Condizione di blocco: perdita delle informazioni umane di `bucoliche` o dei
+dettagli tecnici necessari alla tracciabilita`.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T06-AC1` Esiste un solo tab Registro cloud. | Test setup/readiness/reset. | Setup, verifica e reset considerano solo `bucoliche`; nessun `Bucoliche_*` viene creato o alimentato. | `MET` |
+| `R05-T06-AC2` GAS e Local connector usano le stesse 17 colonne umane. | Test builder GAS e adapter fake. | `test_gas_and_python_share_the_exact_bucoliche_columns` confronta direttamente le intestazioni GAS con `EVENT_COLUMNS`; la GUI avvia lo stesso comando `watch` della pipeline CLI. | `MET` |
+| `R05-T06-AC3` Il Registro resta append-only senza eventi doppi. | Retry fake e transizione archiviazione GAS. | Export locale usa `event_id` per idempotenza; GAS appende una transizione per file e non riscrive righe storiche. | `MET` |
+| `R05-T06-AC4` I dettagli tecnici restano senza esporre path locali. | Ispezione payload fake. | Correlazioni compatte in `note`; `staged_path` e `manifest_path` non appartengono alle colonne esportate. | `MET` |
+| `R05-T06-AC5` Stato e conflitti non duplicano il Registro cloud. | Test adapter e setup. | Proiezioni mantenute localmente; nessun append/replace verso tab Stato o Conflitti. | `MET` |
+
+Prove automatiche: mirati `104 passed`, harness GAS Registro/reset `OK`, smoke
+locale `574 passed`.

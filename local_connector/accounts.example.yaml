@@ -52,9 +52,7 @@ bucoliche:
   enabled: false
   adapter: google_sheets_append_only
   spreadsheet_id_env: VIRGILIO_BUCOLICHE_SPREADSHEET_ID
-  events_sheet: Bucoliche_Eventi
-  state_sheet: Bucoliche_Stato
-  conflicts_sheet: Bucoliche_Conflitti
+  events_sheet: bucoliche
   # Pilota locale consigliato quando le chiavi service account sono bloccate.
   credentials_mode: user_oauth_local
   # Alternativa ammessa: credentials_mode: service_account_json_env

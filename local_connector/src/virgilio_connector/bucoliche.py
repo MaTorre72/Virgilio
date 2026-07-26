@@ -18,11 +18,10 @@ from .time_utils import ROME_TZ, rome_isoformat, rome_min
 
 
 EVENT_COLUMNS = (
-    "event_id", "created_at", "exported_at", "machine_id", "account_alias",
-    "source_email", "source_message_id", "source_message_uid", "attachment_id",
-    "fingerprint", "sha256", "event_type", "local_state",
-    "global_state_suggestion", "staged_filename", "staged_path", "manifest_path",
-    "result", "conflict_type", "notes",
+    "timestamp", "origine", "cliente", "sito", "pratica", "anno", "tecnici",
+    "note", "url_cartella", "id_drive", "mittente_dominio", "oggetto_email",
+    "nome_file", "estensione", "dimensione_kb", "stato",
+    "timestamp_archiviazione",
 )
 CONFLICT_COLUMNS = (
     "event_id", "detected_at", "exported_at", "machine_id", "account_alias",
@@ -45,9 +44,7 @@ class BucolicheConfig:
     adapter: str = "google_sheets_append_only"
     spreadsheet_id: str = ""
     spreadsheet_id_env: str = "VIRGILIO_BUCOLICHE_SPREADSHEET_ID"
-    events_sheet: str = "Bucoliche_Eventi"
-    state_sheet: str = "Bucoliche_Stato"
-    conflicts_sheet: str = "Bucoliche_Conflitti"
+    events_sheet: str = "bucoliche"
     credentials_mode: str = "service_account_json_env"
     service_account_json_env: str = "VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON"
     oauth_client_secrets_path_env: str = "VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH"
@@ -62,6 +59,8 @@ class BucolicheConfig:
             raise BucolicheError("unsupported Bucoliche credentials_mode")
         if not self.append_only:
             raise BucolicheError("Bucoliche adapter must remain append-only")
+        if self.events_sheet != "bucoliche":
+            raise BucolicheError("the shared human register sheet must be bucoliche")
 
 
 def load_bucoliche_config(path: Path) -> BucolicheConfig:
@@ -77,6 +76,10 @@ def load_bucoliche_config(path: Path) -> BucolicheConfig:
         if active and ":" in text:
             key, value = (item.strip() for item in text.split(":", 1))
             values[key] = _scalar(value)
+    if values.get("events_sheet") == "Bucoliche_Eventi":
+        values["events_sheet"] = "bucoliche"
+    values.pop("state_sheet", None)
+    values.pop("conflicts_sheet", None)
     config = BucolicheConfig(**values)
     config.validate()
     return config
@@ -201,7 +204,6 @@ class BucolicheStateRefreshResult:
 
 class BucolicheAppendOnlyAdapter:
     TARGET = "google_sheets_append_only"
-    CONFLICT_TARGET = "google_sheets_conflicts_append_only"
 
     def __init__(self, *, state_db: Path, config: BucolicheConfig,
                  environ: Mapping[str, str] | None = None,
@@ -216,10 +218,8 @@ class BucolicheAppendOnlyAdapter:
         events = [_event_row(row) for row in central_event_rows(self.state_db)]
         exported = self._successful_event_ids(self.TARGET)
         pending = [row for row in events if row["event_id"] not in exported]
-        all_conflicts = [row for row in events if row["conflict_type"] or
-                         row["global_state_suggestion"] == "conflict"]
-        exported_conflicts = self._successful_event_ids(self.CONFLICT_TARGET)
-        conflicts = [row for row in all_conflicts if row["event_id"] not in exported_conflicts]
+        conflicts = [row for row in pending if row["conflict_type"] or
+                     row["global_state_suggestion"] == "conflict"]
         if dry_run:
             return BucolicheExportResult("dry_run", True, len(events), len(pending), 0,
                 len(events) - len(pending), len(conflicts), tuple(pending[:5]), ())
@@ -236,18 +236,6 @@ class BucolicheAppendOnlyAdapter:
                 error_type = type(exc).__name__
                 self._record(row["event_id"], self.TARGET, "export_failed", error_type)
                 errors.append(f"{row['event_id']}: {error_type}")
-        for row in conflicts:
-            try:
-                client.append_rows(self.config.conflicts_sheet, CONFLICT_COLUMNS,
-                                   (_conflict_row(row),))
-                self._record(row["event_id"], self.CONFLICT_TARGET, "exported")
-            except Exception as exc:
-                error_type = type(exc).__name__
-                self._record(row["event_id"], self.CONFLICT_TARGET,
-                             "export_failed", error_type)
-                errors.append(f"conflict {row['event_id']}: {error_type}")
-        state_result = self.refresh_state(dry_run=False, client=client)
-        errors.extend(state_result.errors)
         return BucolicheExportResult("completed_with_errors" if errors else "completed",
             False, len(events), len(pending), done, len(events) - len(pending),
             len(conflicts), (), tuple(errors))
@@ -269,22 +257,11 @@ class BucolicheAppendOnlyAdapter:
             )
         if not self.config.enabled:
             raise BucolicheError("Bucoliche adapter is disabled; set bucoliche.enabled=true")
-        active_client = client or self.client or self._client_from_env()
-        try:
-            active_client.replace_rows(self.config.state_sheet, STATE_COLUMNS, state_rows)
-        except Exception as exc:
-            return BucolicheStateRefreshResult(
-                status="completed_with_errors",
-                dry_run=False,
-                state_rows_total=len(state_rows),
-                preview=(),
-                errors=(f"state {self.config.state_sheet}: {type(exc).__name__}",),
-            )
         return BucolicheStateRefreshResult(
-            status="completed",
+            status="local_only",
             dry_run=False,
             state_rows_total=len(state_rows),
-            preview=(),
+            preview=state_rows[:5],
             errors=(),
         )
 
@@ -311,9 +288,52 @@ class BucolicheAppendOnlyAdapter:
 
 
 def _event_row(row: Mapping[str, object]) -> dict:
-    exported_at = rome_isoformat()
-    return {column: (exported_at if column == "exported_at" else row.get(column, ""))
-            for column in EVENT_COLUMNS}
+    event_id = str(row.get("event_id", "") or "")
+    action = str(row.get("event_type", "") or "")
+    global_state = str(row.get("global_state_suggestion", "") or "")
+    result = str(row.get("result", "") or "")
+    source_email = str(row.get("source_email", "") or "")
+    filename = str(row.get("staged_filename", "") or "")
+    correlations = {
+        key: row.get(key, "") for key in (
+            "event_id", "machine_id", "account_alias", "source_message_id",
+            "source_message_uid", "attachment_id", "fingerprint", "sha256",
+            "event_type", "local_state", "global_state_suggestion", "result",
+            "conflict_type",
+        ) if row.get(key, "") not in {"", None}
+    }
+    details = str(row.get("notes", "") or "").strip()
+    if details:
+        correlations["details"] = details
+    timestamp = _to_local_timestamp(row.get("created_at", ""))
+    state = _human_state(action, global_state, result)
+    projected = dict(row)
+    projected.update({
+        "event_id": event_id,
+        "timestamp": timestamp,
+        "origine": "local_connector",
+        "cliente": "", "sito": "", "pratica": "", "anno": "", "tecnici": "",
+        "note": json.dumps(correlations, ensure_ascii=False, separators=(",", ":")),
+        "url_cartella": "", "id_drive": "",
+        "mittente_dominio": source_email.rsplit("@", 1)[-1] if "@" in source_email else "",
+        "oggetto_email": "", "nome_file": filename,
+        "estensione": Path(filename).suffix.lstrip(".").lower(),
+        "dimensione_kb": "", "stato": state,
+        "timestamp_archiviazione": timestamp if state == "archiviato" else "",
+    })
+    return projected
+
+
+def _human_state(action: str, global_state: str, result: str) -> str:
+    if global_state == "conflict" or action.startswith("conflict_"):
+        return "errore"
+    if global_state == "completed" or action == "message_completed" or result == "completed":
+        return "archiviato"
+    if global_state == "staged":
+        return "in_limbo"
+    if global_state == "failed" or action == "failed" or result == "failed":
+        return "errore"
+    return "acquisito"
 
 
 def _conflict_row(row: Mapping[str, object]) -> dict:

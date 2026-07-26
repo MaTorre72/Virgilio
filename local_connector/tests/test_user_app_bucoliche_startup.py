@@ -152,9 +152,7 @@ def test_existing_gateway_uses_protected_sheets_service_without_external_paths(t
                 (),
                 {
                     "inspect_sheets": lambda self: {
-                        "Bucoliche_Eventi": (),
-                        "Bucoliche_Conflitti": (),
-                        "Bucoliche_Stato": (),
+                        "bucoliche": (),
                     },
                     "create_sheet": lambda self, name: None,
                     "write_header": lambda self, name, columns: None,
@@ -215,9 +213,7 @@ def test_google_connection_prepares_missing_register_sections(tmp_path):
 
     assert result == GuidedStatus(True, "Google collegato. Registro pronto.")
     assert [item[:2] for item in operations if item[0] == "create"] == [
-        ("create", "Bucoliche_Eventi"),
-        ("create", "Bucoliche_Conflitti"),
-        ("create", "Bucoliche_Stato"),
+        ("create", "bucoliche"),
     ]
 
 

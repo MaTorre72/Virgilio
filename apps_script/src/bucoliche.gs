@@ -17,30 +17,6 @@
 
 // ── SCHEMA COLONNE ────────────────────────────────────────────────────────────
 
-/**
- * Indici colonne Bucoliche (1-based, compatibili con sheet.getRange()).
- * Usati sia in registraSuBucoliche() che in aggiornaRigheAllegati().
- */
-const BUCOLICHE_COLS = {
-  timestamp:                1,   // Data/ora evento (fuso Europe/Rome)
-  origine:                  2,   // gmail_staging | gmail_archiviato | form_virgilio | vtenext
-  cliente:                  3,   // Ragione sociale
-  sito:                     4,   // Sito/stabilimento
-  pratica:                  5,   // Tipo pratica (AUA, AIA…)
-  anno:                     6,   // Anno apertura
-  tecnici:                  7,   // Tecnici assegnati
-  note:                     8,   // Note libere
-  url_cartella:             9,   // URL cartella/file Drive
-  id_drive:                10,   // ID Drive (file per staging, cartella per pratica)
-  // ── Colonne ML — popolate solo per gmail_staging ──
-  mittente_dominio:        11,   // Dominio mittente (es. "fomet" da fomet@fomet.it)
-  oggetto_email:           12,   // Oggetto email
-  nome_file:               13,   // Nome originale del file allegato
-  estensione:              14,   // Estensione file (pdf, xlsx…)
-  dimensione_kb:           15,   // Dimensione allegato in KB (int)
-  stato:                   16,   // in_limbo | archiviato | errore
-  timestamp_archiviazione: 17,   // Data/ora spostamento Limbo → pratica
-};
 const BUCOLICHE_NUM_COLS = 17;
 
 
@@ -62,7 +38,7 @@ function registraSuBucoliche(riga) {
     const sheet = _aprifoglioBucoliche();
     _assicuraIntestazione(sheet);
 
-    sheet.appendRow([
+    const appended = _bucolicheAppendUnica_(sheet, [
       _timestampLocale(),                                                        //  1
       riga.origine              || '',                                           //  2
       riga.cliente              || '',                                           //  3
@@ -82,11 +58,13 @@ function registraSuBucoliche(riga) {
       riga.timestampArchiviazione || '',                                         // 17
     ]);
 
-    Logger.log(`[Bucoliche] Riga registrata: ${riga.origine} | ${riga.cliente || riga.mittenteDominio}`);
+    Logger.log(`[Bucoliche] Riga ${appended ? 'registrata' : 'gia presente'}: ${riga.origine} | ${riga.cliente || riga.mittenteDominio}`);
+    return appended;
 
   } catch (err) {
     Logger.log(`[Bucoliche] ERRORE in registraSuBucoliche: ${err.message}`);
     // Non rilancia — la mancata scrittura non deve bloccare l'operazione principale
+    return false;
   }
 }
 
@@ -95,7 +73,7 @@ function registraSuBucoliche(riga) {
  * Aggiorna in blocco le righe gmail_staging corrispondenti ai fileId forniti.
  * Chiamata da doPost() dopo lo spostamento Limbo → 02_corrispondenza.
  *
- * Legge tutta la griglia, modifica in memoria, riscrive in un unico setValues().
+ * Il Registro e` append-only: ogni file archiviato produce una nuova transizione.
  *
  * @param {string[]} fileIds       - Array di Drive file ID da aggiornare
  * @param {Object}   datiPratica   - { cliente, sito, pratica, anno, urlCartella }
@@ -105,43 +83,23 @@ function aggiornaRigheAllegati(fileIds, datiPratica) {
   if (!fileIds || fileIds.length === 0) return 0;
 
   try {
-    const sheet    = _aprifoglioBucoliche();
-    const numRighe = sheet.getLastRow();
-    if (numRighe <= 1) return 0;   // solo header o vuoto
-
-    const range = sheet.getRange(2, 1, numRighe - 1, BUCOLICHE_NUM_COLS);
-    const dati  = range.getValues();
-
     const adesso = _timestampLocale();
-    let aggiornate = 0;
-
-    // Indici 0-based per l'array in memoria
-    const C = {};
-    for (const [nome, idx] of Object.entries(BUCOLICHE_COLS)) C[nome] = idx - 1;
-
-    for (let r = 0; r < dati.length; r++) {
-      const fileId = dati[r][C.id_drive];
-      if (!fileIds.includes(fileId)) continue;
-
-      dati[r][C.origine]                  = 'gmail_archiviato';
-      dati[r][C.cliente]                  = datiPratica.cliente;
-      dati[r][C.sito]                     = datiPratica.sito;
-      dati[r][C.pratica]                  = datiPratica.pratica;
-      dati[r][C.anno]                     = datiPratica.anno;
-      dati[r][C.url_cartella]             = datiPratica.urlCartella;
-      dati[r][C.stato]                    = 'archiviato';
-      dati[r][C.timestamp_archiviazione]  = adesso;
-      aggiornate++;
+    let registrate = 0;
+    for (const fileId of fileIds) {
+      if (registraSuBucoliche({
+        origine: 'gmail_archiviato',
+        cliente: datiPratica.cliente,
+        sito: datiPratica.sito,
+        pratica: datiPratica.pratica,
+        anno: datiPratica.anno,
+        urlCartella: datiPratica.urlCartella,
+        idDrive: fileId,
+        stato: 'archiviato',
+        timestampArchiviazione: adesso,
+      })) registrate++;
     }
-
-    if (aggiornate > 0) {
-      range.setValues(dati);
-      Logger.log(`[Bucoliche] ${aggiornate} righe aggiornate → archiviato`);
-    } else {
-      Logger.log('[Bucoliche] aggiornaRigheAllegati: nessuna riga corrispondente trovata.');
-    }
-
-    return aggiornate;
+    Logger.log(`[Bucoliche] ${registrate} transizioni archiviate registrate`);
+    return registrate;
 
   } catch (err) {
     Logger.log(`[Bucoliche] ERRORE in aggiornaRigheAllegati: ${err.message}`);
@@ -180,8 +138,9 @@ function _bucolicheRegistraEventoRegistro_(tipo, origine, messaggio, contesto, s
     const ultimaRiga = sheet.getLastRow() + 1;
     const row = _bucolicheEventoRegistroRow_(tipo, origine, messaggio, contesto);
 
-    sheet.appendRow(row);
-    sheet.getRange(ultimaRiga, 1, 1, BUCOLICHE_NUM_COLS).setBackground(sfondo || '#FCE4D6');
+    if (_bucolicheAppendUnica_(sheet, row)) {
+      sheet.getRange(ultimaRiga, 1, 1, BUCOLICHE_NUM_COLS).setBackground(sfondo || '#FCE4D6');
+    }
 
     Logger.log(`[Bucoliche] ${tipo} registrato: ${_bucolicheStringOrEmpty_(messaggio)}`);
 
@@ -241,6 +200,21 @@ function _bucolicheStringOrEmpty_(value) {
   return value === null || value === undefined ? '' : String(value).trim();
 }
 
+function _bucolicheEventoKey_(row) {
+  return JSON.stringify((row || []).slice(1, 16).map(_bucolicheStringOrEmpty_));
+}
+
+function _bucolicheAppendUnica_(sheet, row) {
+  const key = _bucolicheEventoKey_(row);
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    const existing = sheet.getRange(2, 1, lastRow - 1, BUCOLICHE_NUM_COLS).getValues();
+    if (existing.some(item => _bucolicheEventoKey_(item) === key)) return false;
+  }
+  sheet.appendRow(row);
+  return true;
+}
+
 
 // ── FUNZIONI PRIVATE ──────────────────────────────────────────────────────────
 
@@ -273,8 +247,6 @@ function _aprifoglioBucoliche() {
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
  */
 function _assicuraIntestazione(sheet) {
-  if (sheet.getLastRow() > 0) return;
-
   const intestazioni = [
     'timestamp',              //  1
     'origine',                //  2
@@ -294,6 +266,15 @@ function _assicuraIntestazione(sheet) {
     'stato',                  // 16
     'timestamp_archiviazione',// 17
   ];
+
+  if (sheet.getLastRow() > 0) {
+    const correnti = sheet.getRange(1, 1, 1, intestazioni.length).getValues()[0]
+      .map(_bucolicheStringOrEmpty_);
+    if (JSON.stringify(correnti) !== JSON.stringify(intestazioni)) {
+      throw new Error('[Bucoliche] Intestazione Registro incompatibile.');
+    }
+    return;
+  }
 
   sheet.appendRow(intestazioni);
 

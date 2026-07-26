@@ -28,9 +28,6 @@ const CONFIG = {
   // Tutti letti da PropertiesService, niente hardcode.
   BUCOLICHE_ID: _PROPS.getProperty('VIRGILIO_BUCOLICHE_SPREADSHEET_ID') || '',
   BUCOLICHE_TAB: _PROPS.getProperty('VIRGILIO_BUCOLICHE_TAB') || 'bucoliche',
-  BUCOLICHE_EVENTS_SHEET: 'Bucoliche_Eventi',
-  BUCOLICHE_STATE_SHEET: 'Bucoliche_Stato',
-  BUCOLICHE_CONFLICTS_SHEET: 'Bucoliche_Conflitti',
   EMPIREO_ID: _PROPS.getProperty('VIRGILIO_EMPIREO_ID') || '',
   ADAMO_ID: _PROPS.getProperty('VIRGILIO_ADAMO_ID') || '',
   LIMBO_ID: _PROPS.getProperty('VIRGILIO_LIMBO_ID') || '',
@@ -258,23 +255,6 @@ function doPost(e) {
     }
 
     // Registra sulle Bucoliche
-    registraSuBucoliche({
-      origine:     dati.origine || 'form_virgilio',
-      cliente:     dati.cliente,
-      sito:        dati.sito,
-      pratica:     dati.pratica,
-      anno:        dati.anno,
-      tecnici:     dati.tecnici || [],
-      note:        _costruisciNotaEsitoVirgilio_(dati.note, inboxId, spostamento),
-      urlCartella: cartella.url,
-      idDrive:     cartella.id,
-      nomeFile:    spostamento.fileName || '',
-      estensione:  spostamento.fileExtension || '',
-      dimensioneKb: Number.isInteger(spostamento.fileSizeKb) ? spostamento.fileSizeKb : '',
-      stato:       inboxId ? 'archiviato' : (spostamento.count > 0 ? 'archiviato' : ''),
-      timestampArchiviazione: inboxId ? _timestampLocale() : '',
-    });
-
     // Aggiorna le righe gmail_staging → gmail_archiviato (senza nuove righe duplicate)
     if (spostamento.fileIds.length > 0) {
       aggiornaRigheAllegati(spostamento.fileIds, {
@@ -283,6 +263,20 @@ function doPost(e) {
         pratica:     dati.pratica,
         anno:        dati.anno,
         urlCartella: cartella.url,
+      });
+    } else {
+      registraSuBucoliche({
+        origine: dati.origine || 'form_virgilio',
+        cliente: dati.cliente,
+        sito: dati.sito,
+        pratica: dati.pratica,
+        anno: dati.anno,
+        tecnici: dati.tecnici || [],
+        note: _costruisciNotaEsitoVirgilio_(dati.note, inboxId, spostamento),
+        urlCartella: cartella.url,
+        idDrive: cartella.id,
+        stato: inboxId ? 'archiviato' : '',
+        timestampArchiviazione: inboxId ? _timestampLocale() : '',
       });
     }
 

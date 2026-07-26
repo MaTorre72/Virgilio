@@ -58,7 +58,7 @@ Dopo il collaudo, il profilo da usare resta quello coerente con la superficie de
 |---|---|---|
 | `staging` | `Limbo` | termine tecnico storico; non usarlo nella UX |
 | `Virgilio_Inbox` | `Da archiviare` | nome tecnico della coda operativa |
-| `Bucoliche_Eventi`, `Bucoliche_Stato`, `Bucoliche_Conflitti` | supporti tecnici del `Registro` | restano compatibilita` tecnica, non inbox |
+| `Bucoliche_Eventi`, `Bucoliche_Stato`, `Bucoliche_Conflitti` | nomi tecnici storici | non sono registri cloud attivi; stato e conflitti restano proiezioni locali |
 | `manifest` | dettaglio diagnostico | resta nel bridge e nei controlli tecnici |
 | `fingerprint` | dettaglio diagnostico | non esporre nella UX normale |
 | `SQLite` | registro operativo locale del connettore | solo nel profilo local connector, non nella UX utente |
@@ -69,6 +69,10 @@ Dopo il collaudo, il profilo da usare resta quello coerente con la superficie de
 
 Il Registro e` l'unico audit ufficiale. Contiene gli eventi rilevanti, gli esiti e le tracce operative necessarie a ricostruire cosa e` successo.
 Nel profilo Google-only, `registraErrore()` e `registraConflitto()` sono gli hook operativi che traducono errori e conflitti in eventi di audit leggibili.
+Il tab cloud canonico e` `bucoliche`, con lo schema umano storico a 17 colonne.
+Google-only e Local connector appendono nello stesso tab e rispettano le stesse
+regole. Le proiezioni tecniche di stato/conflitto restano locali e non generano
+copie parallele nel foglio Google.
 
 ### Schema minimo del Registro
 
@@ -133,7 +137,8 @@ dallo snapshot `clasp`.
 ## Cosa resta tecnico o legacy
 
 - `staging` resta un termine tecnico storico e non deve comparire nella UX.
-- `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti` restano supporti tecnici o di compatibilita`.
+- `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti` sono nomi storici:
+  non vengono creati o alimentati come tab cloud paralleli.
 - `Virgilio_Inbox` resta il nome tecnico della coda operativa; nella UX si chiama `Da archiviare`.
 - `manifest`, `fingerprint` e `SQLite` restano dettagli diagnostici.
 

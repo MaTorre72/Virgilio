@@ -3,7 +3,7 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: `GUI-U-R05-T05` correttivo completato; reset TEST reale in attesa
+- Task corrente: `GUI-U-R05-T06` Registro unico completato; reset TEST reale in attesa
   della sola chiave di collegamento nel deposito protetto locale.
 - `GUI-U-R05-T01` e` `DONE`: un duplicato viene riusato solo con file e SHA-256 validi;
   file assenti o corrotti sono riacquisiti dal processor esistente; gli errori storage sono
@@ -22,11 +22,12 @@
   email -> Limbo -> Da archiviare -> Registro sono verificati; prove `45 passed`, smoke `572 passed`.
 - Sequenza automatica residua: nessuna.
 - Pubblicazione Apps Script autorizzata esplicitamente dall'utente e completata il 2026-07-26:
-  push dei 14 file canonici e deployment web esistente aggiornato alla versione `33`,
-  senza cambiare URL.
-- Topologia TEST riallineata senza nuovi asset: il writer GAS storico usa `bucoliche`,
-  la CLI usa esclusivamente `Bucoliche_Eventi`, `Bucoliche_Stato` e
-  `Bucoliche_Conflitti`, mentre `Virgilio_Inbox` resta la sola coda operativa.
+  push dei 14 file canonici e deployment web esistente aggiornato alla versione `34`,
+  senza cambiare URL; la versione `33` con Registro separato e` superata.
+- Topologia TEST riallineata senza nuovi asset: GAS e Local connector usano lo
+  stesso Registro umano append-only `bucoliche` con le stesse 17 colonne;
+  stato e conflitti tecnici restano locali e non producono tab cloud paralleli.
+  `Virgilio_Inbox` resta la sola coda operativa.
   `Staging_Local_Test` e le relative proprieta` non fanno piu` parte della topologia live.
 - Il reset precedente non e` evidenza valida per la topologia corretta. L'unico trigger
   TEST e` stato fermato; il nuovo reset e` bloccato prima di backup/mutazioni perche`

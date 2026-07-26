@@ -49,7 +49,7 @@
 - Script Properties operative: `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_TOKEN`, `WEBHOOK_CHAT`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `URL_FORM`
 - Script Properties Drive/test: `VIRGILIO_LIMBO_ID`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`
 - azioni webapp: `local_imap_dry_run`, `verify_drive_staging`, `intake_drive_staging_test`, `intake_virgilio_inbox`
-- tab tecnici: `Virgilio_Inbox`, `bucoliche`, `Bucoliche_Eventi`, `Bucoliche_Stato`, `Bucoliche_Conflitti`
+- tab operativi: `Virgilio_Inbox` e l'unico Registro `bucoliche`
 - nomi UX: `Da archiviare`, `02_corrispondenza`
 
 ## 5. Confronto puntuale
@@ -59,7 +59,7 @@
 | Dry-run Caronte | `VIRGILIO_CARONTE_DRY_RUN_URL` verso `local_imap_dry_run` | `caronte.gs` intercetta `CARONTE_DRY_RUN_ACTION` | OK |
 | Verify Drive staging | `VIRGILIO_CARONTE_DRIVE_VERIFY_URL` e manifest metadata-only | `VIRGILIO_LIMBO_ID` e `verify_drive_staging` | OK |
 | Intake finale `Da archiviare` | `VIRGILIO_CARONTE_INTAKE_URL` e `VIRGILIO_TOKEN` | `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `intake_virgilio_inbox` | OK con riserva live |
-| Bucoliche | `VIRGILIO_BUCOLICHE_SPREADSHEET_ID` e `VIRGILIO_BUCOLICHE_TAB` | `caronte.gs` legge gli identificativi da `PropertiesService` | OK |
+| Bucoliche | adapter append-only sul tab `bucoliche` a 17 colonne | `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB` e stesso schema | OK |
 | UX vs tab tecnico | `Da archiviare` nella documentazione operativa | `Virgilio_Inbox` come tab tecnico separato | OK |
 | Notifiche | nessun segreto reale in repo | `WEBHOOK_CHAT`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `URL_FORM` | WARNING live non verificato |
 | Staging locale | `VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED` e `VIRGILIO_LOCAL_DRIVE_STAGING_DIR` | nessun equivalente diretto in GAS, per design | OK |

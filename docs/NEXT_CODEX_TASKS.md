@@ -2,16 +2,15 @@
 
 ## CORRENTE - WAITING_HUMAN_REVIEW
 
-`GUI-U-R05-T05` e` `DONE`: la separazione Registro GAS/CLI gia` esistente e`
-ripristinata, la topologia TEST non contiene asset diagnostici duplicati e il
-deployment esistente e` alla versione `33`.
+`GUI-U-R05-T06` e` `DONE`: `bucoliche` e` l'unico Registro cloud umano per
+GAS, CLI e GUI; i tre `Bucoliche_*` non vengono piu` creati o alimentati.
 
 ## CODA
 
 Nessun task automatico.
 
-Pubblicazione/deploy Apps Script completata alla versione `33`. Prima del collaudo
-resta una sola azione operativa: reinserire `VIRGILIO_TOKEN` tramite la schermata
+Il correttivo Registro unico e` pubblicato sul deployment esistente come versione `34`.
+Prima del collaudo resta una sola azione operativa: reinserire `VIRGILIO_TOKEN` tramite la schermata
 locale di collegamento e rieseguire il reset coordinato gia` autorizzato. Il trigger
 TEST resta fermo e nessuna run automatica deve creare proprieta`, tab o cartelle.
 

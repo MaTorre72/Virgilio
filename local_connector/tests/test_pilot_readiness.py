@@ -158,9 +158,7 @@ class FakeAckRunner:
 
 
 def sheets():
-    return {"Bucoliche_Eventi": EVENT_COLUMNS,
-            "Bucoliche_Conflitti": CONFLICT_COLUMNS,
-            "Bucoliche_Stato": ()}
+    return {"bucoliche": EVENT_COLUMNS}
 
 
 def doctor(environ, *, enabled=True, client=None, has_section=True):
@@ -196,7 +194,7 @@ def test_doctor_unreachable_and_missing_sheet_blocked():
     env = {"VIRGILIO_BUCOLICHE_SPREADSHEET_ID": "x",
            "VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON": "{}"}
     unreachable, _ = doctor(env, client=FakeReadClient(fail=True))
-    absent, _ = doctor(env, client=FakeReadClient({"Bucoliche_Eventi": EVENT_COLUMNS}))
+    absent, _ = doctor(env, client=FakeReadClient({"altro": EVENT_COLUMNS}))
     assert unreachable.status == "BLOCKED"
     assert absent.status == "READY_WITH_WARNINGS"
     assert any("setup-bucoliche-test-sheet" in item for item in absent.warnings)
@@ -212,10 +210,8 @@ def test_doctor_output_has_no_secrets():
 
 def test_doctor_header_absent_warns_and_mismatch_blocks():
     env = setup_env()
-    absent, _ = doctor(env, client=FakeReadClient({
-        "Bucoliche_Eventi": (), "Bucoliche_Conflitti": CONFLICT_COLUMNS}))
-    mismatch, _ = doctor(env, client=FakeReadClient({
-        "Bucoliche_Eventi": ("wrong",), "Bucoliche_Conflitti": CONFLICT_COLUMNS}))
+    absent, _ = doctor(env, client=FakeReadClient({"bucoliche": ()}))
+    mismatch, _ = doctor(env, client=FakeReadClient({"bucoliche": ("wrong",)}))
     assert absent.status == "READY_WITH_WARNINGS"
     assert mismatch.status == "BLOCKED"
 
@@ -900,7 +896,7 @@ def setup_env():
 def test_sheet_setup_dry_run_never_calls_google():
     fake = FakeReadClient()
     result = setup(setup_env(), fake, dry_run=True)
-    assert result.status == "DRY_RUN" and len(result.actions) == 3
+    assert result.status == "DRY_RUN" and len(result.actions) == 1
     assert fake.calls == []
 
 
@@ -908,23 +904,18 @@ def test_sheet_setup_creates_missing_and_writes_only_headers():
     fake = FakeReadClient({})
     result = setup(setup_env(), fake)
     assert result.status == "READY"
-    assert [call[0] for call in fake.calls[1:]] == [
-        "create_sheet", "write_header", "create_sheet", "write_header",
-        "create_sheet", "write_header"]
+    assert [call[0] for call in fake.calls[1:]] == ["create_sheet", "write_header"]
 
 
 def test_sheet_setup_empty_header_only_and_coherent_unchanged():
-    fake = FakeReadClient({"Bucoliche_Eventi": (),
-        "Bucoliche_Conflitti": CONFLICT_COLUMNS, "Bucoliche_Stato": ()})
+    fake = FakeReadClient({"bucoliche": ()})
     result = setup(setup_env(), fake)
     assert result.status == "READY"
-    assert ("write_header", "Bucoliche_Eventi", EVENT_COLUMNS) in fake.calls
-    assert not any(call[:2] == ("write_header", "Bucoliche_Conflitti") for call in fake.calls)
+    assert ("write_header", "bucoliche", EVENT_COLUMNS) in fake.calls
 
 
 def test_sheet_setup_mismatch_blocks_without_any_write():
-    fake = FakeReadClient({"Bucoliche_Eventi": ("wrong",),
-        "Bucoliche_Conflitti": CONFLICT_COLUMNS})
+    fake = FakeReadClient({"bucoliche": ("wrong",)})
     result = setup(setup_env(), fake)
     assert result.status == "BLOCKED"
     assert fake.calls == ["inspect_sheets"]
@@ -981,7 +972,7 @@ def test_oauth_sheet_setup_uses_existing_token_and_fake(tmp_path):
         client_factory=lambda *_: fake).run(dry_run=False)
     assert result.status == "READY"
     assert fake.calls[0] == "inspect_sheets"
-    assert fake.calls[1][:2] == ("write_header", "Bucoliche_Stato")
+    assert fake.calls == ["inspect_sheets"]
 
 
 def test_pilot_check_accepts_oauth_local_files(tmp_path):

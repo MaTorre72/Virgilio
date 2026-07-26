@@ -9,8 +9,8 @@ from pathlib import Path
 import sqlite3
 from typing import Callable, Mapping
 
-from .bucoliche import (BucolicheConfig, BucolicheError, CONFLICT_COLUMNS,
-                        EVENT_COLUMNS, STATE_COLUMNS, BucolicheAppendOnlyAdapter,
+from .bucoliche import (BucolicheConfig, BucolicheError,
+                        EVENT_COLUMNS, BucolicheAppendOnlyAdapter,
                         GoogleSheetsAppendClient,
                         build_google_sheets_client)
 from .completion import AckCompletedMessagesResult, ControlledAckRunner
@@ -105,19 +105,13 @@ class BucolicheDoctor:
         return token_value
 
     def _check_sheets(self, sheets, checks, errors, warnings):
-        required = ((self.config.events_sheet, EVENT_COLUMNS),
-                    (self.config.conflicts_sheet, CONFLICT_COLUMNS))
+        required = ((self.config.events_sheet, EVENT_COLUMNS),)
         for name, expected in required:
             if name not in sheets:
                 warnings.append(f"sheet missing: {name}; run setup-bucoliche-test-sheet")
                 checks.append(_check(f"sheet:{name}", False)); continue
             checks.append(_check(f"sheet:{name}", True))
             self._check_header(name, tuple(sheets[name]), expected, errors, warnings)
-        if self.config.state_sheet not in sheets:
-            warnings.append(f"optional sheet missing: {self.config.state_sheet}")
-        else:
-            self._check_header(self.config.state_sheet, tuple(sheets[self.config.state_sheet]),
-                               STATE_COLUMNS, errors, warnings)
 
     @staticmethod
     def _check_header(name, header, expected, errors, warnings):
@@ -169,9 +163,7 @@ class BucolicheSheetSetup:
             if not client_value or not Path(client_value).is_file(): errors.append("OAuth client secret file missing")
             if not credential_value or not Path(credential_value).is_file():
                 errors.append("OAuth token missing; run google-oauth-login")
-        definitions = ((self.config.events_sheet, EVENT_COLUMNS),
-                       (self.config.conflicts_sheet, CONFLICT_COLUMNS),
-                       (self.config.state_sheet, STATE_COLUMNS))
+        definitions = ((self.config.events_sheet, EVENT_COLUMNS),)
         if dry_run:
             actions = tuple({"sheet": name, "action": "would_verify_or_create",
                              "header": ",".join(columns)} for name, columns in definitions)

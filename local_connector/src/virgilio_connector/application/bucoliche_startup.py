@@ -9,13 +9,7 @@ import re
 import tempfile
 from typing import Protocol
 
-from ..bucoliche import (
-    CONFLICT_COLUMNS,
-    EVENT_COLUMNS,
-    STATE_COLUMNS,
-    BucolicheError,
-    load_bucoliche_config,
-)
+from ..bucoliche import EVENT_COLUMNS, BucolicheError, load_bucoliche_config
 from .configuration import ConfigurationService
 from .google_oauth import (
     GoogleOAuthConfigurationError,
@@ -105,7 +99,7 @@ class ExistingBucolicheGateway:
             return GuidedStatus(
                 False, "Registro non pronto. Completa prima il collegamento Google."
             )
-        required = {config.events_sheet, config.conflicts_sheet, config.state_sheet}
+        required = {config.events_sheet}
         if not required.issubset(sheets):
             return GuidedStatus(
                 False,
@@ -117,11 +111,7 @@ class ExistingBucolicheGateway:
         config = load_bucoliche_config(self.config_path)
         client = self.sheets.client(config.spreadsheet_id)
         existing = client.inspect_sheets()
-        definitions = (
-            (config.events_sheet, EVENT_COLUMNS),
-            (config.conflicts_sheet, CONFLICT_COLUMNS),
-            (config.state_sheet, STATE_COLUMNS),
-        )
+        definitions = ((config.events_sheet, EVENT_COLUMNS),)
         for name, columns in definitions:
             header = tuple(existing.get(name, ()))
             if header and header[: len(columns)] != tuple(columns):

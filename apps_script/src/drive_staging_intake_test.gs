@@ -24,7 +24,7 @@ function caronteSetupStagingDriveTestIntake(spreadsheetId, sheetName) {
   if (typeof spreadsheetId !== 'string' || !spreadsheetId.trim()) {
     throw new Error('ID spreadsheet test obbligatorio.');
   }
-  if (!name || name === CONFIG.BUCOLICHE_EVENTS_SHEET) {
+  if (!name || name === CONFIG.BUCOLICHE_TAB) {
     throw new Error('Il tab test deve essere distinto da Bucoliche reale.');
   }
   const ss = SpreadsheetApp.openById(spreadsheetId.trim());
@@ -45,7 +45,7 @@ function caronteRegistraStagingDriveTest(payload) {
   const folderId = props.getProperty(DRIVE_STAGING_FOLDER_PROPERTY);
   const spreadsheetId = props.getProperty(INTAKE_TEST_SPREADSHEET_PROPERTY);
   const sheetName = props.getProperty(INTAKE_TEST_SHEET_PROPERTY);
-  if (!folderId || !spreadsheetId || !sheetName || sheetName === CONFIG.BUCOLICHE_EVENTS_SHEET) {
+  if (!folderId || !spreadsheetId || !sheetName || sheetName === CONFIG.BUCOLICHE_TAB) {
     return _intakeTestResponse_(payload, false, false, false, false, false, '',
       'Configurazione intake test assente o non sicura.', [
         _driveStagingError_('INTAKE_TEST_NOT_CONFIGURED', 'Eseguire il setup esplicito del tab test.')
@@ -156,7 +156,7 @@ function _intakeTestInspectFolder_(payload, folder) {
 }
 
 function _intakeTestAppendRow_(sheet, manifest, driveFileId, manifestFileId, now) {
-  if (sheet.getName && sheet.getName() === CONFIG.BUCOLICHE_EVENTS_SHEET) {
+  if (sheet.getName && sheet.getName() === CONFIG.BUCOLICHE_TAB) {
     throw new Error('Scrittura su Bucoliche reale vietata.');
   }
   sheet.appendRow([
