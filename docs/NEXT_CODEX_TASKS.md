@@ -2,16 +2,17 @@
 
 ## CORRENTE - WAITING_HUMAN_REVIEW
 
-`GUI-U-R05-T04` e l'intera sequenza R05 sono `DONE`.
-Le run automatiche successive escono senza modifiche.
+`GUI-U-R05-T05` e` `DONE`: la separazione Registro GAS/CLI gia` esistente e`
+ripristinata, la topologia TEST non contiene asset diagnostici duplicati e il
+deployment esistente e` alla versione `33`.
 
 ## CODA
 
 Nessun task automatico.
 
-Pubblicazione/deploy Apps Script completata alla versione `32`. La topologia TEST
-riusa lo spreadsheet esistente per Registro e Da archiviare su tab distinti, con
-Limbo separato; il reset reale coordinato e i backup sono completati.
+Pubblicazione/deploy Apps Script completata alla versione `33`. Prima del collaudo
+resta una sola azione operativa: reinserire `VIRGILIO_TOKEN` tramite la schermata
+locale di collegamento e rieseguire il reset coordinato gia` autorizzato. Il trigger
+TEST resta fermo e nessuna run automatica deve creare proprieta`, tab o cartelle.
 
-Successore unico: collaudo finale umano della RC. Nessun task automatico deve
-modificare codice, asset TEST o documentazione senza un nuovo esito esplicito.
+Successore unico: reset TEST coordinato, poi collaudo finale umano della RC.

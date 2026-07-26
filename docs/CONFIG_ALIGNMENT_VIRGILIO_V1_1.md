@@ -47,9 +47,9 @@
 ## 4. Mappa GAS
 
 - Script Properties operative: `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_TOKEN`, `WEBHOOK_CHAT`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `URL_FORM`
-- Script Properties Drive/test: `VIRGILIO_DRIVE_STAGING_FOLDER_ID`, `VIRGILIO_INTAKE_TEST_SPREADSHEET_ID`, `VIRGILIO_INTAKE_TEST_SHEET_NAME`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`
+- Script Properties Drive/test: `VIRGILIO_LIMBO_ID`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`
 - azioni webapp: `local_imap_dry_run`, `verify_drive_staging`, `intake_drive_staging_test`, `intake_virgilio_inbox`
-- tab tecnici: `Virgilio_Inbox`, `Bucoliche_Eventi`, `Bucoliche_Stato`, `Bucoliche_Conflitti`, `Staging_Local_Test`
+- tab tecnici: `Virgilio_Inbox`, `bucoliche`, `Bucoliche_Eventi`, `Bucoliche_Stato`, `Bucoliche_Conflitti`
 - nomi UX: `Da archiviare`, `02_corrispondenza`
 
 ## 5. Confronto puntuale
@@ -57,8 +57,7 @@
 | Area | Locale | GAS | Esito |
 |---|---|---|---|
 | Dry-run Caronte | `VIRGILIO_CARONTE_DRY_RUN_URL` verso `local_imap_dry_run` | `caronte.gs` intercetta `CARONTE_DRY_RUN_ACTION` | OK |
-| Verify Drive staging | `VIRGILIO_CARONTE_DRIVE_VERIFY_URL` e manifest metadata-only | `VIRGILIO_DRIVE_STAGING_FOLDER_ID` e `verify_drive_staging` | OK |
-| Intake test Drive staging | `VIRGILIO_CARONTE_INTAKE_TEST_URL` | `VIRGILIO_INTAKE_TEST_SPREADSHEET_ID` e `VIRGILIO_INTAKE_TEST_SHEET_NAME` con tab `Staging_Local_Test` | OK |
+| Verify Drive staging | `VIRGILIO_CARONTE_DRIVE_VERIFY_URL` e manifest metadata-only | `VIRGILIO_LIMBO_ID` e `verify_drive_staging` | OK |
 | Intake finale `Da archiviare` | `VIRGILIO_CARONTE_INTAKE_URL` e `VIRGILIO_TOKEN` | `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `intake_virgilio_inbox` | OK con riserva live |
 | Bucoliche | `VIRGILIO_BUCOLICHE_SPREADSHEET_ID` e `VIRGILIO_BUCOLICHE_TAB` | `caronte.gs` legge gli identificativi da `PropertiesService` | OK |
 | UX vs tab tecnico | `Da archiviare` nella documentazione operativa | `Virgilio_Inbox` come tab tecnico separato | OK |
@@ -71,7 +70,7 @@
 - `accounts.example.yaml` e` coerente con i nomi attesi dal codice
 - il contratto metadata-only rimane invariato: non si inviano byte, base64 o path locali ad Apps Script
 - il tab tecnico `Virgilio_Inbox` resta separato dalla UX `Da archiviare`
-- `Staging_Local_Test` rimane un tab di test e non una coda operativa
+- il vecchio endpoint diagnostico `Staging_Local_Test` non fa parte della topologia live
 - il solo punto che non si puo` confermare offline e` il valore live delle Script Properties e degli ID Google
 
 ## 7. Rischi residui
@@ -107,9 +106,7 @@ $required = @(
   'VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON',
   'VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH',
   'VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH',
-  'VIRGILIO_DRIVE_STAGING_FOLDER_ID',
-  'VIRGILIO_INTAKE_TEST_SPREADSHEET_ID',
-  'VIRGILIO_INTAKE_TEST_SHEET_NAME',
+  'VIRGILIO_LIMBO_ID',
   'VIRGILIO_INBOX_SPREADSHEET_ID',
   'VIRGILIO_INBOX_SHEET_NAME'
 )
@@ -142,4 +139,4 @@ if ($LASTEXITCODE -ne 0) {
 - esito operativo: `PRONTO_CON_RISERVE`
 - pronto per collaudo locale: si
 - pronto per collaudo live senza verifica manuale: no
-- azione richiesta prima di un collaudo reale: confermare live `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `VIRGILIO_DRIVE_STAGING_FOLDER_ID`, `URL_FORM` e le credenziali notifiche
+- azione richiesta prima di un collaudo reale: confermare live `VIRGILIO_BUCOLICHE_SPREADSHEET_ID`, `VIRGILIO_BUCOLICHE_TAB`, `VIRGILIO_EMPIREO_ID`, `VIRGILIO_ADAMO_ID`, `VIRGILIO_LIMBO_ID`, `VIRGILIO_INBOX_SPREADSHEET_ID`, `VIRGILIO_INBOX_SHEET_NAME`, `URL_FORM` e le credenziali notifiche

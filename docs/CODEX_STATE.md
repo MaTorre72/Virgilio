@@ -3,7 +3,8 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: nessuno; l'automazione deve uscire senza modifiche.
+- Task corrente: `GUI-U-R05-T05` correttivo completato; reset TEST reale in attesa
+  della sola chiave di collegamento nel deposito protetto locale.
 - `GUI-U-R05-T01` e` `DONE`: un duplicato viene riusato solo con file e SHA-256 validi;
   file assenti o corrotti sono riacquisiti dal processor esistente; gli errori storage sono
   persistiti, visibili e bloccano handoff/completion. Prove: mirati `79 passed`, smoke `558 passed`.
@@ -21,15 +22,18 @@
   email -> Limbo -> Da archiviare -> Registro sono verificati; prove `45 passed`, smoke `572 passed`.
 - Sequenza automatica residua: nessuna.
 - Pubblicazione Apps Script autorizzata esplicitamente dall'utente e completata il 2026-07-26:
-  push dei 14 file canonici e deployment web esistente aggiornato alla versione `32`,
+  push dei 14 file canonici e deployment web esistente aggiornato alla versione `33`,
   senza cambiare URL.
-- Topologia TEST riallineata senza nuovi asset operativi: Registro, inbox e intake
-  riusano lo spreadsheet `Virgilio_Bucoliche_TEST` con tab distinti; il Limbo resta
-  una cartella separata e `VIRGILIO_ENVIRONMENT=TEST` e` configurato.
-- Reset TEST reale `reset-r05-20260726-1848` completato il 2026-07-26: backup locale
-  e due backup remoti creati, Registro/Inbox/Limbo vuoti, tre tab Registro e un tab
-  Inbox preservati.
-- Gate umano residuo: solo il collaudo finale. Codex non puo` approvarlo.
+- Topologia TEST riallineata senza nuovi asset: il writer GAS storico usa `bucoliche`,
+  la CLI usa esclusivamente `Bucoliche_Eventi`, `Bucoliche_Stato` e
+  `Bucoliche_Conflitti`, mentre `Virgilio_Inbox` resta la sola coda operativa.
+  `Staging_Local_Test` e le relative proprieta` non fanno piu` parte della topologia live.
+- Il reset precedente non e` evidenza valida per la topologia corretta. L'unico trigger
+  TEST e` stato fermato; il nuovo reset e` bloccato prima di backup/mutazioni perche`
+  `Caronte/VIRGILIO_TOKEN` manca dal Credential Manager locale. Azione unica: reinserire
+  la chiave nella schermata locale di collegamento, poi rieseguire il reset coordinato.
+- Gate residui: ripetizione del reset TEST sulla topologia corretta e collaudo
+  finale umano. Codex non puo` approvare il collaudo.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.

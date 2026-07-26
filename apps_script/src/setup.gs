@@ -117,16 +117,6 @@ function caronteStatoConfigurazione() {
       hint: "Tenere il tab Virgilio_Inbox esplicito e configurato.",
     },
     {
-      chiave: 'VIRGILIO_INTAKE_TEST_SPREADSHEET_ID',
-      etichetta: 'Spreadsheet test',
-      hint: "Impostare l'ID del workbook di test.",
-    },
-    {
-      chiave: 'VIRGILIO_INTAKE_TEST_SHEET_NAME',
-      etichetta: 'Tab test',
-      hint: "Tenere il tab Staging_Local_Test esplicito e separato.",
-    },
-    {
       chiave: 'VIRGILIO_EMPIREO_ID',
       etichetta: 'Cartella Empireo',
       hint: "Impostare l'ID della cartella Drive radice nelle Script Properties.",

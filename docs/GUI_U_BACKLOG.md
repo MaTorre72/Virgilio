@@ -1384,10 +1384,33 @@ release; push dei 14 file canonici completato e deployment web esistente
 aggiornato dalla versione `30` alla `31`, poi alla `32` per il riallineamento TEST,
 senza cambiare URL o creare un secondo deployment.
 
-Reset reale autorizzato e completato il 2026-07-26. La topologia ottimizzata
-riusa `Virgilio_Bucoliche_TEST` per Registro, inbox e intake su tab distinti e
-mantiene il Limbo separato, senza creare asset operativi duplicati. Il reset
-`reset-r05-20260726-1848` ha creato un backup locale e due backup remoti; esito
-finale verificato: zero righe Registro, zero righe Inbox, zero file Limbo, tre tab
-Registro e un tab Inbox preservati. Solo il collaudo finale resta
-`WAITING_HUMAN_REVIEW`.
+Il reset `reset-r05-20260726-1848` ha creato i backup previsti, ma la verifica
+successiva ha mostrato che puntava al tab diagnostico invece della coda operativa
+e che il writer GAS era stato deviato sul tab CLI. L'esito non e` quindi valido
+per il collaudo della topologia corretta; il correttivo e lo stato operativo sono
+registrati in `GUI-U-R05-T05`.
+
+### GUI-U-R05-T05 - Ripristino della topologia Registro gia` canonica
+
+Stato: `DONE`. Priorita`: `P0`.
+Risultato: la regressione introdotta dopo la soluzione CLI/GAS e` rimossa senza
+nuovi asset: GAS e CLI tornano a scrivere in tab con schemi distinti, reset e
+verifica usano gli identificativi operativi gia` esistenti.
+Dipendenze: `R05-T01`--`R05-T04 = DONE`.
+Componenti ammessi: writer/reset/verifica GAS esistenti, test mirati e sola
+documentazione di configurazione coinvolta.
+Esclusioni: nuovi downloader, storage, pipeline, Registro, backup, reset, tab,
+cartelle o proprieta` live.
+Condizione di blocco: impossibilita` di ripristinare i contratti storici senza
+alterare gli schemi canonici.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T05-AC1` GAS e CLI non condividono il tab eventi. | Test statico e cronologia Git. | Ripristinato `CONFIG.BUCOLICHE_TAB`/`bucoliche`; `Bucoliche_Eventi` resta al solo adapter CLI. | `MET` |
+| `R05-T05-AC2` Reset e verifica puntano agli asset operativi. | Harness reset e test mirato. | Reset usa `Virgilio_Inbox` e `VIRGILIO_LIMBO_ID`; rimosso il ricorso alle proprieta` diagnostiche. | `MET` |
+| `R05-T05-AC3` La topologia live non duplica asset. | Ispezione Script Properties e workbook TEST. | Riusati workbook e tab vuoto esistenti; `Staging_Local_Test` e tre alias di configurazione rimossi, nessun asset creato. | `MET` |
+| `R05-T05-AC4` Il delta pubblicato e` identificabile e non corre durante il reset. | Push/deploy e controllo trigger. | Deployment esistente aggiornato alla versione `33`; unico trigger `caronteTraghetta` rimosso. | `MET` |
+| `R05-T05-AC5` Il reset reale non parte senza collegamento protetto. | Anteprima tramite servizio canonico. | Arresto sicuro prima di backup/mutazioni: manca `Caronte/VIRGILIO_TOKEN`; unica azione registrata nei puntatori operativi. | `MET` |
+
+Prove automatiche: test mirati `8 passed`, harness GAS reset/Registro `OK`,
+smoke locale `573 passed`.

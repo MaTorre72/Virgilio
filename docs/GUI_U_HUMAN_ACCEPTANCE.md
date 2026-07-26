@@ -147,13 +147,12 @@ vengono ripetuti:
 3. eseguire il collaudo reale della RC identificata sul percorso completo e
    registrare esplicitamente l'esito umano.
 
-Stato al 2026-07-26: punti 1 e 2 completati su autorizzazione esplicita. I 14 file
-canonici sono stati pubblicati e il deployment web esistente e` alla versione
-`32`. La topologia riusa lo spreadsheet TEST esistente per Registro e Da
-archiviare su tab distinti, con Limbo separato; il reset coordinato
-`reset-r05-20260726-1848` ha creato backup locale e remoti e ha verificato
-Registro, Inbox e Limbo vuoti con schema preservato. Il punto 3 resta il solo
-gate umano, senza esito compilato da Codex.
+Stato al 2026-07-26: il punto 1 e` completato alla versione `33`. La correzione
+ripristina la separazione storica: GAS scrive in `bucoliche`, la CLI nei tre tab
+`Bucoliche_*` e `Virgilio_Inbox` e` la sola coda. Il punto 2 deve essere ripetuto
+sulla topologia corretta: il trigger e` fermo, ma il servizio si e` arrestato prima
+di backup/mutazioni perche` la chiave manca dal deposito protetto locale. Dopo il
+reset restano il punto 3 e l'esito umano, mai compilato da Codex.
 
 ## Esiti e regole di giudizio
 

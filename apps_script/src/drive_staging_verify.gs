@@ -4,7 +4,7 @@
  */
 
 const DRIVE_STAGING_VERIFY_ACTION = 'verify_drive_staging';
-const DRIVE_STAGING_FOLDER_PROPERTY = 'VIRGILIO_DRIVE_STAGING_FOLDER_ID';
+const DRIVE_STAGING_FOLDER_PROPERTY = 'VIRGILIO_LIMBO_ID';
 
 /**
  * Configurazione manuale una tantum dell'ID della cartella Limbo configurata.
@@ -263,7 +263,7 @@ function _driveStagingResolveFolder_() {
       errors: [
         _driveStagingError_(
           'STAGING_FOLDER_NOT_CONFIGURED',
-          'Configurare VIRGILIO_DRIVE_STAGING_FOLDER_ID nelle Script Properties.'
+          'Configurare VIRGILIO_LIMBO_ID nelle Script Properties.'
         )
       ],
     };

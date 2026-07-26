@@ -245,8 +245,8 @@ function _bucolicheStringOrEmpty_(value) {
 // ── FUNZIONI PRIVATE ──────────────────────────────────────────────────────────
 
 /**
- * Apre (o crea) il tab eventi nel file Bucoliche.
- * Usa CONFIG.BUCOLICHE_EVENTS_SHEET per trovare il tab per nome,
+ * Apre (o crea) il tab GAS storico nel file Bucoliche.
+ * Usa CONFIG.BUCOLICHE_TAB per mantenerlo separato dai tab Registro della CLI,
  * più robusto di getActiveSheet() quando ci sono più tab.
  *
  * @returns {GoogleAppsScript.Spreadsheet.Sheet}
@@ -254,10 +254,10 @@ function _bucolicheStringOrEmpty_(value) {
 function _aprifoglioBucoliche() {
   try {
     const ss = SpreadsheetApp.openById(CONFIG.BUCOLICHE_ID);
-    let sheet = ss.getSheetByName(CONFIG.BUCOLICHE_EVENTS_SHEET);
+    let sheet = ss.getSheetByName(CONFIG.BUCOLICHE_TAB);
     if (!sheet) {
-      sheet = ss.insertSheet(CONFIG.BUCOLICHE_EVENTS_SHEET);
-      Logger.log(`[Bucoliche] Tab "${CONFIG.BUCOLICHE_EVENTS_SHEET}" creato automaticamente.`);
+      sheet = ss.insertSheet(CONFIG.BUCOLICHE_TAB);
+      Logger.log(`[Bucoliche] Tab "${CONFIG.BUCOLICHE_TAB}" creato automaticamente.`);
     }
     return sheet;
   } catch (err) {

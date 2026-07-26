@@ -151,6 +151,26 @@ def test_gas_reset_is_authenticated_but_not_blocked_by_form_rate_limit():
     assert token_gate < reset_route < form_rate_limit
 
 
+def test_gas_reset_targets_operational_inbox_limbo_and_separate_legacy_register_tab():
+    root = Path(__file__).parents[2] / "apps_script" / "src"
+    reset_source = (root / "test_environment_reset.gs").read_text(encoding="utf-8")
+    caronte_source = (root / "caronte.gs").read_text(encoding="utf-8")
+    bucoliche_source = (root / "bucoliche.gs").read_text(encoding="utf-8")
+    verify_source = (root / "drive_staging_verify.gs").read_text(encoding="utf-8")
+
+    inspect = reset_source[reset_source.index("function _testResetInspectGas_"):]
+    assert "VIRGILIO_INBOX_SPREADSHEET_PROPERTY" in inspect
+    assert "VIRGILIO_INBOX_SHEET_PROPERTY" in inspect
+    assert "props.getProperty('VIRGILIO_LIMBO_ID')" in inspect
+    assert "INTAKE_TEST_SPREADSHEET_PROPERTY" not in inspect
+    assert "INTAKE_TEST_SHEET_PROPERTY" not in inspect
+    assert "BUCOLICHE_TAB" in caronte_source
+    assert "getSheetByName(CONFIG.BUCOLICHE_TAB)" in bucoliche_source
+    assert "getSheetByName(CONFIG.BUCOLICHE_EVENTS_SHEET)" not in bucoliche_source
+    assert "const DRIVE_STAGING_FOLDER_PROPERTY = 'VIRGILIO_LIMBO_ID'" in verify_source
+    assert "VIRGILIO_DRIVE_STAGING_FOLDER_ID" not in verify_source
+
+
 def test_completed_remote_reset_must_be_empty_and_preserve_schema(tmp_path):
     class InconsistentRemote(FakeRemote):
         def request(self, reset_id, mode):
