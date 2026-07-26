@@ -9,5 +9,6 @@ Le run automatiche successive escono senza modifiche.
 
 Nessun task automatico.
 
-Azioni esclusivamente umane: autorizzare pubblicazione/deploy Apps Script,
-autorizzare il reset TEST reale e svolgere il collaudo finale della RC.
+Pubblicazione/deploy Apps Script completata alla versione `31` su autorizzazione
+esplicita dell'utente. Azioni residue esclusivamente umane: autorizzare il reset
+TEST reale e svolgere il collaudo finale della RC.

@@ -20,8 +20,10 @@
 - `GUI-U-R05-T04` e` `DONE`: audit a transizioni, export idempotente e percorso integrato
   email -> Limbo -> Da archiviare -> Registro sono verificati; prove `45 passed`, smoke `572 passed`.
 - Sequenza automatica residua: nessuna.
-- Gate umani: pubblicazione/deploy Apps Script, reset TEST reale autorizzato e collaudo finale.
-  Codex non puo` approvarli.
+- Pubblicazione Apps Script autorizzata esplicitamente dall'utente e completata il 2026-07-26:
+  push dei 14 file canonici e deployment web esistente aggiornato alla versione `31`
+  (`GUI-U-R05 62846a8`), senza cambiare URL.
+- Gate umani residui: reset TEST reale autorizzato e collaudo finale. Codex non puo` approvarli.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.

@@ -1377,3 +1377,9 @@ identificabile.
 
 Dopo `R05-T04` l'automazione si ferma. `clasp push`, deploy, azzeramento degli
 asset Google reali e collaudo restano gate umani espliciti.
+
+Pubblicazione autorizzata il 2026-07-26: live confrontato con la baseline della
+release, delta limitato a `caronte.gs`, `setup.gs` e
+`test_environment_reset.gs`; push dei 14 file canonici completato e deployment
+web esistente aggiornato dalla versione `30` alla `31` (`GUI-U-R05 62846a8`).
+Reset TEST reale e collaudo finale restano `WAITING_HUMAN_REVIEW`.

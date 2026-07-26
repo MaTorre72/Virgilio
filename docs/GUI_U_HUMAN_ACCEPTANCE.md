@@ -147,6 +147,10 @@ vengono ripetuti:
 3. eseguire il collaudo reale della RC identificata sul percorso completo e
    registrare esplicitamente l'esito umano.
 
+Stato al 2026-07-26: punto 1 completato su autorizzazione esplicita; i 14 file
+canonici sono stati pubblicati e il deployment web esistente e` alla versione
+`31` (`GUI-U-R05 62846a8`). I punti 2 e 3 restano gate umani separati.
+
 ## Esiti e regole di giudizio
 
 Esiti ammessi: `PASS`, `FAIL`, `NOT_TESTED`, `BLOCKED_BY_ENVIRONMENT`,
