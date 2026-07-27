@@ -2,21 +2,21 @@
 
 ## CORRENTE - WAITING_HUMAN_REVIEW
 
-`GUI-U-R05-T07` e` `DONE`: la strategia esplicita `move_to_done_label`
-applica `traghettate` e rimuove soltanto l'etichetta di ingresso, senza
-cancellazione o expunge. Test mirati `73 passed`; smoke locale `581 passed`.
+`GUI-U-R05-T08` e` `DONE` nel repository: il completamento attende lo stato
+finale `archiviato` di tutti gli allegati, verifica entrambe le etichette Gmail e
+preserva/ripristina le tre anagrafiche canoniche. Test mirati `107 passed`;
+regressione e smoke locale `587 passed`.
 
 ## CODA
 
 Nessun task automatico.
 
-Il correttivo Registro unico e Limbo piatto e` pubblicato sul deployment esistente come versione `35`.
-La RC desktop `CaronteSetup-0.11.0-2294efa.exe` e` installata, il collegamento
-protetto e` configurato e il reset TEST `reset-r05-20260726-2139` e` completato
-con backup. Registro, Inbox e Limbo piatto sono vuoti; il foglio contiene soltanto
-`bucoliche` e `Virgilio_Inbox`. Il trigger TEST resta fermo.
+Il deployment live resta alla versione `35` e la RC installata resta quella del
+commit `fcc5c0c`: nessuno dei due contiene T08. Il reset TEST del 2026-07-27 ha
+preceduto il collaudo che ha riprodotto i tre difetti; non rappresenta quindi lo
+stato vuoto iniziale per un nuovo collaudo. Il trigger TEST resta fermo.
 
-Successore unico: produrre/installare la nuova RC dal commit atomico di T07,
-impostare la strategia nella configurazione installata e collaudare su Gmail TEST.
-Le quattro mail gia` completate richiedono una sola rimozione dell'etichetta
-`da-traghettare`; nessuna ulteriore modifica automatica.
+Successore unico, solo su richiesta esplicita: pubblicare il delta GAS sul
+deployment esistente, produrre/installare la RC dal commit atomico di T08,
+ripristinare `Clienti_Siti`, `Team` e `TipiPratica` da un backup verificato e poi
+eseguire reset TEST e collaudo umano dall'inizio. Nessuna azione live automatica.

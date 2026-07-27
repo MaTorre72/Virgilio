@@ -378,6 +378,11 @@ def test_end_to_end_transitions_export_once_and_unchanged_retry_is_stable(tmp_pa
     class IsolatedAckMailbox(FakeAckMailbox):
         instances = []
 
+    class ArchivedStatus:
+        @staticmethod
+        def statuses(inbox_ids):
+            return {inbox_id: "archiviato" for inbox_id in inbox_ids}
+
     staging = tmp_path / "staging"
     staging.mkdir()
     config = write_storage_config(tmp_path, staging)
@@ -437,6 +442,7 @@ def test_end_to_end_transitions_export_once_and_unchanged_retry_is_stable(tmp_pa
                 },
                 mailbox_factory=lambda account: IsolatedAckMailbox(account),
                 require_da_archiviare=True,
+                archive_status_client=ArchivedStatus(),
             ),
         )
 

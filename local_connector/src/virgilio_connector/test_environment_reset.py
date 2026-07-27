@@ -191,7 +191,9 @@ def _remote_reset_consistent(before: Mapping[str, Any], after: Mapping[str, Any]
         empty = (after["registry"]["rows"] == [] and after["inbox"]["rows"] == []
                  and after["limbo"]["files"] == [])
         schemas = (after["registry"]["schema"] == before["registry"]["schema"]
-                   and after["inbox"]["schema"] == before["inbox"]["schema"])
+                   and after["inbox"]["schema"] == before["inbox"]["schema"]
+                   and after["registry"].get("anagrafiche") ==
+                   before["registry"].get("anagrafiche"))
     except (KeyError, TypeError):
         return False
     return empty and schemas

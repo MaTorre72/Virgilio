@@ -1484,3 +1484,29 @@ di ingresso dalla cancellazione del messaggio.
 Successore: nuova RC desktop dal commit atomico del task, installazione e collaudo
 umano su Gmail TEST. Le quattro mail gia` completate richiedono una sola rimozione
 dell'etichetta di ingresso e non vengono riprocessate automaticamente.
+
+### GUI-U-R05-T08 - Chiusura finale, etichette verificate e anagrafiche
+
+Stato: `DONE`. Priorita`: `P0`.
+Risultato: una mail viene conclusa soltanto dopo l'archiviazione finale di tutti i
+suoi allegati; lo spostamento Gmail e` confermato da post-condizioni osservabili e
+le tre anagrafiche canoniche sono preservate o ripristinate da backup esplicito.
+Dipendenze: `R05-T07 = DONE`; collaudo reale del 2026-07-27 con completamento
+anticipato, doppia etichetta e tab anagrafici mancanti.
+Componenti ammessi: completion e adapter IMAP condivisi, endpoint metadata-only
+autenticato, anagrafiche e reset GAS, test sintetici e documentazione pertinente.
+Esclusioni: dati o credenziali reali nei test, nuovi asset cloud, submit del form,
+pubblicazione Apps Script, reset reale, modifica o approvazione del gate umano.
+Condizione di blocco: assenza di una correlazione metadata-only affidabile tra gli
+allegati locali e lo stato finale `archiviato` di `Virgilio_Inbox`.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T08-AC1` Ogni allegato deve risultare `archiviato` prima del completamento della mail. | Test pipeline/client con stati pendente, misto, mancante, errore e tutto archiviato. | Endpoint autenticato batch `status_virgilio_inbox` e client metadata-only; la completion correla ogni allegato al suo `inbox_id`, resta riprovabile su stato non finale/assente/errore e apre IMAP solo quando tutti sono `archiviato`. | `MET` |
+| `R05-T08-AC2` `move_to_done_label` ha successo solo se la mail e` presente in `traghettate` e assente da `da-traghettare`. | Test IMAP e completion con post-condizione positiva e negativa. | Dopo COPY/STORE l'adapter riapre entrambe le cartelle in sola lettura; presenza input o assenza done solleva errore e produce `ack_failed`. Nessun DELETE/MOVE/EXPUNGE. | `MET` |
+| `R05-T08-AC3` Le anagrafiche canoniche non vengono azzerate e il reset rifiuta una topologia che le omette. | Harness reset con `Clienti_Siti`, `Team` e `TipiPratica`. | Inventario reset include header e numero righe delle tre anagrafiche, le lascia fuori dai clear e richiede uguaglianza prima/dopo; una topologia incompleta e` rifiutata. | `MET` |
+| `R05-T08-AC4` Il ripristino anagrafiche usa un backup esplicito, valida tutto prima di scrivere e non sovrascrive dati presenti. | Harness GAS puro e ispezione sorgente. | `ripristinaAnagraficheDaBackup` richiede una copia distinta, valida i tre header e tutte le destinazioni prima di scrivere, rifiuta tab con righe umane; rimossi i tecnici fittizi dall'inizializzazione. | `MET` |
+| `R05-T08-AC5` Test mirati e smoke locale sono verdi, senza segreti o azioni live. | Suite focalizzata, smoke, diff e scansione segreti. | Mirati `107 passed`; regressione completa `587 passed`; smoke `587 passed`; sintassi Python/GAS, diff e scansione segreti verdi. Nessuna pubblicazione o mutazione live. | `MET` |
+
+Successore: pubblicare esplicitamente il delta GAS, produrre/installare la nuova RC,
+ripristinare le anagrafiche da un backup verificato e ripetere reset/collaudo umano.

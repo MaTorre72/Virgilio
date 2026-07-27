@@ -132,6 +132,11 @@ function doPost(e) {
     return _rispostaJSON(caronteResetTestEnvironment(dati));
   }
 
+  // Lettura metadata-only usata per concludere la mail soltanto dopo il form.
+  if (dati.action === VIRGILIO_INBOX_STATUS_ACTION) {
+    return _rispostaJSON(caronteGetVirgilioInboxStatuses(dati));
+  }
+
   // 2b. Rate limiting — max 1 richiesta ogni 10 secondi
   try {
     _verificaRateLimit();

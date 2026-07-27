@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-27 +02:00 - Completato `GUI-U-R05-T08`: completion vincolata allo
+  stato finale `archiviato`, post-condizioni Gmail verificate, anagrafiche
+  canoniche preservate e ripristino esplicito da backup senza dati fittizi.
+  Mirati `107 passed`; regressione e smoke `587 passed`; nessuna azione live.
+
 - 2026-07-25 +02:00 - Completato `GUI-U-R04-R06`: release candidate locale
   con build e installer autonomi, manifest release SHA-256/commit/build ID e
   flag verificabile `oauth_client_included`; risorsa OAuth inclusa e hash

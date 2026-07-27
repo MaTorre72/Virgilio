@@ -79,6 +79,15 @@ function _testResetAssertTargets_(targets) {
       throw new Error('Ogni asset deve essere identificato e marcato TEST.');
     }
   });
+  const expectedAnagrafiche = [
+    ANAGRAFICA_TABS.CLIENTI_SITI,
+    ANAGRAFICA_TABS.TEAM,
+    ANAGRAFICA_TABS.TIPI_PRATICA,
+  ];
+  const actualAnagrafiche = (targets.registry.anagrafiche || []).map(item => item.sheet);
+  if (expectedAnagrafiche.some(name => actualAnagrafiche.indexOf(name) < 0)) {
+    throw new Error('Le tre anagrafiche canoniche devono esistere prima del reset TEST.');
+  }
   if (targets.limbo.id === targets.registry.id || targets.limbo.id === targets.inbox.id) {
     throw new Error('Il Limbo TEST deve avere un identificativo distinto dagli spreadsheet TEST.');
   }
@@ -123,11 +132,30 @@ function _testResetInspectGas_(props) {
     environment: props.getProperty('VIRGILIO_ENVIRONMENT') || '',
     registry: { id: registryId, name: registry.getName(),
       rows: _testResetRows_(registry, registrySheets),
-      schema: _testResetSchema_(registry, registrySheets) },
+      schema: _testResetSchema_(registry, registrySheets),
+      anagrafiche: _testResetAnagrafiche_(registry) },
     inbox: { id: inboxId, name: `${inbox.getName()} ${sheetName}`, sheet_name: sheetName,
       rows: _testResetRows_(inbox, [sheetName]), schema: _testResetSchema_(inbox, [sheetName]) },
     limbo: { id: limboId, name: limbo.getName(), files: _testResetFiles_(limbo) }
   };
+}
+
+function _testResetAnagrafiche_(spreadsheet) {
+  const names = [
+    ANAGRAFICA_TABS.CLIENTI_SITI,
+    ANAGRAFICA_TABS.TEAM,
+    ANAGRAFICA_TABS.TIPI_PRATICA,
+  ];
+  return names.map(name => {
+    const sheet = spreadsheet.getSheetByName(name);
+    if (!sheet) throw new Error(`Tab anagrafico canonico mancante: ${name}`);
+    const columns = sheet.getLastColumn();
+    return {
+      sheet: name,
+      header: columns ? sheet.getRange(1, 1, 1, columns).getValues()[0] : [],
+      rows: Math.max(0, sheet.getLastRow() - 1),
+    };
+  });
 }
 
 function _testResetRows_(spreadsheet, names) {
@@ -231,7 +259,12 @@ function _testResetResponse_(payload, ok, phase, completed, targets, backups, er
 
 /** Pure harness: no Drive, Sheets, network or credentials. */
 function testTestEnvironmentReset() {
-  const target = { environment: 'TEST', registry: { id: 'r', name: 'Registro TEST', rows: [2], schema: ['h'] },
+  const target = { environment: 'TEST', registry: { id: 'r', name: 'Registro TEST', rows: [2], schema: ['h'],
+    anagrafiche: [
+      { sheet: 'Clienti_Siti', header: ['cliente'], rows: 1 },
+      { sheet: 'Team', header: ['nome'], rows: 1 },
+      { sheet: 'TipiPratica', header: ['codice'], rows: 1 }
+    ] },
     inbox: { id: 'i', name: 'Da archiviare TEST', rows: [2], schema: ['h'] },
     limbo: { id: 'l', name: 'Limbo TEST', files: [{ id: 'f', name: 'doc.pdf' }] } };
   ['preview', 'registry_backed_up', 'prepared', 'registry_cleared', 'inbox_cleared', 'completed']

@@ -4,6 +4,7 @@ const VIRGILIO_INBOX_SPREADSHEET_PROPERTY = 'VIRGILIO_INBOX_SPREADSHEET_ID';
 const VIRGILIO_INBOX_SHEET_PROPERTY = 'VIRGILIO_INBOX_SHEET_NAME';
 const VIRGILIO_INBOX_DEFAULT_SHEET = 'Virgilio_Inbox';
 const VIRGILIO_INBOX_INTAKE_ACTION = 'intake_virgilio_inbox';
+const VIRGILIO_INBOX_STATUS_ACTION = 'status_virgilio_inbox';
 const VIRGILIO_INBOX_COLUMN_WIDTHS = [
   170, 170, 120, 220, 150, 220, 220, 130, 150, 170, 170,
   220, 220, 170, 170, 240, 220, 180, 180, 180, 240, 280
@@ -199,6 +200,36 @@ function caronteGetVirgilioInboxForForm(inboxId) {
         'Lookup Virgilio_Inbox non riuscito.',
     };
   }
+}
+
+/** Stato finale metadata-only per il completamento locale protetto. */
+function caronteGetVirgilioInboxStatuses(payload) {
+  const ids = payload && Array.isArray(payload.inbox_ids)
+    ? payload.inbox_ids.map(_virgilioInboxStringOrEmpty_).filter(Boolean)
+    : [];
+  if (!ids.length || ids.length > 100 || new Set(ids).size !== ids.length) {
+    return {
+      ok: false,
+      action: VIRGILIO_INBOX_STATUS_ACTION,
+      records: [],
+      message: 'inbox_ids non validi.',
+    };
+  }
+  const records = ids.map(inboxId => {
+    const lookup = caronteGetVirgilioInboxForForm(inboxId);
+    return {
+      inbox_id: inboxId,
+      found: lookup && lookup.found === true,
+      status: lookup && lookup.found === true
+        ? _virgilioInboxStringOrEmpty_(lookup.status)
+        : '',
+    };
+  });
+  return {
+    ok: true,
+    action: VIRGILIO_INBOX_STATUS_ACTION,
+    records: records,
+  };
 }
 
 function caronteCollegaSubmitVirgilioInbox(payload) {

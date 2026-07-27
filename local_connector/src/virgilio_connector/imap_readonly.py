@@ -232,8 +232,12 @@ class ImapCompletionMailbox:
         finally:
             ImapReadonlyMailbox._close(client)
 
-    def move_to_done_label(self, uid: str) -> None:
-        """Apply the done label and remove only the configured Gmail input label."""
+    def move_to_done_label(self, uid: str, message_id: str) -> None:
+        """Apply/remove labels and prove both final label post-conditions."""
+        if not message_id:
+            raise ImapCompletionError(
+                "move_to_done_label requires Message-ID for postcondition verification"
+            )
         client = self._connect()
         try:
             listed = self.list_mailboxes(client=client)
@@ -274,6 +278,13 @@ class ImapCompletionMailbox:
             )
         finally:
             ImapReadonlyMailbox._close(client)
+        input_present = self.input_contains_uid(uid)
+        done_present = self.done_contains_message_id(message_id)
+        if input_present or not done_present:
+            raise ImapCompletionError(
+                "move_to_done_label postcondition failed: "
+                f"input_present={input_present}; done_present={done_present}"
+            )
 
     def list_mailboxes(self, *, client=None) -> tuple[str, ...]:
         close_client = client is None

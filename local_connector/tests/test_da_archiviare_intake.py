@@ -7,12 +7,14 @@ import pytest
 
 from virgilio_connector.da_archiviare_intake import (
     DA_ARCHIVIARE_INTAKE_ACTION,
+    DA_ARCHIVIARE_STATUS_ACTION,
     DaArchiviareIntakeClientError,
     DaArchiviareIntakeError,
     DaArchiviareIntakeHttpClient,
     DaArchiviareIntakeResponse,
     DaArchiviareIntakeTokenNotConfigured,
     DaArchiviareIntakeUrlNotConfigured,
+    DaArchiviareStatusHttpClient,
     build_da_archiviare_intake_payload,
 )
 
@@ -174,6 +176,49 @@ def test_create_record_sends_metadata_only_envelope_with_token(tmp_path):
     assert envelope["manifest"]["attachment_id"] == "att-123-42-1-aaaaaaaaaaaa"
     for forbidden in ("local_path", "file_path", "file_bytes", "base64", '"content"', '"raw"'):
         assert forbidden not in serialized
+
+
+def test_status_client_reads_final_states_with_one_metadata_only_request():
+    captured = {}
+
+    def opener(request, *, timeout):
+        captured["payload"] = json.loads(request.data)
+        return FakeResponse({
+            "ok": True,
+            "action": DA_ARCHIVIARE_STATUS_ACTION,
+            "records": [
+                {"inbox_id": "inbox-1", "found": True, "status": "archiviato"},
+                {"inbox_id": "inbox-2", "found": True, "status": "in_lavorazione"},
+            ],
+        })
+
+    result = DaArchiviareStatusHttpClient(
+        "https://example.invalid/exec", "token-123", opener=opener
+    ).statuses(("inbox-1", "inbox-2"))
+
+    assert result == {"inbox-1": "archiviato", "inbox-2": "in_lavorazione"}
+    assert captured["payload"] == {
+        "action": DA_ARCHIVIARE_STATUS_ACTION,
+        "token": "token-123",
+        "inbox_ids": ["inbox-1", "inbox-2"],
+    }
+
+
+def test_status_client_rejects_missing_or_duplicate_records():
+    client = DaArchiviareStatusHttpClient(
+        "https://example.invalid/exec", "token-123",
+        opener=lambda request, timeout: FakeResponse({
+            "ok": True,
+            "action": DA_ARCHIVIARE_STATUS_ACTION,
+            "records": [
+                {"inbox_id": "inbox-1", "found": True, "status": "archiviato"},
+                {"inbox_id": "inbox-1", "found": True, "status": "archiviato"},
+            ],
+        }),
+    )
+
+    with pytest.raises(DaArchiviareIntakeClientError, match="records"):
+        client.statuses(("inbox-1", "inbox-2"))
 
 
 def test_url_not_configured_never_attempts_network(tmp_path):

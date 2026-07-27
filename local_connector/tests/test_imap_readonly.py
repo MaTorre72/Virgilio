@@ -32,6 +32,7 @@ class FakeImapClient:
     copy_data = [b"copied"]
     store_status = "OK"
     store_data = [b"label removed"]
+    label_removed = False
 
     def __init__(self, host, port, *, timeout):
         self.calls = [("connect", host, port, timeout)]
@@ -43,15 +44,20 @@ class FakeImapClient:
 
     def select(self, mailbox, readonly=False):
         self.calls.append(("select", mailbox, readonly))
+        self.selected_mailbox = mailbox
         return "OK", [b"1"]
 
     def uid(self, command, *args):
         self.calls.append(("uid", command, *args))
         if command == "SEARCH":
+            if self.selected_mailbox == "Virgilio/da-traghettare" and self.label_removed:
+                return "OK", [b""]
             return "OK", [b"42"]
         if command == "COPY":
             return self.copy_status, self.copy_data
         if command == "STORE":
+            if self.store_status == "OK":
+                self.__class__.label_removed = True
             return self.store_status, self.store_data
         return "OK", [(b"42 (BODY[] {1})", eml_bytes()), b")"]
 
@@ -78,6 +84,7 @@ class ImapReadonlyTests(unittest.TestCase):
         FakeImapClient.copy_data = [b"copied"]
         FakeImapClient.store_status = "OK"
         FakeImapClient.store_data = [b"label removed"]
+        FakeImapClient.label_removed = False
         self.temp = tempfile.TemporaryDirectory()
         self.adapter = ImapReadonlyMailbox(
             ImapReadonlyConfig("imap.example.invalid", "test-user", "test-password"),
@@ -164,12 +171,14 @@ class ImapReadonlyTests(unittest.TestCase):
             b'(\\HasNoChildren) "/" "Virgilio/da-traghettare"',
             b'(\\HasNoChildren) "/" "Virgilio/traghettate"',
         ]
-        self.completion.move_to_done_label("42")
+        self.completion.move_to_done_label("42", "<readonly@example.invalid>")
         calls = [call for client in FakeImapClient.instances for call in client.calls]
         self.assertIn(("select", "Virgilio/da-traghettare", False), calls)
         self.assertIn(("uid", "COPY", "42", "Virgilio/traghettate"), calls)
         self.assertIn(("uid", "STORE", "42", "-X-GM-LABELS",
                        "(Virgilio/da-traghettare)"), calls)
+        self.assertIn(("select", "Virgilio/da-traghettare", True), calls)
+        self.assertIn(("select", "Virgilio/traghettate", True), calls)
         texts = [str(call).upper() for call in calls]
         for forbidden in ("DELETE", "EXPUNGE", "MOVE", "\\DELETED"):
             self.assertFalse(any(forbidden in item for item in texts))
@@ -182,8 +191,29 @@ class ImapReadonlyTests(unittest.TestCase):
         FakeImapClient.store_status = "NO"
         FakeImapClient.store_data = [b"extension unavailable"]
         with self.assertRaises(ImapCompletionError) as ctx:
-            self.completion.move_to_done_label("42")
+            self.completion.move_to_done_label("42", "<readonly@example.invalid>")
         self.assertIn("UID STORE REMOVE INPUT LABEL failed", str(ctx.exception))
+
+    def test_completion_move_rejects_unverified_postcondition(self):
+        FakeImapClient.list_data = [
+            b'(\\HasNoChildren) "/" "Virgilio/da-traghettare"',
+            b'(\\HasNoChildren) "/" "Virgilio/traghettate"',
+        ]
+        original_uid = FakeImapClient.uid
+
+        def uid_without_removal(client, command, *args):
+            if command == "STORE":
+                client.calls.append(("uid", command, *args))
+                return "OK", [b"claimed removal"]
+            return original_uid(client, command, *args)
+
+        FakeImapClient.uid = uid_without_removal
+        try:
+            with self.assertRaises(ImapCompletionError) as ctx:
+                self.completion.move_to_done_label("42", "<readonly@example.invalid>")
+        finally:
+            FakeImapClient.uid = original_uid
+        self.assertIn("postcondition", str(ctx.exception))
 
     def test_completion_move_requires_distinct_existing_folders(self):
         completion = ImapCompletionMailbox(
@@ -195,7 +225,7 @@ class ImapReadonlyTests(unittest.TestCase):
             client_factory=FakeImapClient,
         )
         with self.assertRaises(ImapCompletionError) as ctx:
-            completion.move_to_done_label("42")
+            completion.move_to_done_label("42", "<readonly@example.invalid>")
         self.assertIn("must be different", str(ctx.exception))
         calls = [call for client in FakeImapClient.instances for call in client.calls]
         self.assertFalse(any(call[:2] == ("uid", "COPY") for call in calls))

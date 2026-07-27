@@ -12,6 +12,7 @@ from urllib.request import Request, urlopen
 
 
 DA_ARCHIVIARE_INTAKE_ACTION = "intake_virgilio_inbox"
+DA_ARCHIVIARE_STATUS_ACTION = "status_virgilio_inbox"
 FORBIDDEN_FIELDS = frozenset(
     {"local_path", "file_path", "staged_path", "manifest_path",
      "file_bytes", "base64", "content", "raw"}
@@ -185,6 +186,87 @@ class DaArchiviareIntakeHttpClient:
         if result.ok and not result.inbox_id:
             raise DaArchiviareIntakeClientError("successful Da archiviare response is incomplete")
         return result
+
+
+class DaArchiviareStatusHttpClient:
+    """Read final Virgilio_Inbox states without transporting documents."""
+
+    def __init__(self, url: str | None, token: str | None, *, timeout_seconds: float = 15.0,
+                 opener: Callable[..., Any] = urlopen) -> None:
+        self.url = (url or "").strip()
+        self.token = (token or "").strip()
+        if timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be positive")
+        self.timeout_seconds = timeout_seconds
+        self._opener = opener
+
+    def statuses(self, inbox_ids) -> dict[str, str]:
+        requested = tuple(dict.fromkeys(_normalized_identifier(value, "inbox_id")
+                                        for value in inbox_ids))
+        if not requested:
+            return {}
+        if not self.url:
+            raise DaArchiviareIntakeUrlNotConfigured(
+                "VIRGILIO_CARONTE_INTAKE_URL is not configured; network was not attempted"
+            )
+        if not self.token:
+            raise DaArchiviareIntakeTokenNotConfigured(
+                "VIRGILIO_TOKEN is not configured; network was not attempted"
+            )
+        parsed = urlparse(self.url)
+        if parsed.scheme != "https" or not parsed.netloc:
+            raise DaArchiviareIntakeClientError("Da archiviare URL must be an absolute HTTPS URL")
+        envelope = {
+            "action": DA_ARCHIVIARE_STATUS_ACTION,
+            "token": self.token,
+            "inbox_ids": list(requested),
+        }
+        request = Request(
+            self.url,
+            data=json.dumps(envelope, ensure_ascii=False, separators=(",", ":")).encode("utf-8"),
+            method="POST",
+            headers={"Content-Type": "application/json; charset=utf-8",
+                     "Accept": "application/json"},
+        )
+        try:
+            response = self._opener(request, timeout=self.timeout_seconds)
+            try:
+                response_body = response.read()
+            finally:
+                close = getattr(response, "close", None)
+                if close:
+                    close()
+        except TimeoutError as exc:
+            raise DaArchiviareIntakeClientError("Da archiviare status request timed out") from exc
+        except HTTPError as exc:
+            raise DaArchiviareIntakeClientError(
+                f"Da archiviare status returned HTTP {exc.code}"
+            ) from exc
+        except URLError as exc:
+            raise DaArchiviareIntakeClientError(
+                "Da archiviare status network request failed"
+            ) from exc
+        try:
+            decoded = json.loads(response_body.decode("utf-8"))
+        except (UnicodeError, json.JSONDecodeError) as exc:
+            raise DaArchiviareIntakeClientError(
+                "Da archiviare status returned invalid JSON"
+            ) from exc
+        if (not isinstance(decoded, dict) or decoded.get("ok") is not True
+                or decoded.get("action") != DA_ARCHIVIARE_STATUS_ACTION
+                or not isinstance(decoded.get("records"), list)):
+            raise DaArchiviareIntakeClientError("Da archiviare status response is invalid")
+        statuses: dict[str, str] = {}
+        for record in decoded["records"]:
+            if (not isinstance(record, dict) or not isinstance(record.get("inbox_id"), str)
+                    or not isinstance(record.get("found"), bool)
+                    or not isinstance(record.get("status"), str)
+                    or record["inbox_id"] in statuses):
+                raise DaArchiviareIntakeClientError("Da archiviare status records are invalid")
+            statuses[record["inbox_id"]] = record["status"].strip() if record["found"] else ""
+        if set(statuses) != set(requested):
+            raise DaArchiviareIntakeClientError("Da archiviare status records are incomplete")
+        return statuses
 
 
 def build_da_archiviare_intake_payload(

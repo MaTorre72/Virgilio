@@ -170,11 +170,25 @@ class FakeAckMailbox:
         if self.fail:
             raise RuntimeError(self.fail_message)
 
-    def move_to_done_label(self, uid):
+    def move_to_done_label(self, uid, message_id):
         self.calls.append(("move_to_done_label", self.account.account_alias,
-                           self.account.input_folder, self.account.done_folder, uid))
+                           self.account.input_folder, self.account.done_folder, uid,
+                           message_id))
         if self.fail:
             raise RuntimeError(self.fail_message)
+
+
+class FakeArchiveStatusClient:
+    def __init__(self, statuses=None, *, error=None):
+        self.statuses_by_id = statuses or {}
+        self.error = error
+        self.calls = []
+
+    def statuses(self, inbox_ids):
+        self.calls.append(tuple(inbox_ids))
+        if self.error:
+            raise RuntimeError(self.error)
+        return {inbox_id: self.statuses_by_id.get(inbox_id, "") for inbox_id in inbox_ids}
 
 
 def test_loads_multi_account_yaml_without_secret_values(tmp_path):
@@ -689,6 +703,7 @@ def test_operational_completion_waits_for_da_archiviare_handoff(tmp_path):
         mailbox_calls.append(account.account_alias)
         return FakeAckMailbox(account)
 
+    status_client = FakeArchiveStatusClient({"inbox-1": "da_lavorare"})
     runner = LocalCompletionRunner(
         accounts,
         paths=paths,
@@ -698,6 +713,7 @@ def test_operational_completion_waits_for_da_archiviare_handoff(tmp_path):
         },
         mailbox_factory=mailbox_factory,
         require_da_archiviare=True,
+        archive_status_client=status_client,
     )
 
     blocked = runner.complete(dry_run=False)
@@ -707,24 +723,62 @@ def test_operational_completion_waits_for_da_archiviare_handoff(tmp_path):
     assert mailbox_calls == []
 
     with sqlite3.connect(paths.state_db) as db:
-        attachment_id, account_alias, fingerprint = db.execute(
+        attachments = db.execute(
             """SELECT attachment_id,account_alias,fingerprint
-               FROM attachments WHERE status='staged_storage'"""
-        ).fetchone()
-        db.execute(
+               FROM attachments WHERE status='staged_storage' ORDER BY id"""
+        ).fetchall()
+        db.executemany(
             """INSERT INTO audit_events(
                  created_at,machine_id,account_alias,entity_type,entity_id,
                  fingerprint,action,status,details_json
                ) VALUES(datetime('now'),'caronte-test',?,'attachment',?,?,
-                        'da_archiviare_intake','idempotent','{}')""",
-            (account_alias, attachment_id, fingerprint),
+                        'da_archiviare_intake','idempotent',?)""",
+            [(row[1], row[0], row[2], json.dumps({"inbox_id": f"inbox-{index}"}))
+             for index, row in enumerate(attachments, start=1)],
         )
         db.commit()
 
+    pending = runner.complete(dry_run=False)
+    assert all(item.status == "completion_skipped" for item in pending)
+    assert all("archiviazione finale" in item.reason for item in pending)
+    assert mailbox_calls == []
+
+    status_client.statuses_by_id = {
+        f"inbox-{index}": "archiviato" for index in range(1, len(attachments) + 1)
+    }
     completed = runner.complete(dry_run=False)
 
-    assert completed[0].status == "completed"
-    assert mailbox_calls == ["account_1"]
+    assert all(item.status == "completed" for item in completed)
+    assert mailbox_calls == ["account_1", "account_1"]
+
+
+def test_operational_completion_stays_retryable_when_archive_status_fails(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    with sqlite3.connect(paths.state_db) as db:
+        rows = db.execute("""SELECT attachment_id,account_alias,fingerprint
+            FROM attachments WHERE status='staged_storage' ORDER BY id""").fetchall()
+        db.executemany("""INSERT INTO audit_events(
+            created_at,machine_id,account_alias,entity_type,entity_id,fingerprint,
+            action,status,details_json
+        ) VALUES(datetime('now'),'caronte-test',?,'attachment',?,?,
+                 'da_archiviare_intake','created',?)""", [
+            (row[1], row[0], row[2], json.dumps({"inbox_id": f"inbox-{index}"}))
+            for index, row in enumerate(rows, start=1)
+        ])
+        db.commit()
+    calls = []
+    runner = LocalCompletionRunner(
+        accounts, paths=paths,
+        mailbox_factory=lambda account: calls.append(account),
+        require_da_archiviare=True,
+        archive_status_client=FakeArchiveStatusClient(error="status unavailable"),
+    )
+
+    result = runner.complete(dry_run=False)
+
+    assert all(item.status == "completion_skipped" for item in result)
+    assert all("verifica archiviazione" in item.reason for item in result)
+    assert calls == []
 
 
 def mark_candidate_events_exported(paths, accounts, *, leave_pending=0):
@@ -841,7 +895,7 @@ def test_completion_move_strategy_removes_input_label_and_records_result(tmp_pat
     assert FakeAckMailbox.instances[0].calls == [
         ("input_contains_uid", "account_1", "41"),
         ("move_to_done_label", "account_1", "Virgilio/da-traghettare",
-         "Virgilio/traghettate", "41"),
+         "Virgilio/traghettate", "41", "<a@example.invalid>"),
     ]
     with sqlite3.connect(paths.state_db) as db:
         strategy, ack_result = db.execute(

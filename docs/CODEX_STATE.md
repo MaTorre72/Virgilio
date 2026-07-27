@@ -3,8 +3,8 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: `GUI-U-R05-T07` correttivo spostamento etichette `DONE`;
-  resta installazione della nuova RC e collaudo finale umano.
+- Task corrente: `GUI-U-R05-T08` correttivo coordinato `DONE` nel repository;
+  restano pubblicazione/installazione, ripristino anagrafiche e collaudo finale umano.
 - `GUI-U-R05-T01` e` `DONE`: un duplicato viene riusato solo con file e SHA-256 validi;
   file assenti o corrotti sono riacquisiti dal processor esistente; gli errori storage sono
   persistiti, visibili e bloccano handoff/completion. Prove: mirati `79 passed`, smoke `558 passed`.
@@ -26,15 +26,20 @@
   `traghettate` e rimuove la sola etichetta di ingresso tramite estensione Gmail,
   senza `DELETE`, `MOVE` o `EXPUNGE`; la copia-only precedente resta disponibile.
   Prove: mirati `73 passed`, smoke `581 passed`.
+- `GUI-U-R05-T08` e` `DONE`: la pipeline conclude la mail solo quando ogni
+  `Virgilio_Inbox` correlato e` `archiviato`; COPY/STORE e` seguito dalla verifica
+  read-only delle due etichette; il reset preserva e verifica `Clienti_Siti`, `Team`
+  e `TipiPratica`, ripristinabili solo da backup esplicito senza sovrascritture.
+  Prove: mirati `107 passed`, regressione e smoke `587 passed`.
 - Sequenza automatica residua: nessuna.
 - Pubblicazione Apps Script autorizzata esplicitamente dall'utente e completata il 2026-07-26:
   push dei 14 file canonici e deployment web esistente aggiornato alla versione `35`,
   senza cambiare URL; la versione `34` e` superata dal reset Limbo ricorsivo.
-- RC desktop prodotta e verificata dal commit `2294efa`: installer
-  `CaronteSetup-0.11.0-2294efa.exe`, Build ID
-  `34eafb2f-6974-4153-bb94-07e0e078a77f`, SHA-256
-  `C483221148B619C18C36E99F55B23B4078D287A89AF24194B198F273A42C872E`;
-  client OAuth incluso, smoke build e installer `PASS`.
+- RC desktop installata dal commit `fcc5c0c`: installer
+  `CaronteSetup-0.11.0-fcc5c0c.exe`, Build ID
+  `4543a3b1-4d2a-45b5-964a-28e2a9ec6be0`, SHA-256
+  `263F889A1C1F99622F699EEF5CEF4C5AEC124771C073866B842A9525FE8D9701`;
+  e` superata dal correttivo T08 non ancora distribuito.
 - Topologia TEST riallineata senza nuovi asset: GAS e Local connector usano lo
   stesso Registro umano append-only `bucoliche` con le stesse 17 colonne;
   stato e conflitti tecnici restano locali e non producono tab cloud paralleli.
@@ -49,8 +54,9 @@
   precedente sono stati rimossi i soli tab legacy
   `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti`; il foglio reale contiene
   soltanto `bucoliche` e `Virgilio_Inbox`. Trigger TEST fermo.
-- Gate residuo: installazione della nuova RC e collaudo finale umano dello
-  spostamento etichette. Codex non puo` approvarlo.
+- Gate residuo: pubblicazione esplicita del delta GAS, nuova RC, ripristino delle
+  anagrafiche da backup verificato, reset TEST e collaudo finale umano. Codex non
+  puo` approvare il gate umano e non ha eseguito azioni live in T08.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.

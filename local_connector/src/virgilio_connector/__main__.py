@@ -39,6 +39,7 @@ from .da_archiviare_intake import (
     DaArchiviareIntakeError,
     DaArchiviareIntakeHttpClient,
     DaArchiviareIntakeResponse,
+    DaArchiviareStatusHttpClient,
     build_da_archiviare_intake_payload,
 )
 from .doctor import LocalDoctor
@@ -306,6 +307,11 @@ def _build_local_pipeline_runner(
         ),
         completion_factory=lambda: LocalCompletionRunner(
             accounts, paths=paths, environ=runtime, require_da_archiviare=True,
+            archive_status_client=DaArchiviareStatusHttpClient(
+                runtime.get("VIRGILIO_CARONTE_INTAKE_URL"),
+                runtime.get("VIRGILIO_TOKEN"),
+                timeout_seconds=timeout_seconds,
+            ),
         ),
     )
 

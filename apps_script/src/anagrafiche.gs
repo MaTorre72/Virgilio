@@ -26,14 +26,12 @@ const ANAGRAFICA_TABS = {
   TIPI_PRATICA: 'TipiPratica',
 };
 
-// Dati default Team — verificare e correggere le email dopo inizializzazione
-const _TEAM_DEFAULT = [
-  { nome: 'Tecnico 1',     email: 'account.1@example.invalid',     ruolo: 'Tecnico' },
-  { nome: 'Tecnico 2',    email: 'account.2@example.invalid',    ruolo: 'Tecnico' },
-  { nome: 'Tecnico 3', email: 'account.3@example.invalid', ruolo: 'Tecnico' },
-  { nome: 'Tecnico 4',      email: 'account.4@example.invalid',      ruolo: 'Tecnico' },
-  { nome: 'Tecnico 5',      email: 'account.5@example.invalid',      ruolo: 'Tecnico' },
-];
+// Gli header sono canonici; i dati umani devono provenire da fonti autorevoli.
+const _ANAGRAFICA_HEADERS = Object.freeze({
+  Clienti_Siti: ['cliente', 'sito', 'attivo', 'data_inserimento'],
+  Team: ['nome', 'email', 'ruolo', 'attivo'],
+  TipiPratica: ['codice', 'descrizione', 'attivo'],
+});
 
 // Vocabolario pratiche — specchio di CONFIG.TIPI_PRATICA con descrizioni
 const _TIPI_PRATICA_DEFAULT = [
@@ -119,7 +117,7 @@ function aggiungiClienteSito(cliente, sito) {
 
 /**
  * Crea i tre tab di anagrafica nel file Bucoliche se non esistono.
- * Popola Team e TipiPratica con i dati default.
+ * Popola il solo vocabolario TipiPratica; Team non riceve nominativi fittizi.
  * Clienti_Siti parte vuoto: compilare manualmente o tramite il form Virgilio.
  *
  * Idempotente: non sovrascrive tab già esistenti con dati.
@@ -134,8 +132,59 @@ function inizializzaAnagrafica() {
 
   Logger.log('[Anagrafica] Tab verificati/creati in Bucoliche:');
   Logger.log(`  → ${ANAGRAFICA_TABS.CLIENTI_SITI} (compilare con i clienti reali)`);
-  Logger.log(`  → ${ANAGRAFICA_TABS.TEAM} (verificare le email)`);
+  Logger.log(`  → ${ANAGRAFICA_TABS.TEAM} (ripristinare da backup o compilare dati autorevoli)`);
   Logger.log(`  → ${ANAGRAFICA_TABS.TIPI_PRATICA} (vocabolario completo)`);
+}
+
+
+/** Ripristino esplicito, atomico nella validazione, da una copia completa. */
+function ripristinaAnagraficheDaBackup(backupSpreadsheetId) {
+  const backupId = (backupSpreadsheetId || '').toString().trim();
+  if (!backupId || backupId === CONFIG.BUCOLICHE_ID) {
+    throw new Error('Indicare un backup spreadsheet distinto dal Registro operativo.');
+  }
+  const source = SpreadsheetApp.openById(backupId);
+  const target = SpreadsheetApp.openById(CONFIG.BUCOLICHE_ID);
+  const plan = _pianificaRipristinoAnagrafiche_(source, target);
+  plan.forEach(item => {
+    let sheet = target.getSheetByName(item.name);
+    if (!sheet) sheet = target.insertSheet(item.name);
+    sheet.clearContents();
+    sheet.getRange(1, 1, item.values.length, item.values[0].length)
+      .setValues(item.values);
+    _formattaIntestazioneAnagrafica(sheet, item.values[0].length);
+  });
+  return {
+    ok: true,
+    backup_spreadsheet_id: backupId,
+    restored: plan.map(item => ({ sheet: item.name, rows: item.values.length - 1 })),
+  };
+}
+
+
+function _pianificaRipristinoAnagrafiche_(source, target) {
+  return Object.keys(_ANAGRAFICA_HEADERS).map(name => {
+    const sourceSheet = source.getSheetByName(name);
+    if (!sourceSheet) throw new Error(`Backup privo del tab canonico ${name}.`);
+    const values = sourceSheet.getDataRange().getValues();
+    const expected = _ANAGRAFICA_HEADERS[name];
+    const header = values.length ? values[0].slice(0, expected.length) : [];
+    if (header.length !== expected.length ||
+        header.some((value, index) => value.toString().trim() !== expected[index])) {
+      throw new Error(`Intestazione non valida nel backup per ${name}.`);
+    }
+    const targetSheet = target.getSheetByName(name);
+    if (targetSheet && targetSheet.getLastRow() > 1) {
+      throw new Error(`Il tab ${name} contiene dati e non viene sovrascritto.`);
+    }
+    if (targetSheet && targetSheet.getLastRow() === 1) {
+      const current = targetSheet.getRange(1, 1, 1, expected.length).getValues()[0];
+      if (current.some((value, index) => value.toString().trim() !== expected[index])) {
+        throw new Error(`Intestazione destinazione non valida per ${name}.`);
+      }
+    }
+    return { name: name, values: values };
+  });
 }
 
 
@@ -247,7 +296,7 @@ function _assicuraTabClientiSiti(ss) {
   if (!sheet) sheet = ss.insertSheet(ANAGRAFICA_TABS.CLIENTI_SITI);
 
   if (sheet.getLastRow() === 0) {
-    const header = ['cliente', 'sito', 'attivo', 'data_inserimento'];
+    const header = _ANAGRAFICA_HEADERS.Clienti_Siti;
     sheet.appendRow(header);
     _formattaIntestazioneAnagrafica(sheet, header.length);
     sheet.setColumnWidth(1, 200);
@@ -264,7 +313,7 @@ function _assicuraTabTeam(ss) {
   if (!sheet) sheet = ss.insertSheet(ANAGRAFICA_TABS.TEAM);
 
   if (sheet.getLastRow() === 0) {
-    const header = ['nome', 'email', 'ruolo', 'attivo'];
+    const header = _ANAGRAFICA_HEADERS.Team;
     sheet.appendRow(header);
     _formattaIntestazioneAnagrafica(sheet, header.length);
     sheet.setColumnWidth(1, 160);
@@ -272,11 +321,7 @@ function _assicuraTabTeam(ss) {
     sheet.setColumnWidth(3, 140);
     sheet.setColumnWidth(4,  80);
 
-    _TEAM_DEFAULT.forEach(m => {
-      sheet.appendRow([m.nome, m.email, m.ruolo, true]);
-    });
-
-    Logger.log(`[Anagrafica] Tab ${ANAGRAFICA_TABS.TEAM} creato con dati default — verificare le email.`);
+    Logger.log(`[Anagrafica] Tab ${ANAGRAFICA_TABS.TEAM} creato vuoto — ripristinare da backup o compilare dati autorevoli.`);
   }
 }
 
@@ -286,7 +331,7 @@ function _assicuraTabTipiPratica(ss) {
   if (!sheet) sheet = ss.insertSheet(ANAGRAFICA_TABS.TIPI_PRATICA);
 
   if (sheet.getLastRow() === 0) {
-    const header = ['codice', 'descrizione', 'attivo'];
+    const header = _ANAGRAFICA_HEADERS.TipiPratica;
     sheet.appendRow(header);
     _formattaIntestazioneAnagrafica(sheet, header.length);
     sheet.setColumnWidth(1, 130);

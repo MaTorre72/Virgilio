@@ -171,12 +171,14 @@ class LocalCompletionRunner:
                  paths: LocalDataPaths | None = None,
                  environ: Mapping[str, str] | None = None,
                  mailbox_factory: Callable[[LocalImapAccount], object] | None = None,
-                 require_da_archiviare: bool = False) -> None:
+                 require_da_archiviare: bool = False,
+                 archive_status_client: object | None = None) -> None:
         self.accounts = {account.account_alias: account for account in accounts}
         self.paths = paths or LocalDataPaths()
         self.environ = environ
         self.mailbox_factory = mailbox_factory or self._default_mailbox
         self.require_da_archiviare = require_da_archiviare
+        self.archive_status_client = archive_status_client
 
     def complete(self, *, dry_run: bool) -> tuple[CompletionResult, ...]:
         ensure_state_db(self.paths.root)
@@ -250,6 +252,29 @@ class LocalCompletionRunner:
             return CompletionResult(**base, status="completion_skipped",
                                     ack_strategy=None,
                                     reason="message has attachments not delivered to Da archiviare")
+        if self.require_da_archiviare:
+            try:
+                inbox_ids = self._handoff_inbox_ids(int(row["message_row_id"]), staged)
+                if len(inbox_ids) != len(staged):
+                    return CompletionResult(
+                        **base, status="completion_skipped", ack_strategy=None,
+                        reason="verifica archiviazione incompleta: correlazione inbox mancante",
+                    )
+                if self.archive_status_client is None:
+                    raise RuntimeError("archive status client is not configured")
+                statuses = self.archive_status_client.statuses(inbox_ids)
+            except Exception as exc:
+                return CompletionResult(
+                    **base, status="completion_skipped", ack_strategy=None,
+                    reason=f"verifica archiviazione non disponibile: {exc}",
+                )
+            pending = tuple(inbox_id for inbox_id in inbox_ids
+                            if statuses.get(inbox_id) != "archiviato")
+            if pending:
+                return CompletionResult(
+                    **base, status="completion_skipped", ack_strategy=None,
+                    reason="in attesa dell'archiviazione finale in Da archiviare",
+                )
         if not account.ack_enabled:
             return CompletionResult(**base, status="completion_skipped",
                                     ack_strategy=account.ack_strategy,
@@ -293,7 +318,9 @@ class LocalCompletionRunner:
                 message_state="ready_for_ack", ack_strategy=account.ack_strategy,
                 ack_result="attempting", attempted=True, completed=False)
             if account.ack_strategy == "move_to_done_label":
-                mailbox.move_to_done_label(str(row["message_uid"]))
+                mailbox.move_to_done_label(
+                    str(row["message_uid"]), str(row["message_id"] or "")
+                )
                 completed_reason = (
                     "marcata come traghettata; etichetta input rimossa"
                 )
@@ -365,6 +392,34 @@ class LocalCompletionRunner:
                 WHERE message_id=? AND attachment_id IS NOT NULL AND fingerprint IS NOT NULL
                 ORDER BY id""", (message_row_id,)).fetchall()
         return tuple((str(row[0]), str(row[1])) for row in rows)
+
+    def _handoff_inbox_ids(
+        self, message_row_id: int, attachment_ids: Sequence[str]
+    ) -> tuple[str, ...]:
+        if not attachment_ids:
+            return ()
+        uri = f"{self.paths.state_db.resolve().as_uri()}?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True)) as db:
+            rows = db.execute("""SELECT a.attachment_id,e.details_json
+                FROM attachments a JOIN audit_events e
+                  ON e.entity_id=a.attachment_id AND e.account_alias=a.account_alias
+                WHERE a.message_id=? AND a.attachment_id IS NOT NULL
+                  AND e.action='da_archiviare_intake'
+                  AND e.status IN ('created','updated','idempotent')
+                ORDER BY e.id DESC""", (message_row_id,)).fetchall()
+        by_attachment: dict[str, str] = {}
+        for attachment_id, details_json in rows:
+            key = str(attachment_id)
+            if key in by_attachment:
+                continue
+            try:
+                details = json.loads(str(details_json or "{}"))
+            except json.JSONDecodeError:
+                continue
+            inbox_id = str(details.get("inbox_id", "")).strip() if isinstance(details, dict) else ""
+            if inbox_id:
+                by_attachment[key] = inbox_id
+        return tuple(by_attachment[item] for item in attachment_ids if item in by_attachment)
 
     def _default_mailbox(self, account: LocalImapAccount):
         config = account.to_imap_config(self.environ)

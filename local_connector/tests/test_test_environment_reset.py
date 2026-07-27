@@ -23,7 +23,12 @@ def response(reset_id, mode, *, phase=None, completed=None, targets=None):
         "targets": targets or {
             "environment": "TEST",
             "registry": {"id": "registry-test", "name": "Registro TEST", "rows": [],
-                         "schema": [{"sheet": "Eventi", "header": ["id"]}]},
+                         "schema": [{"sheet": "Eventi", "header": ["id"]}],
+                         "anagrafiche": [
+                             {"sheet": "Clienti_Siti", "header": ["cliente", "sito", "attivo", "data_inserimento"], "rows": 2},
+                             {"sheet": "Team", "header": ["nome", "email", "ruolo", "attivo"], "rows": 3},
+                             {"sheet": "TipiPratica", "header": ["codice", "descrizione", "attivo"], "rows": 13},
+                         ]},
             "inbox": {"id": "inbox-test", "name": "Da archiviare TEST", "rows": [],
                       "schema": [{"sheet": "Inbox TEST", "header": ["id"]}]},
             "limbo": {"id": "limbo-test", "name": "Limbo TEST", "files": []},
@@ -147,8 +152,10 @@ def test_gas_reset_is_authenticated_but_not_blocked_by_form_rate_limit():
     )
     token_gate = source.index("dati.token !== CONFIG.VIRGILIO_TOKEN")
     reset_route = source.index("dati.action === TEST_ENVIRONMENT_RESET_ACTION")
+    status_route = source.index("dati.action === VIRGILIO_INBOX_STATUS_ACTION")
     form_rate_limit = source.index("_verificaRateLimit()")
     assert token_gate < reset_route < form_rate_limit
+    assert token_gate < status_route < form_rate_limit
 
 
 def test_gas_reset_targets_operational_assets_and_one_shared_register_tab():
@@ -164,6 +171,10 @@ def test_gas_reset_targets_operational_assets_and_one_shared_register_tab():
     assert "VIRGILIO_INBOX_SPREADSHEET_PROPERTY" in inspect
     assert "VIRGILIO_INBOX_SHEET_PROPERTY" in inspect
     assert "props.getProperty('VIRGILIO_LIMBO_ID')" in inspect
+    assert "ANAGRAFICA_TABS.CLIENTI_SITI" in inspect
+    assert "ANAGRAFICA_TABS.TEAM" in inspect
+    assert "ANAGRAFICA_TABS.TIPI_PRATICA" in inspect
+    assert "anagrafiche: _testResetAnagrafiche_" in inspect
     assert "INTAKE_TEST_SPREADSHEET_PROPERTY" not in inspect
     assert "INTAKE_TEST_SHEET_PROPERTY" not in inspect
     assert "BUCOLICHE_TAB" in caronte_source
@@ -182,6 +193,19 @@ def test_gas_reset_targets_operational_assets_and_one_shared_register_tab():
     assert "active_client.replace_rows" not in local_source
     assert "const DRIVE_STAGING_FOLDER_PROPERTY = 'VIRGILIO_LIMBO_ID'" in verify_source
     assert "VIRGILIO_DRIVE_STAGING_FOLDER_ID" not in verify_source
+
+
+def test_anagrafiche_restore_is_explicit_validated_and_never_seeds_fake_team():
+    source = (Path(__file__).parents[2] / "apps_script" / "src" /
+              "anagrafiche.gs").read_text(encoding="utf-8")
+
+    assert "function ripristinaAnagraficheDaBackup(backupSpreadsheetId)" in source
+    assert "_pianificaRipristinoAnagrafiche_" in source
+    assert "non viene sovrascritto" in source
+    assert "account.1@example.invalid" not in source
+    team_setup = source[source.index("function _assicuraTabTeam"):
+                        source.index("function _assicuraTabTipiPratica")]
+    assert "appendRow([m.nome" not in team_setup
 
 
 def test_gas_reset_backs_up_and_removes_legacy_limbo_subfolders():
@@ -207,5 +231,21 @@ def test_completed_remote_reset_must_be_empty_and_preserve_schema(tmp_path):
     seed_local(root)
     with pytest.raises(ResetError, match="left data"):
         ResetService(MaintenanceService(root), InconsistentRemote()).reset(
+            "reset-test-12345678", confirmed=True
+        )
+
+
+def test_completed_remote_reset_must_preserve_anagrafiche(tmp_path):
+    class ChangedAnagraficheRemote(FakeRemote):
+        def request(self, reset_id, mode):
+            raw = response(reset_id, mode)
+            if mode == "execute":
+                raw["targets"]["registry"]["anagrafiche"][0]["rows"] = 0
+            return ResetResponse.from_mapping(raw, mode=mode, reset_id=reset_id)
+
+    root = tmp_path / "data"
+    seed_local(root)
+    with pytest.raises(ResetError, match="left data"):
+        ResetService(MaintenanceService(root), ChangedAnagraficheRemote()).reset(
             "reset-test-12345678", confirmed=True
         )
