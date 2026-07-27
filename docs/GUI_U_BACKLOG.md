@@ -1581,3 +1581,10 @@ etichetta di ingresso senza cancellare o spostare il messaggio.
 
 Il delta e` solo locale. L'RC installata `0.11.0-1f0e6e8` non contiene T10 e non
 e` valida per il prossimo collaudo; Apps Script resta invariato alla versione `40`.
+
+Distribuzione autorizzata del 2026-07-27: generata e installata la RC
+`CaronteSetup-0.11.0-e9e0949.exe` dal commit pulito T10. Build e smoke installer
+`PASS`; Build ID `11924c13-22c8-4a0c-ab59-20faf2751d75`, SHA-256 setup
+`CA87D016EA122EA8A3B5091A01FA7339839146808FE57DAEEBC427381FD14AB6`.
+Identita` e hash del payload installato, registrazione, collegamenti e
+preservazione di configurazione/dati verificati. Apps Script e reset invariati.

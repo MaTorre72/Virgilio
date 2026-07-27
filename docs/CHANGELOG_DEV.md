@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-27 +02:00 - Distribuita la RC T10
+  `CaronteSetup-0.11.0-e9e0949.exe`, Build ID
+  `11924c13-22c8-4a0c-ab59-20faf2751d75`, SHA-256
+  `CA87D016EA122EA8A3B5091A01FA7339839146808FE57DAEEBC427381FD14AB6`.
+  Build e smoke installer `PASS`; identita` payload, registrazione, collegamenti
+  e preservazione dati verificati. Apps Script e reset invariati.
+
 - 2026-07-27 +02:00 - Completato `GUI-U-R05-T10`: il follow-up riprende soltanto
   staged/handoff/completion fino alla chiusura o alla pausa; Gmail rimuove la
   label di ingresso dalla cartella destinazione usando `X-GM-MSGID`, senza

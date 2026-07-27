@@ -147,9 +147,9 @@ vengono ripetuti:
    registrare esplicitamente l'esito umano.
 
 Stato al 2026-07-27: il correttivo e` pubblicato come versione Apps Script `40`.
-La RC desktop installata e` `CaronteSetup-0.11.0-1f0e6e8.exe`, Build ID
-`a0bb673d-6d1d-417f-9d26-cb8d5de71600`, SHA-256
-`5A2405EC861F2CE3654C0CF01D32857FEB496A8218042FC715CE6832C515E5D2`.
+La RC desktop installata e` `CaronteSetup-0.11.0-e9e0949.exe`, Build ID
+`11924c13-22c8-4a0c-ab59-20faf2751d75`, SHA-256
+`CA87D016EA122EA8A3B5091A01FA7339839146808FE57DAEEBC427381FD14AB6`.
 GAS e Local connector scrivono nello stesso `bucoliche` umano a 17 colonne; i
 tre `Bucoliche_*` non sono registri cloud paralleli e `Virgilio_Inbox` e` la
 sola coda. Il punto 2 e` stato completato con reset
@@ -160,8 +160,11 @@ restano fermi. Resta il punto 3 e l'esito umano, mai compilato da Codex.
 
 Il collaudo successivo ha confermato tutte le funzioni salvo la rimozione
 dell'etichetta Gmail di ingresso. Il correttivo `GUI-U-R05-T10` ha chiuso il caso
-reale, ma e` successivo alla RC sopra identificata: serve una nuova RC e una
-conferma umana focalizzata sul passaggio `da-traghettare` -> `traghettate`.
+reale ed e` installato nella RC `CaronteSetup-0.11.0-e9e0949.exe`, Build ID
+`11924c13-22c8-4a0c-ab59-20faf2751d75`, SHA-256
+`CA87D016EA122EA8A3B5091A01FA7339839146808FE57DAEEBC427381FD14AB6`.
+Resta la conferma umana focalizzata sul passaggio
+`da-traghettare` -> `traghettate`.
 
 ## Esiti e regole di giudizio
 

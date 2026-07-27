@@ -36,16 +36,16 @@
   e `TipiPratica`, ripristinabili solo da backup esplicito senza sovrascritture.
   Prove finali dopo l'allineamento live: mirati reset `13 passed`, regressione e
   smoke `589 passed`.
-- Sequenza automatica residua: nessuna. Il successore e` generare e installare
-  una nuova RC contenente T10; Apps Script `40` resta invariato.
+- Sequenza automatica residua: nessuna. La RC contenente T10 e` installata;
+  Apps Script `40` resta invariato. Resta soltanto il collaudo umano focalizzato.
 - Pubblicazione Apps Script autorizzata e completata il 2026-07-27: push dei
   14 file canonici e deployment web esistente aggiornato alla versione `40`,
   senza cambiare URL. Il tab Registro e` canonico `bucoliche`; il reset usa il
   fallback canonico `Virgilio_Inbox` se la proprieta` legacy e` assente.
-- RC desktop installata dal commit `1f0e6e8`: installer
-  `CaronteSetup-0.11.0-1f0e6e8.exe`, Build ID
-  `a0bb673d-6d1d-417f-9d26-cb8d5de71600`, SHA-256
-  `5A2405EC861F2CE3654C0CF01D32857FEB496A8218042FC715CE6832C515E5D2`;
+- RC desktop installata dal commit `e9e0949`: installer
+  `CaronteSetup-0.11.0-e9e0949.exe`, Build ID
+  `11924c13-22c8-4a0c-ab59-20faf2751d75`, SHA-256
+  `CA87D016EA122EA8A3B5091A01FA7339839146808FE57DAEEBC427381FD14AB6`;
   build e smoke installer `PASS`, payload installato verificato e dati preservati.
 - Topologia TEST riallineata senza nuovi asset: GAS e Local connector usano lo
   stesso Registro umano append-only `bucoliche` con le stesse 17 colonne;
@@ -62,8 +62,8 @@
   anagrafiche sono rimaste `4/4/13`; configurazione, credenziali e machine ID
   locali sono preservati. Caronte e avvio automatico restano fermi.
 - Gate residuo: solo collaudo finale umano. Codex non puo` approvarlo.
-- La RC installata `0.11.0-1f0e6e8` precede T10 e non e` valida per un nuovo
-  collaudo, anche se il caso reale pendente e` stato chiuso usando il sorgente corretto.
+- La RC installata `0.11.0-e9e0949` contiene T10 ed e` valida per il nuovo
+  collaudo umano focalizzato sul completamento Gmail.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.
