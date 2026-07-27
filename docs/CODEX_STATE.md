@@ -3,8 +3,10 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: `GUI-U-R05-T08` correttivo coordinato `DONE` e distribuito;
-  resta soltanto il collaudo finale umano.
+- Task corrente: `GUI-U-R05-T09` `DONE`, correttivo coordinato nato dal
+  FAIL reale del collaudo del 2026-07-27: retry Limbo, ripresa waiting,
+  completion periodico, Registro operativo deduplicato e UIDVALIDITY di sessione.
+  Prove: core `49 passed`, pipeline/polling `118 passed`, suite e smoke `593 passed`.
 - `GUI-U-R05-T01` e` `DONE`: un duplicato viene riusato solo con file e SHA-256 validi;
   file assenti o corrotti sono riacquisiti dal processor esistente; gli errori storage sono
   persistiti, visibili e bloccano handoff/completion. Prove: mirati `79 passed`, smoke `558 passed`.
@@ -32,7 +34,9 @@
   e `TipiPratica`, ripristinabili solo da backup esplicito senza sovrascritture.
   Prove finali dopo l'allineamento live: mirati reset `13 passed`, regressione e
   smoke `589 passed`.
-- Sequenza automatica residua: nessuna.
+- Sequenza automatica residua: nessuna. Pubblicazione, nuova RC, reset e nuovo
+  collaudo restano azioni separate da autorizzare; deployment `40` e RC
+  `0.11.0-60cc6ff` restano quelli installati finche` non vengono sostituiti.
 - Pubblicazione Apps Script autorizzata e completata il 2026-07-27: push dei
   14 file canonici e deployment web esistente aggiornato alla versione `40`,
   senza cambiare URL. Il tab Registro e` canonico `bucoliche`; il reset usa il

@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import sqlite3
 import sys
-from time import sleep
+from time import monotonic, sleep
 
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
 from .bucoliche import (BucolicheAppendOnlyAdapter, BucolicheError,
@@ -392,6 +392,25 @@ def _watch_human_summary(result, *, cycle: int) -> list[str]:
     return [f"Ciclo watch #{cycle}", *result.human_summary]
 
 
+def _poll_pending_completion(runner, *, followup_seconds: int,
+                             poll_seconds: int, clock=monotonic,
+                             sleeper=sleep):
+    """Poll final Virgilio_Inbox states after a one-shot acquisition cycle."""
+    deadline = clock() + followup_seconds
+    results = ()
+    while True:
+        results = tuple(runner.complete_pending(dry_run=False))
+        awaiting_human = any(
+            item.status == "completion_skipped" and
+            item.reason == "in attesa dell'archiviazione finale in Da archiviare"
+            for item in results
+        )
+        if not awaiting_human or clock() >= deadline:
+            break
+        sleeper(min(float(poll_seconds), max(0.0, deadline - clock())))
+    return results
+
+
 def _record_da_archiviare_intake_event(local_root: Path, payload: dict[str, object],
                                        *, result: DaArchiviareIntakeResponse | None = None,
                                        error: str | None = None) -> None:
@@ -531,6 +550,10 @@ def main() -> int:
     watch.add_argument("--human", action="store_true")
     watch.add_argument("--interval-seconds", type=int, default=300)
     watch.add_argument("--max-cycles", type=int, default=0)
+    watch.add_argument("--completion-followup-seconds", type=int, default=0,
+                       help=argparse.SUPPRESS)
+    watch.add_argument("--completion-poll-seconds", type=int, default=30,
+                       help=argparse.SUPPRESS)
     watch.add_argument("--progress-events", action="store_true", help=argparse.SUPPRESS)
     doctor = commands.add_parser("doctor")
     doctor.add_argument("--config", type=Path, required=True)
@@ -877,6 +900,10 @@ def main() -> int:
             parser.exit(2, "error: --interval-seconds must be greater than 0\n")
         if args.max_cycles < 0:
             parser.exit(2, "error: --max-cycles must be 0 or greater\n")
+        if args.completion_followup_seconds < 0:
+            parser.exit(2, "error: --completion-followup-seconds must be 0 or greater\n")
+        if args.completion_poll_seconds <= 0:
+            parser.exit(2, "error: --completion-poll-seconds must be greater than 0\n")
         try:
             runner = _build_local_pipeline_runner_from_config(args.config)
         except (FileNotFoundError, MultiAccountConfigError, ValueError) as exc:
@@ -900,6 +927,13 @@ def main() -> int:
                         **asdict(result),
                     }, ensure_ascii=False, separators=(",", ":")))
                 if args.max_cycles and cycle >= args.max_cycles:
+                    if (not args.dry_run and args.completion_followup_seconds and
+                            result.status in {"completed", "completed_with_warnings"}):
+                        _poll_pending_completion(
+                            runner,
+                            followup_seconds=args.completion_followup_seconds,
+                            poll_seconds=args.completion_poll_seconds,
+                        )
                     return 0 if result.status in {
                         "completed", "completed_with_warnings"
                     } else 1

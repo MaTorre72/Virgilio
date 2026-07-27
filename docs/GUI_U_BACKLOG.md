@@ -1512,3 +1512,30 @@ Distribuzione autorizzata del 2026-07-27: deployment Apps Script esistente alla
 versione `40`; RC `0.11.0-60cc6ff` installata; anagrafiche ripristinate con conteggi
 `4/4/13`; reset `reset-r05-20260727-t08-final` completato con backup, dati operativi
 vuoti e anagrafiche invariate. Successore: solo collaudo umano con nuove mail TEST.
+
+### GUI-U-R05-T09 - Ripresa asincrona e Registro operativo coerente
+
+Stato: `DONE`. Priorita`: `P0`.
+Risultato: il percorso reale tollera la latenza di sincronizzazione del Limbo,
+riprende il lavoro pendente e completa Gmail dopo la decisione umana senza
+moltiplicare le righe operative del Registro.
+Dipendenze: `R05-T08 = DONE`; collaudo reale del 2026-07-27 con 5 allegati staged,
+2 intake riusciti, 3 waiting, 2 archiviazioni e 0 mail completate.
+Componenti ammessi: handoff, pipeline/watch, completion e adapter IMAP condivisi,
+proiezione Bucoliche locale, test sintetici e documentazione pertinente.
+Esclusioni: servizi o credenziali reali nei test, nuovi asset cloud, riscrittura del
+form, pubblicazione Apps Script, installazione RC o reset TEST reale.
+Condizione di blocco: impossibilita` di rendere retry e proiezione idempotenti senza
+alterare i contratti metadata-only o il gate umano gia` verificato.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T09-AC1` La verifica Limbo usa retry limitato con backoff e timeout; un intake riuscito non viene ripetuto. | Test con clock/verifier fake e intake contatore. | `test_handoff_retries_with_bounded_backoff_and_never_repeats_intake` verifica tornate `1s/2s`, successo al terzo tentativo e un solo intake; la scadenza globale predefinita e` 60 secondi. | `MET` |
+| `R05-T09-AC2` Un allegato `waiting` e` ripreso nei cicli successivi anche se era gia` staged; UIDVALIDITY e` stabile per tutta la sessione mailbox. | Doppio ciclo sintetico e fake IMAP che consuma la risposta UIDVALIDITY. | Il doppio ciclo passa da `waiting` a `created` con `already_staged` e mantiene un solo intake; il fake IMAP con risposta consumabile assegna lo stesso UIDVALIDITY a entrambi i messaggi con una sola lettura. | `MET` |
+| `R05-T09-AC3` Il completamento viene rieseguito periodicamente dopo l'azione umana e applica Gmail solo quando tutti gli allegati sono `archiviato`. | Watch multi-ciclo e completion/status/IMAP fake. | `Controlla ora` esegue per 10 minuti il solo completion ogni 30 secondi; il test passa da stato umano pendente a `completed` senza nuova acquisizione. Restano verdi i gate misto/assente/tutto archiviato e le post-condizioni Gmail. | `MET` |
+| `R05-T09-AC4` Bucoliche espone una sola riga operativa locale per documento, mantenendo l'audit tecnico in SQLite e una sola transizione finale GAS. | Audit con tre eventi per allegato, export/retry fake e verifica delle righe. | Tre eventi SQLite producono un solo append locale stabile; il percorso integrato con due allegati produce due righe, non otto. Gli ID legacy gia` esportati sono riconosciuti senza riappendere. | `MET` |
+| `R05-T09-AC5` Il correttivo non regredisce pipeline, reset, GUI e contratti di sicurezza. | Test mirati, smoke locale, diff e scansione segreti. | Core `49 passed`, pipeline/polling `118 passed`, suite completa `593 passed`; `smoke_local_connector: OK`, diff-check e scansione segreti senza nuovi valori reali. | `MET` |
+
+Il delta e` solo locale: nessun push/deploy Apps Script, build/installazione RC,
+reset TEST o modifica Gmail e` stato eseguito. Successore: distribuzione coordinata
+su autorizzazione, poi nuovo reset e collaudo umano.

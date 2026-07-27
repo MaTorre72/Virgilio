@@ -5,7 +5,9 @@ import subprocess
 import sys
 import tomllib
 import pytest
+from types import SimpleNamespace
 
+from virgilio_connector.__main__ import _poll_pending_completion
 from virgilio_connector.bucoliche import BucolicheConfig, CONFLICT_COLUMNS, EVENT_COLUMNS
 from virgilio_connector.completion import AckCompletedMessagesResult, CompletionResult
 from virgilio_connector.doctor import DoctorResult
@@ -51,6 +53,47 @@ class FakePipelineRunner:
     def run(self, *, dry_run):
         self.log.append(("pipeline", dry_run))
         return self.result
+
+
+def test_completion_followup_polls_human_state_without_rerunning_acquisition():
+    class CompletionOnlyRunner:
+        def __init__(self):
+            self.calls = 0
+
+        def complete_pending(self, *, dry_run):
+            self.calls += 1
+            if self.calls == 1:
+                return (SimpleNamespace(
+                    status="completion_skipped",
+                    reason="in attesa dell'archiviazione finale in Da archiviare",
+                ),)
+            return (SimpleNamespace(status="completed", reason="completed"),)
+
+    class Clock:
+        now = 0.0
+        sleeps = []
+
+        def __call__(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    runner = CompletionOnlyRunner()
+    clock = Clock()
+
+    results = _poll_pending_completion(
+        runner,
+        followup_seconds=120,
+        poll_seconds=30,
+        clock=clock,
+        sleeper=clock.sleep,
+    )
+
+    assert runner.calls == 2
+    assert clock.sleeps == [30.0]
+    assert results[0].status == "completed"
 
 
 class FakeExportRunner:

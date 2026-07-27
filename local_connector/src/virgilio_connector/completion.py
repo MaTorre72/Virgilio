@@ -9,13 +9,17 @@ import sqlite3
 from contextlib import closing
 from typing import Callable, Mapping, Sequence
 
-from .bucoliche import BucolicheAppendOnlyAdapter
+from .bucoliche import (
+    BucolicheAppendOnlyAdapter,
+    exported_operational_event_ids,
+    operational_event_rows,
+)
 from .imap_readonly import ImapCompletionMailbox
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountConfigError
 from .readonly_state import ReadonlyStateStore, ensure_state_db
 from .time_utils import rome_isoformat, rome_timestamp
-from .traceability import LocalConflictChecker, central_event_rows, load_machine_id
+from .traceability import LocalConflictChecker, load_machine_id
 
 
 BLOCKING_ATTACHMENT_STATES = {
@@ -153,17 +157,14 @@ class ControlledAckRunner:
         exported = self._successful_exported_event_ids()
         return sum(
             1
-            for row in central_event_rows(self.paths.state_db)
+            for row in operational_event_rows(self.paths.state_db)
             if row.get("attachment_id") in attachment_ids and row["event_id"] not in exported
         )
 
     def _successful_exported_event_ids(self) -> set[str]:
-        uri = f"{self.paths.state_db.resolve().as_uri()}?mode=ro"
-        with closing(sqlite3.connect(uri, uri=True)) as db:
-            rows = db.execute("""SELECT event_id FROM local_export_status
-                WHERE target_adapter=? AND export_result='exported'""",
-                (BucolicheAppendOnlyAdapter.TARGET,)).fetchall()
-        return {str(row[0]) for row in rows}
+        return exported_operational_event_ids(
+            self.paths.state_db, BucolicheAppendOnlyAdapter.TARGET
+        )
 
 
 class LocalCompletionRunner:
@@ -180,7 +181,8 @@ class LocalCompletionRunner:
         self.require_da_archiviare = require_da_archiviare
         self.archive_status_client = archive_status_client
 
-    def complete(self, *, dry_run: bool) -> tuple[CompletionResult, ...]:
+    def complete(self, *, dry_run: bool, write_report: bool = True,
+                 record_skipped: bool = True) -> tuple[CompletionResult, ...]:
         ensure_state_db(self.paths.root)
         candidates = self._load_candidates()
         store = ReadonlyStateStore(self.paths.state_db)
@@ -190,9 +192,11 @@ class LocalCompletionRunner:
         for candidate in candidates:
             result = self._complete_one(candidate, store, dry_run=dry_run)
             results.append(result)
-        report_path = None if dry_run else self._write_report(results)
-        if report_path:
+        report_path = None if dry_run or not write_report else self._write_report(results)
+        if not dry_run:
             for result in results:
+                if result.status == "completion_skipped" and not record_skipped:
+                    continue
                 if result.status in {"completed", "already_completed", "already_acked", "ack_failed", "completion_skipped"}:
                     store.update_message_completion(
                         result.message_row_id,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -215,7 +216,7 @@ class BucolicheAppendOnlyAdapter:
     def export(self, *, dry_run: bool) -> BucolicheExportResult:
         self.config.validate()
         ensure_state_db(self.state_db.parent)
-        events = [_event_row(row) for row in central_event_rows(self.state_db)]
+        events = operational_event_rows(self.state_db)
         exported = self._successful_event_ids(self.TARGET)
         pending = [row for row in events if row["event_id"] not in exported]
         conflicts = [row for row in pending if row["conflict_type"] or
@@ -269,11 +270,7 @@ class BucolicheAppendOnlyAdapter:
         return build_google_sheets_client(self.config, self.environ)
 
     def _successful_event_ids(self, target: str) -> set[str]:
-        with closing(sqlite3.connect(self.state_db)) as db:
-            exists = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='local_export_status'").fetchone()
-            if not exists: return set()
-            return {row[0] for row in db.execute("""SELECT event_id FROM local_export_status
-                WHERE target_adapter=? AND export_result='exported'""", (target,))}
+        return exported_operational_event_ids(self.state_db, target)
 
     def _record(self, event_id: str, target: str, result: str,
                 error_type: str | None = None) -> None:
@@ -322,6 +319,60 @@ def _event_row(row: Mapping[str, object]) -> dict:
         "timestamp_archiviazione": timestamp if state == "archiviato" else "",
     })
     return projected
+
+
+def operational_event_rows(state_db: Path) -> list[dict]:
+    """Project one stable human row per local document.
+
+    SQLite remains the append-only technical audit.  The cloud sheet receives a
+    single local lifecycle row; Apps Script may later append the human archival
+    transition without replaying quarantine, staging and intake internals.
+    """
+    latest_by_document: dict[tuple[str, str], Mapping[str, object]] = {}
+    for row in central_event_rows(state_db):
+        fingerprint = str(row.get("fingerprint", "") or "").strip()
+        if not fingerprint:
+            continue
+        key = (str(row.get("account_alias", "") or ""), fingerprint)
+        previous = latest_by_document.get(key)
+        if previous is None or _event_sort_key(row) > _event_sort_key(previous):
+            latest_by_document[key] = row
+    projected: list[dict] = []
+    for key in sorted(latest_by_document):
+        row = _event_row(latest_by_document[key])
+        row["event_id"] = _operational_event_id(*key)
+        projected.append(row)
+    return projected
+
+
+def exported_operational_event_ids(state_db: Path, target: str) -> set[str]:
+    """Resolve both new document IDs and already-exported legacy audit IDs."""
+    with closing(sqlite3.connect(state_db)) as db:
+        exists = db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='local_export_status'"
+        ).fetchone()
+        if not exists:
+            return set()
+        exported = {str(row[0]) for row in db.execute(
+            """SELECT event_id FROM local_export_status
+               WHERE target_adapter=? AND export_result='exported'""",
+            (target,),
+        )}
+    resolved = set(exported)
+    for row in central_event_rows(state_db):
+        if str(row.get("event_id", "")) not in exported:
+            continue
+        account_alias = str(row.get("account_alias", "") or "")
+        fingerprint = str(row.get("fingerprint", "") or "").strip()
+        if fingerprint:
+            resolved.add(_operational_event_id(account_alias, fingerprint))
+    return resolved
+
+
+def _operational_event_id(account_alias: str, fingerprint: str) -> str:
+    return hashlib.sha256(
+        f"bucoliche-operational|{account_alias}|{fingerprint}".encode("utf-8")
+    ).hexdigest()
 
 
 def _human_state(action: str, global_state: str, result: str) -> str:

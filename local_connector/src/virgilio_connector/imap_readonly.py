@@ -66,11 +66,15 @@ class ImapReadonlyMailbox:
         client = self._connect()
         try:
             self._select_readonly(client)
+            uidvalidity = self._uidvalidity(client)
             status, data = client.uid("SEARCH", None, "ALL")
             self._require_ok(status, "UID SEARCH")
             raw_uids = data[0].split() if data and data[0] else []
             uids = raw_uids[-self.config.max_messages:]
-            return tuple(self._reference(client, uid.decode("ascii")) for uid in uids)
+            return tuple(
+                self._reference(client, uid.decode("ascii"), uidvalidity)
+                for uid in uids
+            )
         finally:
             self._close(client)
 
@@ -132,18 +136,24 @@ class ImapReadonlyMailbox:
         status, _ = client.select(self.config.mailbox, readonly=True)
         self._require_ok(status, "SELECT READ-ONLY")
 
-    def _reference(self, client, uid: str) -> MessageReference:
+    @staticmethod
+    def _uidvalidity(client) -> str | None:
+        read_response = getattr(client, "response", None)
+        if not callable(read_response):
+            return None
+        response = read_response("UIDVALIDITY")
+        if not response or len(response) <= 1 or not response[1]:
+            return None
+        value = response[1][0]
+        return value.decode("ascii") if isinstance(value, bytes) else str(value)
+
+    def _reference(self, client, uid: str, uidvalidity: str | None) -> MessageReference:
         parsed = self._fetch_message(client, uid)
         date_header = parsed.get("Date")
         try:
             date = parsedate_to_datetime(date_header).isoformat() if date_header else "1970-01-01T00:00:00+00:00"
         except (TypeError, ValueError):
             date = "1970-01-01T00:00:00+00:00"
-        response = client.response("UIDVALIDITY")
-        uidvalidity = None
-        if response and len(response) > 1 and response[1]:
-            value = response[1][0]
-            uidvalidity = value.decode("ascii") if isinstance(value, bytes) else str(value)
         return MessageReference(
             mailbox=self.config.mailbox, uidvalidity=uidvalidity, message_uid=uid,
             message_id=parsed.get("Message-ID", ""), subject=parsed.get("Subject", ""),

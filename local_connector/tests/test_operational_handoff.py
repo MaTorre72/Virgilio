@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from dataclasses import replace
 from types import SimpleNamespace
 
 from virgilio_connector.da_archiviare_intake import (
@@ -94,16 +95,18 @@ class FakeIntake:
         return self.response
 
 
-def _runner(tmp_path, verifier, intake):
+def _runner(tmp_path, verifier, intake, **runner_options):
     paths = LocalDataPaths(tmp_path / "local-data")
     ensure_state_db(paths.root)
     staging_root, staged = _staged(tmp_path)
+    options = {"verify_timeout_seconds": 0, **runner_options}
     return (
         OperationalHandoffRunner(
             paths=paths,
             staging_root=staging_root,
             verifier=verifier,
             intake=intake,
+            **options,
         ),
         paths,
         staged,
@@ -151,6 +154,68 @@ def test_handoff_waits_for_cloud_without_calling_intake(tmp_path):
             "SELECT status FROM audit_events ORDER BY id DESC LIMIT 1"
         ).fetchone()[0]
     assert status == "waiting"
+
+
+def test_handoff_retries_with_bounded_backoff_and_never_repeats_intake(tmp_path):
+    class Clock:
+        now = 0.0
+        sleeps = []
+
+        def __call__(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    class EventuallyVisible(FakeVerifier):
+        def verify_manifest(self, manifest_path):
+            self.calls.append(manifest_path)
+            visible = len(self.calls) >= 3
+            return SimpleNamespace(
+                cloud_visible=visible,
+                drive_file_id="drive-123" if visible else "",
+                manifest_file_id="manifest-123" if visible else "",
+                message="visible" if visible else "not visible",
+                errors=() if visible else ({"code": "NOT_FOUND"},),
+            )
+
+    clock = Clock()
+    verifier = EventuallyVisible()
+    intake = FakeIntake()
+    runner, _, staged = _runner(
+        tmp_path, verifier, intake,
+        verify_timeout_seconds=10,
+        initial_backoff_seconds=1,
+        max_backoff_seconds=4,
+        clock=clock,
+        sleeper=clock.sleep,
+    )
+
+    first = runner.deliver((staged,), dry_run=False)
+    second = runner.deliver((staged,), dry_run=False)
+
+    assert first[0].status == "created"
+    assert second[0].status == "already_delivered"
+    assert clock.sleeps == [1, 2]
+    assert len(verifier.calls) == 3
+    assert len(intake.calls) == 1
+
+
+def test_waiting_already_staged_document_is_resumed_on_next_cycle(tmp_path):
+    verifier = FakeVerifier(visible=False)
+    intake = FakeIntake()
+    runner, _, staged = _runner(tmp_path, verifier, intake)
+
+    waiting = runner.deliver((staged,), dry_run=False)
+    verifier.visible = True
+    resumed = runner.deliver((replace(staged, status="already_staged"),), dry_run=False)
+    repeated = runner.deliver((replace(staged, status="already_staged"),), dry_run=False)
+
+    assert waiting[0].status == "waiting"
+    assert resumed[0].status == "created"
+    assert repeated[0].status == "already_delivered"
+    assert len(intake.calls) == 1
 
 
 def test_handoff_delivers_each_staged_attachment_once(tmp_path):

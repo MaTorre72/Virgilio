@@ -111,6 +111,30 @@ class ImapReadonlyTests(unittest.TestCase):
         self.assertTrue(fetches)
         self.assertTrue(all("BODY.PEEK[]" in str(call) for call in fetches))
 
+    def test_uidvalidity_is_read_once_and_reused_for_all_session_messages(self):
+        class ConsumableUidValidityClient(FakeImapClient):
+            def uid(self, command, *args):
+                if command == "SEARCH":
+                    self.calls.append(("uid", command, *args))
+                    return "OK", [b"42 43"]
+                return super().uid(command, *args)
+
+            def response(self, name):
+                self.calls.append(("response", name))
+                reads = sum(1 for call in self.calls if call == ("response", name))
+                return ("UIDVALIDITY", [b"12345"]) if reads == 1 else (name, None)
+
+        adapter = ImapReadonlyMailbox(
+            ImapReadonlyConfig("imap.example.invalid", "test-user", "test-password"),
+            Path(self.temp.name), client_factory=ConsumableUidValidityClient,
+        )
+
+        references = adapter.list_pending()
+        calls = ConsumableUidValidityClient.instances[-1].calls
+
+        self.assertEqual([item.uidvalidity for item in references], ["12345", "12345"])
+        self.assertEqual(calls.count(("response", "UIDVALIDITY")), 1)
+
     def test_never_issues_mutating_imap_commands(self):
         reference = self.adapter.list_pending()[0]
         self.adapter.download_attachments(reference)

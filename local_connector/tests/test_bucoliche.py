@@ -155,12 +155,17 @@ def test_state_sheet_is_rebuilt_from_latest_event_without_reappending_events(tmp
         action="attachment_quarantined", status="queued", details={"step": "start"})
     store.add_audit_event(machine_id="machine-test", account_alias="box",
         entity_type="attachment", entity_id="att-1", fingerprint="f" * 64,
-        action="message_completed", status="ok", details={"step": "done"})
+        action="attachment_staged", status="staged_storage", details={"step": "staged"})
+    store.add_audit_event(machine_id="machine-test", account_alias="box",
+        entity_type="attachment", entity_id="att-1", fingerprint="f" * 64,
+        action="da_archiviare_intake", status="created", details={"step": "intake"})
     fake = FakeSheets()
     adapter(db, fake).export(dry_run=False)
     retry = adapter(db, fake).export(dry_run=False)
-    assert retry.already_exported == 2
-    assert [call[0] for call in fake.calls] == ["bucoliche", "bucoliche"]
+    assert retry.already_exported == 1
+    assert [call[0] for call in fake.calls] == ["bucoliche"]
+    with sqlite3.connect(db) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0] == 3
 
 
 def test_second_export_of_already_exported_event_skips_append_and_rebuilds_state(tmp_path):
@@ -216,9 +221,10 @@ def test_dry_run_can_preview_same_fingerprint_from_two_machine_ids(tmp_path):
             action="attachment_quarantined", status="ready_for_caronte",
             details={"machine": machine_id})
     preview = adapter(db, FakeSheets(), enabled=False).export(dry_run=True).preview
-    assert len(preview) == 2
-    assert {row["machine_id"] for row in preview} == {"machine-a", "machine-b"}
-    assert len({row["event_id"] for row in preview}) == 2
+    assert len(preview) == 1
+    assert preview[0]["machine_id"] == "machine-b"
+    assert preview[0]["attachment_id"] == "att-2"
+    assert len({row["event_id"] for row in preview}) == 1
     assert {row["fingerprint"] for row in preview} == {"f" * 64}
 
 
@@ -468,7 +474,7 @@ def test_end_to_end_transitions_export_once_and_unchanged_retry_is_stable(tmp_pa
     assert actions.count("attachment_staged") == 2
     assert actions.count("da_archiviare_intake") == 2
     assert actions.count("message_completed") == 2
-    assert [call[0] for call in fake.calls].count("bucoliche") == 8
+    assert [call[0] for call in fake.calls].count("bucoliche") == 2
 
 
 def test_output_never_contains_credentials(tmp_path):

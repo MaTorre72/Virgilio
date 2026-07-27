@@ -26,12 +26,15 @@ from virgilio_connector.storage_adapter import (
     StorageStageResult,
     StorageAdapterError,
 )
-from virgilio_connector.bucoliche import BucolicheAppendOnlyAdapter
+from virgilio_connector.bucoliche import (
+    BucolicheAppendOnlyAdapter,
+    operational_event_rows,
+)
 from virgilio_connector.pipeline import LocalPipelineRunner
 from virgilio_connector.reset_local_state import reset_local_state
 from virgilio_connector.operational_handoff import OperationalHandoffResult
 from virgilio_connector.doctor import LocalDoctor
-from virgilio_connector.traceability import central_event_rows, load_rules
+from virgilio_connector.traceability import load_rules
 from virgilio_connector.attachment_identity import canonical_attachment_id
 
 
@@ -743,6 +746,18 @@ def test_operational_completion_waits_for_da_archiviare_handoff(tmp_path):
     assert all("archiviazione finale" in item.reason for item in pending)
     assert mailbox_calls == []
 
+    with sqlite3.connect(paths.state_db) as db:
+        audit_before_quiet_poll = db.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
+    reports_before_quiet_poll = set((paths.root / "reports").glob("completion_report_*.json"))
+    quiet_pending = runner.complete(
+        dry_run=False, write_report=False, record_skipped=False
+    )
+    with sqlite3.connect(paths.state_db) as db:
+        audit_after_quiet_poll = db.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0]
+    assert all(item.status == "completion_skipped" for item in quiet_pending)
+    assert audit_after_quiet_poll == audit_before_quiet_poll
+    assert set((paths.root / "reports").glob("completion_report_*.json")) == reports_before_quiet_poll
+
     status_client.statuses_by_id = {
         f"inbox-{index}": "archiviato" for index in range(1, len(attachments) + 1)
     }
@@ -790,7 +805,7 @@ def mark_candidate_events_exported(paths, accounts, *, leave_pending=0):
         for attachment_id in item.staged_attachments
     }
     event_ids = [
-        row["event_id"] for row in central_event_rows(paths.state_db)
+        row["event_id"] for row in operational_event_rows(paths.state_db)
         if row["attachment_id"] in attachment_ids
     ]
     exported = event_ids[:-leave_pending] if leave_pending else event_ids

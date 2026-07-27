@@ -106,6 +106,8 @@ def test_check_now_reports_acceptance_and_final_result():
     assert runner.commands == [[
         "watch", "--config", "config.yaml", "--human", "--progress-events",
         "--interval-seconds", "300", "--max-cycles", "1",
+        "--completion-followup-seconds", "600",
+        "--completion-poll-seconds", "30",
     ]]
     accepted = controller.drain_feedback()
     assert accepted == [HomeFeedback(

@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-27 +02:00 - Completato `GUI-U-R05-T09`: verifica Limbo con retry a
+  backoff e timeout globale, ripresa degli staged `waiting`, completion-only per
+  10 minuti dopo il controllo manuale, una riga Bucoliche locale per documento e
+  UIDVALIDITY letto una volta per sessione. Suite e smoke `593 passed`; nessuna
+  pubblicazione, installazione, modifica Gmail o reset reale.
+
 - 2026-07-27 +02:00 - Distribuito `GUI-U-R05-T08`: Apps Script versione `40`
   sul deployment esistente; RC `CaronteSetup-0.11.0-60cc6ff.exe` installata
   (Build ID `b93b7fa7-60ca-462f-9ae7-1e7dc7cae0f6`). Ripristinate e verificate

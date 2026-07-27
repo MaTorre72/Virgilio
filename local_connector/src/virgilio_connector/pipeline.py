@@ -8,7 +8,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Callable, Sequence
 
-from .completion import LocalCompletionRunner
+from .completion import CompletionResult, LocalCompletionRunner
 from .local_paths import LocalDataPaths
 from .multi_account import LocalImapAccount, MultiAccountImapProcessor, MultiAccountReadonlyScanner
 from .operational_handoff import OperationalHandoffRunner
@@ -50,6 +50,16 @@ class LocalPipelineRunner:
     def run(self, *, dry_run: bool, progress: Callable[[dict[str, object]], None] | None = None) -> PipelineResult:
         with LocalOperationLock(self.paths.root):
             return self._run_locked(dry_run=dry_run, progress=progress)
+
+    def complete_pending(self, *, dry_run: bool = False) -> tuple[CompletionResult, ...]:
+        """Recheck only final human decisions without reacquiring messages."""
+        with LocalOperationLock(self.paths.root):
+            ensure_state_db(self.paths.root)
+            return tuple(self.completion_factory().complete(
+                dry_run=dry_run,
+                write_report=False,
+                record_skipped=False,
+            ))
 
     def _run_locked(self, *, dry_run: bool,
                     progress: Callable[[dict[str, object]], None] | None = None) -> PipelineResult:

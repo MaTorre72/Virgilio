@@ -6,7 +6,8 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import sqlite3
-from typing import Sequence
+from time import monotonic, sleep
+from typing import Callable, Sequence
 
 from .da_archiviare_intake import (
     DaArchiviareIntakeError,
@@ -16,6 +17,7 @@ from .da_archiviare_intake import (
 from .drive_staging_verify import (
     DriveStagingVerifyClient,
     DriveStagingVerifyError,
+    DriveStagingVerifyResponse,
 )
 from .local_paths import LocalDataPaths
 from .readonly_state import ReadonlyStateStore, ensure_state_db
@@ -49,11 +51,25 @@ class OperationalHandoffRunner:
         staging_root: Path,
         verifier: DriveStagingVerifyClient,
         intake: DaArchiviareIntakeHttpClient,
+        verify_timeout_seconds: float = 60.0,
+        initial_backoff_seconds: float = 1.0,
+        max_backoff_seconds: float = 5.0,
+        clock: Callable[[], float] = monotonic,
+        sleeper: Callable[[float], None] = sleep,
     ) -> None:
         self.paths = paths
         self.staging_root = Path(staging_root).resolve()
         self.verifier = verifier
         self.intake = intake
+        if verify_timeout_seconds < 0:
+            raise ValueError("verify_timeout_seconds must not be negative")
+        if initial_backoff_seconds <= 0 or max_backoff_seconds <= 0:
+            raise ValueError("handoff backoff values must be positive")
+        self.verify_timeout_seconds = float(verify_timeout_seconds)
+        self.initial_backoff_seconds = float(initial_backoff_seconds)
+        self.max_backoff_seconds = float(max_backoff_seconds)
+        self.clock = clock
+        self.sleeper = sleeper
 
     def deliver(
         self,
@@ -62,68 +78,102 @@ class OperationalHandoffRunner:
         dry_run: bool,
     ) -> tuple[OperationalHandoffResult, ...]:
         ensure_state_db(self.paths.root)
-        results: list[OperationalHandoffResult] = []
+        ordered: list[StorageStageResult] = []
+        completed: dict[tuple[str, str], OperationalHandoffResult] = {}
         for staged in storage_results:
             if staged.status not in {"staged_storage", "already_staged", "planned"}:
                 continue
             if self._already_delivered(staged):
-                results.append(self._result(
+                completed[self._key(staged)] = self._result(
                     staged, "already_delivered",
                     "Documento gia presente in Da archiviare.",
-                ))
+                )
                 continue
             if dry_run:
-                results.append(self._result(
+                completed[self._key(staged)] = self._result(
                     staged, "planned",
                     "Il documento verrebbe verificato e inviato a Da archiviare.",
-                ))
-                continue
-            identity: dict[str, str] = {"fingerprint": ""}
-            try:
-                manifest_path = self._manifest_path(staged)
-                identity = self._manifest_identity(manifest_path, staged)
-                verified = self.verifier.verify_manifest(manifest_path)
-            except (DriveStagingVerifyError, OSError, ValueError) as exc:
-                self._record(
-                    staged, "waiting", {"error": str(exc)},
-                    fingerprint=identity["fingerprint"] or None,
                 )
-                results.append(self._result(
-                    staged, "waiting",
-                    "Documento in attesa della sincronizzazione del Limbo.",
-                ))
                 continue
-            if not verified.cloud_visible:
-                self._record(staged, "waiting", {
-                    "message": verified.message,
-                    "errors": [dict(item) for item in verified.errors],
-                }, fingerprint=identity["fingerprint"])
-                results.append(self._result(
-                    staged, "waiting",
-                    "Documento in attesa della sincronizzazione del Limbo.",
-                ))
-                continue
-            try:
-                intake_result = self.intake.create_record(
-                    manifest_path,
-                    drive_file_id=verified.drive_file_id,
-                    manifest_file_id=verified.manifest_file_id,
+            ordered.append(staged)
+
+        deadline = self.clock() + self.verify_timeout_seconds
+        pending = list(ordered)
+        last_waiting: dict[tuple[str, str], tuple[dict[str, object], str | None]] = {}
+        delay = self.initial_backoff_seconds
+        attempted_pass = False
+        while pending:
+            if attempted_pass and self.clock() >= deadline:
+                break
+            attempted_pass = True
+            retry: list[StorageStageResult] = []
+            for staged in pending:
+                key = self._key(staged)
+                identity: dict[str, str] = {"fingerprint": ""}
+                try:
+                    manifest_path = self._manifest_path(staged)
+                    identity = self._manifest_identity(manifest_path, staged)
+                    verified = self.verifier.verify_manifest(manifest_path)
+                except (DriveStagingVerifyError, OSError, ValueError) as exc:
+                    last_waiting[key] = ({"error": str(exc)}, identity["fingerprint"] or None)
+                    retry.append(staged)
+                    continue
+                if not verified.cloud_visible:
+                    last_waiting[key] = ({
+                        "message": verified.message,
+                        "errors": [dict(item) for item in verified.errors],
+                    }, identity["fingerprint"])
+                    retry.append(staged)
+                    continue
+                completed[key] = self._intake_verified(
+                    staged, manifest_path, verified, identity["fingerprint"]
                 )
-            except DaArchiviareIntakeError as exc:
-                self._record(staged, "failed", {
-                    "error": str(exc),
-                    "drive_file_id": verified.drive_file_id,
-                    "manifest_file_id": verified.manifest_file_id,
-                }, fingerprint=identity["fingerprint"])
-                results.append(self._result(
-                    staged, "failed",
-                    "Invio a Da archiviare non riuscito.",
-                    drive_file_id=verified.drive_file_id,
-                    manifest_file_id=verified.manifest_file_id,
-                ))
-                continue
-            status = self._intake_status(intake_result)
-            self._record(staged, status, {
+            pending = retry
+            if not pending:
+                break
+            remaining = deadline - self.clock()
+            if remaining <= 0:
+                break
+            self.sleeper(min(delay, remaining))
+            delay = min(delay * 2, self.max_backoff_seconds)
+
+        for staged in pending:
+            key = self._key(staged)
+            details, fingerprint = last_waiting[key]
+            details = {**details, "retry_timeout_seconds": self.verify_timeout_seconds}
+            self._record(staged, "waiting", details, fingerprint=fingerprint)
+            completed[key] = self._result(
+                staged, "waiting",
+                "Documento in attesa della sincronizzazione del Limbo.",
+            )
+        return tuple(
+            completed[self._key(staged)]
+            for staged in storage_results
+            if self._key(staged) in completed
+        )
+
+    def _intake_verified(self, staged: StorageStageResult, manifest_path: Path,
+                         verified: DriveStagingVerifyResponse,
+                         fingerprint: str) -> OperationalHandoffResult:
+        try:
+            intake_result = self.intake.create_record(
+                manifest_path,
+                drive_file_id=verified.drive_file_id,
+                manifest_file_id=verified.manifest_file_id,
+            )
+        except DaArchiviareIntakeError as exc:
+            self._record(staged, "failed", {
+                "error": str(exc),
+                "drive_file_id": verified.drive_file_id,
+                "manifest_file_id": verified.manifest_file_id,
+            }, fingerprint=fingerprint)
+            return self._result(
+                staged, "failed", "Invio a Da archiviare non riuscito.",
+                drive_file_id=verified.drive_file_id,
+                manifest_file_id=verified.manifest_file_id,
+            )
+        status = self._intake_status(intake_result)
+        self._record(staged, status, {
                 "inbox_id": intake_result.inbox_id,
                 "drive_file_id": verified.drive_file_id,
                 "manifest_file_id": verified.manifest_file_id,
@@ -134,25 +184,25 @@ class OperationalHandoffRunner:
                 "errors": [dict(item) for item in intake_result.errors],
                 "form_url": intake_result.form_url,
                 "notification_status": intake_result.notification_status,
-            }, fingerprint=identity["fingerprint"])
-            if not intake_result.ok:
-                results.append(self._result(
-                    staged, "failed",
-                    "Invio a Da archiviare non riuscito.",
-                    drive_file_id=verified.drive_file_id,
-                    manifest_file_id=verified.manifest_file_id,
-                ))
-                continue
-            results.append(self._result(
-                staged, status,
-                "Documento inviato a Da archiviare.",
-                inbox_id=intake_result.inbox_id,
+        }, fingerprint=fingerprint)
+        if not intake_result.ok:
+            return self._result(
+                staged, "failed", "Invio a Da archiviare non riuscito.",
                 drive_file_id=verified.drive_file_id,
                 manifest_file_id=verified.manifest_file_id,
-                form_url=intake_result.form_url,
-                notification_status=intake_result.notification_status,
-            ))
-        return tuple(results)
+            )
+        return self._result(
+            staged, status, "Documento inviato a Da archiviare.",
+            inbox_id=intake_result.inbox_id,
+            drive_file_id=verified.drive_file_id,
+            manifest_file_id=verified.manifest_file_id,
+            form_url=intake_result.form_url,
+            notification_status=intake_result.notification_status,
+        )
+
+    @staticmethod
+    def _key(staged: StorageStageResult) -> tuple[str, str]:
+        return staged.account_alias, staged.attachment_id
 
     def _manifest_path(self, staged: StorageStageResult) -> Path:
         if not staged.staged_manifest_path:
