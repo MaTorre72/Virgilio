@@ -1555,3 +1555,29 @@ Verifica indipendente: tutte le tabelle locali operative, `bucoliche`,
 mail del collaudo precedente sono state soltanto rimosse dall'etichetta di
 ingresso, senza cancellazione o falsa etichetta `traghettata`. Configurazione,
 credenziali, machine ID e anagrafiche `4/4/13` sono preservati.
+
+### GUI-U-R05-T10 - Completamento persistente e rimozione etichetta Gmail
+
+Stato: `DONE`. Priorita`: `P0`.
+Risultato: Caronte riprende handoff e completamento finche` i documenti sono
+chiusi oppure l'utente mette in pausa, quindi sposta realmente la mail da
+`da-traghettare` a `traghettate` senza operazioni distruttive.
+Dipendenze: `R05-T09 = DONE`; collaudo reale del 2026-07-27 con quattro mail
+ancora nella coda di ingresso nonostante le pratiche archiviate.
+Componenti ammessi: polling CLI/GUI, pipeline di ripresa, adapter IMAP di
+completamento, test sintetici e documentazione pertinente.
+Esclusioni: nuova acquisizione durante il follow-up, `DELETE`, `MOVE`, `EXPUNGE`,
+modifiche Apps Script, nuova RC o reset TEST.
+Condizione di blocco: impossibilita` di rimuovere in modo verificabile la sola
+etichetta di ingresso senza cancellare o spostare il messaggio.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T10-AC1` Il follow-up non scade mentre esistono decisioni umane o handoff recuperabili. | Clock e runner fake con timeout `0`. | Il polling ogni 30 secondi prosegue fino a chiusura; la pausa del worker resta il comando di arresto. | `MET` |
+| `R05-T10-AC2` La ripresa non riesegue scansione o acquisizione e non duplica intake riusciti. | Fasi fake con log esatto e regressioni handoff idempotenti. | La sequenza e` solo `storage already_staged -> handoff -> completion`; scanner e processor non sono invocati, gli intake riusciti restano esclusi. | `MET` |
+| `R05-T10-AC3` Gmail rimuove l'etichetta sorgente da una cartella diversa e verifica entrambe le post-condizioni. | Fake con UID diversi per cartella e `X-GM-MSGID`. | Dopo `COPY`, Caronte seleziona `traghettate`, ritrova il UID stabile via `X-GM-MSGID` e usa `-X-GM-LABELS`; nessun `DELETE`, `MOVE`, `EXPUNGE` o `\\Deleted`. | `MET` |
+| `R05-T10-AC4` Il caso reale termina con le quattro mail solo in `traghettate`. | Ripresa reale e verifica Gmail indipendente. | Quattro risultati `completed`; `da-traghettare` vuota e i quattro ID correnti presenti in `traghettate`. L'intake incompleto e` stato recuperato dal retry senza ripetere i quattro intake gia` riusciti. | `MET` |
+| `R05-T10-AC5` Il correttivo non regredisce il connettore. | Suite mirata e smoke ufficiale. | Mirati `146 passed`; suite e smoke `595 passed`, `smoke_local_connector: OK`. | `MET` |
+
+Il delta e` solo locale. L'RC installata `0.11.0-1f0e6e8` non contiene T10 e non
+e` valida per il prossimo collaudo; Apps Script resta invariato alla versione `40`.

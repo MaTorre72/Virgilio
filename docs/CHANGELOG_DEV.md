@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-27 +02:00 - Completato `GUI-U-R05-T10`: il follow-up riprende soltanto
+  staged/handoff/completion fino alla chiusura o alla pausa; Gmail rimuove la
+  label di ingresso dalla cartella destinazione usando `X-GM-MSGID`, senza
+  `DELETE`, `MOVE` o `EXPUNGE`. Caso reale: quattro mail `completed`, coda
+  `da-traghettare` vuota. Mirati `146 passed`; suite e smoke `595 passed`.
+  Apps Script invariato; nuova RC ancora da generare.
+
 - 2026-07-27 +02:00 - Completato il reset totale TEST
   `reset-r05-20260727-t09-final`: backup locale/Registro/Limbo verificati; stato
   locale, `bucoliche`, `Virgilio_Inbox`, Limbo e coda Gmail `da-traghettare`

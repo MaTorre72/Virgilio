@@ -50,15 +50,19 @@ class FakeImapClient:
     def uid(self, command, *args):
         self.calls.append(("uid", command, *args))
         if command == "SEARCH":
+            if len(args) >= 3 and args[1] == "X-GM-MSGID":
+                return "OK", [b"84"]
             if self.selected_mailbox == "Virgilio/da-traghettare" and self.label_removed:
                 return "OK", [b""]
             return "OK", [b"42"]
         if command == "COPY":
             return self.copy_status, self.copy_data
         if command == "STORE":
-            if self.store_status == "OK":
+            if self.store_status == "OK" and self.selected_mailbox == "Virgilio/traghettate":
                 self.__class__.label_removed = True
             return self.store_status, self.store_data
+        if command == "FETCH" and args[-1] == "(X-GM-MSGID)":
+            return "OK", [b"42 (X-GM-MSGID 123456789 UID 42)"]
         return "OK", [(b"42 (BODY[] {1})", eml_bytes()), b")"]
 
     def list(self, directory='""', pattern='*'):
@@ -198,8 +202,11 @@ class ImapReadonlyTests(unittest.TestCase):
         self.completion.move_to_done_label("42", "<readonly@example.invalid>")
         calls = [call for client in FakeImapClient.instances for call in client.calls]
         self.assertIn(("select", "Virgilio/da-traghettare", False), calls)
+        self.assertIn(("uid", "FETCH", "42", "(X-GM-MSGID)"), calls)
         self.assertIn(("uid", "COPY", "42", "Virgilio/traghettate"), calls)
-        self.assertIn(("uid", "STORE", "42", "-X-GM-LABELS",
+        self.assertIn(("select", "Virgilio/traghettate", False), calls)
+        self.assertIn(("uid", "SEARCH", None, "X-GM-MSGID", "123456789"), calls)
+        self.assertIn(("uid", "STORE", "84", "-X-GM-LABELS",
                        "(Virgilio/da-traghettare)"), calls)
         self.assertIn(("select", "Virgilio/da-traghettare", True), calls)
         self.assertIn(("select", "Virgilio/traghettate", True), calls)

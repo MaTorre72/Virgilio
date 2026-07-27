@@ -395,20 +395,31 @@ def _watch_human_summary(result, *, cycle: int) -> list[str]:
 def _poll_pending_completion(runner, *, followup_seconds: int,
                              poll_seconds: int, clock=monotonic,
                              sleeper=sleep):
-    """Poll final Virgilio_Inbox states after a one-shot acquisition cycle."""
-    deadline = clock() + followup_seconds
+    """Resume handoff/completion after one-shot acquisition; zero waits until done."""
+    deadline = None if followup_seconds == 0 else clock() + followup_seconds
     results = ()
     while True:
-        results = tuple(runner.complete_pending(dry_run=False))
-        awaiting_human = any(
-            item.status == "completion_skipped" and
-            item.reason == "in attesa dell'archiviazione finale in Da archiviare"
-            for item in results
-        )
-        if not awaiting_human or clock() >= deadline:
+        results = tuple(runner.resume_pending(dry_run=False))
+        pending = any(_is_retryable_completion_pending(item) for item in results)
+        if not pending or (deadline is not None and clock() >= deadline):
             break
-        sleeper(min(float(poll_seconds), max(0.0, deadline - clock())))
+        delay = float(poll_seconds)
+        if deadline is not None:
+            delay = min(delay, max(0.0, deadline - clock()))
+        sleeper(delay)
     return results
+
+
+def _is_retryable_completion_pending(item) -> bool:
+    if getattr(item, "status", "") != "completion_skipped":
+        return False
+    reason = str(getattr(item, "reason", "") or "")
+    return (
+        reason == "in attesa dell'archiviazione finale in Da archiviare"
+        or reason == "message has attachments not delivered to Da archiviare"
+        or reason == "verifica archiviazione incompleta: correlazione inbox mancante"
+        or reason.startswith("verifica archiviazione non disponibile:")
+    )
 
 
 def _record_da_archiviare_intake_event(local_root: Path, payload: dict[str, object],
@@ -550,7 +561,7 @@ def main() -> int:
     watch.add_argument("--human", action="store_true")
     watch.add_argument("--interval-seconds", type=int, default=300)
     watch.add_argument("--max-cycles", type=int, default=0)
-    watch.add_argument("--completion-followup-seconds", type=int, default=0,
+    watch.add_argument("--completion-followup-seconds", type=int,
                        help=argparse.SUPPRESS)
     watch.add_argument("--completion-poll-seconds", type=int, default=30,
                        help=argparse.SUPPRESS)
@@ -900,7 +911,8 @@ def main() -> int:
             parser.exit(2, "error: --interval-seconds must be greater than 0\n")
         if args.max_cycles < 0:
             parser.exit(2, "error: --max-cycles must be 0 or greater\n")
-        if args.completion_followup_seconds < 0:
+        if (args.completion_followup_seconds is not None
+                and args.completion_followup_seconds < 0):
             parser.exit(2, "error: --completion-followup-seconds must be 0 or greater\n")
         if args.completion_poll_seconds <= 0:
             parser.exit(2, "error: --completion-poll-seconds must be greater than 0\n")
@@ -927,7 +939,7 @@ def main() -> int:
                         **asdict(result),
                     }, ensure_ascii=False, separators=(",", ":")))
                 if args.max_cycles and cycle >= args.max_cycles:
-                    if (not args.dry_run and args.completion_followup_seconds and
+                    if (not args.dry_run and args.completion_followup_seconds is not None and
                             result.status in {"completed", "completed_with_warnings"}):
                         _poll_pending_completion(
                             runner,

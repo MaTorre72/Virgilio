@@ -1140,7 +1140,7 @@ class FakePhase:
             raise RuntimeError("phase boom")
         return self.result
 
-    def complete(self, dry_run):
+    def complete(self, dry_run, **kwargs):
         self.log.append((self.name, dry_run))
         if self.fail:
             raise RuntimeError("phase boom")
@@ -1155,6 +1155,28 @@ class FakeHandoffPhase:
     def deliver(self, storage_results, dry_run):
         self.log.append(("handoff", dry_run))
         return self.result
+
+
+def test_resume_pending_retries_handoff_and_completion_without_reacquisition(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    log = []
+    runner = LocalPipelineRunner(
+        accounts,
+        paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner_factory=lambda: FakePhase("scan", log),
+        processor_factory=lambda: FakePhase("process", log),
+        storage_factory=lambda: FakePhase("storage", log),
+        handoff_factory=lambda: FakeHandoffPhase(log),
+        completion_factory=lambda: FakePhase("completion", log),
+    )
+
+    runner.resume_pending(dry_run=False)
+
+    assert log == [
+        ("storage", False),
+        ("handoff", False),
+        ("completion", False),
+    ]
 
 
 @dataclass(frozen=True)

@@ -55,11 +55,23 @@ class LocalPipelineRunner:
         """Recheck only final human decisions without reacquiring messages."""
         with LocalOperationLock(self.paths.root):
             ensure_state_db(self.paths.root)
-            return tuple(self.completion_factory().complete(
-                dry_run=dry_run,
-                write_report=False,
-                record_skipped=False,
-            ))
+            return self._complete_pending_locked(dry_run=dry_run)
+
+    def resume_pending(self, *, dry_run: bool = False) -> tuple[CompletionResult, ...]:
+        """Resume staged handoffs, then recheck completion without IMAP acquisition."""
+        with LocalOperationLock(self.paths.root):
+            ensure_state_db(self.paths.root)
+            storage = tuple(self.storage_factory().stage_ready(dry_run=dry_run))
+            if self.handoff_factory is not None:
+                self.handoff_factory().deliver(storage, dry_run=dry_run)
+            return self._complete_pending_locked(dry_run=dry_run)
+
+    def _complete_pending_locked(self, *, dry_run: bool) -> tuple[CompletionResult, ...]:
+        return tuple(self.completion_factory().complete(
+            dry_run=dry_run,
+            write_report=False,
+            record_skipped=False,
+        ))
 
     def _run_locked(self, *, dry_run: bool,
                     progress: Callable[[dict[str, object]], None] | None = None) -> PipelineResult:

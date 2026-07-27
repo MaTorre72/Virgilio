@@ -268,6 +268,7 @@ class ImapCompletionMailbox:
                     "input_folder and done_folder must be different for move_to_done_label"
                 )
             self._select(client, self.config.mailbox, readonly=False)
+            gmail_message_id = self._gmail_message_id(client, str(uid))
             target = self._mailbox_argument(self.done_folder)
             status, data = client.uid("COPY", str(uid), target)
             self._require_completion_ok(
@@ -276,9 +277,11 @@ class ImapCompletionMailbox:
                 done_folder=self.done_folder,
                 data=data,
             )
+            self._select(client, self.done_folder, readonly=False)
+            done_uid = self._uid_for_gmail_message_id(client, gmail_message_id)
             source_label = f"({self._mailbox_argument(self.config.mailbox)})"
             status, data = client.uid(
-                "STORE", str(uid), "-X-GM-LABELS", source_label
+                "STORE", done_uid, "-X-GM-LABELS", source_label
             )
             self._require_completion_ok(
                 status,
@@ -295,6 +298,32 @@ class ImapCompletionMailbox:
                 "move_to_done_label postcondition failed: "
                 f"input_present={input_present}; done_present={done_present}"
             )
+
+    @classmethod
+    def _gmail_message_id(cls, client, uid: str) -> str:
+        status, data = client.uid("FETCH", uid, "(X-GM-MSGID)")
+        cls._require_completion_ok(status, "UID FETCH X-GM-MSGID", data=data)
+        values = []
+        for item in data or ():
+            text = item.decode("ascii", "replace") if isinstance(item, bytes) else str(item)
+            values.extend(re.findall(r"\bX-GM-MSGID\s+(\d+)\b", text, flags=re.IGNORECASE))
+        unique = tuple(dict.fromkeys(values))
+        if len(unique) != 1:
+            raise ImapCompletionError("UID FETCH X-GM-MSGID returned no unique Gmail message id")
+        return unique[0]
+
+    @classmethod
+    def _uid_for_gmail_message_id(cls, client, gmail_message_id: str) -> str:
+        status, data = client.uid("SEARCH", None, "X-GM-MSGID", gmail_message_id)
+        cls._require_completion_ok(status, "UID SEARCH X-GM-MSGID", data=data)
+        values = tuple(
+            token.decode("ascii", "replace") if isinstance(token, bytes) else str(token)
+            for item in data or ()
+            for token in (item.split() if isinstance(item, bytes) else str(item).split())
+        )
+        if len(values) != 1 or not values[0].isdigit():
+            raise ImapCompletionError("UID SEARCH X-GM-MSGID returned no unique done-folder UID")
+        return values[0]
 
     def list_mailboxes(self, *, client=None) -> tuple[str, ...]:
         close_client = client is None

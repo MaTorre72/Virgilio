@@ -158,6 +158,11 @@ operativi e coda Gmail `da-traghettare` azzerati, anagrafiche `Clienti_Siti`,
 `Team`, `TipiPratica` invariate con conteggi `4/4/13`. Caronte e avvio automatico
 restano fermi. Resta il punto 3 e l'esito umano, mai compilato da Codex.
 
+Il collaudo successivo ha confermato tutte le funzioni salvo la rimozione
+dell'etichetta Gmail di ingresso. Il correttivo `GUI-U-R05-T10` ha chiuso il caso
+reale, ma e` successivo alla RC sopra identificata: serve una nuova RC e una
+conferma umana focalizzata sul passaggio `da-traghettare` -> `traghettate`.
+
 ## Esiti e regole di giudizio
 
 Esiti ammessi: `PASS`, `FAIL`, `NOT_TESTED`, `BLOCKED_BY_ENVIRONMENT`,

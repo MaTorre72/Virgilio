@@ -3,10 +3,12 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: `GUI-U-R05-T09` `DONE`, correttivo coordinato nato dal
-  FAIL reale del collaudo del 2026-07-27: retry Limbo, ripresa waiting,
-  completion periodico, Registro operativo deduplicato e UIDVALIDITY di sessione.
-  Prove: core `49 passed`, pipeline/polling `118 passed`, suite e smoke `593 passed`.
+- Task corrente: `GUI-U-R05-T10` `DONE`, correttivo nato dal secondo FAIL reale
+  del 2026-07-27: follow-up persistente di handoff/completion e rimozione Gmail
+  eseguita dalla cartella destinazione tramite `X-GM-MSGID`. Nessuna nuova
+  acquisizione nel follow-up e nessun `DELETE`, `MOVE` o `EXPUNGE`.
+  Prove: mirati `146 passed`, suite e smoke `595 passed`; quattro mail reali
+  completate, `da-traghettare` vuota e `traghettate` verificata.
 - `GUI-U-R05-T01` e` `DONE`: un duplicato viene riusato solo con file e SHA-256 validi;
   file assenti o corrotti sono riacquisiti dal processor esistente; gli errori storage sono
   persistiti, visibili e bloccano handoff/completion. Prove: mirati `79 passed`, smoke `558 passed`.
@@ -34,8 +36,8 @@
   e `TipiPratica`, ripristinabili solo da backup esplicito senza sovrascritture.
   Prove finali dopo l'allineamento live: mirati reset `13 passed`, regressione e
   smoke `589 passed`.
-- Sequenza automatica residua: nessuna. Resta soltanto il nuovo collaudo umano;
-  deployment Apps Script `40` e RC locale `0.11.0-1f0e6e8` sono pronti.
+- Sequenza automatica residua: nessuna. Il successore e` generare e installare
+  una nuova RC contenente T10; Apps Script `40` resta invariato.
 - Pubblicazione Apps Script autorizzata e completata il 2026-07-27: push dei
   14 file canonici e deployment web esistente aggiornato alla versione `40`,
   senza cambiare URL. Il tab Registro e` canonico `bucoliche`; il reset usa il
@@ -60,6 +62,8 @@
   anagrafiche sono rimaste `4/4/13`; configurazione, credenziali e machine ID
   locali sono preservati. Caronte e avvio automatico restano fermi.
 - Gate residuo: solo collaudo finale umano. Codex non puo` approvarlo.
+- La RC installata `0.11.0-1f0e6e8` precede T10 e non e` valida per un nuovo
+  collaudo, anche se il caso reale pendente e` stato chiuso usando il sorgente corretto.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.

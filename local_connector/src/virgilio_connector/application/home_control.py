@@ -166,7 +166,7 @@ class HomeRunController:
         if max_cycles is not None:
             args.extend(("--max-cycles", str(max_cycles)))
             args.extend((
-                "--completion-followup-seconds", "600",
+                "--completion-followup-seconds", "0",
                 "--completion-poll-seconds", "30",
             ))
         return args

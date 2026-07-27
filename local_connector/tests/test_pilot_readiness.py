@@ -60,7 +60,7 @@ def test_completion_followup_polls_human_state_without_rerunning_acquisition():
         def __init__(self):
             self.calls = 0
 
-        def complete_pending(self, *, dry_run):
+        def resume_pending(self, *, dry_run):
             self.calls += 1
             if self.calls == 1:
                 return (SimpleNamespace(
@@ -86,6 +86,47 @@ def test_completion_followup_polls_human_state_without_rerunning_acquisition():
     results = _poll_pending_completion(
         runner,
         followup_seconds=120,
+        poll_seconds=30,
+        clock=clock,
+        sleeper=clock.sleep,
+    )
+
+    assert runner.calls == 2
+    assert clock.sleeps == [30.0]
+    assert results[0].status == "completed"
+
+
+def test_completion_followup_zero_timeout_waits_until_pending_handoff_recovers():
+    class PendingRunner:
+        def __init__(self):
+            self.calls = 0
+
+        def resume_pending(self, *, dry_run):
+            self.calls += 1
+            if self.calls == 1:
+                return (SimpleNamespace(
+                    status="completion_skipped",
+                    reason="message has attachments not delivered to Da archiviare",
+                ),)
+            return (SimpleNamespace(status="completed", reason="completed"),)
+
+    class Clock:
+        now = 0.0
+        sleeps = []
+
+        def __call__(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    runner = PendingRunner()
+    clock = Clock()
+
+    results = _poll_pending_completion(
+        runner,
+        followup_seconds=0,
         poll_seconds=30,
         clock=clock,
         sleeper=clock.sleep,
