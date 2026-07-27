@@ -1,5 +1,13 @@
 # Changelog sviluppo
 
+- 2026-07-27 +02:00 - Distribuita la RC del correttivo `GUI-U-R05-T09`:
+  `CaronteSetup-0.11.0-1f0e6e8.exe`, Build ID
+  `a0bb673d-6d1d-417f-9d26-cb8d5de71600`, SHA-256
+  `5A2405EC861F2CE3654C0CF01D32857FEB496A8218042FC715CE6832C515E5D2`.
+  Build e smoke installer `PASS`; identita` del payload installato, collegamenti,
+  registrazione e preservazione dei dati verificati. Apps Script invariato; reset
+  TEST non eseguito.
+
 - 2026-07-27 +02:00 - Completato `GUI-U-R05-T09`: verifica Limbo con retry a
   backoff e timeout globale, ripresa degli staged `waiting`, completion-only per
   10 minuti dopo il controllo manuale, una riga Bucoliche locale per documento e

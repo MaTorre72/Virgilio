@@ -34,18 +34,18 @@
   e `TipiPratica`, ripristinabili solo da backup esplicito senza sovrascritture.
   Prove finali dopo l'allineamento live: mirati reset `13 passed`, regressione e
   smoke `589 passed`.
-- Sequenza automatica residua: nessuna. Pubblicazione, nuova RC, reset e nuovo
-  collaudo restano azioni separate da autorizzare; deployment `40` e RC
-  `0.11.0-60cc6ff` restano quelli installati finche` non vengono sostituiti.
+- Sequenza automatica residua: nessuna. Reset TEST e nuovo collaudo restano
+  azioni separate da autorizzare; deployment Apps Script `40` resta invariato e
+  la RC locale installata e` `0.11.0-1f0e6e8`.
 - Pubblicazione Apps Script autorizzata e completata il 2026-07-27: push dei
   14 file canonici e deployment web esistente aggiornato alla versione `40`,
   senza cambiare URL. Il tab Registro e` canonico `bucoliche`; il reset usa il
   fallback canonico `Virgilio_Inbox` se la proprieta` legacy e` assente.
-- RC desktop installata dal commit `60cc6ff`: installer
-  `CaronteSetup-0.11.0-60cc6ff.exe`, Build ID
-  `b93b7fa7-60ca-462f-9ae7-1e7dc7cae0f6`, SHA-256
-  `9EBDBB53A0378F8D6C0AD209A2E4BA8D0564F948AA87B4C90B87C8E86E92E685`;
-  build e smoke installer `PASS`.
+- RC desktop installata dal commit `1f0e6e8`: installer
+  `CaronteSetup-0.11.0-1f0e6e8.exe`, Build ID
+  `a0bb673d-6d1d-417f-9d26-cb8d5de71600`, SHA-256
+  `5A2405EC861F2CE3654C0CF01D32857FEB496A8218042FC715CE6832C515E5D2`;
+  build e smoke installer `PASS`, payload installato verificato e dati preservati.
 - Topologia TEST riallineata senza nuovi asset: GAS e Local connector usano lo
   stesso Registro umano append-only `bucoliche` con le stesse 17 colonne;
   stato e conflitti tecnici restano locali e non producono tab cloud paralleli.

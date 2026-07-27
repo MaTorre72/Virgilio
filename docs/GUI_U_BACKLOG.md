@@ -1539,3 +1539,11 @@ alterare i contratti metadata-only o il gate umano gia` verificato.
 Il delta e` solo locale: nessun push/deploy Apps Script, build/installazione RC,
 reset TEST o modifica Gmail e` stato eseguito. Successore: distribuzione coordinata
 su autorizzazione, poi nuovo reset e collaudo umano.
+
+Distribuzione autorizzata del 2026-07-27: generata e installata la RC
+`CaronteSetup-0.11.0-1f0e6e8.exe` dal working tree pulito della branch prevista.
+Build e smoke installer `PASS`; Build ID
+`a0bb673d-6d1d-417f-9d26-cb8d5de71600`, SHA-256 setup
+`5A2405EC861F2CE3654C0CF01D32857FEB496A8218042FC715CE6832C515E5D2`.
+L'identita` installata coincide con il payload; configurazione e dati sono
+preservati. Nessun delta Apps Script e nessun reset TEST eseguito.
