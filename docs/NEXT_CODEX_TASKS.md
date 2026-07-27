@@ -2,8 +2,9 @@
 
 ## CORRENTE - WAITING_HUMAN_REVIEW
 
-`GUI-U-R05-T06` e` `DONE`: `bucoliche` e` l'unico Registro cloud umano per
-GAS, CLI e GUI; i tre `Bucoliche_*` non vengono piu` creati o alimentati.
+`GUI-U-R05-T07` e` `DONE`: la strategia esplicita `move_to_done_label`
+applica `traghettate` e rimuove soltanto l'etichetta di ingresso, senza
+cancellazione o expunge. Test mirati `73 passed`; smoke locale `581 passed`.
 
 ## CODA
 
@@ -15,4 +16,7 @@ protetto e` configurato e il reset TEST `reset-r05-20260726-2139` e` completato
 con backup. Registro, Inbox e Limbo piatto sono vuoti; il foglio contiene soltanto
 `bucoliche` e `Virgilio_Inbox`. Il trigger TEST resta fermo.
 
-Successore unico: collaudo finale umano della RC; nessuna ulteriore modifica automatica.
+Successore unico: produrre/installare la nuova RC dal commit atomico di T07,
+impostare la strategia nella configurazione installata e collaudare su Gmail TEST.
+Le quattro mail gia` completate richiedono una sola rimozione dell'etichetta
+`da-traghettare`; nessuna ulteriore modifica automatica.

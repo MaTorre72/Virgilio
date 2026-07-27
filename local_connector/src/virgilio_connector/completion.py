@@ -254,14 +254,19 @@ class LocalCompletionRunner:
             return CompletionResult(**base, status="completion_skipped",
                                     ack_strategy=account.ack_strategy,
                                     reason="ack_enabled is false")
-        if account.ack_strategy != "add_done_label_only":
+        if account.ack_strategy not in {"add_done_label_only", "move_to_done_label"}:
             return CompletionResult(**base, status="completion_skipped",
                                     ack_strategy=account.ack_strategy,
                                     reason=f"unsupported ack strategy: {account.ack_strategy}")
         if dry_run:
+            reason = (
+                "would move message from input_folder to done_folder"
+                if account.ack_strategy == "move_to_done_label"
+                else "would mark as traghettata; input message not removed"
+            )
             return CompletionResult(**base, status="planned",
                                     ack_strategy=account.ack_strategy,
-                                    reason="would mark as traghettata; input message not removed")
+                                    reason=reason)
         mailbox = self.mailbox_factory(account)
         try:
             if not mailbox.input_contains_uid(str(row["message_uid"])):
@@ -269,10 +274,15 @@ class LocalCompletionRunner:
                     store.update_message_completion(int(row["message_row_id"]),
                         message_state="completed", ack_strategy=account.ack_strategy,
                         ack_result="already_acked", attempted=False, completed=True)
+                    reason = (
+                        "gia presente in done_folder e assente da input_folder"
+                        if account.ack_strategy == "move_to_done_label"
+                        else ("marcata come traghettata; gia presente in "
+                              "done_folder; messaggio non rimosso dalla cartella input")
+                    )
                     return CompletionResult(**base, status="already_acked",
                                             ack_strategy=account.ack_strategy,
-                                            reason=("marcata come traghettata; gia presente in "
-                                                    "done_folder; messaggio non rimosso dalla cartella input"))
+                                            reason=reason)
                 store.update_message_completion(int(row["message_row_id"]),
                     message_state="ack_failed", ack_strategy=account.ack_strategy,
                     ack_result="message_not_found", attempted=True, completed=False)
@@ -282,13 +292,22 @@ class LocalCompletionRunner:
             store.update_message_completion(int(row["message_row_id"]),
                 message_state="ready_for_ack", ack_strategy=account.ack_strategy,
                 ack_result="attempting", attempted=True, completed=False)
-            mailbox.add_done_label_only(str(row["message_uid"]))
+            if account.ack_strategy == "move_to_done_label":
+                mailbox.move_to_done_label(str(row["message_uid"]))
+                completed_reason = (
+                    "marcata come traghettata; etichetta input rimossa"
+                )
+            else:
+                mailbox.add_done_label_only(str(row["message_uid"]))
+                completed_reason = (
+                    "marcata come traghettata; messaggio non rimosso dalla cartella input"
+                )
             store.update_message_completion(int(row["message_row_id"]),
                 message_state="completed", ack_strategy=account.ack_strategy,
                 ack_result="completed", attempted=False, completed=True)
             return CompletionResult(**base, status="completed",
                                     ack_strategy=account.ack_strategy,
-                                    reason="marcata come traghettata; messaggio non rimosso dalla cartella input")
+                                    reason=completed_reason)
         except Exception as exc:
             store.update_message_completion(int(row["message_row_id"]),
                 message_state="ack_failed", ack_strategy=account.ack_strategy,

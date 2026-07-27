@@ -83,7 +83,9 @@ class LocalImapAccount:
                 raise MultiAccountConfigError(f"{field_name} is required")
         if self.max_messages <= 0:
             raise MultiAccountConfigError("max_messages must be positive")
-        if self.ack_strategy not in {"no_ack_manual", "add_done_label_only"}:
+        if self.ack_strategy not in {
+            "no_ack_manual", "add_done_label_only", "move_to_done_label"
+        }:
             raise MultiAccountConfigError(f"unsupported ack_strategy: {self.ack_strategy}")
 
     def to_imap_config(self, environ: Mapping[str, str] | None = None) -> ImapReadonlyConfig:

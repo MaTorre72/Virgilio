@@ -3,8 +3,8 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: `GUI-U-R05-T06` Registro unico e reset TEST reale completati;
-  resta il solo collaudo finale umano.
+- Task corrente: `GUI-U-R05-T07` correttivo spostamento etichette `DONE`;
+  resta installazione della nuova RC e collaudo finale umano.
 - `GUI-U-R05-T01` e` `DONE`: un duplicato viene riusato solo con file e SHA-256 validi;
   file assenti o corrotti sono riacquisiti dal processor esistente; gli errori storage sono
   persistiti, visibili e bloccano handoff/completion. Prove: mirati `79 passed`, smoke `558 passed`.
@@ -22,6 +22,10 @@
   non si ricostruiscono downloader, storage, verify, intake, Registro, backup o reset gia` esistenti.
 - `GUI-U-R05-T04` e` `DONE`: audit a transizioni, export idempotente e percorso integrato
   email -> Limbo -> Da archiviare -> Registro sono verificati; prove `45 passed`, smoke `572 passed`.
+- `GUI-U-R05-T07` e` `DONE`: la nuova strategia `move_to_done_label` aggiunge
+  `traghettate` e rimuove la sola etichetta di ingresso tramite estensione Gmail,
+  senza `DELETE`, `MOVE` o `EXPUNGE`; la copia-only precedente resta disponibile.
+  Prove: mirati `73 passed`, smoke `581 passed`.
 - Sequenza automatica residua: nessuna.
 - Pubblicazione Apps Script autorizzata esplicitamente dall'utente e completata il 2026-07-26:
   push dei 14 file canonici e deployment web esistente aggiornato alla versione `35`,
@@ -45,7 +49,8 @@
   precedente sono stati rimossi i soli tab legacy
   `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti`; il foglio reale contiene
   soltanto `bucoliche` e `Virgilio_Inbox`. Trigger TEST fermo.
-- Gate residuo: collaudo finale umano. Codex non puo` approvarlo.
+- Gate residuo: installazione della nuova RC e collaudo finale umano dello
+  spostamento etichette. Codex non puo` approvarlo.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.

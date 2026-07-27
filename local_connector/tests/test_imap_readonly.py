@@ -30,6 +30,8 @@ class FakeImapClient:
     list_data = [b'(\\HasNoChildren) "/" "Virgilio/traghettate"']
     copy_status = "OK"
     copy_data = [b"copied"]
+    store_status = "OK"
+    store_data = [b"label removed"]
 
     def __init__(self, host, port, *, timeout):
         self.calls = [("connect", host, port, timeout)]
@@ -49,6 +51,8 @@ class FakeImapClient:
             return "OK", [b"42"]
         if command == "COPY":
             return self.copy_status, self.copy_data
+        if command == "STORE":
+            return self.store_status, self.store_data
         return "OK", [(b"42 (BODY[] {1})", eml_bytes()), b")"]
 
     def list(self, directory='""', pattern='*'):
@@ -72,6 +76,8 @@ class ImapReadonlyTests(unittest.TestCase):
         FakeImapClient.list_data = [b'(\\HasNoChildren) "/" "Virgilio/traghettate"']
         FakeImapClient.copy_status = "OK"
         FakeImapClient.copy_data = [b"copied"]
+        FakeImapClient.store_status = "OK"
+        FakeImapClient.store_data = [b"label removed"]
         self.temp = tempfile.TemporaryDirectory()
         self.adapter = ImapReadonlyMailbox(
             ImapReadonlyConfig("imap.example.invalid", "test-user", "test-password"),
@@ -152,6 +158,47 @@ class ImapReadonlyTests(unittest.TestCase):
         self.assertIn("Virgilio/traghettate", message)
         self.assertIn("TRYCREATE", message)
         self.assertIn("Mostra in IMAP", message)
+
+    def test_completion_move_adds_done_and_removes_only_input_label(self):
+        FakeImapClient.list_data = [
+            b'(\\HasNoChildren) "/" "Virgilio/da-traghettare"',
+            b'(\\HasNoChildren) "/" "Virgilio/traghettate"',
+        ]
+        self.completion.move_to_done_label("42")
+        calls = [call for client in FakeImapClient.instances for call in client.calls]
+        self.assertIn(("select", "Virgilio/da-traghettare", False), calls)
+        self.assertIn(("uid", "COPY", "42", "Virgilio/traghettate"), calls)
+        self.assertIn(("uid", "STORE", "42", "-X-GM-LABELS",
+                       "(Virgilio/da-traghettare)"), calls)
+        texts = [str(call).upper() for call in calls]
+        for forbidden in ("DELETE", "EXPUNGE", "MOVE", "\\DELETED"):
+            self.assertFalse(any(forbidden in item for item in texts))
+
+    def test_completion_move_stops_if_source_label_removal_fails(self):
+        FakeImapClient.list_data = [
+            b'(\\HasNoChildren) "/" "Virgilio/da-traghettare"',
+            b'(\\HasNoChildren) "/" "Virgilio/traghettate"',
+        ]
+        FakeImapClient.store_status = "NO"
+        FakeImapClient.store_data = [b"extension unavailable"]
+        with self.assertRaises(ImapCompletionError) as ctx:
+            self.completion.move_to_done_label("42")
+        self.assertIn("UID STORE REMOVE INPUT LABEL failed", str(ctx.exception))
+
+    def test_completion_move_requires_distinct_existing_folders(self):
+        completion = ImapCompletionMailbox(
+            ImapReadonlyConfig(
+                "imap.example.invalid", "test-user", "test-password",
+                mailbox="Virgilio/traghettate",
+            ),
+            done_folder="Virgilio/traghettate",
+            client_factory=FakeImapClient,
+        )
+        with self.assertRaises(ImapCompletionError) as ctx:
+            completion.move_to_done_label("42")
+        self.assertIn("must be different", str(ctx.exception))
+        calls = [call for client in FakeImapClient.instances for call in client.calls]
+        self.assertFalse(any(call[:2] == ("uid", "COPY") for call in calls))
 
 
 if __name__ == "__main__":

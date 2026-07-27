@@ -178,7 +178,7 @@ class ImapReadonlyMailbox:
 
 
 class ImapCompletionMailbox:
-    """Minimal IMAP completion adapter: SEARCH + COPY only, no EXPUNGE/STORE."""
+    """Minimal IMAP completion adapter without DELETE or EXPUNGE."""
 
     def __init__(self, config: ImapReadonlyConfig, *,
                  done_folder: str,
@@ -227,6 +227,49 @@ class ImapCompletionMailbox:
                 status,
                 "UID COPY DONE",
                 done_folder=self.done_folder,
+                data=data,
+            )
+        finally:
+            ImapReadonlyMailbox._close(client)
+
+    def move_to_done_label(self, uid: str) -> None:
+        """Apply the done label and remove only the configured Gmail input label."""
+        client = self._connect()
+        try:
+            listed = self.list_mailboxes(client=client)
+            missing = tuple(
+                mailbox
+                for mailbox in (self.config.mailbox, self.done_folder)
+                if mailbox not in listed
+            )
+            if missing:
+                raise ImapCompletionError(
+                    "completion_folder_not_found_in_imap_list: "
+                    f"missing_mailboxes={', '.join(missing)}; "
+                    f"available_mailboxes={', '.join(listed) if listed else '<empty>'}; "
+                    "verify exact IMAP name and 'Mostra in IMAP'"
+                )
+            if self.config.mailbox == self.done_folder:
+                raise ImapCompletionError(
+                    "input_folder and done_folder must be different for move_to_done_label"
+                )
+            self._select(client, self.config.mailbox, readonly=False)
+            target = self._mailbox_argument(self.done_folder)
+            status, data = client.uid("COPY", str(uid), target)
+            self._require_completion_ok(
+                status,
+                "UID COPY DONE",
+                done_folder=self.done_folder,
+                data=data,
+            )
+            source_label = f"({self._mailbox_argument(self.config.mailbox)})"
+            status, data = client.uid(
+                "STORE", str(uid), "-X-GM-LABELS", source_label
+            )
+            self._require_completion_ok(
+                status,
+                "UID STORE REMOVE INPUT LABEL",
+                done_folder=self.config.mailbox,
                 data=data,
             )
         finally:

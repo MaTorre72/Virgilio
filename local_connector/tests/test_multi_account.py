@@ -170,6 +170,12 @@ class FakeAckMailbox:
         if self.fail:
             raise RuntimeError(self.fail_message)
 
+    def move_to_done_label(self, uid):
+        self.calls.append(("move_to_done_label", self.account.account_alias,
+                           self.account.input_folder, self.account.done_folder, uid))
+        if self.fail:
+            raise RuntimeError(self.fail_message)
+
 
 def test_loads_multi_account_yaml_without_secret_values(tmp_path):
     accounts = load_multi_account_config(write_config(tmp_path))
@@ -807,6 +813,42 @@ def test_completion_real_ack_updates_sqlite_and_report(tmp_path):
     assert rows[0][6] == result[0].report_path
     assert attachments == 2
     assert result[0].reason == "marcata come traghettata; messaggio non rimosso dalla cartella input"
+
+
+def test_completion_move_strategy_removes_input_label_and_records_result(tmp_path):
+    accounts, paths = staged_fixture(tmp_path)
+    account = accounts[0]
+    moving = (LocalImapAccount(
+        account_alias=account.account_alias,
+        email=account.email,
+        provider_hint=account.provider_hint,
+        imap_host=account.imap_host,
+        imap_port=account.imap_port,
+        username_env=account.username_env,
+        password_env=account.password_env,
+        input_folder=account.input_folder,
+        done_folder=account.done_folder,
+        error_folder=account.error_folder,
+        enabled=account.enabled,
+        max_messages=account.max_messages,
+        ack_enabled=True,
+        ack_strategy="move_to_done_label",
+    ),)
+    FakeAckMailbox.instances.clear()
+    result = complete(paths, moving)
+    assert result[0].status == "completed"
+    assert result[0].reason == "marcata come traghettata; etichetta input rimossa"
+    assert FakeAckMailbox.instances[0].calls == [
+        ("input_contains_uid", "account_1", "41"),
+        ("move_to_done_label", "account_1", "Virgilio/da-traghettare",
+         "Virgilio/traghettate", "41"),
+    ]
+    with sqlite3.connect(paths.state_db) as db:
+        strategy, ack_result = db.execute(
+            "SELECT ack_strategy,ack_result FROM messages WHERE id=1"
+        ).fetchone()
+    assert strategy == "move_to_done_label"
+    assert ack_result == "completed"
 
 
 def test_completion_skips_blocking_attachment_states(tmp_path):

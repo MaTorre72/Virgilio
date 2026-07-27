@@ -1459,3 +1459,28 @@ aggiornato alla versione `35`; backup locale/Registro/Limbo presenti, stati fina
 a zero e schema preservato. Il Limbo e` ora piatto (`use_account_subfolders: false`):
 i nomi sono gia` univoci per alias e attachment ID, e la sottocartella pregressa
 `principale` e` stata inclusa nel backup e rimossa senza creare nuovi asset.
+
+### GUI-U-R05-T07 - Spostamento conclusivo delle etichette Gmail
+
+Stato: `DONE`. Priorita`: `P0`.
+Risultato: il completamento puo` applicare `traghettate` e rimuovere la sola
+etichetta di ingresso, senza cancellare il messaggio o usare expunge.
+Dipendenze: `R05-T06 = DONE`; collaudo reale che ha riprodotto la doppia etichetta.
+Componenti ammessi: adapter IMAP completion, orchestratore completion, validazione
+configurazione, test sintetici e documentazione pertinente.
+Esclusioni: Gmail API, nuove credenziali, cancellazione mail, refactor IMAP,
+modifiche GAS, Registro, backup o reset.
+Condizione di blocco: impossibilita` di distinguere la rimozione dell'etichetta
+di ingresso dalla cancellazione del messaggio.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T07-AC1` La strategia di spostamento e` esplicita e valida cartelle esistenti e distinte. | Test configurazione e adapter fake. | `move_to_done_label` e` accettata dal contratto; l'adapter blocca cartelle mancanti o coincidenti prima delle mutazioni. | `MET` |
+| `R05-T07-AC2` Il messaggio riceve `traghettate` e perde soltanto `da-traghettare`. | Traccia comandi IMAP fake. | Sequenza `UID COPY` e `UID STORE -X-GM-LABELS` sulla sola etichetta sorgente; nessun `DELETE`, `MOVE`, `EXPUNGE` o `\\Deleted`. | `MET` |
+| `R05-T07-AC3` Un errore di rimozione resta osservabile e non produce un falso completamento. | STORE fake fallito e test completion. | Il fallimento viene sollevato dall'adapter e il runner esistente lo registra `ack_failed`; `completed` e` scritto solo dopo entrambe le operazioni riuscite. | `MET` |
+| `R05-T07-AC4` La strategia copia-only precedente resta disponibile. | Regressione mirata. | `add_done_label_only` conserva il comportamento precedente; il nuovo percorso e` selezionato solo esplicitamente. | `MET` |
+| `R05-T07-AC5` Il percorso locale non regredisce. | Test mirati e smoke locale. | Test mirati `73 passed`; smoke locale `581 passed`. | `MET` |
+
+Successore: nuova RC desktop dal commit atomico del task, installazione e collaudo
+umano su Gmail TEST. Le quattro mail gia` completate richiedono una sola rimozione
+dell'etichetta di ingresso e non vengono riprocessate automaticamente.
