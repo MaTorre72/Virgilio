@@ -1547,3 +1547,11 @@ Build e smoke installer `PASS`; Build ID
 `5A2405EC861F2CE3654C0CF01D32857FEB496A8218042FC715CE6832C515E5D2`.
 L'identita` installata coincide con il payload; configurazione e dati sono
 preservati. Nessun delta Apps Script e nessun reset TEST eseguito.
+
+Reset totale autorizzato del 2026-07-27: operazione coordinata
+`reset-r05-20260727-t09-final` completata con backup locale, Registro e Limbo.
+Verifica indipendente: tutte le tabelle locali operative, `bucoliche`,
+`Virgilio_Inbox`, Limbo e la coda Gmail `da-traghettare` sono vuoti; le quattro
+mail del collaudo precedente sono state soltanto rimosse dall'etichetta di
+ingresso, senza cancellazione o falsa etichetta `traghettata`. Configurazione,
+credenziali, machine ID e anagrafiche `4/4/13` sono preservati.

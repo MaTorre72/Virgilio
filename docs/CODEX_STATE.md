@@ -34,9 +34,8 @@
   e `TipiPratica`, ripristinabili solo da backup esplicito senza sovrascritture.
   Prove finali dopo l'allineamento live: mirati reset `13 passed`, regressione e
   smoke `589 passed`.
-- Sequenza automatica residua: nessuna. Reset TEST e nuovo collaudo restano
-  azioni separate da autorizzare; deployment Apps Script `40` resta invariato e
-  la RC locale installata e` `0.11.0-1f0e6e8`.
+- Sequenza automatica residua: nessuna. Resta soltanto il nuovo collaudo umano;
+  deployment Apps Script `40` e RC locale `0.11.0-1f0e6e8` sono pronti.
 - Pubblicazione Apps Script autorizzata e completata il 2026-07-27: push dei
   14 file canonici e deployment web esistente aggiornato alla versione `40`,
   senza cambiare URL. Il tab Registro e` canonico `bucoliche`; il reset usa il
@@ -55,10 +54,11 @@
   umana del 2026-07-26.
 - Anagrafiche ripristinate il 2026-07-27 dalla fonte storica verificata: 4 righe
   `Clienti_Siti`, 4 righe `Team`, 13 righe `TipiPratica`, confronto esatto riuscito.
-- Reset TEST reale `reset-r05-20260727-t08-final` completato: backup locale,
-  backup Registro e backup Limbo verificati; `bucoliche`, `Virgilio_Inbox` e
-  Limbo sono vuoti, mentre le tre anagrafiche sono rimaste invariate. Configurazione,
-  credenziali e machine ID locali preservati. Trigger TEST fermo.
+- Reset TEST reale `reset-r05-20260727-t09-final` completato: backup locale,
+  backup Registro e backup Limbo verificati; stato locale, `bucoliche`,
+  `Virgilio_Inbox`, Limbo e coda Gmail `da-traghettare` sono vuoti. Le tre
+  anagrafiche sono rimaste `4/4/13`; configurazione, credenziali e machine ID
+  locali sono preservati. Caronte e avvio automatico restano fermi.
 - Gate residuo: solo collaudo finale umano. Codex non puo` approvarlo.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in

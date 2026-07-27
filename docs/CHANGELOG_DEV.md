@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-27 +02:00 - Completato il reset totale TEST
+  `reset-r05-20260727-t09-final`: backup locale/Registro/Limbo verificati; stato
+  locale, `bucoliche`, `Virgilio_Inbox`, Limbo e coda Gmail `da-traghettare`
+  vuoti. Le quattro vecchie mail sono state rimosse soltanto dall'etichetta di
+  ingresso. Anagrafiche `4/4/13`, configurazione, credenziali e machine ID
+  preservati; Caronte e avvio automatico fermi.
+
 - 2026-07-27 +02:00 - Distribuita la RC del correttivo `GUI-U-R05-T09`:
   `CaronteSetup-0.11.0-1f0e6e8.exe`, Build ID
   `a0bb673d-6d1d-417f-9d26-cb8d5de71600`, SHA-256

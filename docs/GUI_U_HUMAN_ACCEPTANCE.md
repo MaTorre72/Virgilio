@@ -147,16 +147,16 @@ vengono ripetuti:
    registrare esplicitamente l'esito umano.
 
 Stato al 2026-07-27: il correttivo e` pubblicato come versione Apps Script `40`.
-La RC desktop installata e` `CaronteSetup-0.11.0-60cc6ff.exe`, Build ID
-`b93b7fa7-60ca-462f-9ae7-1e7dc7cae0f6`, SHA-256
-`9EBDBB53A0378F8D6C0AD209A2E4BA8D0564F948AA87B4C90B87C8E86E92E685`.
+La RC desktop installata e` `CaronteSetup-0.11.0-1f0e6e8.exe`, Build ID
+`a0bb673d-6d1d-417f-9d26-cb8d5de71600`, SHA-256
+`5A2405EC861F2CE3654C0CF01D32857FEB496A8218042FC715CE6832C515E5D2`.
 GAS e Local connector scrivono nello stesso `bucoliche` umano a 17 colonne; i
 tre `Bucoliche_*` non sono registri cloud paralleli e `Virgilio_Inbox` e` la
 sola coda. Il punto 2 e` stato completato con reset
-`reset-r05-20260727-t08-final`: backup locale/Registro/Limbo verificati, dati
-operativi azzerati e anagrafiche `Clienti_Siti`, `Team`, `TipiPratica` invariate
-con conteggi `4/4/13`. Il trigger resta fermo. Resta il punto 3 e l'esito umano,
-mai compilato da Codex.
+`reset-r05-20260727-t09-final`: backup locale/Registro/Limbo verificati, dati
+operativi e coda Gmail `da-traghettare` azzerati, anagrafiche `Clienti_Siti`,
+`Team`, `TipiPratica` invariate con conteggi `4/4/13`. Caronte e avvio automatico
+restano fermi. Resta il punto 3 e l'esito umano, mai compilato da Codex.
 
 ## Esiti e regole di giudizio
 
