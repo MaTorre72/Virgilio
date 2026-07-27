@@ -1506,7 +1506,9 @@ allegati locali e lo stato finale `archiviato` di `Virgilio_Inbox`.
 | `R05-T08-AC2` `move_to_done_label` ha successo solo se la mail e` presente in `traghettate` e assente da `da-traghettare`. | Test IMAP e completion con post-condizione positiva e negativa. | Dopo COPY/STORE l'adapter riapre entrambe le cartelle in sola lettura; presenza input o assenza done solleva errore e produce `ack_failed`. Nessun DELETE/MOVE/EXPUNGE. | `MET` |
 | `R05-T08-AC3` Le anagrafiche canoniche non vengono azzerate e il reset rifiuta una topologia che le omette. | Harness reset con `Clienti_Siti`, `Team` e `TipiPratica`. | Inventario reset include header e numero righe delle tre anagrafiche, le lascia fuori dai clear e richiede uguaglianza prima/dopo; una topologia incompleta e` rifiutata. | `MET` |
 | `R05-T08-AC4` Il ripristino anagrafiche usa un backup esplicito, valida tutto prima di scrivere e non sovrascrive dati presenti. | Harness GAS puro e ispezione sorgente. | `ripristinaAnagraficheDaBackup` richiede una copia distinta, valida i tre header e tutte le destinazioni prima di scrivere, rifiuta tab con righe umane; rimossi i tecnici fittizi dall'inizializzazione. | `MET` |
-| `R05-T08-AC5` Test mirati e smoke locale sono verdi, senza segreti o azioni live. | Suite focalizzata, smoke, diff e scansione segreti. | Mirati `107 passed`; regressione completa `587 passed`; smoke `587 passed`; sintassi Python/GAS, diff e scansione segreti verdi. Nessuna pubblicazione o mutazione live. | `MET` |
+| `R05-T08-AC5` Test mirati e smoke locale sono verdi, senza segreti nei sorgenti o nei test. | Suite focalizzata, smoke, diff e scansione segreti. | Mirati iniziali `107 passed`; dopo l'allineamento live mirati reset `13 passed`, regressione e smoke `589 passed`; sintassi Python/GAS, diff e scansione segreti verdi. | `MET` |
 
-Successore: pubblicare esplicitamente il delta GAS, produrre/installare la nuova RC,
-ripristinare le anagrafiche da un backup verificato e ripetere reset/collaudo umano.
+Distribuzione autorizzata del 2026-07-27: deployment Apps Script esistente alla
+versione `40`; RC `0.11.0-60cc6ff` installata; anagrafiche ripristinate con conteggi
+`4/4/13`; reset `reset-r05-20260727-t08-final` completato con backup, dati operativi
+vuoti e anagrafiche invariate. Successore: solo collaudo umano con nuove mail TEST.

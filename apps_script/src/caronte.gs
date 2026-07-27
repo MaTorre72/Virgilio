@@ -27,7 +27,7 @@ const CONFIG = {
   // ── ID Drive/Sheets ──
   // Tutti letti da PropertiesService, niente hardcode.
   BUCOLICHE_ID: _PROPS.getProperty('VIRGILIO_BUCOLICHE_SPREADSHEET_ID') || '',
-  BUCOLICHE_TAB: _PROPS.getProperty('VIRGILIO_BUCOLICHE_TAB') || 'bucoliche',
+  BUCOLICHE_TAB: 'bucoliche',
   EMPIREO_ID: _PROPS.getProperty('VIRGILIO_EMPIREO_ID') || '',
   ADAMO_ID: _PROPS.getProperty('VIRGILIO_ADAMO_ID') || '',
   LIMBO_ID: _PROPS.getProperty('VIRGILIO_LIMBO_ID') || '',

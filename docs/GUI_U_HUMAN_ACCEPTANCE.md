@@ -141,22 +141,22 @@ di Python o consultazione della documentazione tecnica.
 Questa e` l'intera checklist residua. Le prove automatiche e i PASS storici non
 vengono ripetuti:
 
-1. autorizzare e verificare la pubblicazione/deploy del solo delta Apps Script;
-2. autorizzare ed eseguire il reset dell'ambiente TEST reale, verificando backup
-   e stato finale vuoto senza coinvolgere asset di produzione;
+1. pubblicazione/deploy del delta Apps Script: `COMPLETATO`;
+2. reset dell'ambiente TEST reale con backup e stato finale vuoto: `COMPLETATO`;
 3. eseguire il collaudo reale della RC identificata sul percorso completo e
    registrare esplicitamente l'esito umano.
 
-Stato al 2026-07-26: il correttivo Registro unico e Limbo piatto e` pubblicato come versione
-Apps Script `35`. La RC desktop verificata e` `CaronteSetup-0.11.0-2294efa.exe`,
-Build ID `34eafb2f-6974-4153-bb94-07e0e078a77f`, SHA-256
-`C483221148B619C18C36E99F55B23B4078D287A89AF24194B198F273A42C872E`.
+Stato al 2026-07-27: il correttivo e` pubblicato come versione Apps Script `40`.
+La RC desktop installata e` `CaronteSetup-0.11.0-60cc6ff.exe`, Build ID
+`b93b7fa7-60ca-462f-9ae7-1e7dc7cae0f6`, SHA-256
+`9EBDBB53A0378F8D6C0AD209A2E4BA8D0564F948AA87B4C90B87C8E86E92E685`.
 GAS e Local connector scrivono nello stesso `bucoliche` umano a 17 colonne; i
 tre `Bucoliche_*` non sono registri cloud paralleli e `Virgilio_Inbox` e` la
-sola coda. Il punto 2 e` stato ripetuto con reset
-`reset-r05-20260726-2139`: backup locale/Registro/Limbo verificati, dati azzerati,
-intestazioni preservate, Limbo piatto senza `principale` e tab legacy gia` rimossi. Il
-trigger resta fermo. Resta il punto 3 e l'esito umano, mai compilato da Codex.
+sola coda. Il punto 2 e` stato completato con reset
+`reset-r05-20260727-t08-final`: backup locale/Registro/Limbo verificati, dati
+operativi azzerati e anagrafiche `Clienti_Siti`, `Team`, `TipiPratica` invariate
+con conteggi `4/4/13`. Il trigger resta fermo. Resta il punto 3 e l'esito umano,
+mai compilato da Codex.
 
 ## Esiti e regole di giudizio
 

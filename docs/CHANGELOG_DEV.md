@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-27 +02:00 - Distribuito `GUI-U-R05-T08`: Apps Script versione `40`
+  sul deployment esistente; RC `CaronteSetup-0.11.0-60cc6ff.exe` installata
+  (Build ID `b93b7fa7-60ca-462f-9ae7-1e7dc7cae0f6`). Ripristinate e verificate
+  le tre anagrafiche; reset `reset-r05-20260727-t08-final` completato con backup,
+  dati operativi vuoti e anagrafiche invariate. Smoke finale `589 passed`.
+
 - 2026-07-27 +02:00 - Completato `GUI-U-R05-T08`: completion vincolata allo
   stato finale `archiviato`, post-condizioni Gmail verificate, anagrafiche
   canoniche preservate e ripristino esplicito da backup senza dati fittizi.

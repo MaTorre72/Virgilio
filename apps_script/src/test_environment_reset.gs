@@ -122,7 +122,8 @@ function _testResetGasAdapter_() {
 function _testResetInspectGas_(props) {
   const registryId = props.getProperty('VIRGILIO_BUCOLICHE_SPREADSHEET_ID') || '';
   const inboxId = props.getProperty(VIRGILIO_INBOX_SPREADSHEET_PROPERTY) || '';
-  const sheetName = props.getProperty(VIRGILIO_INBOX_SHEET_PROPERTY) || '';
+  const sheetName = props.getProperty(VIRGILIO_INBOX_SHEET_PROPERTY) ||
+    VIRGILIO_INBOX_DEFAULT_SHEET;
   const limboId = props.getProperty('VIRGILIO_LIMBO_ID') || '';
   const registry = SpreadsheetApp.openById(registryId);
   const inbox = SpreadsheetApp.openById(inboxId);

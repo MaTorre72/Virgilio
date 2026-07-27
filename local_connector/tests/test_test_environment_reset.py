@@ -208,6 +208,22 @@ def test_anagrafiche_restore_is_explicit_validated_and_never_seeds_fake_team():
     assert "appendRow([m.nome" not in team_setup
 
 
+def test_gas_registry_tab_is_canonical_and_ignores_legacy_property():
+    source = (Path(__file__).parents[2] / "apps_script" / "src" /
+              "caronte.gs").read_text(encoding="utf-8")
+
+    assert "BUCOLICHE_TAB: 'bucoliche'" in source
+    assert "getProperty('VIRGILIO_BUCOLICHE_TAB')" not in source
+
+
+def test_gas_reset_uses_canonical_inbox_tab_when_property_is_blank():
+    source = (Path(__file__).parents[2] / "apps_script" / "src" /
+              "test_environment_reset.gs").read_text(encoding="utf-8")
+
+    assert "props.getProperty(VIRGILIO_INBOX_SHEET_PROPERTY) ||" in source
+    assert "VIRGILIO_INBOX_DEFAULT_SHEET" in source
+
+
 def test_gas_reset_backs_up_and_removes_legacy_limbo_subfolders():
     source = (Path(__file__).parents[2] / "apps_script" / "src" /
               "test_environment_reset.gs").read_text(encoding="utf-8")

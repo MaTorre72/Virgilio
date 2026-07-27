@@ -3,8 +3,8 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: `GUI-U-R05-T08` correttivo coordinato `DONE` nel repository;
-  restano pubblicazione/installazione, ripristino anagrafiche e collaudo finale umano.
+- Task corrente: `GUI-U-R05-T08` correttivo coordinato `DONE` e distribuito;
+  resta soltanto il collaudo finale umano.
 - `GUI-U-R05-T01` e` `DONE`: un duplicato viene riusato solo con file e SHA-256 validi;
   file assenti o corrotti sono riacquisiti dal processor esistente; gli errori storage sono
   persistiti, visibili e bloccano handoff/completion. Prove: mirati `79 passed`, smoke `558 passed`.
@@ -30,16 +30,18 @@
   `Virgilio_Inbox` correlato e` `archiviato`; COPY/STORE e` seguito dalla verifica
   read-only delle due etichette; il reset preserva e verifica `Clienti_Siti`, `Team`
   e `TipiPratica`, ripristinabili solo da backup esplicito senza sovrascritture.
-  Prove: mirati `107 passed`, regressione e smoke `587 passed`.
+  Prove finali dopo l'allineamento live: mirati reset `13 passed`, regressione e
+  smoke `589 passed`.
 - Sequenza automatica residua: nessuna.
-- Pubblicazione Apps Script autorizzata esplicitamente dall'utente e completata il 2026-07-26:
-  push dei 14 file canonici e deployment web esistente aggiornato alla versione `35`,
-  senza cambiare URL; la versione `34` e` superata dal reset Limbo ricorsivo.
-- RC desktop installata dal commit `fcc5c0c`: installer
-  `CaronteSetup-0.11.0-fcc5c0c.exe`, Build ID
-  `4543a3b1-4d2a-45b5-964a-28e2a9ec6be0`, SHA-256
-  `263F889A1C1F99622F699EEF5CEF4C5AEC124771C073866B842A9525FE8D9701`;
-  e` superata dal correttivo T08 non ancora distribuito.
+- Pubblicazione Apps Script autorizzata e completata il 2026-07-27: push dei
+  14 file canonici e deployment web esistente aggiornato alla versione `40`,
+  senza cambiare URL. Il tab Registro e` canonico `bucoliche`; il reset usa il
+  fallback canonico `Virgilio_Inbox` se la proprieta` legacy e` assente.
+- RC desktop installata dal commit `60cc6ff`: installer
+  `CaronteSetup-0.11.0-60cc6ff.exe`, Build ID
+  `b93b7fa7-60ca-462f-9ae7-1e7dc7cae0f6`, SHA-256
+  `9EBDBB53A0378F8D6C0AD209A2E4BA8D0564F948AA87B4C90B87C8E86E92E685`;
+  build e smoke installer `PASS`.
 - Topologia TEST riallineata senza nuovi asset: GAS e Local connector usano lo
   stesso Registro umano append-only `bucoliche` con le stesse 17 colonne;
   stato e conflitti tecnici restano locali e non producono tab cloud paralleli.
@@ -47,16 +49,13 @@
   `Staging_Local_Test` e le relative proprieta` non fanno piu` parte della topologia live.
 - RC installata e `VIRGILIO_TOKEN` salvato nel deposito protetto locale su conferma
   umana del 2026-07-26.
-- Reset TEST reale `reset-r05-20260726-2139` completato: backup locale, backup Registro
-  e backup Limbo verificati; `bucoliche`, `Virgilio_Inbox` e Limbo sono vuoti con
-  intestazioni preservate; la configurazione installata scrive direttamente nella radice
-  Limbo e la sottocartella pregressa `principale` e` stata rimossa. Dopo il backup completo
-  precedente sono stati rimossi i soli tab legacy
-  `Bucoliche_Eventi`, `Bucoliche_Stato` e `Bucoliche_Conflitti`; il foglio reale contiene
-  soltanto `bucoliche` e `Virgilio_Inbox`. Trigger TEST fermo.
-- Gate residuo: pubblicazione esplicita del delta GAS, nuova RC, ripristino delle
-  anagrafiche da backup verificato, reset TEST e collaudo finale umano. Codex non
-  puo` approvare il gate umano e non ha eseguito azioni live in T08.
+- Anagrafiche ripristinate il 2026-07-27 dalla fonte storica verificata: 4 righe
+  `Clienti_Siti`, 4 righe `Team`, 13 righe `TipiPratica`, confronto esatto riuscito.
+- Reset TEST reale `reset-r05-20260727-t08-final` completato: backup locale,
+  backup Registro e backup Limbo verificati; `bucoliche`, `Virgilio_Inbox` e
+  Limbo sono vuoti, mentre le tre anagrafiche sono rimaste invariate. Configurazione,
+  credenziali e machine ID locali preservati. Trigger TEST fermo.
+- Gate residuo: solo collaudo finale umano. Codex non puo` approvarlo.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.
