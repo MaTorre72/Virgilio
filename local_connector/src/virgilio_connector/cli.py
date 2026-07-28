@@ -1,0 +1,1161 @@
+"""Parser, dispatch, and implementations for explicit connector commands."""
+
+from __future__ import annotations
+
+import argparse
+from dataclasses import asdict
+import json
+import os
+from pathlib import Path
+import sqlite3
+import sys
+from time import monotonic, sleep
+
+from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
+from .bucoliche import (BucolicheAppendOnlyAdapter, BucolicheError,
+                        GoogleOAuthLogin, load_bucoliche_config)
+from .completion import CompletionError, ControlledAckRunner, LocalCompletionRunner
+from .staging_transport import (
+    LocalDriveStagingConfig,
+    LocalDriveStagingTransport,
+    StagingTransportError,
+)
+from .drive_staging_verify import (
+    DriveStagingVerifyClient,
+    DriveStagingVerifyError,
+)
+from .drive_staging_intake_test import (
+    DriveStagingIntakeTestClient,
+    DriveStagingIntakeTestError,
+)
+from .da_archiviare_intake import (
+    DaArchiviareIntakeError,
+    DaArchiviareIntakeHttpClient,
+    DaArchiviareIntakeResponse,
+    DaArchiviareStatusHttpClient,
+    build_da_archiviare_intake_payload,
+)
+from .doctor import LocalDoctor
+from .application_paths import default_application_paths
+from .application.configuration import ConfigurationService
+from .application.credentials import CredentialStoreError
+from .application.google_oauth import (
+    GoogleOAuthConfigurationError,
+    create_google_sheets_oauth_service,
+)
+from .application.operational_connection import create_operational_connection_service
+from .application.registry_configuration import RegistryConfigurationService
+from .application.windows_credentials import create_account_credential_service
+from .local_paths import LocalDataPaths
+from .reset_local_state import ResetLocalStateError, reset_local_state
+from .operation_lock import LocalOperationBusyError
+from .readonly_state import ReadonlyStateStore
+from .multi_account import (
+    LocalStorageConfig,
+    MultiAccountConfigError,
+    MultiAccountImapProcessor,
+    MultiAccountReadonlyScanner,
+    scaffold_local_config,
+    load_storage_config,
+    load_multi_account_config,
+)
+from .pipeline import LocalPipelineRunner
+from .operational_handoff import OperationalHandoffRunner
+from .pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup, PilotCheck,
+                              PilotPreview, PilotRunV11Runner, PilotSafeRunner,
+                              has_bucoliche_section)
+from .scanner import select_scanner
+from .storage_adapter import LocalFilesystemStorageAdapter, StorageAdapterError
+from .traceability import (
+    LocalConflictChecker,
+    export_central_events,
+    export_registro_events,
+    load_machine_id,
+    load_rules,
+)
+from .windows_task import (
+    WindowsTaskError,
+    build_windows_watch_task,
+    query_windows_watch_task,
+    register_windows_watch_task,
+    unregister_windows_watch_task,
+)
+
+
+def _load_env_file(path: Path) -> None:
+    if not path.is_file():
+        return
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        os.environ.setdefault(name.strip(), value.strip().strip('"').strip("'"))
+
+
+def _prog_name() -> str:
+    return "virgilio" if Path(sys.argv[0]).stem.lower() == "virgilio" else "python -m virgilio_connector"
+
+
+def _local_data_root() -> Path:
+    return default_application_paths().data_dir
+
+
+def _load_pilot_components(config_path: Path):
+    local_root = _local_data_root()
+    accounts = load_multi_account_config(config_path)
+    storage_config = load_storage_config(config_path)
+    bucoliche_config = load_bucoliche_config(config_path)
+    return accounts, storage_config, bucoliche_config, LocalDataPaths(local_root)
+
+
+def _print_human(lines) -> None:
+    print("\n".join(lines))
+
+
+def _print_progress_event(progress: dict[str, object]) -> None:
+    """Emit a small private event stream consumed only by the user application."""
+    print(json.dumps({"caronte_progress": progress}, ensure_ascii=False), flush=True)
+
+
+def _pilot_safe_human_summary(result, *, label: str = "Esito pilot") -> list[str]:
+    lines = [f"{label}: {result.status} ({'dry-run' if result.dry_run else 'run reale'})",
+             f"Pilot check: {result.pilot_check}"]
+    if result.pipeline_status:
+        lines.append(f"Pipeline locale: {result.pipeline_status}")
+    if result.export_status:
+        lines.append(f"Export Bucoliche: {result.export_status}")
+    if result.stopped_at:
+        lines.append(f"Interrotto a: {result.stopped_at}")
+    for warning in result.warnings:
+        lines.append(f"Warning: {warning}")
+    for error in result.errors:
+        lines.append(f"Errore: {error}")
+    if result.suggested_next_commands:
+        lines.append(f"Prossimo comando: {result.suggested_next_commands[0]}")
+    return lines
+
+
+def _pilot_preview_human_summary(preview: dict[str, object]) -> list[str]:
+    accounts = [item["account_alias"] for item in preview.get("accounts", [])]
+    account_text = ", ".join(accounts) if accounts else "nessun account abilitato"
+    lines = [
+        f"Stato preview pilota: {preview['pilot_check']}",
+        f"Account abilitate: {account_text}",
+        f"Eventi esportabili: {preview['events_exportable']}; conflitti locali: {preview['local_conflicts']}",
+    ]
+    if preview.get("sheet_target"):
+        lines.append(f"Target Bucoliche: {preview['sheet_target']}")
+    for warning in preview.get("warnings", []):
+        lines.append(f"Warning: {warning}")
+    next_commands = preview.get("next_commands", [])
+    if next_commands:
+        lines.append(f"Prossimo comando: {next_commands[0]}")
+    return lines
+
+
+def _doctor_human_summary(result) -> list[str]:
+    lines = [f"Esito doctor: {result.status}"]
+    for account in result.accounts:
+        lines.append(
+            f"Account {account['account_alias']}: user={account['username_env']}, "
+            f"password={account['password_env']}, imap={account['imap']}"
+        )
+    for warning in result.warnings:
+        lines.append(f"Warning: {warning}")
+    for error in result.errors:
+        lines.append(f"Errore: {error}")
+    for fix in result.suggested_fixes:
+        lines.append(f"Azione consigliata: {fix}")
+    if result.suggested_next_commands:
+        lines.append(f"Prossimo comando: {result.suggested_next_commands[0]}")
+    return lines
+
+
+def _reset_local_state_human_summary(result) -> list[str]:
+    lines = [
+        f"Reset locale: {result.status}",
+        f"Root locale: {result.local_root}",
+        f"Backup automatico: {result.backup_path or 'nessuno'}",
+        f"Machine ID preservato: {'sì' if result.machine_id_preserved else 'no'}",
+        f"Conservato: {', '.join(result.preserved) or 'nessuno'}",
+        f"Azzerato: {', '.join(result.reset) or 'nessuno'}",
+        f"Messaggio: {result.message}",
+    ]
+    return lines
+
+
+def _windows_task_human_summary(payload: dict[str, object]) -> list[str]:
+    task_name = payload["task_name"]
+    if payload["status"] == "not_installed":
+        return [f"Avvio automatico '{task_name}': non installato"]
+    if payload["status"] == "removed":
+        return [f"Avvio automatico '{task_name}': rimosso"]
+    if payload["status"] in {"created", "dry_run"}:
+        label = "piano verificato" if payload["status"] == "dry_run" else "installato"
+        return [f"Avvio automatico '{task_name}': {label}",
+                f"Controllo ogni {payload['interval_seconds']} secondi"]
+    last_result = payload.get("last_result")
+    result_text = "mai eseguito" if last_result is None else (
+        "completato correttamente (0)" if last_result == 0 else f"codice {last_result}"
+    )
+    return [
+        f"Avvio automatico '{task_name}': installato",
+        f"Stato: {payload.get('state') or 'non disponibile'}",
+        f"Ultima esecuzione: {payload.get('last_run_time') or 'mai eseguito'}",
+        f"Ultimo esito: {result_text}",
+        f"Prossima esecuzione: {payload.get('next_run_time') or 'al prossimo accesso a Windows'}",
+    ]
+
+
+def _bucoliche_doctor_human_summary(result) -> list[str]:
+    lines = [f"Esito doctor Bucoliche: {result.status}"]
+    for check in result.checks:
+        name = check.get("name", "check")
+        status = check.get("status", "")
+        extras = [f"{key}={value}" for key, value in check.items()
+                  if key not in {"name", "status"}]
+        line = f"Check {name}: {status}"
+        if extras:
+            line = f"{line} ({', '.join(extras)})"
+        lines.append(line)
+    for warning in result.warnings:
+        lines.append(f"Warning: {warning}")
+    for error in result.errors:
+        lines.append(f"Errore: {error}")
+    for command in result.suggested_next_commands:
+        lines.append(f"Prossimo comando: {command}")
+    return lines
+
+
+def _pilot_run_v11_human_summary(result) -> list[str]:
+    config_status = "BLOCKED" if result.doctor_status == "BLOCKED" else "OK"
+    pipeline_status = "ERROR" if "error" in result.pipeline_status else "OK"
+    ack_suffix = ""
+    if result.ack_skip_reason:
+        ack_suffix = f" / skipped ({result.ack_skip_reason})"
+    lines = [
+        f"Configurazione: {config_status} ({result.doctor_status})",
+        f"Pipeline: {pipeline_status} ({result.pipeline_status})",
+        f"Conflitti: {result.conflicts_count}",
+        ("Bucoliche: eventi nuovi {new} / gia esportati {existing}"
+         .format(new=result.bucoliche_events_exported,
+                 existing=result.bucoliche_already_exported)),
+        f"Stato: {result.bucoliche_state_rows} righe aggiornate",
+        ("Ack: {completed} completati / {failed} falliti / {planned} pianificati{suffix}"
+         .format(completed=result.ack_completed, failed=result.ack_failed,
+                 planned=result.ack_messages_planned, suffix=ack_suffix)),
+        f"Esito finale: {result.final_status}",
+        f"Prossima azione: {result.next_action}",
+    ]
+    for warning in result.warnings[:4]:
+        lines.append(f"Warning: {warning}")
+    for error in result.errors[:4]:
+        lines.append(f"Errore: {error}")
+    return lines[:20]
+
+
+def _build_local_pipeline_runner(
+    accounts, storage_config, paths, config_path, runtime_environment=None
+):
+    runtime = os.environ if runtime_environment is None else runtime_environment
+    timeout_seconds = float(runtime.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15"))
+    return LocalPipelineRunner(
+        accounts, paths=paths, config_path=config_path,
+        scanner_factory=lambda: MultiAccountReadonlyScanner(
+            accounts, paths=paths, environ=runtime,
+        ),
+        processor_factory=lambda: MultiAccountImapProcessor(
+            accounts, paths=paths, environ=runtime,
+            scanner=select_scanner(runtime.get("VIRGILIO_SCANNER", "auto")),
+            rules=load_rules(config_path),
+            max_attachment_bytes=int(runtime.get(
+                "VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400"
+            )),
+        ),
+        storage_factory=lambda: LocalFilesystemStorageAdapter(
+            state_db=paths.state_db, local_data_root=paths.root, config=storage_config,
+        ),
+        handoff_factory=lambda: OperationalHandoffRunner(
+            paths=paths,
+            staging_root=storage_config.staging_dir,
+            verifier=DriveStagingVerifyClient(
+                runtime.get("VIRGILIO_CARONTE_DRIVE_VERIFY_URL"),
+                timeout_seconds=timeout_seconds,
+            ),
+            intake=DaArchiviareIntakeHttpClient(
+                runtime.get("VIRGILIO_CARONTE_INTAKE_URL"),
+                runtime.get("VIRGILIO_TOKEN"),
+                timeout_seconds=timeout_seconds,
+            ),
+        ),
+        registry_export_factory=lambda: _build_protected_registry_exporter(
+            config_path, paths, runtime
+        ),
+        completion_factory=lambda: LocalCompletionRunner(
+            accounts, paths=paths, environ=runtime, require_da_archiviare=True,
+            archive_status_client=DaArchiviareStatusHttpClient(
+                runtime.get("VIRGILIO_CARONTE_INTAKE_URL"),
+                runtime.get("VIRGILIO_TOKEN"),
+                timeout_seconds=timeout_seconds,
+            ),
+        ),
+    )
+
+
+def _build_protected_registry_exporter(
+    config_path: Path,
+    paths: LocalDataPaths,
+    runtime: dict[str, str],
+) -> BucolicheAppendOnlyAdapter:
+    RegistryConfigurationService(config_path).ensure_enabled()
+    config = load_bucoliche_config(config_path)
+    client = None
+    try:
+        client = create_google_sheets_oauth_service().client(config.spreadsheet_id)
+    except (
+        GoogleOAuthConfigurationError,
+        CredentialStoreError,
+        OSError,
+        PermissionError,
+        ValueError,
+    ):
+        # Explicit CLI environment remains a supported fallback.
+        pass
+    return BucolicheAppendOnlyAdapter(
+        state_db=paths.state_db,
+        config=config,
+        environ=runtime,
+        client=client,
+    )
+
+
+def _build_local_pipeline_runner_from_config(config_path: Path) -> LocalPipelineRunner:
+    local_root = _local_data_root()
+    accounts = load_multi_account_config(config_path)
+    storage_config = load_storage_config(config_path)
+    paths = LocalDataPaths(local_root)
+    runtime = _protected_runtime_environment(config_path, accounts)
+    return _build_local_pipeline_runner(
+        accounts, storage_config, paths, config_path, runtime
+    )
+
+
+def _protected_runtime_environment(config_path: Path, accounts) -> dict[str, str]:
+    """Hydrate installed workers from Windows storage while preserving CLI env."""
+
+    runtime = dict(os.environ)
+    missing_accounts = tuple(
+        account for account in accounts
+        if not runtime.get(account.username_env) or not runtime.get(account.password_env)
+    )
+    if missing_accounts:
+        try:
+            credentials = create_account_credential_service()
+            for account in missing_accounts:
+                values = credentials.read(account)
+                runtime.setdefault(account.username_env, values.username)
+                runtime.setdefault(account.password_env, values.password)
+        except (CredentialStoreError, OSError, AttributeError):
+            pass
+    connection_names = (
+        "VIRGILIO_CARONTE_DRIVE_VERIFY_URL",
+        "VIRGILIO_CARONTE_INTAKE_URL",
+        "VIRGILIO_TOKEN",
+    )
+    if any(not runtime.get(name) for name in connection_names):
+        try:
+            protected = create_operational_connection_service(
+                config_path
+            ).runtime_environment()
+            for name, value in protected.items():
+                runtime.setdefault(name, value)
+        except (CredentialStoreError, OSError, AttributeError):
+            pass
+    return runtime
+
+
+def _watch_human_summary(result, *, cycle: int) -> list[str]:
+    return [f"Ciclo watch #{cycle}", *result.human_summary]
+
+
+def _poll_pending_completion(runner, *, followup_seconds: int,
+                             poll_seconds: int, clock=monotonic,
+                             sleeper=sleep):
+    """Resume handoff/completion after one-shot acquisition; zero waits until done."""
+    deadline = None if followup_seconds == 0 else clock() + followup_seconds
+    results = ()
+    while True:
+        results = tuple(runner.resume_pending(dry_run=False))
+        pending = any(_is_retryable_completion_pending(item) for item in results)
+        if not pending or (deadline is not None and clock() >= deadline):
+            break
+        delay = float(poll_seconds)
+        if deadline is not None:
+            delay = min(delay, max(0.0, deadline - clock()))
+        sleeper(delay)
+    return results
+
+
+def _is_retryable_completion_pending(item) -> bool:
+    if getattr(item, "status", "") != "completion_skipped":
+        return False
+    reason = str(getattr(item, "reason", "") or "")
+    return (
+        reason == "in attesa dell'archiviazione finale in Da archiviare"
+        or reason == "message has attachments not delivered to Da archiviare"
+        or reason == "verifica archiviazione incompleta: correlazione inbox mancante"
+        or reason.startswith("verifica archiviazione non disponibile:")
+    )
+
+
+def _record_da_archiviare_intake_event(local_root: Path, payload: dict[str, object],
+                                       *, result: DaArchiviareIntakeResponse | None = None,
+                                       error: str | None = None) -> None:
+    manifest = payload.get("manifest")
+    if not isinstance(manifest, dict):
+        return
+    attachment_id = str(manifest.get("attachment_id", "")).strip()
+    account_alias = str(manifest.get("account_alias", "")).strip() or "unknown"
+    fingerprint = str(manifest.get("fingerprint", "")).strip() or None
+    details: dict[str, object] = {
+        "drive_file_id": payload.get("drive_file_id", ""),
+        "manifest_file_id": payload.get("manifest_file_id", ""),
+        "form_url": payload.get("form_url", ""),
+    }
+    status = "failed"
+    if result is not None:
+        details.update({
+            "inbox_id": result.inbox_id,
+            "created": result.created,
+            "updated": result.updated,
+            "idempotent": result.idempotent,
+            "row": result.row,
+            "message": result.message,
+        })
+        if result.ok:
+            status = "created" if result.created else "updated" if result.updated else "idempotent"
+        else:
+            details["errors"] = [dict(item) for item in result.errors]
+    if error is not None:
+        details["error"] = error
+    store = ReadonlyStateStore(local_root / "state.db")
+    store.initialize()
+    store.add_audit_event(
+        machine_id=load_machine_id(local_root),
+        account_alias=account_alias,
+        entity_type="attachment",
+        entity_id=attachment_id or (result.inbox_id if result else "unknown"),
+        fingerprint=fingerprint,
+        action="da_archiviare_intake",
+        status=status,
+        details=details,
+    )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build the stable command-line contract without executing a command."""
+    parser = argparse.ArgumentParser(prog=_prog_name())
+    commands = parser.add_subparsers(
+        dest="command",
+        required=True,
+        metavar="{init-config,doctor,watch}",
+    )
+    sender = commands.add_parser("send-caronte-dry-run")
+    sender.add_argument("--command-file", type=Path, required=True)
+    staging = commands.add_parser("stage-ready-files")
+    staging.add_argument("--dry-run", action="store_true")
+    verifier = commands.add_parser("verify-drive-staging")
+    verifier.add_argument("--manifest", type=Path, required=True)
+    intake = commands.add_parser("intake-drive-staging-test")
+    intake.add_argument("--manifest", type=Path, required=True)
+    da_archiviare = commands.add_parser("intake-da-archiviare")
+    da_archiviare.add_argument("--manifest", type=Path, required=True)
+    da_archiviare.add_argument("--drive-file-id", required=True)
+    da_archiviare.add_argument("--manifest-file-id", required=True)
+    da_archiviare.add_argument("--form-url", default="")
+    scanner = commands.add_parser("scan-imap-accounts")
+    scanner.add_argument("--config", type=Path, required=True)
+    scanner.add_argument("--dry-run", action="store_true")
+    processor = commands.add_parser("process-imap-accounts")
+    processor.add_argument("--config", type=Path, required=True)
+    processor.add_argument("--dry-run", action="store_true")
+    storage = commands.add_parser("stage-ready-attachments")
+    storage.add_argument("--config", type=Path, required=True)
+    storage.add_argument("--dry-run", action="store_true")
+    completer = commands.add_parser("complete-staged-messages")
+    completer.add_argument("--config", type=Path, required=True)
+    completer.add_argument("--dry-run", action="store_true")
+    ack_wrapper = commands.add_parser("ack-completed-messages")
+    ack_wrapper.add_argument("--config", type=Path, required=True)
+    ack_wrapper.add_argument("--dry-run", action="store_true")
+    pipeline = commands.add_parser("run-local-pipeline")
+    pipeline.add_argument("--config", type=Path, required=True)
+    pipeline.add_argument("--dry-run", action="store_true")
+    pipeline.add_argument("--human", action="store_true")
+    watch = commands.add_parser(
+        "watch",
+        help="Mantiene attiva la pipeline locale con polling controllato",
+    )
+    watch.add_argument("--config", type=Path, required=True)
+    watch.add_argument("--dry-run", action="store_true")
+    watch.add_argument("--human", action="store_true")
+    watch.add_argument("--interval-seconds", type=int, default=300)
+    watch.add_argument("--max-cycles", type=int, default=0)
+    watch.add_argument("--completion-followup-seconds", type=int,
+                       help=argparse.SUPPRESS)
+    watch.add_argument("--completion-poll-seconds", type=int, default=30,
+                       help=argparse.SUPPRESS)
+    watch.add_argument("--progress-events", action="store_true", help=argparse.SUPPRESS)
+    doctor = commands.add_parser("doctor", help="Verifica la configurazione locale")
+    doctor.add_argument("--config", type=Path, required=True)
+    doctor.add_argument("--human", action="store_true")
+    conflicts = commands.add_parser("check-local-conflicts")
+    conflicts.add_argument("--config", type=Path, required=True)
+    exporter = commands.add_parser("export-central-events")
+    exporter.add_argument("--config", type=Path, required=True)
+    exporter.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
+    registro_exporter = commands.add_parser("export-registro-events")
+    registro_exporter.add_argument("--config", type=Path, required=True)
+    registro_exporter.add_argument("--format", choices=("jsonl", "csv"), default="jsonl")
+    bucoliche = commands.add_parser("export-to-bucoliche")
+    bucoliche.add_argument("--config", type=Path, required=True)
+    bucoliche.add_argument("--dry-run", action="store_true")
+    refresh_state = commands.add_parser("refresh-bucoliche-state")
+    refresh_state.add_argument("--config", type=Path, required=True)
+    refresh_state.add_argument("--dry-run", action="store_true")
+    doctor_bucoliche = commands.add_parser("doctor-bucoliche")
+    doctor_bucoliche.add_argument("--config", type=Path, required=True)
+    doctor_bucoliche.add_argument("--human", action="store_true")
+    pilot_check = commands.add_parser("pilot-check")
+    pilot_check.add_argument("--config", type=Path, required=True)
+    pilot_safe = commands.add_parser("pilot-run-safe")
+    pilot_safe.add_argument("--config", type=Path, required=True)
+    pilot_safe.add_argument("--human", action="store_true")
+    pilot_run = commands.add_parser("pilot-run")
+    pilot_run.add_argument("--config", type=Path, required=True)
+    pilot_run.add_argument("--dry-run", action="store_true")
+    pilot_run.add_argument("--human", action="store_true")
+    pilot = commands.add_parser("pilot")
+    pilot.add_argument("--config", type=Path, required=True)
+    pilot.add_argument("--human", action="store_true")
+    sheet_setup = commands.add_parser("setup-bucoliche-test-sheet")
+    sheet_setup.add_argument("--config", type=Path, required=True)
+    sheet_setup.add_argument("--dry-run", action="store_true")
+    pilot_preview = commands.add_parser("pilot-preview")
+    pilot_preview.add_argument("--config", type=Path, required=True)
+    pilot_preview.add_argument("--human", action="store_true")
+    oauth_login = commands.add_parser("google-oauth-login")
+    oauth_login.add_argument("--config", type=Path, required=True)
+    init_config = commands.add_parser("init-config", help="Crea una configurazione locale")
+    init_config.add_argument("--output", type=Path, required=True)
+    init_config.add_argument("--email", required=True)
+    init_config.add_argument("--staging-dir", type=Path, required=True)
+    init_config.add_argument("--provider", choices=("gmail_workspace", "generic_imap"),
+                             default="gmail_workspace")
+    init_config.add_argument("--account-alias")
+    init_config.add_argument("--imap-host")
+    init_config.add_argument("--imap-port", type=int, default=993)
+    init_config.add_argument("--input-folder")
+    init_config.add_argument("--done-folder")
+    init_config.add_argument("--error-folder")
+    init_config.add_argument("--enable-bucoliche", action="store_true")
+    init_config.add_argument("--dry-run", action="store_true")
+    init_config.add_argument("--force", action="store_true")
+    install_windows_task = commands.add_parser("install-windows-task")
+    install_windows_task.add_argument("--config", type=Path, required=True)
+    install_windows_task.add_argument("--python-exe", type=Path, default=Path(sys.executable))
+    install_windows_task.add_argument("--task-name", default="Virgilio Local Watch")
+    install_windows_task.add_argument("--interval-seconds", type=int, default=300)
+    install_windows_task.add_argument("--dry-run", action="store_true")
+    install_windows_task.add_argument("--force", action="store_true")
+    install_windows_task.add_argument("--human", action="store_true")
+    status_windows_task = commands.add_parser("status-windows-task")
+    status_windows_task.add_argument("--task-name", default="Virgilio Local Watch")
+    status_windows_task.add_argument("--human", action="store_true")
+    uninstall_windows_task = commands.add_parser("uninstall-windows-task")
+    uninstall_windows_task.add_argument("--task-name", default="Virgilio Local Watch")
+    uninstall_windows_task.add_argument("--confirm", action="store_true")
+    uninstall_windows_task.add_argument("--human", action="store_true")
+    reset_local_state_cmd = commands.add_parser("reset-local-state")
+    reset_local_state_cmd.add_argument("--backup", action="store_true")
+    reset_local_state_cmd.add_argument("--confirm", action="store_true")
+    reset_local_state_cmd.add_argument("--human", action="store_true")
+    user_gui = commands.add_parser("user-gui")
+    user_gui.add_argument("--config", type=Path)
+    maintenance_gui = commands.add_parser("maintenance-gui")
+    maintenance_gui.add_argument("--config", type=Path)
+    return parser
+
+
+def dispatch(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    """Dispatch a parsed command to its existing implementation group."""
+
+    if args.command == "send-caronte-dry-run":
+        client = CaronteDryRunHttpClient(
+            os.environ.get("VIRGILIO_CARONTE_DRY_RUN_URL"),
+            timeout_seconds=float(os.environ.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15")),
+        )
+        try:
+            result = client.send_command_file(args.command_file)
+        except CaronteDryRunClientError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.ok else 1
+    if args.command == "stage-ready-files":
+        enabled_text = os.environ.get("VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED", "false")
+        if enabled_text.lower() not in {"true", "false"}:
+            parser.exit(2, "error: VIRGILIO_LOCAL_DRIVE_STAGING_ENABLED must be true or false\n")
+        staging_text = os.environ.get("VIRGILIO_LIMBO_LOCAL_SYNC_DIR", "").strip()
+        local_root = _local_data_root()
+        transport = LocalDriveStagingTransport(
+            state_db=local_root / "state.db", local_data_root=local_root,
+            config=LocalDriveStagingConfig(
+                enabled=enabled_text.lower() == "true",
+                staging_dir=Path(staging_text) if staging_text else None,
+            ),
+        )
+        try:
+            results = transport.stage_ready_files(dry_run=args.dry_run)
+        except (StagingTransportError, FileNotFoundError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0
+    if args.command == "verify-drive-staging":
+        client = DriveStagingVerifyClient(
+            os.environ.get("VIRGILIO_CARONTE_DRIVE_VERIFY_URL"),
+            timeout_seconds=float(os.environ.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15")),
+        )
+        try:
+            result = client.verify_manifest(args.manifest)
+        except DriveStagingVerifyError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.ok else 1
+    if args.command == "intake-drive-staging-test":
+        client = DriveStagingIntakeTestClient(
+            os.environ.get("VIRGILIO_CARONTE_INTAKE_TEST_URL"),
+            timeout_seconds=float(os.environ.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15")),
+        )
+        try:
+            result = client.intake_manifest(args.manifest)
+        except DriveStagingIntakeTestError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.ok else 1
+    if args.command == "intake-da-archiviare":
+        client = DaArchiviareIntakeHttpClient(
+            os.environ.get("VIRGILIO_CARONTE_INTAKE_URL"),
+            os.environ.get("VIRGILIO_TOKEN"),
+            timeout_seconds=float(os.environ.get("VIRGILIO_CARONTE_TIMEOUT_SECONDS", "15")),
+        )
+        local_root = _local_data_root()
+        payload: dict[str, object] | None = None
+        try:
+            payload = build_da_archiviare_intake_payload(
+                args.manifest,
+                drive_file_id=args.drive_file_id,
+                manifest_file_id=args.manifest_file_id,
+                form_url=args.form_url,
+            )
+            result = client.create_record(
+                args.manifest,
+                drive_file_id=args.drive_file_id,
+                manifest_file_id=args.manifest_file_id,
+                form_url=args.form_url,
+            )
+        except DaArchiviareIntakeError as exc:
+            if payload is not None:
+                try:
+                    _record_da_archiviare_intake_event(local_root, payload, error=str(exc))
+                except (OSError, sqlite3.Error):
+                    pass
+            parser.exit(2, f"error: {exc}\n")
+        if payload is not None:
+            _record_da_archiviare_intake_event(local_root, payload, result=result)
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.ok else 1
+    if args.command == "scan-imap-accounts":
+        try:
+            accounts = ConfigurationService.for_file(args.config).load().accounts
+            results = MultiAccountReadonlyScanner(
+                accounts,
+                paths=LocalDataPaths(_local_data_root()),
+            ).scan(dry_run=args.dry_run)
+        except MultiAccountConfigError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0 if all(item.status in {"ok", "disabled"} for item in results) else 1
+    if args.command == "process-imap-accounts":
+        try:
+            accounts = load_multi_account_config(args.config)
+            results = MultiAccountImapProcessor(
+                accounts,
+                paths=LocalDataPaths(_local_data_root()),
+                scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+                rules=load_rules(args.config),
+                max_attachment_bytes=int(os.environ.get("VIRGILIO_MAX_ATTACHMENT_BYTES", "26214400")),
+            ).process(dry_run=args.dry_run)
+        except (MultiAccountConfigError, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0 if all(item.quarantine_status != "error" for item in results) else 1
+    if args.command == "stage-ready-attachments":
+        local_root = _local_data_root()
+        try:
+            # Validate account configuration too; the storage rows are keyed by account_alias.
+            load_multi_account_config(args.config)
+            storage_config = load_storage_config(args.config)
+            results = LocalFilesystemStorageAdapter(
+                state_db=local_root / "state.db",
+                local_data_root=local_root,
+                config=storage_config,
+            ).stage_ready(dry_run=args.dry_run)
+        except (MultiAccountConfigError, StorageAdapterError, FileNotFoundError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0 if all(item.status not in {"staging_failed", "staging_conflict"}
+                        for item in results) else 1
+    if args.command == "complete-staged-messages":
+        local_root = _local_data_root()
+        try:
+            accounts = load_multi_account_config(args.config)
+            results = LocalCompletionRunner(
+                accounts,
+                paths=LocalDataPaths(local_root),
+            ).complete(dry_run=args.dry_run)
+        except (MultiAccountConfigError, CompletionError, FileNotFoundError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps([asdict(item) for item in results], ensure_ascii=False,
+                         separators=(",", ":")))
+        return 0 if all(item.status != "ack_failed" for item in results) else 1
+    if args.command == "ack-completed-messages":
+        local_root = _local_data_root()
+        try:
+            accounts = load_multi_account_config(args.config)
+            result = ControlledAckRunner(
+                accounts,
+                paths=LocalDataPaths(local_root),
+            ).run(dry_run=args.dry_run)
+        except (MultiAccountConfigError, CompletionError, FileNotFoundError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps({
+            **asdict(result),
+            "results": [asdict(item) for item in result.results],
+        }, ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.status in {"dry_run", "completed"} else 1
+    if args.command == "run-local-pipeline":
+        try:
+            result = _build_local_pipeline_runner_from_config(args.config).run(dry_run=args.dry_run)
+        except (FileNotFoundError, MultiAccountConfigError, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(result.human_summary)
+        else:
+            print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 0 if result.status in {"completed", "completed_with_warnings"} else 1
+    if args.command == "watch":
+        if args.interval_seconds <= 0:
+            parser.exit(2, "error: --interval-seconds must be greater than 0\n")
+        if args.max_cycles < 0:
+            parser.exit(2, "error: --max-cycles must be 0 or greater\n")
+        if (args.completion_followup_seconds is not None
+                and args.completion_followup_seconds < 0):
+            parser.exit(2, "error: --completion-followup-seconds must be 0 or greater\n")
+        if args.completion_poll_seconds <= 0:
+            parser.exit(2, "error: --completion-poll-seconds must be greater than 0\n")
+        try:
+            runner = _build_local_pipeline_runner_from_config(args.config)
+        except (FileNotFoundError, MultiAccountConfigError, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        cycle = 0
+        try:
+            while True:
+                cycle += 1
+                progress = _print_progress_event if args.progress_events else None
+                result = (
+                    runner.run(dry_run=args.dry_run, progress=progress)
+                    if progress is not None else runner.run(dry_run=args.dry_run)
+                )
+                if args.human:
+                    if cycle > 1:
+                        print()
+                    _print_human(_watch_human_summary(result, cycle=cycle))
+                else:
+                    print(json.dumps({
+                        "cycle": cycle,
+                        **asdict(result),
+                    }, ensure_ascii=False, separators=(",", ":")))
+                if args.max_cycles and cycle >= args.max_cycles:
+                    if (not args.dry_run and args.completion_followup_seconds is not None and
+                            result.status in {"completed", "completed_with_warnings"}):
+                        _poll_pending_completion(
+                            runner,
+                            followup_seconds=args.completion_followup_seconds,
+                            poll_seconds=args.completion_poll_seconds,
+                        )
+                    return 0 if result.status in {
+                        "completed", "completed_with_warnings"
+                    } else 1
+                sleep(args.interval_seconds)
+        except KeyboardInterrupt:
+            if args.human:
+                print()
+                _print_human([f"Watch interrotto dopo {cycle} ciclo{'i' if cycle != 1 else ''}."])
+            return 130
+    if args.command == "doctor":
+        local_root = _local_data_root()
+        try:
+            accounts = load_multi_account_config(args.config)
+            storage_config = load_storage_config(args.config)
+            result = LocalDoctor(
+                accounts, storage=storage_config, paths=LocalDataPaths(local_root),
+                scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+            ).run()
+        except MultiAccountConfigError as exc:
+            payload = {
+                "status": "BLOCKED",
+                "errors": [str(exc)],
+                "warnings": [],
+                "accounts": [],
+                "suggested_fixes": ["Correggi il file di configurazione locale e riesegui il doctor."],
+                "suggested_next_commands": [
+                    f"python -m virgilio_connector doctor --config {args.config} --human"
+                ],
+            }
+            parser.exit(2, json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n")
+        if args.human:
+            _print_human(_doctor_human_summary(result))
+        else:
+            print(result.to_json())
+        return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "check-local-conflicts":
+        local_root = _local_data_root()
+        try:
+            load_multi_account_config(args.config)
+            result = LocalConflictChecker(local_root / "state.db").check()
+        except (MultiAccountConfigError, FileNotFoundError, sqlite3.Error) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+        return 1 if result["status"] == "CONFLICTS" else 0
+    if args.command == "export-central-events":
+        local_root = _local_data_root()
+        try:
+            load_multi_account_config(args.config)
+            target = export_central_events(local_root / "state.db", local_root, args.format)
+        except (MultiAccountConfigError, FileNotFoundError, sqlite3.Error, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps({"path": target.relative_to(local_root).as_posix()}, separators=(",", ":")))
+        return 0
+    if args.command == "export-registro-events":
+        local_root = _local_data_root()
+        try:
+            load_multi_account_config(args.config)
+            target = export_registro_events(local_root / "state.db", local_root, args.format)
+        except (MultiAccountConfigError, FileNotFoundError, sqlite3.Error, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps({"path": target.relative_to(local_root).as_posix()}, separators=(",", ":")))
+        return 0
+    if args.command == "export-to-bucoliche":
+        local_root = _local_data_root()
+        try:
+            load_multi_account_config(args.config)
+            result = BucolicheAppendOnlyAdapter(state_db=local_root / "state.db",
+                config=load_bucoliche_config(args.config)).export(dry_run=args.dry_run)
+        except (MultiAccountConfigError, BucolicheError, sqlite3.Error) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 1 if result.status == "completed_with_errors" else 0
+    if args.command == "refresh-bucoliche-state":
+        local_root = _local_data_root()
+        try:
+            load_multi_account_config(args.config)
+            result = BucolicheAppendOnlyAdapter(
+                state_db=local_root / "state.db",
+                config=load_bucoliche_config(args.config),
+            ).refresh_state(dry_run=args.dry_run)
+        except (MultiAccountConfigError, BucolicheError, sqlite3.Error) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
+        return 1 if result.status == "completed_with_errors" else 0
+    if args.command == "doctor-bucoliche":
+        try:
+            config = load_bucoliche_config(args.config)
+            result = BucolicheDoctor(config,
+                config_has_section=has_bucoliche_section(args.config)).run()
+        except (BucolicheError, OSError) as exc:
+            result = {"status": "BLOCKED", "checks": [], "errors": [str(exc)],
+                      "warnings": [], "suggested_next_commands": []}
+            print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        if args.human:
+            _print_human(_bucoliche_doctor_human_summary(result))
+        else:
+            print(result.to_json())
+        return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "pilot-check":
+        local_root = _local_data_root()
+        try:
+            result = PilotCheck(load_multi_account_config(args.config),
+                storage=load_storage_config(args.config),
+                bucoliche=load_bucoliche_config(args.config), config_path=args.config,
+                paths=LocalDataPaths(local_root)).run()
+        except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
+            payload = {"status": "BLOCKED", "checks": [], "errors": [str(exc)],
+                       "warnings": [], "suggested_next_commands": []}
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        print(result.to_json())
+        return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "pilot-run-safe":
+        try:
+            accounts, storage_config, bucoliche_config, paths = _load_pilot_components(args.config)
+            runner = PilotSafeRunner(
+                pilot_check_runner=PilotCheck(
+                    accounts,
+                    storage=storage_config,
+                    bucoliche=bucoliche_config,
+                    config_path=args.config,
+                    paths=paths,
+                ),
+                pipeline_factory=lambda: _build_local_pipeline_runner(
+                    accounts, storage_config, paths, args.config,
+                ),
+                export_factory=lambda: BucolicheAppendOnlyAdapter(
+                    state_db=paths.state_db,
+                    config=bucoliche_config,
+                ),
+            )
+            result = runner.run()
+        except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
+            payload = {"status": "BLOCKED", "errors": [str(exc)], "warnings": []}
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        print(result.to_json())
+        return 0 if result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "pilot-run":
+        local_root = _local_data_root()
+        try:
+            accounts, storage_config, bucoliche_config, paths = _load_pilot_components(args.config)
+            result = PilotRunV11Runner(
+                accounts=accounts,
+                paths=paths,
+                doctor_runner=LocalDoctor(
+                    accounts, storage=storage_config, paths=LocalDataPaths(local_root),
+                    scanner=select_scanner(os.environ.get("VIRGILIO_SCANNER", "auto")),
+                ),
+                pipeline_factory=lambda: _build_local_pipeline_runner(
+                    accounts, storage_config, paths, args.config,
+                ),
+                conflict_checker_factory=lambda: LocalConflictChecker(paths.state_db),
+                export_factory=lambda: BucolicheAppendOnlyAdapter(
+                    state_db=paths.state_db,
+                    config=bucoliche_config,
+                ),
+                ack_factory=lambda: ControlledAckRunner(
+                    accounts,
+                    paths=paths,
+                ),
+            ).run(dry_run=args.dry_run)
+        except (MultiAccountConfigError, BucolicheError, CompletionError,
+                FileNotFoundError, OSError, ValueError, sqlite3.Error) as exc:
+            payload = {"status": "BLOCKED", "errors": [str(exc)], "warnings": []}
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        if args.human:
+            _print_human(_pilot_run_v11_human_summary(result))
+        else:
+            print(result.to_json())
+        return 0 if result.final_status in {"READY_DRY_RUN", "OK", "OK_NO_NEW_WORK"} else 1
+    if args.command == "pilot":
+        try:
+            accounts, storage_config, bucoliche_config, paths = _load_pilot_components(args.config)
+            pilot_check_runner = PilotCheck(
+                accounts,
+                storage=storage_config,
+                bucoliche=bucoliche_config,
+                config_path=args.config,
+                paths=paths,
+            )
+            preview = PilotPreview(
+                accounts,
+                storage=storage_config,
+                bucoliche=bucoliche_config,
+                paths=paths,
+                pilot_status=pilot_check_runner.run().status,
+            ).run()
+            pilot_result = PilotSafeRunner(
+                pilot_check_runner=pilot_check_runner,
+                pipeline_factory=lambda: _build_local_pipeline_runner(
+                    accounts, storage_config, paths, args.config,
+                ),
+                export_factory=lambda: BucolicheAppendOnlyAdapter(
+                    state_db=paths.state_db,
+                    config=bucoliche_config,
+                ),
+            ).run()
+        except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
+            payload = {"status": "BLOCKED", "errors": [str(exc)], "warnings": []}
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+            return 2
+        payload = {
+            "status": pilot_result.status,
+            "dry_run": True,
+            "preview": preview,
+            "pilot_run_safe": asdict(pilot_result),
+        }
+        if args.human:
+            _print_human(_pilot_preview_human_summary(preview))
+            print()
+            _print_human(_pilot_safe_human_summary(pilot_result, label="Esito pilot-run-safe"))
+        else:
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        return 0 if pilot_result.status in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "setup-bucoliche-test-sheet":
+        try:
+            result = BucolicheSheetSetup(load_bucoliche_config(args.config)).run(
+                dry_run=args.dry_run)
+        except (BucolicheError, OSError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(result.to_json())
+        return 0 if result.status in {"DRY_RUN", "READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "pilot-preview":
+        local_root = _local_data_root()
+        try:
+            accounts = load_multi_account_config(args.config)
+            storage_config = load_storage_config(args.config)
+            bucoliche_config = load_bucoliche_config(args.config)
+            paths = LocalDataPaths(local_root)
+            pilot = PilotCheck(accounts, storage=storage_config,
+                bucoliche=bucoliche_config, config_path=args.config, paths=paths).run()
+            result = PilotPreview(accounts, storage=storage_config,
+                bucoliche=bucoliche_config, paths=paths, pilot_status=pilot.status).run()
+        except (MultiAccountConfigError, BucolicheError, OSError, ValueError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(_pilot_preview_human_summary(result))
+        else:
+            print(json.dumps(result, ensure_ascii=False, separators=(",", ":")))
+        return 0 if result["pilot_check"] in {"READY", "READY_WITH_WARNINGS"} else 1
+    if args.command == "google-oauth-login":
+        try:
+            result = GoogleOAuthLogin(load_bucoliche_config(args.config)).run()
+        except (BucolicheError, OSError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        print(result.to_json())
+        return 0 if result.status in {"token_created", "token_refreshed"} else 1
+    if args.command == "init-config":
+        try:
+            content = scaffold_local_config(
+                email=args.email,
+                staging_dir=args.staging_dir,
+                account_alias=args.account_alias,
+                provider_hint=args.provider,
+                imap_host=args.imap_host,
+                imap_port=args.imap_port,
+                input_folder=args.input_folder,
+                done_folder=args.done_folder,
+                error_folder=args.error_folder,
+                bucoliche_enabled=args.enable_bucoliche,
+            )
+            if args.output.exists() and not args.force and not args.dry_run:
+                raise MultiAccountConfigError(f"refusing to overwrite existing file: {args.output}")
+        except MultiAccountConfigError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.dry_run:
+            print(content)
+            return 0
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(content, encoding="utf-8", newline="\n")
+        print(json.dumps({
+            "status": "written",
+            "path": str(args.output),
+            "next_commands": [
+                f"python -m virgilio_connector doctor --config {args.output}",
+                f"virgilio pilot --config {args.output} --human",
+            ],
+        }, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "install-windows-task":
+        try:
+            plan = build_windows_watch_task(
+                config_path=args.config,
+                python_exe=args.python_exe,
+                repo_root=Path.cwd(),
+                interval_seconds=args.interval_seconds,
+                task_name=args.task_name,
+                force=args.force,
+            )
+        except WindowsTaskError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.dry_run:
+            payload = plan.to_payload(status="dry_run")
+            if args.human:
+                _print_human(_windows_task_human_summary(payload))
+            else:
+                print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+            return 0
+        try:
+            payload = register_windows_watch_task(plan)
+        except WindowsTaskError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(_windows_task_human_summary(payload))
+        else:
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "status-windows-task":
+        try:
+            payload = query_windows_watch_task(args.task_name).to_payload()
+        except WindowsTaskError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(_windows_task_human_summary(payload))
+        else:
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "uninstall-windows-task":
+        if not args.confirm:
+            parser.exit(2, "error: uninstall-windows-task requires --confirm\n")
+        try:
+            payload = unregister_windows_watch_task(args.task_name)
+        except WindowsTaskError as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(_windows_task_human_summary(payload))
+        else:
+            print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
+        return 0
+    if args.command == "reset-local-state":
+        local_root = _local_data_root()
+        try:
+            result = reset_local_state(local_root, backup=args.backup, confirm=args.confirm)
+        except (ResetLocalStateError, LocalOperationBusyError, OSError) as exc:
+            parser.exit(2, f"error: {exc}\n")
+        if args.human:
+            _print_human(_reset_local_state_human_summary(result))
+        else:
+            print(result.to_json())
+        return 0
+    if args.command == "user-gui":
+        from .user_app import launch_user_app
+        return launch_user_app(config_path=args.config)
+    if args.command == "maintenance-gui":
+        from .maintenance_gui import launch_gui
+        return launch_gui(config_path=args.config)
+    return 2
+
+
+def main() -> int:
+    """Compose environment loading, parsing, and command dispatch."""
+    _load_env_file(Path(".env"))
+    parser = build_parser()
+    return dispatch(parser.parse_args(), parser)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "virgilio-local-connector"
+dynamic = ["version"]
+description = "Connettore IMAP read-only con presa in carico staging di test"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [
+  { name = "Virgilio project contributors" }
+]
+dependencies = [
+  "google-auth>=2.30,<3",
+  "google-auth-oauthlib>=1.2,<2",
+  "requests>=2.31,<3",
+  "tzdata>=2025.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+build = ["pyinstaller>=6.21,<7"]
+
+[project.scripts]
+virgilio = "virgilio_connector.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "virgilio_connector._version.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --basetemp=.pytest-tmp"
+markers = [
+  "unit: comportamento isolato di un singolo componente",
+  "contract: confini pubblici, formati, superfici e compatibilita`",
+  "integration_offline: flussi tra componenti con soli fake e risorse locali",
+]

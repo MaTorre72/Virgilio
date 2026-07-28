@@ -1,0 +1,430 @@
+"""Controlled local completion for staged IMAP messages."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, asdict
+import json
+from pathlib import Path
+import sqlite3
+from contextlib import closing
+from typing import Callable, Mapping, Sequence
+
+from .bucoliche import (
+    BucolicheAppendOnlyAdapter,
+    exported_operational_event_ids,
+    operational_event_rows,
+)
+from .imap_readonly import ImapCompletionMailbox
+from .local_paths import LocalDataPaths
+from .multi_account import LocalImapAccount, MultiAccountConfigError
+from .readonly_state import ReadonlyStateStore, ensure_state_db
+from .time_utils import rome_isoformat, rome_timestamp
+from .traceability import LocalConflictChecker, load_machine_id
+
+
+BLOCKING_ATTACHMENT_STATES = {
+    "scan_failed", "rejected_malware", "staging_failed", "staging_conflict",
+}
+
+
+class CompletionError(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True, slots=True)
+class CompletionResult:
+    account_alias: str
+    message_row_id: int
+    message_uid: str
+    message_id: str
+    subject: str
+    staged_attachments: tuple[str, ...]
+    status: str
+    dry_run: bool
+    ack_strategy: str | None
+    report_path: str | None = None
+    reason: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AckCompletedMessagesResult:
+    status: str
+    dry_run: bool
+    gate_status: str
+    messages_planned: int
+    pending_export_events: int
+    local_conflicts: int
+    errors: tuple[str, ...]
+    warnings: tuple[str, ...]
+    results: tuple[CompletionResult, ...]
+
+
+class ControlledAckRunner:
+    def __init__(self, accounts: Sequence[LocalImapAccount], *,
+                 paths: LocalDataPaths | None = None,
+                 environ: Mapping[str, str] | None = None,
+                 mailbox_factory: Callable[[LocalImapAccount], object] | None = None) -> None:
+        self.completion = LocalCompletionRunner(
+            accounts,
+            paths=paths,
+            environ=environ,
+            mailbox_factory=mailbox_factory,
+        )
+        self.paths = self.completion.paths
+
+    def run(self, *, dry_run: bool) -> AckCompletedMessagesResult:
+        preview = self.completion.complete(dry_run=True)
+        planned = tuple(item for item in preview if item.status == "planned")
+        warnings = []
+        errors = []
+
+        if not planned:
+            warnings.append("no ackable staged messages found")
+
+        candidate_attachment_ids = {
+            attachment_id
+            for item in planned
+            for attachment_id in item.staged_attachments
+            if attachment_id
+        }
+        candidate_fingerprints = self._candidate_fingerprints(candidate_attachment_ids)
+
+        conflict_payload = LocalConflictChecker(self.paths.state_db).check()
+        relevant_conflicts = tuple(
+            conflict for conflict in conflict_payload["conflicts"]
+            if conflict.get("attachment_id") in candidate_attachment_ids
+            or conflict.get("fingerprint") in candidate_fingerprints
+        )
+        if relevant_conflicts:
+            errors.append("local conflicts detected; run check-local-conflicts before ack")
+
+        pending_export_events = self._pending_export_events(candidate_attachment_ids)
+        if pending_export_events:
+            errors.append("pending Bucoliche export events detected; run export-to-bucoliche first")
+
+        gate_status = "BLOCKED" if errors else "READY"
+        if dry_run:
+            return AckCompletedMessagesResult(
+                status="dry_run",
+                dry_run=True,
+                gate_status=gate_status,
+                messages_planned=len(planned),
+                pending_export_events=pending_export_events,
+                local_conflicts=len(relevant_conflicts),
+                errors=tuple(errors),
+                warnings=tuple(warnings),
+                results=preview,
+            )
+        if errors or not planned:
+            return AckCompletedMessagesResult(
+                status="blocked",
+                dry_run=False,
+                gate_status=gate_status if errors else "BLOCKED",
+                messages_planned=len(planned),
+                pending_export_events=pending_export_events,
+                local_conflicts=len(relevant_conflicts),
+                errors=tuple(errors),
+                warnings=tuple(warnings),
+                results=preview,
+            )
+        results = self.completion.complete(dry_run=False)
+        return AckCompletedMessagesResult(
+            status="completed",
+            dry_run=False,
+            gate_status="READY",
+            messages_planned=len(planned),
+            pending_export_events=0,
+            local_conflicts=0,
+            errors=(),
+            warnings=tuple(warnings),
+            results=results,
+        )
+
+    def _candidate_fingerprints(self, attachment_ids: set[str]) -> set[str]:
+        if not attachment_ids:
+            return set()
+        placeholders = ",".join("?" for _ in attachment_ids)
+        uri = f"{self.paths.state_db.resolve().as_uri()}?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True)) as db:
+            rows = db.execute(f"""SELECT fingerprint FROM attachments
+                WHERE attachment_id IN ({placeholders}) AND fingerprint IS NOT NULL""",
+                tuple(sorted(attachment_ids))).fetchall()
+        return {str(row[0]) for row in rows if row[0]}
+
+    def _pending_export_events(self, attachment_ids: set[str]) -> int:
+        if not attachment_ids:
+            return 0
+        exported = self._successful_exported_event_ids()
+        return sum(
+            1
+            for row in operational_event_rows(self.paths.state_db)
+            if row.get("attachment_id") in attachment_ids and row["event_id"] not in exported
+        )
+
+    def _successful_exported_event_ids(self) -> set[str]:
+        return exported_operational_event_ids(
+            self.paths.state_db, BucolicheAppendOnlyAdapter.TARGET
+        )
+
+
+class LocalCompletionRunner:
+    def __init__(self, accounts: Sequence[LocalImapAccount], *,
+                 paths: LocalDataPaths | None = None,
+                 environ: Mapping[str, str] | None = None,
+                 mailbox_factory: Callable[[LocalImapAccount], object] | None = None,
+                 require_da_archiviare: bool = False,
+                 archive_status_client: object | None = None) -> None:
+        self.accounts = {account.account_alias: account for account in accounts}
+        self.paths = paths or LocalDataPaths()
+        self.environ = environ
+        self.mailbox_factory = mailbox_factory or self._default_mailbox
+        self.require_da_archiviare = require_da_archiviare
+        self.archive_status_client = archive_status_client
+
+    def complete(self, *, dry_run: bool, write_report: bool = True,
+                 record_skipped: bool = True) -> tuple[CompletionResult, ...]:
+        ensure_state_db(self.paths.root)
+        candidates = self._load_candidates()
+        store = ReadonlyStateStore(self.paths.state_db)
+        if not dry_run:
+            store.initialize()
+        results: list[CompletionResult] = []
+        for candidate in candidates:
+            result = self._complete_one(candidate, store, dry_run=dry_run)
+            results.append(result)
+        report_path = None if dry_run or not write_report else self._write_report(results)
+        if not dry_run:
+            for result in results:
+                if result.status == "completion_skipped" and not record_skipped:
+                    continue
+                if result.status in {"completed", "already_completed", "already_acked", "ack_failed", "completion_skipped"}:
+                    store.update_message_completion(
+                        result.message_row_id,
+                        message_state=("completed" if result.status in {"completed", "already_completed", "already_acked"}
+                                       else "ack_failed" if result.status == "ack_failed"
+                                       else "completion_skipped"),
+                        ack_strategy=result.ack_strategy,
+                        ack_result=result.status,
+                        report_path=report_path,
+                        attempted=False,
+                        completed=result.status in {"completed", "already_completed", "already_acked"},
+                    )
+                    if result.status != "already_completed":
+                        action = ("message_completed" if result.status in
+                                  {"completed", "already_acked"}
+                                  else "failed" if result.status == "ack_failed" else "skipped")
+                        machine_id = load_machine_id(self.paths.root)
+                        for attachment_id, fingerprint in self._attachment_audit_targets(result.message_row_id):
+                            store.add_audit_event(machine_id=machine_id,
+                                account_alias=result.account_alias, entity_type="attachment",
+                                entity_id=attachment_id, fingerprint=fingerprint,
+                                action=action, status=result.status,
+                                details={"reason": result.reason or ""})
+        return tuple(CompletionResult(**{**asdict(item), "report_path": report_path or item.report_path})
+                     for item in results)
+
+    def _complete_one(self, row: sqlite3.Row, store: ReadonlyStateStore,
+                      *, dry_run: bool) -> CompletionResult:
+        staged = tuple(str(row["staged_attachment_ids"]).split("|")) if row["staged_attachment_ids"] else ()
+        base = {
+            "account_alias": str(row["account_alias"]),
+            "message_row_id": int(row["message_row_id"]),
+            "message_uid": str(row["message_uid"]),
+            "message_id": str(row["message_id"] or ""),
+            "subject": str(row["subject"] or ""),
+            "staged_attachments": staged,
+            "dry_run": dry_run,
+        }
+        if str(row["message_state"]) in {"completed", "acked"}:
+            return CompletionResult(**base, status="already_completed",
+                                    ack_strategy=row["ack_strategy"],
+                                    reason="message already completed")
+        account = self.accounts.get(str(row["account_alias"]))
+        if account is None:
+            return CompletionResult(**base, status="completion_skipped",
+                                    ack_strategy=None,
+                                    reason="account_alias not configured")
+        if int(row["blocking_count"]) > 0:
+            return CompletionResult(**base, status="completion_skipped",
+                                    ack_strategy=None,
+                                    reason="message has blocking attachment states")
+        if int(row["staged_count"]) <= 0:
+            return CompletionResult(**base, status="completion_skipped",
+                                    ack_strategy=None,
+                                    reason="message has no staged_storage attachment")
+        if self.require_da_archiviare and int(row["handoff_missing_count"]) > 0:
+            return CompletionResult(**base, status="completion_skipped",
+                                    ack_strategy=None,
+                                    reason="message has attachments not delivered to Da archiviare")
+        if self.require_da_archiviare:
+            try:
+                inbox_ids = self._handoff_inbox_ids(int(row["message_row_id"]), staged)
+                if len(inbox_ids) != len(staged):
+                    return CompletionResult(
+                        **base, status="completion_skipped", ack_strategy=None,
+                        reason="verifica archiviazione incompleta: correlazione inbox mancante",
+                    )
+                if self.archive_status_client is None:
+                    raise RuntimeError("archive status client is not configured")
+                statuses = self.archive_status_client.statuses(inbox_ids)
+            except Exception as exc:
+                return CompletionResult(
+                    **base, status="completion_skipped", ack_strategy=None,
+                    reason=f"verifica archiviazione non disponibile: {exc}",
+                )
+            pending = tuple(inbox_id for inbox_id in inbox_ids
+                            if statuses.get(inbox_id) != "archiviato")
+            if pending:
+                return CompletionResult(
+                    **base, status="completion_skipped", ack_strategy=None,
+                    reason="in attesa dell'archiviazione finale in Da archiviare",
+                )
+        if not account.ack_enabled:
+            return CompletionResult(**base, status="completion_skipped",
+                                    ack_strategy=account.ack_strategy,
+                                    reason="ack_enabled is false")
+        if account.ack_strategy not in {"add_done_label_only", "move_to_done_label"}:
+            return CompletionResult(**base, status="completion_skipped",
+                                    ack_strategy=account.ack_strategy,
+                                    reason=f"unsupported ack strategy: {account.ack_strategy}")
+        if dry_run:
+            reason = (
+                "would move message from input_folder to done_folder"
+                if account.ack_strategy == "move_to_done_label"
+                else "would mark as traghettata; input message not removed"
+            )
+            return CompletionResult(**base, status="planned",
+                                    ack_strategy=account.ack_strategy,
+                                    reason=reason)
+        mailbox = self.mailbox_factory(account)
+        try:
+            if not mailbox.input_contains_uid(str(row["message_uid"])):
+                if mailbox.done_contains_message_id(str(row["message_id"] or "")):
+                    store.update_message_completion(int(row["message_row_id"]),
+                        message_state="completed", ack_strategy=account.ack_strategy,
+                        ack_result="already_acked", attempted=False, completed=True)
+                    reason = (
+                        "gia presente in done_folder e assente da input_folder"
+                        if account.ack_strategy == "move_to_done_label"
+                        else ("marcata come traghettata; gia presente in "
+                              "done_folder; messaggio non rimosso dalla cartella input")
+                    )
+                    return CompletionResult(**base, status="already_acked",
+                                            ack_strategy=account.ack_strategy,
+                                            reason=reason)
+                store.update_message_completion(int(row["message_row_id"]),
+                    message_state="ack_failed", ack_strategy=account.ack_strategy,
+                    ack_result="message_not_found", attempted=True, completed=False)
+                return CompletionResult(**base, status="ack_failed",
+                                        ack_strategy=account.ack_strategy,
+                                        reason="message not found in input or done folder")
+            store.update_message_completion(int(row["message_row_id"]),
+                message_state="ready_for_ack", ack_strategy=account.ack_strategy,
+                ack_result="attempting", attempted=True, completed=False)
+            if account.ack_strategy == "move_to_done_label":
+                mailbox.move_to_done_label(
+                    str(row["message_uid"]), str(row["message_id"] or "")
+                )
+                completed_reason = (
+                    "marcata come traghettata; etichetta input rimossa"
+                )
+            else:
+                mailbox.add_done_label_only(str(row["message_uid"]))
+                completed_reason = (
+                    "marcata come traghettata; messaggio non rimosso dalla cartella input"
+                )
+            store.update_message_completion(int(row["message_row_id"]),
+                message_state="completed", ack_strategy=account.ack_strategy,
+                ack_result="completed", attempted=False, completed=True)
+            return CompletionResult(**base, status="completed",
+                                    ack_strategy=account.ack_strategy,
+                                    reason=completed_reason)
+        except Exception as exc:
+            store.update_message_completion(int(row["message_row_id"]),
+                message_state="ack_failed", ack_strategy=account.ack_strategy,
+                ack_result=f"ack_failed: {type(exc).__name__}", attempted=True,
+                completed=False)
+            return CompletionResult(**base, status="ack_failed",
+                                    ack_strategy=account.ack_strategy,
+                                    reason=f"ack failed: {exc}")
+
+    def _load_candidates(self) -> tuple[sqlite3.Row, ...]:
+        if not self.paths.state_db.is_file():
+            raise FileNotFoundError(f"state database not found: {self.paths.state_db}")
+        uri = f"{self.paths.state_db.resolve().as_uri()}?mode=ro"
+        with sqlite3.connect(uri, uri=True) as db:
+            db.row_factory = sqlite3.Row
+            db.execute("PRAGMA query_only=ON")
+            return tuple(db.execute(f"""SELECT m.id AS message_row_id,m.account_alias,
+                m.message_uid,m.message_id,m.subject,m.message_state,m.ack_strategy,
+                SUM(CASE WHEN a.status='staged_storage' THEN 1 ELSE 0 END) AS staged_count,
+                SUM(CASE WHEN a.status IN ({','.join('?' for _ in BLOCKING_ATTACHMENT_STATES)})
+                    THEN 1 ELSE 0 END) AS blocking_count,
+                SUM(CASE WHEN a.status='staged_storage' AND NOT EXISTS (
+                    SELECT 1 FROM audit_events e
+                    WHERE e.entity_id=a.attachment_id
+                      AND e.action='da_archiviare_intake'
+                      AND e.status IN ('created','updated','idempotent')
+                ) THEN 1 ELSE 0 END) AS handoff_missing_count,
+                GROUP_CONCAT(CASE WHEN a.status='staged_storage' THEN a.attachment_id END, '|')
+                    AS staged_attachment_ids
+                FROM messages m LEFT JOIN attachments a ON a.message_id=m.id
+                GROUP BY m.id
+                HAVING staged_count > 0 OR blocking_count > 0
+                    OR m.message_state IN ('completed','acked')
+                ORDER BY m.account_alias,m.id""", tuple(BLOCKING_ATTACHMENT_STATES)).fetchall())
+
+    def _write_report(self, results: Sequence[CompletionResult]) -> str:
+        reports = self.paths.root / "reports"
+        reports.mkdir(parents=True, exist_ok=True)
+        path = reports / f"completion_report_{rome_timestamp()}.json"
+        payload = {
+            "timestamp": rome_isoformat(),
+            "messages_candidates": len(results),
+            "messages_completed": sum(1 for item in results if item.status in {"completed", "already_completed", "already_acked"}),
+            "messages_skipped": sum(1 for item in results if item.status == "completion_skipped"),
+            "errors": [asdict(item) for item in results if item.status == "ack_failed"],
+            "results": [asdict(item) for item in results],
+        }
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return path.relative_to(self.paths.root).as_posix()
+
+    def _attachment_audit_targets(self, message_row_id: int) -> tuple[tuple[str, str], ...]:
+        uri = f"{self.paths.state_db.resolve().as_uri()}?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True)) as db:
+            rows = db.execute("""SELECT attachment_id,fingerprint FROM attachments
+                WHERE message_id=? AND attachment_id IS NOT NULL AND fingerprint IS NOT NULL
+                ORDER BY id""", (message_row_id,)).fetchall()
+        return tuple((str(row[0]), str(row[1])) for row in rows)
+
+    def _handoff_inbox_ids(
+        self, message_row_id: int, attachment_ids: Sequence[str]
+    ) -> tuple[str, ...]:
+        if not attachment_ids:
+            return ()
+        uri = f"{self.paths.state_db.resolve().as_uri()}?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True)) as db:
+            rows = db.execute("""SELECT a.attachment_id,e.details_json
+                FROM attachments a JOIN audit_events e
+                  ON e.entity_id=a.attachment_id AND e.account_alias=a.account_alias
+                WHERE a.message_id=? AND a.attachment_id IS NOT NULL
+                  AND e.action='da_archiviare_intake'
+                  AND e.status IN ('created','updated','idempotent')
+                ORDER BY e.id DESC""", (message_row_id,)).fetchall()
+        by_attachment: dict[str, str] = {}
+        for attachment_id, details_json in rows:
+            key = str(attachment_id)
+            if key in by_attachment:
+                continue
+            try:
+                details = json.loads(str(details_json or "{}"))
+            except json.JSONDecodeError:
+                continue
+            inbox_id = str(details.get("inbox_id", "")).strip() if isinstance(details, dict) else ""
+            if inbox_id:
+                by_attachment[key] = inbox_id
+        return tuple(by_attachment[item] for item in attachment_ids if item in by_attachment)
+
+    def _default_mailbox(self, account: LocalImapAccount):
+        config = account.to_imap_config(self.environ)
+        return ImapCompletionMailbox(config, done_folder=account.done_folder)
