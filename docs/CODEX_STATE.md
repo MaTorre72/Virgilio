@@ -9,10 +9,9 @@
   annotato `v1.1.0` pubblicato sul commit sorgente `68f3b90`.
 - Documentazione corrente: `README.md`, `docs/ARCHITETTURA_UNIFICATA.md` e
   `docs/RUNBOOKS.md`; classificazione in `docs/DOCUMENT_INVENTORY.md`.
-- Ultimo task: `CONS-D04` `DONE`; storia 1.1 condensata in `CHANGELOG.md` e
-  `docs/CHANGELOG_DEV.md`, fascicoli chiusi fuori dal percorso corrente e
-  recuperabili da Git al commit `45a19f4`.
-- Task corrente: `CONS-G01`, inventario di entry point, comandi, import e file
-  inclusi nella build.
+- Ultimo task: `CONS-G01` `DONE`; `docs/SURFACE_INVENTORY.md` mappa ingressi,
+  dispatch CLI, import diretti dei target e contenuti di package/build.
+- Task corrente: `CONS-G02`, rimozione della GUI legacy non raggiungibile dai
+  target supportati e dei test esclusivi.
 - Contesto normale per una run: `AGENTS.md`, questo file e
   `docs/NEXT_CODEX_TASKS.md`.

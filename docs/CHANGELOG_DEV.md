@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-G01`: inventariati ingressi installati e di
+  sviluppo, tutti i dispatch CLI, gli import diretti di GUI utente e
+  Manutenzione e i contenuti di wheel, eseguibile e installer. La GUI legacy
+  non e` importata dai target supportati; nessuna rimozione o modifica
+  funzionale e` stata eseguita. Test packaging mirati `22 passed`; suite locale
+  `600 passed`.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-D04`: storia e baseline 1.1 condensate nel
   changelog pubblico e in questo registro cronologico; 17 backlog, roadmap,
   report e guide assorbite sono stati ritirati dal percorso corrente, dopo
