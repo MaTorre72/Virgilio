@@ -69,8 +69,8 @@ non devono usare mail, account Google, credenziali o servizi reali.
 ## Sviluppo e verifica
 
 Il riferimento architetturale e` [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md).
-Setup e test sono in [Setup e test](docs/SETUP_AND_TEST.md); il flusso locale e`
-descritto in [Caronte Locale](docs/LOCAL_CARONTE.md). Il gate locale completo e`:
+I percorsi brevi per setup, sviluppo, test, operazioni e release sono nei
+[Runbook correnti](docs/RUNBOOKS.md). Il gate locale completo e`:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1

@@ -88,6 +88,18 @@ Stato: `DONE` (2026-07-28).
 | `AC4` | confronto documenti `MERGE` | quattro fonti assorbite dichiarano esplicitamente lo stato storico | `PASS` |
 | `AC5` | controlli Git e documentali | link, diff, segreti, puntatori e verifiche mirate risultano verdi | `PASS` |
 
+### CONS-D03 - Runbook correnti brevi
+
+Stato: `DONE` (2026-07-28).
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `AC1` | esecuzione comandi offline | setup e sviluppo hanno un ingresso unico in `docs/RUNBOOKS.md`; help CLI verificato | `PASS` |
+| `AC2` | prove mirate e smoke | ordine mirati -> area -> smoke esplicito; smoke locale verde | `PASS` |
+| `AC3` | confronto con architettura | Caronte, Manutenzione e CLI hanno responsabilita` distinte e coerenti | `PASS` |
+| `AC4` | verifica comandi e link | build, installer, manifest, smoke e vincoli di pubblicazione sono collegati senza deploy | `PASS` |
+| `AC5` | controlli Git e documentali | tre fonti `MERGE` assorbite e marcate storiche; diff, segreti e puntatori verificati | `PASS` |
+
 ## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,

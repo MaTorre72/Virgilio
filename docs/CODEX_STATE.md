@@ -5,8 +5,11 @@
   un commit per run; Git usa solo fetch/pull fast-forward e push non forzato.
 - Iniziativa corrente: `CONS - Pubblicazione, pulizia e consegna 1.1`, definita
   in `docs/CONSOLIDATION_PROGRAM.md`.
-- Task corrente: `CONS-D03`, runbook brevi e verificati per setup, sviluppo,
-  test, operazioni e release.
+- Task corrente: `CONS-D04`, storia 1.1 condensata e documenti storici fuori
+  dal percorso corrente.
+- `CONS-D03` e` `DONE`: `docs/RUNBOOKS.md` e` l'ingresso breve per setup,
+  sviluppo, test, operazioni e release; tre fonti `MERGE` sono assorbite e
+  marcate storiche senza rimozioni.
 - `CONS-D02` e` `DONE`: `docs/ARCHITETTURA_UNIFICATA.md` e` l'unica fonte
   architetturale corrente; profili, risorse condivise, presentazioni, servizi,
   CLI e GAS hanno confini univoci. Le quattro fonti `MERGE` assorbite sono

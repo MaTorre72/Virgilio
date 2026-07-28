@@ -1,4 +1,8 @@
-# Caronte Locale
+# Caronte Locale (storico)
+
+> Descrizione storica assorbita in [RUNBOOKS.md](RUNBOOKS.md) e
+> [ARCHITETTURA_UNIFICATA.md](ARCHITETTURA_UNIFICATA.md). Non e` una fonte
+> operativa corrente.
 
 Caronte Locale e' la direzione v1.1: un motore operativo locale che riceve eventi da una o piu' caselle e decide azioni controllate tramite adapter.
 

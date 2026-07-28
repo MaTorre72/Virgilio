@@ -1,4 +1,8 @@
-# Virgilio Local Connector
+# Virgilio Local Connector (storico)
+
+> Questa descrizione incrementale e` storica. I percorsi correnti sono
+> [`docs/RUNBOOKS.md`](../docs/RUNBOOKS.md) e
+> [`docs/ARCHITETTURA_UNIFICATA.md`](../docs/ARCHITETTURA_UNIFICATA.md).
 
 Skeleton Python del connettore locale di ingresso per Virgilio.
 

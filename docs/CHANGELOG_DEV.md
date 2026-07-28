@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-D03`: `docs/RUNBOOKS.md` offre percorsi
+  brevi e univoci per setup, sviluppo, test, operazioni e release. Le tre fonti
+  `MERGE` pertinenti sono assorbite e marcate storiche; nessun deploy o servizio
+  reale e` stato eseguito.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-D02`: consolidata l'architettura corrente
   in `docs/ARCHITETTURA_UNIFICATA.md`, con confini univoci tra profili,
   risorse condivise, GUI utente, Manutenzione, CLI, servizi e GAS. Le quattro

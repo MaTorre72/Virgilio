@@ -1,31 +1,31 @@
 # Next Codex Task
 
-## CORRENTE - CONS-D03 - Runbook correnti brevi
+## CORRENTE - CONS-D04 - Storia 1.1 condensata
 
 Stato: `TODO`. Priorita`: `P1`.
 
-Risultato: setup, sviluppo, test, operazioni e release hanno percorsi brevi,
-non duplicati e basati su comandi verificati.
+Risultato: backlog e report chiusi confluiscono in una storia 1.1 concisa; i
+documenti storici non compaiono nel percorso operativo corrente.
 
-Dipendenze: `CONS-D02` chiuso `DONE`; architettura corrente canonica.
+Dipendenze: `CONS-D03` chiuso `DONE`; runbook correnti canonici.
 
-Componenti ammessi: documenti classificati `KEEP` o `MERGE` pertinenti ai
-runbook, link, comandi ed evidenze del solo task.
+Componenti ammessi: documenti `HISTORY`, inventario, changelog e soli link
+necessari a separare storia e percorso corrente.
 
-Esclusioni: rimozione di file, modifica funzionale di codice o Apps Script,
-servizi reali, build/deploy reali, modifica o merge di `main`.
+Esclusioni: modifica funzionale, servizi reali, build/deploy, modifica o merge
+di `main`; nessuna rimozione senza prova di link e recuperabilita` Git.
 
-Condizione di blocco: comando essenziale non verificabile offline o upstream
-divergente.
+Condizione di blocco: documento storico ancora necessario come fonte corrente,
+link non riconciliabile o upstream divergente.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-D03-AC1` setup e sviluppo hanno una sequenza minima univoca. | esecuzione comandi offline |
-| `CONS-D03-AC2` test e smoke indicano ambito e ordine corretti. | prove mirate e smoke |
-| `CONS-D03-AC3` operazioni distinguono uso utente e manutenzione. | confronto con architettura |
-| `CONS-D03-AC4` release documenta build, verifica e vincoli senza deploy. | verifica comandi e link |
-| `CONS-D03-AC5` fonti `MERGE`, diff, segreti e puntatori sono verificati. | controlli Git e documentali |
+| `CONS-D04-AC1` la storia 1.1 chiusa e` condensata senza perdere esiti e baseline. | confronto changelog e inventario |
+| `CONS-D04-AC2` backlog e report storici non sono fonti operative correnti. | ricerca link e intestazioni |
+| `CONS-D04-AC3` ogni rimozione prevista e` non raggiungibile e recuperabile da Git. | `rg`, `git log` e test link |
+| `CONS-D04-AC4` README, runbook e puntatori rimandano solo a fonti correnti. | verifica link mirata |
+| `CONS-D04-AC5` diff, segreti e puntatori sono verificati. | controlli Git e documentali |
 
 ## SUCCESSIVO
 
-`CONS-D04` - storia 1.1 condensata e documenti storici fuori dal percorso corrente.
+`CONS-G01` - inventario di entry point, comandi, import e file inclusi nella build.

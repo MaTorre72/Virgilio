@@ -1,6 +1,7 @@
 # Inventario documentale
 
-Inventario completo dei documenti versionati al task `CONS-D01` (2026-07-28).
+Inventario completo dei 61 documenti versionati, riallineato da `CONS-D03`
+(2026-07-28).
 Le classi hanno questo significato:
 
 - `KEEP`: documento corrente con responsabilita` distinta;
@@ -22,7 +23,7 @@ report datati sono intenzionalmente separati dalle fonti operative correnti.
 | `README.md` | `KEEP` | ingresso pubblico al progetto |
 | `docs/ARCHITECTURE.md` | `MERGE` | assorbire in `docs/ARCHITETTURA_UNIFICATA.md` |
 | `docs/ARCHITETTURA_UNIFICATA.md` | `KEEP` | architettura canonica corrente |
-| `docs/AUTONOMOUS_DEVELOPMENT.md` | `MERGE` | assorbire le regole correnti nei runbook di sviluppo di `CONS-D03` |
+| `docs/AUTONOMOUS_DEVELOPMENT.md` | `HISTORY` | assorbito in `docs/RUNBOOKS.md` da `CONS-D03` |
 | `docs/BUCOLICHE_CONFLICT_POLICY.md` | `KEEP` | policy operativa distinta |
 | `docs/BUILD_CARONTE.md` | `KEEP` | runbook build distinto |
 | `docs/CHANGELOG_DEV.md` | `HISTORY` | registro cronologico di sviluppo |
@@ -34,6 +35,7 @@ report datati sono intenzionalmente separati dalle fonti operative correnti.
 | `docs/DEFINITION_OF_DONE.md` | `KEEP` | governance verificabile dei task |
 | `docs/DEV_BACKLOG.md` | `KEEP` | backlog operativo corrente |
 | `docs/DEV_BACKLOG_ARCHIVE.md` | `HISTORY` | backlog chiuso e recuperabile |
+| `docs/DOCUMENT_INVENTORY.md` | `KEEP` | inventario canonico della classificazione documentale |
 | `docs/GAS_PUSH_REPORT_20260704.md` | `HISTORY` | evidenza datata di pubblicazione GAS |
 | `docs/GAS_PUSH_REPORT_20260705.md` | `HISTORY` | evidenza datata di pubblicazione GAS |
 | `docs/GAS_READINESS_20260704.md` | `HISTORY` | snapshot datato pre-pubblicazione |
@@ -44,10 +46,11 @@ report datati sono intenzionalmente separati dalle fonti operative correnti.
 | `docs/GUI_U_BACKLOG.md` | `HISTORY` | fascicolo completo dell'iniziativa GUI-U chiusa |
 | `docs/GUI_U_CODE_MAP.md` | `HISTORY` | mappa di implementazione della baseline GUI-U |
 | `docs/GUI_U_HUMAN_ACCEPTANCE.md` | `HISTORY` | evidenza del collaudo umano chiuso |
-| `docs/LOCAL_CARONTE.md` | `MERGE` | assorbire il percorso operativo nei runbook di `CONS-D03` |
+| `docs/LOCAL_CARONTE.md` | `HISTORY` | assorbito in `docs/RUNBOOKS.md` e nell'architettura canonica da `CONS-D03` |
 | `docs/NEXT_CODEX_TASKS.md` | `KEEP` | scheda del task corrente e successore |
 | `docs/PARSER_SPIKE_DOCLING_UNSTRUCTURED.md` | `REMOVE` | spike AI vietato dalle regole correnti; recuperabile da Git |
 | `docs/ROADMAP_V1_1.md` | `HISTORY` | roadmap 1.1 completata |
+| `docs/RUNBOOKS.md` | `KEEP` | ingresso canonico breve per setup, sviluppo, test, operazioni e release |
 | `docs/SETUP_AND_TEST.md` | `KEEP` | runbook setup e test corrente |
 | `docs/TEST_READINESS_20260704.md` | `HISTORY` | snapshot di readiness datato |
 | `docs/TEST_REPORT_20260704.md` | `HISTORY` | rapporto test datato |
@@ -70,5 +73,5 @@ report datati sono intenzionalmente separati dalle fonti operative correnti.
 | `docs/archive/QUARANTENA_LOCALE.md` | `HISTORY` | specifica precedente archiviata |
 | `docs/archive/REPO_STRUCTURE.md` | `HISTORY` | struttura precedente archiviata |
 | `docs/archive/STATE_DB.md` | `HISTORY` | specifica precedente archiviata |
-| `local_connector/README.md` | `MERGE` | assorbire le istruzioni non duplicate nei runbook di `CONS-D03` |
+| `local_connector/README.md` | `HISTORY` | assorbito in `docs/RUNBOOKS.md` da `CONS-D03` |
 | `local_connector/tests/README.md` | `KEEP` | guida distinta alla suite locale |

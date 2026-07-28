@@ -1,4 +1,8 @@
-# Sviluppo autonomo
+# Sviluppo autonomo (storico)
+
+> Fonte storica assorbita in [RUNBOOKS.md](RUNBOOKS.md). Le regole operative
+> correnti sono `AGENTS.md`, `CODEX_STATE.md`, `NEXT_CODEX_TASKS.md` e il
+> runbook canonico; questo documento non introduce istruzioni concorrenti.
 
 ## Ciclo
 
