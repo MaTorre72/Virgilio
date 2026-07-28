@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-D01`: inventariati una sola volta tutti i
+  59 documenti versionati in `docs/DOCUMENT_INVENTORY.md`, usando esclusivamente
+  `KEEP`, `MERGE`, `HISTORY` e `REMOVE`; destinazioni e motivazioni obbligatorie
+  sono esplicite e fonti operative, report datati e archivio sono distinguibili.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-R04`: creato e pubblicato il tag annotato
   `v1.1.0` sul commit sorgente release `68f3b90`; annotazione con installer,
   SHA-256 e Build ID e riferimenti locale/remoto verificati coincidenti.

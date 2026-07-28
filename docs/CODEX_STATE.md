@@ -5,8 +5,11 @@
   un commit per run; Git usa solo fetch/pull fast-forward e push non forzato.
 - Iniziativa corrente: `CONS - Pubblicazione, pulizia e consegna 1.1`, definita
   in `docs/CONSOLIDATION_PROGRAM.md`.
-- Task corrente: `CONS-D01`, inventario documentale completo
-  `KEEP/MERGE/HISTORY/REMOVE`.
+- Task corrente: `CONS-D02`, architettura corrente unificata in un solo
+  documento canonico.
+- `CONS-D01` e` `DONE`: i 59 documenti versionati sono classificati una sola
+  volta in `docs/DOCUMENT_INVENTORY.md` come `KEEP`, `MERGE`, `HISTORY` o
+  `REMOVE`; destinazioni e motivazioni obbligatorie sono complete.
 - `CONS-R04` e` `DONE`: il tag annotato `v1.1.0` identifica il commit sorgente
   release `68f3b90`; annotazione, riferimento locale e riferimento remoto sono
   stati verificati e coincidono.

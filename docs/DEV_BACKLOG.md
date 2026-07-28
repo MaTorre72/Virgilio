@@ -64,6 +64,18 @@ Stato: `DONE` (2026-07-28).
 | `AC4` | push esplicito e fetch | pubblicato esclusivamente `refs/tags/v1.1.0` | `PASS` |
 | `AC5` | rev-parse, diff e stato Git | riferimenti locale/remoto coincidenti e puntatori aggiornati | `PASS` |
 
+### CONS-D01 - Inventario documentale
+
+Stato: `DONE` (2026-07-28).
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `AC1` | elenco Git e confronto inventario | tutti i 59 documenti versionati compaiono una sola volta in `docs/DOCUMENT_INVENTORY.md` | `PASS` |
+| `AC2` | validazione categorie | ogni riga usa solo `KEEP`, `MERGE`, `HISTORY` o `REMOVE` | `PASS` |
+| `AC3` | controllo campi obbligatori | tutte le voci `MERGE` e `REMOVE` hanno destinazione o motivazione esplicita | `PASS` |
+| `AC4` | confronto link e fonti operative | fonti correnti, report datati e `docs/archive/` sono distinti esplicitamente | `PASS` |
+| `AC5` | controlli Git e scansione | inventario, diff, segreti e puntatori verificati | `PASS` |
+
 ## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,
