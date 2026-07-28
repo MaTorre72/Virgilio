@@ -4,12 +4,26 @@ from pathlib import Path
 import sys
 import tomllib
 
+import virgilio_connector
 from virgilio_connector import build_entry
 from virgilio_connector.application.operation_runner import _runtime_command
 
 
 ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT.parent
+
+
+def test_product_version_has_one_authoritative_package_value() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    release_marker = (REPO_ROOT / "VERSION").read_text(encoding="utf-8").strip()
+    build_text = (REPO_ROOT / "scripts" / "dev" / "build_caronte.ps1").read_text(encoding="utf-8")
+
+    assert release_marker == virgilio_connector.__version__ == "1.1.0"
+    assert project["project"]["dynamic"] == ["version"]
+    assert project["tool"]["setuptools"]["dynamic"]["version"] == {
+        "attr": "virgilio_connector._version.__version__"
+    }
+    assert "_version.py" in build_text
 
 
 def test_build_configuration_defines_one_folder_caronte() -> None:

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "virgilio-local-connector"
-version = "0.11.0"
+dynamic = ["version"]
 description = "Connettore IMAP read-only con presa in carico staging di test"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -28,6 +28,9 @@ virgilio = "virgilio_connector.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "virgilio_connector._version.__version__" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

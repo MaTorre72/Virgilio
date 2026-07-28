@@ -32,10 +32,9 @@ if ($HumanAcceptanceBuild) {
     if ($Branch -ne "codex/v1.1-development") { throw "Build di collaudo rifiutata: branch sorgente non autorizzata." }
 }
 
-$ProjectText = Get-Content -Raw -LiteralPath (Join-Path $ConnectorRoot "pyproject.toml")
-$VersionMatch = [regex]::Match($ProjectText, '(?m)^version\s*=\s*"([^"]+)"')
-if (-not $VersionMatch.Success) { throw "Versione prodotto non disponibile." }
-$Version = $VersionMatch.Groups[1].Value
+$VersionFile = Join-Path $ConnectorRoot "src\virgilio_connector\_version.py"
+$Version = (& $Python -c "import runpy,sys; print(runpy.run_path(sys.argv[1])['__version__'])" $VersionFile).Trim()
+if ($LASTEXITCODE -ne 0 -or -not $Version) { throw "Versione prodotto non disponibile." }
 $PythonVersion = (& $Python -c "import platform; print(platform.python_version())").Trim()
 $PyInstallerVersion = (& $Python -c "import PyInstaller; print(PyInstaller.__version__)").Trim()
 if ($LASTEXITCODE -ne 0 -or -not $PyInstallerVersion) { throw "Versione PyInstaller non disponibile." }

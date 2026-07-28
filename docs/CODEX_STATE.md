@@ -5,8 +5,10 @@
   un commit per run; Git usa solo fetch/pull fast-forward e push non forzato.
 - Iniziativa corrente: `CONS - Pubblicazione, pulizia e consegna 1.1`, definita
   in `docs/CONSOLIDATION_PROGRAM.md`.
-- Task corrente: `CONS-R01`, uniformazione della versione prodotto a `1.1.0`
-  senza cambiamenti funzionali.
+- Task corrente: `CONS-R02`, README e changelog della release ufficiale 1.1.
+- `CONS-R01` e` `DONE`: `virgilio_connector._version.__version__` e` la sola
+  fonte autorevole `1.1.0` letta da package metadata, runtime e build; `VERSION`
+  e` il marcatore verificato. Prove: mirati `22 passed`, smoke `600 passed`.
 - Iniziativa precedente: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`PASS`
   umano esplicito del 2026-07-28). `GUI-U` e `GATE U-H3` sono chiusi `PASS`.
 - Ultimo task precedente: `GUI-U-R05-T11` `DONE`, correttivo nato dal caso reale

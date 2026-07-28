@@ -1,32 +1,31 @@
 # Next Codex Task
 
-## CORRENTE - CONS-R01 - Versione prodotto unica 1.1.0
+## CORRENTE - CONS-R02 - README e changelog release 1.1
 
 Stato: `TODO`. Priorita`: `P0`.
 
-Risultato: il prodotto pubblicabile usa una sola versione `1.1.0`; la stringa
-`0.11.0` resta soltanto nelle evidenze storiche delle RC gia` collaudate.
+Risultato: README e changelog descrivono la release ufficiale 1.1, il percorso
+utente realmente collaudato e i limiti operativi correnti senza dettagli obsoleti.
 
-Dipendenze: `GUI-U-R05` e `GATE U-H3` chiusi `PASS` il 2026-07-28.
+Dipendenze: `CONS-R01` chiuso `DONE`.
 
-Componenti ammessi: `VERSION`, package metadata/versione, manifest e script di
-build, test mirati sulla versione e documentazione strettamente coinvolta.
+Componenti ammessi: README, changelog ufficiale e link/documentazione
+strettamente necessari a renderli coerenti.
 
-Esclusioni: cambiamenti funzionali, refactor, nuova build reale, tag, release,
-Apps Script, servizi reali e modifica di `main`.
+Esclusioni: codice, nuova build, tag, release remota, Apps Script, servizi reali,
+riscrittura dei runbook e modifica di `main`.
 
-Condizione di blocco: impossibilita` di mantenere compatibilita` dell'installer o
-di ricavare tutte le identita` di build da una fonte autorevole senza cambiare il
-runtime collaudato.
+Condizione di blocco: informazioni pubbliche indispensabili contraddittorie e
+non risolvibili dalle evidenze correnti senza una decisione umana.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-R01-AC1` `1.1.0` e` la sola versione corrente nei sorgenti. | ricerca repository con esclusione esplicita di storico/evidenze |
-| `CONS-R01-AC2` package e build leggono una sola fonte autorevole. | test metadata e manifest |
-| `CONS-R01-AC3` Informazioni e `--build-info` espongono `1.1.0`. | test mirati build-info/about |
-| `CONS-R01-AC4` nessun comportamento operativo cambia. | diff circoscritto e test mirati |
-| `CONS-R01-AC5` tree, segreti e puntatori sono coerenti. | diff, scansione e stato Git |
+| `CONS-R02-AC1` README presenta il percorso utente 1.1 corrente. | verifica sezioni e link |
+| `CONS-R02-AC2` changelog ufficiale riassume funzioni e correzioni pubblicate. | confronto con stato collaudato |
+| `CONS-R02-AC3` prerequisiti e limiti reali sono espliciti e coerenti. | ricerca termini e riferimenti |
+| `CONS-R02-AC4` storico RC resta distinguibile dalla release ufficiale. | ricerca versioni e formulazioni |
+| `CONS-R02-AC5` tree, segreti e puntatori sono coerenti. | diff, scansione e stato Git |
 
 ## SUCCESSIVO
 
-`CONS-R02` - README e changelog della release ufficiale 1.1.
+`CONS-R03` - build release, installer, manifest e checksum dal commit candidato.

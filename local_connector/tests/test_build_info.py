@@ -14,7 +14,7 @@ from virgilio_connector.user_app.about import ABOUT_TITLE, visible_build_informa
 def manifest_values() -> dict[str, str]:
     return {
         "product_name": "Caronte",
-        "version": "0.11.0",
+        "version": "1.1.0",
         "git_commit": "a1b2c3d4e5f67890123456789012345678901234",
         "git_short_commit": "a1b2c3d",
         "build_utc": "2026-07-20T17:00:00Z",
@@ -71,6 +71,7 @@ def test_build_info_command_and_about_use_exactly_the_same_public_values(monkeyp
         "Build ID": command_values["build_id"],
     }
     assert ABOUT_TITLE == "Informazioni su Caronte"
+    assert command_values["version"] == "1.1.0"
 
 
 def test_build_info_command_fails_without_a_valid_manifest(monkeypatch, capsys) -> None:

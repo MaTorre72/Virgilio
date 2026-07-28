@@ -21,7 +21,7 @@ def _write_payload_manifest(payload: Path) -> None:
     (resources / "build_manifest.json").write_text(
         json.dumps(
             {
-                "version": "0.11.0",
+                "version": "1.1.0",
                 "git_commit": "a1b2c3d4e5f67890123456789012345678901234",
                 "git_short_commit": "a1b2c3d",
                 "build_id": "12345678-1234-4abc-8def-1234567890ab",

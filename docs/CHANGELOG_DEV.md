@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-R01`: versione prodotto corrente `1.1.0`;
+  package metadata, runtime e build leggono l'unica fonte autorevole
+  `virgilio_connector._version.__version__`, con `VERSION` come marcatore
+  verificato. Informazioni e `--build-info` coperti dai mirati `22 passed`;
+  smoke locale `600 passed`. Nessun cambiamento funzionale o build reale.
+
 - 2026-07-28 +02:00 - Avviato il programma autonomo `CONS` successivo al
   collaudo finale: 20 task seriali per release `1.1.0`, consolidamento
   documentale, pulizia, refactor e handoff. Formalizzati fetch/pull fast-forward,

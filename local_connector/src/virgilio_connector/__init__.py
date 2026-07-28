@@ -246,7 +246,7 @@ __all__ = [
     "response_to_json",
 ]
 
-__version__ = "0.11.0"
+from ._version import __version__
 from .completion import (
     AckCompletedMessagesResult,
     CompletionError,

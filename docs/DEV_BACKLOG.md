@@ -16,6 +16,18 @@ Stati operativi: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. La classificazione sp
 distribuita e non piu` sviluppata, senza chiudere l'eventuale applicazione target
 che la sostituisce.
 
+### CONS-R01 - Versione prodotto unica 1.1.0
+
+Stato: `DONE` (2026-07-28).
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `AC1` | ricerca versioni correnti | sorgenti e test correnti usano `1.1.0`; `0.11.0` resta nelle evidenze RC | `PASS` |
+| `AC2` | metadata e build | setuptools, runtime e build leggono `_version.__version__` | `PASS` |
+| `AC3` | build-info/about | test mirati verificano esposizione `1.1.0` | `PASS` |
+| `AC4` | regressione | `22 passed`; smoke locale `600 passed` | `PASS` |
+| `AC5` | Git e segreti | diff circoscritto, scansione e puntatori verificati | `PASS` |
+
 ## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,
