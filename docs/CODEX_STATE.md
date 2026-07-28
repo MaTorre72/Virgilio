@@ -1,10 +1,15 @@
 # Codex State
 
 - Branch attesa: `codex/v1.1-development`.
-- Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
-- Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`PASS`
+- Modalita`: consolidamento autonomo ogni 60 minuti, seriale, un task e massimo
+  un commit per run; Git usa solo fetch/pull fast-forward e push non forzato.
+- Iniziativa corrente: `CONS - Pubblicazione, pulizia e consegna 1.1`, definita
+  in `docs/CONSOLIDATION_PROGRAM.md`.
+- Task corrente: `CONS-R01`, uniformazione della versione prodotto a `1.1.0`
+  senza cambiamenti funzionali.
+- Iniziativa precedente: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`PASS`
   umano esplicito del 2026-07-28). `GUI-U` e `GATE U-H3` sono chiusi `PASS`.
-- Task corrente: nessuno. `GUI-U-R05-T11` e` `DONE`, correttivo nato dal caso reale
+- Ultimo task precedente: `GUI-U-R05-T11` `DONE`, correttivo nato dal caso reale
   del 2026-07-28: allegati annidati in `multipart/mixed` dentro
   `multipart/alternative`, identita` IMAP duplicate tra cicli e report senza
   avviso quando una mail rilevata produce zero allegati. Parser ricorsivo,

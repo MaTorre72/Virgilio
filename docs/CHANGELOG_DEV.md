@@ -1,5 +1,13 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Avviato il programma autonomo `CONS` successivo al
+  collaudo finale: 20 task seriali per release `1.1.0`, consolidamento
+  documentale, pulizia, refactor e handoff. Formalizzati fetch/pull fast-forward,
+  commit e push non forzato, cadenza oraria, contesto minimo e monitoraggio token
+  senza stime quando il dato di piattaforma non e` esposto. Primo task
+  `CONS-R01`; `main`, merge e servizi reali restano esclusi. Smoke di governance
+  verde: `599 passed`, `smoke_local_connector: OK`.
+
 - 2026-07-28 +02:00 - `PASS` umano esplicito sul collaudo finale della RC
   `CaronteSetup-0.11.0-7e18277.exe`: chiusi `GUI-U-R05`, il recupero prodotto e
   `GATE U-H3`. I precedenti `FAIL` restano conservati come storico; nessun esito

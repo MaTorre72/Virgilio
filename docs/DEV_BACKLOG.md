@@ -4,6 +4,13 @@ Nota: lo storico, i completamenti chiusi e le milestone finite sono stati sposta
 `docs/DEV_BACKLOG_ARCHIVE.md`; il registro datato e` in `docs/CHANGELOG_DEV.md`.
 Le fonti operative leggere restano `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md`.
 
+## Programma CONS - Pubblicazione, pulizia e consegna 1.1
+
+Stato: `IN_PROGRESS`. Programma e ordine vincolante sono in
+`docs/CONSOLIDATION_PROGRAM.md`. Il collaudo umano finale e` `PASS`; la coda
+parte da `CONS-R01` e termina con una pull request pronta verso `main`, senza
+merge automatico. Ogni task resta atomico, seriale e con massimo un commit.
+
 Stati operativi: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. La classificazione speciale
 `ABANDONED_LEGACY` identifica un'implementazione storica non supportata, non
 distribuita e non piu` sviluppata, senza chiudere l'eventuale applicazione target

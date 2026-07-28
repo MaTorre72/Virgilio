@@ -2,7 +2,7 @@
 
 ## Ciclo
 
-- Frequenza prevista: ogni 30 minuti.
+- Frequenza prevista per il consolidamento: ogni 60 minuti.
 - Esecuzione seriale: un solo task e massimo un commit per run.
 - Il task corrente deve chiudersi nella run; nessun secondo task viene iniziato.
 
@@ -16,6 +16,28 @@ Leggere sempre e soltanto:
 
 Il task corrente indica i soli file di codice, test e riferimenti aggiuntivi da aprire. Consultare
 `DEV_BACKLOG`, architettura, storico o workflow `clasp` solo se il task lo richiede espressamente.
+
+Per il programma di consolidamento usare `docs/CONSOLIDATION_PROGRAM.md` solo
+per individuare il successore immediato; la scheda completa corrente resta in
+`docs/NEXT_CODEX_TASKS.md`.
+
+## Sincronizzazione Git
+
+- Prima del task: tree pulito, `git fetch origin --prune`, confronto di HEAD,
+  upstream e merge-base; `git pull --ff-only` solo quando e` dimostrato sicuro.
+- Dopo il task: commit atomico, nuovo fetch, push esplicito della branch corrente
+  e verifica della coincidenza locale/remota.
+- Divergenza, upstream inatteso o push rifiutato sono condizioni di stop.
+- Vietati force-push, merge automatico e modifica diretta di `main`.
+
+## Efficienza e budget
+
+- Modello e reasoning dell'automazione: `gpt-5.6-sol`, `low`.
+- Usare `rg` e letture circoscritte; non caricare backlog o storici completi.
+- Test a scalare: mirati, area, smoke soltanto quando richiesto.
+- Il consumo token settimanale non e` esposto alla run: non stimarlo. Riportare
+  `token_usage=non_esposto`; se il dato diventa disponibile, sospendere dopo il
+  90% del budget disponibile registrato all'avvio del programma.
 
 ## Regola di sviluppo
 
