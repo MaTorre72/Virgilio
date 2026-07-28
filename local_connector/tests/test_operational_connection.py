@@ -87,7 +87,7 @@ def test_existing_protected_key_is_kept_when_administrator_leaves_field_empty(tm
 def test_installed_worker_hydrates_mailbox_and_connection_credentials(
     tmp_path, monkeypatch
 ):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     account = SimpleNamespace(
         username_env="VIRGILIO_IMAP_ACCOUNT_USERNAME",
@@ -122,7 +122,7 @@ def test_installed_worker_hydrates_mailbox_and_connection_credentials(
 
 
 def test_cli_environment_takes_precedence_over_protected_values(tmp_path, monkeypatch):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     account = SimpleNamespace(
         username_env="VIRGILIO_IMAP_ACCOUNT_USERNAME",

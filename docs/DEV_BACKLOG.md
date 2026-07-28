@@ -24,6 +24,7 @@ Stato: `IN_PROGRESS`.
 | `CONS-G03` | `DONE` | spike AI/LiteLLM/Docling e superfici esclusive rimossi |
 | `CONS-G04` | `DONE` | 4 asset/script storici ritirati; mirati `26 passed`, smoke `533 passed` |
 | `CONS-C01` | `DONE` | root API limitata a `__version__`; mirati `17 passed`, smoke `535 passed` |
+| `CONS-C03` | `DONE` | bootstrap minimo e parser/dispatch isolati; area CLI `173 passed` |
 
 I task successivi restano chiusi finche` non diventano il successore immediato
 in `docs/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
@@ -37,3 +38,13 @@ in `docs/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
 | `AC3` | root, metadata e build puntano a `_version.__version__`; test versione verdi | `PASS` |
 | `AC4` | moduli `__main__`, `build_entry`, `maintenance_gui` e `user_app` importabili | `PASS` |
 | `AC5` | test mirati `17 passed`, smoke locale `535 passed`; diff, segreti e puntatori verificati | `PASS` |
+
+### Evidenze CONS-C03
+
+| Criterio | Evidenza ottenuta | Esito |
+| --- | --- | --- |
+| `AC1` | `__main__.py` contiene solo composizione, compatibilita` import e uscita | `PASS` |
+| `AC2` | `cli.build_parser()` isolato; snapshot help e rifiuto alias verdi | `PASS` |
+| `AC3` | dispatch separato dal parser; rappresentanti di cinque gruppi registrati | `PASS` |
+| `AC4` | test esistenti su output, errori e codici di uscita invariati | `PASS` |
+| `AC5` | area CLI `173 passed`; smoke locale `543 passed`; diff, segreti e puntatori verificati | `PASS` |

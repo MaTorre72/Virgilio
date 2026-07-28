@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-C03`: `__main__` e` ridotto al bootstrap;
+  `cli.py` contiene costruzione isolata del parser, dispatch e implementazioni
+  esistenti. Help, errori, codici di uscita e ingressi conservati; test area CLI
+  `173 passed`; smoke locale `543 passed`.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-C02`: classificati tutti i comandi CLI con
   motivazione. L'help principale espone soltanto `init-config`, `doctor` e
   `watch`; gli ingressi e i comandi tecnici necessari restano raggiungibili ma

@@ -404,7 +404,7 @@ def test_cli_intake_da_archiviare_uses_env_and_prints_json(tmp_path, monkeypatch
         "--manifest-file-id",
         "manifest-123",
     ])
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     monkeypatch.setattr(cli, "DaArchiviareIntakeHttpClient", FakeClient)
 
@@ -455,7 +455,7 @@ def test_cli_intake_da_archiviare_writes_audit_event(tmp_path, monkeypatch, caps
         "--manifest-file-id",
         "manifest-123",
     ])
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     monkeypatch.setattr(cli, "DaArchiviareIntakeHttpClient", FakeClient)
 

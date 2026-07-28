@@ -72,7 +72,7 @@ def test_atomic_write_failure_preserves_existing_file(tmp_path, monkeypatch):
 
 
 def test_scan_cli_uses_shared_configuration_service(tmp_path, monkeypatch, capsys):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     path = configuration_file(tmp_path)
     model = ConfigurationService.for_file(path).load()

@@ -1591,7 +1591,7 @@ def test_storage_loader_rejects_bucoliche_adapter_in_storage_section(tmp_path):
 def test_pipeline_cli_dry_run_keeps_storage_and_bucoliche_separate(tmp_path, monkeypatch, capsys):
     config = write_storage_and_bucoliche_config(tmp_path)
     log = []
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
     monkeypatch.setattr(cli, "MultiAccountReadonlyScanner",
                         lambda *a, **k: FakePhase("scan", log))
     monkeypatch.setattr(cli, "MultiAccountImapProcessor",
@@ -1613,7 +1613,7 @@ def test_pipeline_cli_dry_run_keeps_storage_and_bucoliche_separate(tmp_path, mon
 def test_pipeline_cli_human_output_uses_summary(tmp_path, monkeypatch, capsys):
     config = write_storage_and_bucoliche_config(tmp_path)
     log = []
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
     monkeypatch.setattr(cli, "MultiAccountReadonlyScanner",
                         lambda *a, **k: FakePhase("scan", log))
     monkeypatch.setattr(cli, "MultiAccountImapProcessor",
@@ -1777,7 +1777,7 @@ def test_doctor_cli_human_output_shows_actions(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", [
         "virgilio", "doctor", "--config", str(config), "--human",
     ])
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
     monkeypatch.setattr(cli, "select_scanner", lambda *_: FakeUnavailableScanner())
     monkeypatch.setattr(cli, "LocalDoctor", lambda *args, **kwargs: LocalDoctor(
         *args,

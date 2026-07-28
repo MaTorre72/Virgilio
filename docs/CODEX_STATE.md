@@ -9,9 +9,9 @@
   annotato `v1.1.0` pubblicato sul commit sorgente `68f3b90`.
 - Documentazione corrente: `README.md`, `docs/ARCHITETTURA_UNIFICATA.md` e
   `docs/RUNBOOKS.md`; classificazione in `docs/DOCUMENT_INVENTORY.md`.
-- Ultimo task: `CONS-C02` `DONE`; l'help espone solo `init-config`, `doctor` e
-  `watch`, i comandi tecnici restano interni e l'alias `local-watch` e` rimosso.
-- Task corrente: `CONS-C03`, separazione behavior-preserving di parser e
-  dispatch CLI dal bootstrap `__main__`.
+- Ultimo task: `CONS-C03` `DONE`; `__main__` e` un bootstrap minimo, mentre il
+  modulo `cli` isola costruzione del parser e dispatch senza cambiare contratti.
+- Task corrente: `CONS-C04`, separazione behavior-preserving del primo modulo
+  operativo monolitico per responsabilita`.
 - Contesto normale per una run: `AGENTS.md`, questo file e
   `docs/NEXT_CODEX_TASKS.md`.

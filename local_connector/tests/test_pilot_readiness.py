@@ -7,7 +7,7 @@ import tomllib
 import pytest
 from types import SimpleNamespace
 
-from virgilio_connector.__main__ import _poll_pending_completion
+from virgilio_connector.cli import _poll_pending_completion
 from virgilio_connector.bucoliche import BucolicheConfig, CONFLICT_COLUMNS, EVENT_COLUMNS
 from virgilio_connector.completion import AckCompletedMessagesResult, CompletionResult
 from virgilio_connector.doctor import DoctorResult
@@ -540,7 +540,7 @@ def test_new_cli_commands_are_registered(tmp_path, monkeypatch):
 
 
 def test_doctor_bucoliche_cli_runs_without_human_flag(tmp_path, monkeypatch, capsys):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     class FakeResult:
         status = "READY"
@@ -568,7 +568,7 @@ def test_doctor_bucoliche_cli_runs_without_human_flag(tmp_path, monkeypatch, cap
 
 
 def test_doctor_bucoliche_cli_human_uses_doctor_summary(tmp_path, monkeypatch, capsys):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     class FakeResult:
         status = "READY"
@@ -602,7 +602,7 @@ def test_doctor_bucoliche_cli_human_uses_doctor_summary(tmp_path, monkeypatch, c
 
 
 def test_maintenance_gui_command_calls_launcher(tmp_path, monkeypatch):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     seen = {}
 
@@ -618,7 +618,7 @@ def test_maintenance_gui_command_calls_launcher(tmp_path, monkeypatch):
 
 
 def test_pilot_cli_returns_preview_and_safe_result(tmp_path, monkeypatch, capsys):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     @dataclass
     class FakePilotResult:
@@ -669,7 +669,7 @@ def test_pilot_cli_returns_preview_and_safe_result(tmp_path, monkeypatch, capsys
 
 
 def test_pilot_cli_human_output_includes_snapshot(tmp_path, monkeypatch, capsys):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     @dataclass
     class FakePilotResult:
@@ -729,7 +729,7 @@ def test_pilot_cli_human_output_includes_snapshot(tmp_path, monkeypatch, capsys)
 
 
 def test_pilot_run_cli_human_output_is_essential(tmp_path, monkeypatch, capsys):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     @dataclass
     class FakePilotRunResult:
@@ -775,7 +775,7 @@ def test_pilot_run_cli_human_output_is_essential(tmp_path, monkeypatch, capsys):
 
 
 def test_watch_cli_runs_controlled_cycles(tmp_path, monkeypatch, capsys):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     @dataclass
     class FakePipelineResult:
@@ -819,7 +819,7 @@ def test_watch_cli_runs_controlled_cycles(tmp_path, monkeypatch, capsys):
 def test_watch_single_cycle_returns_failure_when_pipeline_has_errors(
     tmp_path, monkeypatch, capsys
 ):
-    import virgilio_connector.__main__ as cli
+    import virgilio_connector.cli as cli
 
     @dataclass
     class FailedPipelineResult:

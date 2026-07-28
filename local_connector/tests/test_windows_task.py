@@ -128,7 +128,7 @@ def test_frozen_watch_task_uses_only_installed_executable(monkeypatch, tmp_path)
 def test_windows_task_status_cli_has_readable_last_result(monkeypatch, capsys):
     from virgilio_connector.__main__ import main
 
-    monkeypatch.setattr("virgilio_connector.__main__.query_windows_watch_task", lambda name:
+    monkeypatch.setattr("virgilio_connector.cli.query_windows_watch_task", lambda name:
                         windows_task.WindowsTaskStatus(
                             name, installed=True, state="Ready",
                             last_run_time="2026-07-14T08:00:00+02:00", last_result=0))
@@ -151,7 +151,7 @@ def test_windows_task_uninstall_cli_requires_confirmation(monkeypatch, capsys):
         called = True
         return {"status": "removed", "task_name": name, "removed": True}
 
-    monkeypatch.setattr("virgilio_connector.__main__.unregister_windows_watch_task", fake_unregister)
+    monkeypatch.setattr("virgilio_connector.cli.unregister_windows_watch_task", fake_unregister)
     monkeypatch.setattr(sys, "argv", ["virgilio", "uninstall-windows-task"])
     with pytest.raises(SystemExit) as exc:
         main()
@@ -163,7 +163,7 @@ def test_windows_task_uninstall_cli_requires_confirmation(monkeypatch, capsys):
 def test_windows_task_uninstall_cli_is_idempotent(monkeypatch, capsys):
     from virgilio_connector.__main__ import main
 
-    monkeypatch.setattr("virgilio_connector.__main__.unregister_windows_watch_task", lambda name: {
+    monkeypatch.setattr("virgilio_connector.cli.unregister_windows_watch_task", lambda name: {
         "status": "not_installed", "task_name": name, "removed": False,
     })
     monkeypatch.setattr(sys, "argv", [
