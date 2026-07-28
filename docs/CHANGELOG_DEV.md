@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-H03` e il programma `CONS`: pubblicato
+  l'handoff verificabile della release 1.1 e aperta la pull request `#1` da
+  `codex/v1.1-development` verso `main`. Branch pubblicata, merge non eseguito;
+  revisione e approvazione restano umane.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-H02`: audit finale integrato su 208 file
   tracciati e 44/44 documenti inventariati, senza superfici legacy o segreti
   operativi versionati. Smoke offline `548 passed`; build Caronte e installer

@@ -1,6 +1,6 @@
 # Inventario documentale
 
-Inventario completo dei 44 documenti correnti, riallineato da `CONS-D04`
+Inventario completo dei 45 documenti correnti, riallineato da `CONS-H03`
 (2026-07-28). I fascicoli ritirati sono elencati dopo la tabella e restano
 recuperabili da Git.
 Le classi hanno questo significato:
@@ -35,6 +35,7 @@ operative correnti.
 | `docs/DEV_BACKLOG.md` | `KEEP` | backlog operativo corrente |
 | `docs/DOCUMENT_INVENTORY.md` | `KEEP` | inventario canonico della classificazione documentale |
 | `docs/GOOGLE_OAUTH_DESKTOP.md` | `KEEP` | runbook OAuth Desktop distinto |
+| `docs/HANDOFF_1_1.md` | `KEEP` | consegna finale verificabile della release 1.1 |
 | `docs/GUI_UX_REQUIREMENTS.md` | `MERGE` | assorbire i requisiti correnti nell'architettura GUI durante `CONS-D02` |
 | `docs/GUI_U_ARCHITETTURA.md` | `MERGE` | assorbire in `docs/ARCHITETTURA_UNIFICATA.md` durante `CONS-D02` |
 | `docs/NEXT_CODEX_TASKS.md` | `KEEP` | scheda del task corrente e successore |

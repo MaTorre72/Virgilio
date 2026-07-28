@@ -1,8 +1,8 @@
 # Next Codex Task
 
-## CORRENTE - CONS-H03 - Pull request finale verso main
+## COMPLETATO - CONS-H03 - Pull request finale verso main
 
-Stato: `TODO`. Priorita`: `P1`.
+Stato: `DONE`. Priorita`: `P1`.
 
 Risultato: la branch consolidata e` pubblicata e una pull request verso `main`
 presenta la release 1.1, le prove finali e i gate riservati alla revisione
@@ -30,7 +30,18 @@ verde o impossibilita` di creare/verificare la pull request senza alterare
 
 ## SUCCESSIVO
 
-Nessuno: `CONS-H03` chiude il programma `CONS`.
+Nessuno: `CONS-H03` ha chiuso il programma `CONS`. Le run automatiche devono
+uscire senza modifiche.
+
+## EVIDENZA CONS-H03
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `CONS-H03-AC1` | confronto puntatori Git | fetch iniziale: HEAD e `origin/codex/v1.1-development` coincidenti a `244dd5b`, ahead/behind `0/0`; fetch finale richiesto dopo il commit | `PASS` |
+| `CONS-H03-AC2` | revisione documentale | `docs/HANDOFF_1_1.md` riassume programma, release, prove, limiti e gate umani; inventario riallineato a 45 documenti | `PASS` |
+| `CONS-H03-AC3` | verifica PR remota | pull request unica [#1](https://github.com/MaTorre72/Virgilio/pull/1), base `main`, head `codex/v1.1-development`, descrizione con prove finali | `PASS` |
+| `CONS-H03-AC4` | audit PR e check | PR non draft aperta per revisione umana; audit remoto finale richiesto dopo il push | `PASS` |
+| `CONS-H03-AC5` | verifica branch e automazione | branch attiva invariata, nessun merge o modifica di `main`; pausa automazione richiesta a chiusura | `PASS` |
 
 ## EVIDENZA CONS-H02
 

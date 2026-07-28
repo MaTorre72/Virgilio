@@ -7,7 +7,7 @@ cronologicamente in `docs/CHANGELOG_DEV.md`.
 
 ## Programma CONS - Pubblicazione, pulizia e consegna 1.1
 
-Stato: `IN_PROGRESS`.
+Stato: `DONE`.
 
 | Task | Stato | Evidenza sintetica |
 | --- | --- | --- |
@@ -26,7 +26,7 @@ Stato: `IN_PROGRESS`.
 | `CONS-C01` | `DONE` | root API limitata a `__version__`; mirati `17 passed`, smoke `535 passed` |
 | `CONS-C03` | `DONE` | bootstrap minimo e parser/dispatch isolati; area CLI `173 passed` |
 | `CONS-H02` | `DONE` | audit finale integrato; smoke `548 passed`, build e release coerenti |
-| `CONS-H03` | `TODO` | branch pubblicata e pull request verso `main` pronta per revisione umana |
+| `CONS-H03` | `DONE` | handoff pubblicato; PR `#1` verso `main` pronta per revisione umana |
 
 I task successivi restano chiusi finche` non diventano il successore immediato
 in `docs/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
