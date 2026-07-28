@@ -319,7 +319,9 @@ class MultiAccountReadonlyScanner:
                 if store is not None:
                     run_id = store.start_run(account_alias=account.account_alias)
                     for message in messages:
-                        store.add_message(run_id, message, account_alias=account.account_alias)
+                        store.find_or_add_message(
+                            run_id, message, account_alias=account.account_alias
+                        )
                         store.add_audit_event(machine_id=load_machine_id(self.paths.root),
                             account_alias=account.account_alias, entity_type="message",
                             entity_id=message.message_id or message.message_uid,
@@ -385,7 +387,7 @@ class MultiAccountImapProcessor:
                 attachments_seen = 0
                 try:
                     for message in messages:
-                        message_row_id = (store.add_message(run_id, message,
+                        message_row_id = (store.find_or_add_message(run_id, message,
                                           account_alias=account.account_alias)
                                           if store and run_id is not None else None)
                         for attachment in mailbox.detect_attachments(message):

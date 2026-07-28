@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Completato `GUI-U-R05-T11`: estrazione ricorsiva degli
+  allegati nominati o espliciti anche in `multipart/alternative ->
+  multipart/mixed`, riuso dell'identita` IMAP tra scanner/processor e cicli,
+  warning operativo per mail trovate senza allegati acquisibili. Mirati
+  `132 passed`; suite e smoke `599 passed`. Solo fixture sintetiche; Gmail,
+  Google, Apps Script e RC installata invariati.
+
 - 2026-07-27 +02:00 - Distribuita la RC T10
   `CaronteSetup-0.11.0-e9e0949.exe`, Build ID
   `11924c13-22c8-4a0c-ab59-20faf2751d75`, SHA-256

@@ -83,8 +83,12 @@ class LocalPipelineRunner:
         scan = self._phase("scan", phase_times, errors, lambda: (
             self.scanner_factory().scan(dry_run=dry_run) if self.scanner_factory else ()
         ), progress)
+        process_errors_before = len(errors)
         process = self._phase("process", phase_times, errors,
                               lambda: self.processor_factory().process(dry_run=dry_run), progress)
+        messages_found = sum(getattr(item, "messages_seen", 0) for item in scan)
+        if messages_found and not process and len(errors) == process_errors_before:
+            warnings.append("acquisition: messages_found_without_detectable_attachments")
         storage_errors_before = len(errors)
         storage = self._phase("storage", phase_times, errors,
                               lambda: self.storage_factory().stage_ready(dry_run=dry_run), progress)
@@ -168,7 +172,7 @@ class LocalPipelineRunner:
             "timestamp": rome_isoformat(),
             "config": str(self.config_path) if self.config_path else None,
             "accounts": [item.account_alias for item in self.accounts if item.enabled],
-            "messages_found": sum(getattr(item, "messages_seen", 0) for item in scan),
+            "messages_found": messages_found,
             "attachments_processed": len(process),
             "attachments_staged": sum(1 for item in storage if getattr(item, "status", "") in {"staged_storage", "already_staged"}),
             "attachments_delivered": sum(1 for item in handoff if getattr(item, "status", "") in {
@@ -230,7 +234,10 @@ class LocalPipelineRunner:
             f"Durata totale: {report['duration_seconds']}s",
         ]
         for warning in report["warnings"]:
-            lines.append(f"Warning: {warning}")
+            if warning == "acquisition: messages_found_without_detectable_attachments":
+                lines.append("Warning: mail trovate ma nessun allegato acquisibile.")
+            else:
+                lines.append(f"Warning: {warning}")
         for error in report["errors"]:
             lines.append(f"Errore: {error}")
         if report["errors"]:

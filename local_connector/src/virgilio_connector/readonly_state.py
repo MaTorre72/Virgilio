@@ -144,12 +144,51 @@ class ReadonlyStateStore:
 
     def add_message(self, run_id: int, message, account_alias: str = "default") -> int:
         with self._connection() as db:
-            cursor = db.execute("""INSERT INTO messages(
-                run_id,account_alias,mailbox,uidvalidity,message_uid,message_id,subject,sender,message_date
-                ) VALUES(?,?,?,?,?,?,?,?,?)""", (run_id, account_alias, message.mailbox, message.uidvalidity,
-                message.message_uid, message.message_id or None, message.subject,
-                message.sender, message.date))
-            return int(cursor.lastrowid)
+            return self._insert_message(db, run_id, message, account_alias)
+
+    def find_or_add_message(self, run_id: int, message,
+                            account_alias: str = "default") -> int:
+        with self._connection() as db:
+            existing = self._find_message_identity(db, message, account_alias)
+            if existing is not None:
+                return int(existing["id"])
+            return self._insert_message(db, run_id, message, account_alias)
+
+    @staticmethod
+    def _insert_message(db: sqlite3.Connection, run_id: int, message,
+                        account_alias: str) -> int:
+        cursor = db.execute("""INSERT INTO messages(
+            run_id,account_alias,mailbox,uidvalidity,message_uid,message_id,subject,sender,message_date
+            ) VALUES(?,?,?,?,?,?,?,?,?)""", (run_id, account_alias, message.mailbox,
+            message.uidvalidity, message.message_uid, message.message_id or None,
+            message.subject, message.sender, message.date))
+        return int(cursor.lastrowid)
+
+    @staticmethod
+    def _find_message_identity(db: sqlite3.Connection, message, account_alias: str):
+        order = """ORDER BY
+            CASE WHEN message_state='completed' THEN 0
+                 WHEN EXISTS(SELECT 1 FROM attachments a WHERE a.message_id=messages.id) THEN 1
+                 ELSE 2 END,
+            id
+            LIMIT 1"""
+        if message.uidvalidity:
+            return db.execute(f"""SELECT id FROM messages
+                WHERE account_alias=? AND mailbox=? AND uidvalidity=? AND message_uid=?
+                {order}""", (
+                account_alias, message.mailbox, message.uidvalidity, message.message_uid,
+            )).fetchone()
+        if message.message_id:
+            return db.execute(f"""SELECT id FROM messages
+                WHERE account_alias=? AND mailbox=? AND message_id=?
+                {order}""", (
+                account_alias, message.mailbox, message.message_id,
+            )).fetchone()
+        return db.execute(f"""SELECT id FROM messages
+            WHERE account_alias=? AND mailbox=? AND uidvalidity IS NULL AND message_uid=?
+            {order}""", (
+            account_alias, message.mailbox, message.message_uid,
+        )).fetchone()
 
     def add_attachment(self, message_id: int, *, ordinal: int, original_filename: str | None,
                        sanitized_filename: str | None, declared_mime_type: str,

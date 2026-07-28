@@ -1588,3 +1588,30 @@ Distribuzione autorizzata del 2026-07-27: generata e installata la RC
 `CA87D016EA122EA8A3B5091A01FA7339839146808FE57DAEEBC427381FD14AB6`.
 Identita` e hash del payload installato, registrazione, collegamenti e
 preservazione di configurazione/dati verificati. Apps Script e reset invariati.
+
+### GUI-U-R05-T11 - MIME annidato, identita` messaggi e reporting acquisizione
+
+Stato: `DONE`. Priorita`: `P0`.
+Risultato: Caronte acquisisce gli allegati validi anche quando sono annidati in
+strutture MIME non canoniche, non accumula una nuova riga per la stessa identita`
+IMAP a ogni ciclo e rende osservabile una mail trovata senza allegati acquisibili.
+Dipendenze: `R05-T10 = DONE`; diagnosi reale del 2026-07-28 su un messaggio Apple
+Mail `multipart/alternative -> multipart/mixed` rilevato ma non acquisito.
+Componenti ammessi: parser MIME IMAP, persistenza locale dei messaggi, report
+pipeline, test sintetici e documentazione pertinente.
+Esclusioni: uso dei byte della mail reale nei test, servizi reali, Apps Script,
+modifiche alle etichette Gmail, nuova RC o reset TEST.
+Condizione di blocco: l'estrazione ricorsiva non puo` distinguere deterministicamente
+allegati nominati/candidati da normali parti corpo senza ampliare la policy file.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `R05-T11-AC1` Gli allegati annidati sono individuati senza perdere quelli MIME ordinari. | EML sintetici per struttura ordinaria e `alternative -> mixed`. | Il parser ricorsivo trova `nested.pdf` nel ramo mixed annidato; il caso ordinario `report.pdf` resta verde. | `MET` |
+| `R05-T11-AC2` Corpo testuale e parti senza nome non diventano allegati. | Test negativo con alternative testuale e parte inline priva di nome. | Il test annidato restituisce il solo PDF nominato; corpo plain/html e inline PNG senza nome sono esclusi. | `MET` |
+| `R05-T11-AC3` La stessa identita` IMAP non crea righe messaggio aggiuntive tra scanner e processor o cicli successivi. | Test SQLite su due run e fallback `Message-ID`. | Due cicli scanner/processor conservano 2 righe per 2 messaggi e 2 allegati; senza UIDVALIDITY due UID dello stesso `Message-ID` riusano la stessa riga. | `MET` |
+| `R05-T11-AC4` Una mail trovata con zero allegati produce warning e stato non silenziosamente pulito. | Test report e riepilogo umano della pipeline. | Il report conserva `messages_found=1`, `attachments_processed=0`, stato `completed_with_warnings` e riepilogo `mail trovate ma nessun allegato acquisibile`. | `MET` |
+| `R05-T11-AC5` Il correttivo non regredisce il connettore. | Test mirati, suite e smoke ufficiale. | Mirati consolidati `132 passed`; suite completa e smoke `599 passed`, `smoke_local_connector: OK`. | `MET` |
+
+Il delta e` solo locale e usa esclusivamente fixture sintetiche. Nessuna mail,
+etichetta, risorsa Google o configurazione reale e` stata modificata. L'RC
+installata `0.11.0-e9e0949` non contiene T11; nuova distribuzione non eseguita.

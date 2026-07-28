@@ -87,7 +87,7 @@ class ImapReadonlyMailbox:
             target_dir = self.quarantine_root / sanitize_filename(message.message_uid)
             target_dir.mkdir(parents=True, exist_ok=True)
             attachments = []
-            for index, part in enumerate(parsed.iter_attachments(), start=1):
+            for index, part in enumerate(_iter_attachment_parts(parsed), start=1):
                 original = part.get_filename() or f"unnamed-{index}.bin"
                 filename = f"{index:03d}-{sanitize_filename(original)}"
                 target = target_dir / filename
@@ -110,7 +110,7 @@ class ImapReadonlyMailbox:
                 ordinal=index, original_filename=part.get_filename(),
                 declared_mime_type=part.get_content_type(),
                 payload=part.get_payload(decode=True) or b"",
-            ) for index, part in enumerate(parsed.iter_attachments(), start=1))
+            ) for index, part in enumerate(_iter_attachment_parts(parsed), start=1))
         finally:
             self._close(client)
 
@@ -185,6 +185,16 @@ class ImapReadonlyMailbox:
             client.logout()
         except (imaplib.IMAP4.error, OSError):
             pass
+
+
+def _iter_attachment_parts(message):
+    """Yield named or explicitly attached MIME parts at any nesting depth."""
+
+    for part in message.iter_parts():
+        if part.get_content_disposition() == "attachment" or part.get_filename():
+            yield part
+        elif part.is_multipart():
+            yield from _iter_attachment_parts(part)
 
 
 class ImapCompletionMailbox:

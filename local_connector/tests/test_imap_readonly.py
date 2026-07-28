@@ -25,6 +25,33 @@ def eml_bytes():
     return message.as_bytes(policy=SMTP)
 
 
+def nested_mixed_alternative_eml_bytes():
+    message = EmailMessage()
+    message["From"] = "sender@example.invalid"
+    message["To"] = "test@example.invalid"
+    message["Date"] = "Tue, 28 Jul 2026 10:00:00 +0200"
+    message["Message-ID"] = "<nested@example.invalid>"
+    message["Subject"] = "Nested synthetic"
+    message.make_alternative()
+    plain = EmailMessage()
+    plain.set_content("Synthetic body")
+    mixed = EmailMessage()
+    mixed.make_mixed()
+    html = EmailMessage()
+    html.set_content("<p>Synthetic body</p>", subtype="html")
+    mixed.attach(html)
+    mixed.add_attachment(
+        b"nested-pdf", maintype="application", subtype="pdf", filename="nested.pdf"
+    )
+    unnamed_inline = EmailMessage()
+    unnamed_inline.set_content(b"pixel", maintype="image", subtype="png")
+    unnamed_inline["Content-Disposition"] = "inline"
+    mixed.attach(unnamed_inline)
+    message.attach(plain)
+    message.attach(mixed)
+    return message.as_bytes(policy=SMTP)
+
+
 class FakeImapClient:
     instances = []
     list_data = [b'(\\HasNoChildren) "/" "Virgilio/traghettate"']
@@ -33,6 +60,7 @@ class FakeImapClient:
     store_status = "OK"
     store_data = [b"label removed"]
     label_removed = False
+    payload_factory = staticmethod(eml_bytes)
 
     def __init__(self, host, port, *, timeout):
         self.calls = [("connect", host, port, timeout)]
@@ -63,7 +91,7 @@ class FakeImapClient:
             return self.store_status, self.store_data
         if command == "FETCH" and args[-1] == "(X-GM-MSGID)":
             return "OK", [b"42 (X-GM-MSGID 123456789 UID 42)"]
-        return "OK", [(b"42 (BODY[] {1})", eml_bytes()), b")"]
+        return "OK", [(b"42 (BODY[] {1})", self.payload_factory()), b")"]
 
     def list(self, directory='""', pattern='*'):
         self.calls.append(("list", directory, pattern))
@@ -89,6 +117,7 @@ class ImapReadonlyTests(unittest.TestCase):
         FakeImapClient.store_status = "OK"
         FakeImapClient.store_data = [b"label removed"]
         FakeImapClient.label_removed = False
+        FakeImapClient.payload_factory = staticmethod(eml_bytes)
         self.temp = tempfile.TemporaryDirectory()
         self.adapter = ImapReadonlyMailbox(
             ImapReadonlyConfig("imap.example.invalid", "test-user", "test-password"),
@@ -138,6 +167,18 @@ class ImapReadonlyTests(unittest.TestCase):
 
         self.assertEqual([item.uidvalidity for item in references], ["12345", "12345"])
         self.assertEqual(calls.count(("response", "UIDVALIDITY")), 1)
+
+    def test_detects_attachment_nested_inside_mixed_alternative(self):
+        FakeImapClient.payload_factory = staticmethod(nested_mixed_alternative_eml_bytes)
+
+        reference = self.adapter.list_pending()[0]
+        attachments = self.adapter.detect_attachments(reference)
+
+        self.assertEqual(
+            [(item.original_filename, item.declared_mime_type, item.payload)
+             for item in attachments],
+            [("nested.pdf", "application/pdf", b"nested-pdf")],
+        )
 
     def test_never_issues_mutating_imap_commands(self):
         reference = self.adapter.list_pending()[0]

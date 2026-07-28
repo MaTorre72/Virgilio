@@ -10,6 +10,7 @@ from virgilio_connector.imap_readonly import DetectedAttachment
 from virgilio_connector.completion import ControlledAckRunner, LocalCompletionRunner
 from virgilio_connector.multi_account import (
     LocalImapAccount,
+    MultiAccountScanResult,
     MultiAccountImapProcessor,
     MultiAccountConfigError,
     MultiAccountReadonlyScanner,
@@ -36,6 +37,7 @@ from virgilio_connector.operational_handoff import OperationalHandoffResult
 from virgilio_connector.doctor import LocalDoctor
 from virgilio_connector.traceability import load_rules
 from virgilio_connector.attachment_identity import canonical_attachment_id
+from virgilio_connector.readonly_state import ReadonlyStateStore
 
 
 def write_config(tmp_path: Path) -> Path:
@@ -430,6 +432,56 @@ def test_process_is_idempotent_for_same_attachment_id_and_sha(tmp_path):
     assert result2[0].saved is False
     with sqlite3.connect(paths.state_db) as db:
         assert db.execute("SELECT COUNT(*) FROM attachments").fetchone()[0] == 2
+
+
+def test_scanner_and_processor_reuse_message_identity_across_cycles(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    paths = LocalDataPaths(tmp_path / ".local_data")
+    environ = {
+        "VIRGILIO_IMAP_ACCOUNT_1_USERNAME": "user@example.invalid",
+        "VIRGILIO_IMAP_ACCOUNT_1_PASSWORD": "secret",
+    }
+    scanner = MultiAccountReadonlyScanner(
+        accounts, paths=paths, environ=environ,
+        mailbox_factory=lambda config, root: FakeMailbox(config, root),
+    )
+    processor = MultiAccountImapProcessor(
+        accounts, paths=paths, environ=environ,
+        mailbox_factory=lambda config, root: FakeProcessMailbox(config, root),
+        scanner=FakeScanner(ScanVerdict.CLEAN),
+    )
+
+    scanner.scan(dry_run=False)
+    processor.process(dry_run=False)
+    scanner.scan(dry_run=False)
+    processor.process(dry_run=False)
+
+    with sqlite3.connect(paths.state_db) as db:
+        assert db.execute("SELECT COUNT(*) FROM messages").fetchone()[0] == 2
+        assert db.execute("SELECT COUNT(*) FROM attachments").fetchone()[0] == 2
+
+
+def test_message_identity_falls_back_to_message_id_without_uidvalidity(tmp_path):
+    paths = LocalDataPaths(tmp_path / ".local_data")
+    store = ReadonlyStateStore(paths.state_db)
+    store.initialize()
+    first_run = store.start_run("account_1")
+    second_run = store.start_run("account_1")
+    first = MessageReference(
+        "INBOX", None, "41", "<stable@example.invalid>", "First", "a@example.invalid",
+        "2026-07-28T10:00:00+02:00",
+    )
+    second = MessageReference(
+        "INBOX", None, "84", "<stable@example.invalid>", "Second", "a@example.invalid",
+        "2026-07-28T10:00:00+02:00",
+    )
+
+    first_id = store.find_or_add_message(first_run, first, account_alias="account_1")
+    second_id = store.find_or_add_message(second_run, second, account_alias="account_1")
+
+    assert second_id == first_id
+    with sqlite3.connect(paths.state_db) as db:
+        assert db.execute("SELECT COUNT(*) FROM messages").fetchone()[0] == 1
 
 
 @pytest.mark.parametrize("damage", ["missing", "corrupt"])
@@ -1233,6 +1285,35 @@ def test_pipeline_reports_real_phase_changes_and_counts_when_known(tmp_path):
     assert progress[-1] == {
         "phase": "Elaborazione dei documenti", "found": 0, "processed": 0, "remaining": 0,
     }
+
+
+def test_pipeline_warns_when_messages_have_no_detectable_attachments(tmp_path):
+    accounts = load_multi_account_config(write_config(tmp_path))[:1]
+    scan = MultiAccountScanResult(
+        "account_1", "account.1@example.invalid", "gmail_workspace", True, "ok", 1,
+    )
+    log = []
+    runner = LocalPipelineRunner(
+        accounts, paths=LocalDataPaths(tmp_path / ".local_data"),
+        scanner_factory=lambda: FakePhase("scan", log, (scan,)),
+        processor_factory=lambda: FakePhase("process", log),
+        storage_factory=lambda: FakePhase("storage", log),
+        completion_factory=lambda: FakePhase("completion", log),
+    )
+
+    result = runner.run(dry_run=False)
+    report = json.loads(
+        (tmp_path / ".local_data" / result.report_path).read_text(encoding="utf-8")
+    )
+
+    assert result.status == "completed_with_warnings"
+    assert "acquisition: messages_found_without_detectable_attachments" in result.warnings
+    assert any(
+        "mail trovate ma nessun allegato acquisibile" in line.lower()
+        for line in result.human_summary
+    )
+    assert report["messages_found"] == 1
+    assert report["attachments_processed"] == 0
 
 
 def test_pipeline_real_report_and_error_collection(tmp_path):

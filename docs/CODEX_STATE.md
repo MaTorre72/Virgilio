@@ -3,7 +3,14 @@
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
 - Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: `GUI-U-R05-T10` `DONE`, correttivo nato dal secondo FAIL reale
+- Task corrente: `GUI-U-R05-T11` `DONE`, correttivo nato dal caso reale
+  del 2026-07-28: allegati annidati in `multipart/mixed` dentro
+  `multipart/alternative`, identita` IMAP duplicate tra cicli e report senza
+  avviso quando una mail rilevata produce zero allegati. Parser ricorsivo,
+  identita` riusata e warning operativo sono coperti da mirati `132 passed`,
+  suite e smoke `599 passed`. Nessun servizio reale e nessun byte della mail
+  reale entrano nei test.
+- `GUI-U-R05-T10` e` `DONE`, correttivo nato dal secondo FAIL reale
   del 2026-07-27: follow-up persistente di handoff/completion e rimozione Gmail
   eseguita dalla cartella destinazione tramite `X-GM-MSGID`. Nessuna nuova
   acquisizione nel follow-up e nessun `DELETE`, `MOVE` o `EXPUNGE`.
@@ -36,8 +43,9 @@
   e `TipiPratica`, ripristinabili solo da backup esplicito senza sovrascritture.
   Prove finali dopo l'allineamento live: mirati reset `13 passed`, regressione e
   smoke `589 passed`.
-- Sequenza automatica residua: nessuna. La RC contenente T10 e` installata;
-  Apps Script `40` resta invariato. Resta soltanto il collaudo umano focalizzato.
+- Sequenza automatica residua: nessuna. La RC installata contiene T10 ma non T11;
+  Apps Script `40` resta invariato. Una nuova RC richiede task esplicito, poi
+  resta il collaudo umano focalizzato sul caso MIME reale.
 - Pubblicazione Apps Script autorizzata e completata il 2026-07-27: push dei
   14 file canonici e deployment web esistente aggiornato alla versione `40`,
   senza cambiare URL. Il tab Registro e` canonico `bucoliche`; il reset usa il
@@ -61,9 +69,9 @@
   `Virgilio_Inbox`, Limbo e coda Gmail `da-traghettare` sono vuoti. Le tre
   anagrafiche sono rimaste `4/4/13`; configurazione, credenziali e machine ID
   locali sono preservati. Caronte e avvio automatico restano fermi.
-- Gate residuo: solo collaudo finale umano. Codex non puo` approvarlo.
-- La RC installata `0.11.0-e9e0949` contiene T10 ed e` valida per il nuovo
-  collaudo umano focalizzato sul completamento Gmail.
+- Gate residuo: nuova RC T11 e successivo collaudo finale umano. Codex non puo`
+  approvare il gate umano.
+- La RC installata `0.11.0-e9e0949` contiene T10 ma non il correttivo T11.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.
