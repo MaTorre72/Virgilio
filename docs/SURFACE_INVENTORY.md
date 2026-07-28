@@ -12,7 +12,6 @@ superfici sperimentali o deprecate che risultano ancora collegate al parser.
 | `python -m virgilio_connector` | `virgilio_connector/__main__.py` | `main()` | ingresso di sviluppo equivalente |
 | `Caronte.exe` senza argomenti | `build/Caronte.spec` | `build_entry.main` -> `user_app.launch_user_app` | GUI utente supportata |
 | `Caronte.exe maintenance-gui` | inoltro di `build_entry.main` al parser | `maintenance_gui.launch_gui` | GUI manutenzione supportata |
-| `Caronte.exe gui` | inoltro di `build_entry.main` al parser | stesso dispatch di `maintenance-gui` | alias deprecato, target di rimozione `CONS-G02` |
 | `Caronte.exe --build-info` / `--smoke-about-available` / `--demo...` | dispatch riservato in `build_entry.py` | build info, smoke Informazioni, demo isolata | strumenti build/test interni |
 | `CaronteSetup-*.exe` | `installer/CaronteSetup.spec` | `installer/caronte_installer.py` | installer e disinstaller supportati |
 
@@ -44,7 +43,7 @@ Tutti i parser elencati hanno un ramo esplicito in `__main__.main`.
 | `install-windows-task`, `status-windows-task`, `uninstall-windows-task` | funzioni in `windows_task` |
 | `reset-local-state` | `reset_local_state` |
 | `user-gui` | `user_app.launch_user_app` |
-| `maintenance-gui`, `gui` | `maintenance_gui.launch_gui`; `gui` e` alias deprecato |
+| `maintenance-gui` | `maintenance_gui.launch_gui` |
 
 ## Import diretti dei target supportati
 
@@ -55,9 +54,8 @@ Tutti i parser elencati hanno un ramo esplicito in `__main__.main`.
   avvio Windows e credenziali; importa inoltre le sole viste sotto `user_app`.
 - `maintenance_gui` importa i servizi applicativi `maintenance`, `credentials`,
   `operational_connection`, `registry_configuration` e `application_paths`.
-- Nessuno dei due target GUI importa `virgilio_connector.gui` o moduli `gui_*`.
-  La superficie legacy e` quindi raggiungibile solo tramite test/import espliciti,
-  non dagli ingressi supportati; il comando deprecato `gui` usa gia` la nuova
+- Nessuno dei due target GUI importa moduli della presentazione legacy rimossa
+  in `CONS-G02`; gli ingressi supportati usano soltanto `user_app` e
   `maintenance_gui`.
 - Il package root `virgilio_connector.__init__` riesporta una API ampia; la sua
   riduzione e` riservata a `CONS-C01`.

@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-G02`: rimossi i sette moduli della GUI
+  legacy, i sette test esclusivi e l'alias CLI deprecato `gui`. Gli ingressi
+  supportati `user-gui` e `maintenance-gui`, la build e l'installer conservano
+  i contratti correnti; i file rimossi restano recuperabili dalla storia Git.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-G01`: inventariati ingressi installati e di
   sviluppo, tutti i dispatch CLI, gli import diretti di GUI utente e
   Manutenzione e i contenuti di wheel, eseguibile e installer. La GUI legacy

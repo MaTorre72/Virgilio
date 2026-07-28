@@ -601,8 +601,7 @@ def test_doctor_bucoliche_cli_human_uses_doctor_summary(tmp_path, monkeypatch, c
     assert "Check config_section: OK" in output
 
 
-@pytest.mark.parametrize("command", ["maintenance-gui", "gui"])
-def test_maintenance_gui_commands_call_launcher(command, tmp_path, monkeypatch, capsys):
+def test_maintenance_gui_command_calls_launcher(tmp_path, monkeypatch):
     import virgilio_connector.__main__ as cli
 
     seen = {}
@@ -611,12 +610,11 @@ def test_maintenance_gui_commands_call_launcher(command, tmp_path, monkeypatch, 
         seen["config_path"] = config_path
         return 0
 
-    monkeypatch.setattr(sys, "argv", ["virgilio", command, "--config", str(tmp_path / "accounts.yaml")])
+    monkeypatch.setattr(sys, "argv", ["virgilio", "maintenance-gui", "--config", str(tmp_path / "accounts.yaml")])
     monkeypatch.setattr("virgilio_connector.maintenance_gui.launch_gui", fake_launch_gui)
 
     assert cli.main() == 0
     assert seen["config_path"] == tmp_path / "accounts.yaml"
-    assert ("deprecato" in capsys.readouterr().err) is (command == "gui")
 
 
 def test_pilot_cli_returns_preview_and_safe_result(tmp_path, monkeypatch, capsys):

@@ -9,9 +9,9 @@
   annotato `v1.1.0` pubblicato sul commit sorgente `68f3b90`.
 - Documentazione corrente: `README.md`, `docs/ARCHITETTURA_UNIFICATA.md` e
   `docs/RUNBOOKS.md`; classificazione in `docs/DOCUMENT_INVENTORY.md`.
-- Ultimo task: `CONS-G01` `DONE`; `docs/SURFACE_INVENTORY.md` mappa ingressi,
-  dispatch CLI, import diretti dei target e contenuti di package/build.
-- Task corrente: `CONS-G02`, rimozione della GUI legacy non raggiungibile dai
-  target supportati e dei test esclusivi.
+- Ultimo task: `CONS-G02` `DONE`; GUI legacy e test esclusivi rimossi, ingressi
+  supportati e packaging preservati.
+- Task corrente: `CONS-G03`, rimozione degli spike AI/LiteLLM/Docling e delle
+  superfici sperimentali non supportate.
 - Contesto normale per una run: `AGENTS.md`, questo file e
   `docs/NEXT_CODEX_TASKS.md`.

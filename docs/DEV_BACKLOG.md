@@ -19,17 +19,18 @@ Stato: `IN_PROGRESS`.
 | `CONS-D02` | `DONE` | architettura corrente resa canonica |
 | `CONS-D03` | `DONE` | runbook correnti brevi e verificati |
 | `CONS-D04` | `DONE` | storia 1.1 condensata; fascicoli chiusi ritirati dal percorso corrente |
-| `CONS-G01` | `TODO` | inventario di entry point, comandi, import e file di build |
+| `CONS-G01` | `DONE` | inventario di entry point, comandi, import e file di build |
+| `CONS-G02` | `DONE` | GUI legacy e test esclusivi rimossi; target supportati verdi |
 
 I task successivi restano chiusi finche` non diventano il successore immediato
 in `docs/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
 
-### Evidenze CONS-D04
+### Evidenze CONS-G02
 
 | Criterio | Evidenza ottenuta | Esito |
 | --- | --- | --- |
-| `AC1` | `CHANGELOG.md` conserva funzioni, correzioni, baseline `7e18277`, `PASS` umano e deployment `40` | `PASS` |
-| `AC2` | backlog corrente ridotto a CONS; fascicoli chiusi assenti dal tree corrente | `PASS` |
-| `AC3` | riferimenti esclusivamente storici verificati; 17 file recuperabili da `45a19f4` | `PASS` |
-| `AC4` | README, runbook e puntatori operativi non collegano i fascicoli ritirati | `PASS` |
-| `AC5` | inventario, link, diff e segreti verificati; smoke locale `600 passed` | `PASS` |
+| `AC1` | ricerca statica e inventario: nessun target supportato importava il legacy | `PASS` |
+| `AC2` | rimossi 7 moduli e 7 test esclusivi, recuperabili dai commit sorgente Git | `PASS` |
+| `AC3` | test mirati GUI utente e Manutenzione verdi | `PASS` |
+| `AC4` | alias CLI legacy rimosso; help e test packaging verdi | `PASS` |
+| `AC5` | suite locale, diff, segreti e puntatori verificati | `PASS` |
