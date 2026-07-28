@@ -1,31 +1,32 @@
 # Next Codex Task
 
-## CORRENTE - CONS-R03 - Build release 1.1.0
+## CORRENTE - CONS-R04 - Tag release v1.1.0
 
 Stato: `TODO`. Priorita`: `P0`.
 
-Risultato: installer, manifest e checksum della release ufficiale `1.1.0` sono
-prodotti dal commit candidato e superano gli smoke previsti.
+Risultato: il tag annotato `v1.1.0` identifica senza ambiguita` il commit release
+e il riferimento remoto coincide con quello locale.
 
-Dipendenze: `CONS-R02` chiuso `DONE`.
+Dipendenze: `CONS-R03` chiuso `DONE`; installer e manifest verificati dal commit
+`68f3b90`.
 
-Componenti ammessi: pipeline di build e release, artefatti locali ignorati,
-manifest, checksum e documentazione delle sole evidenze del task.
+Componenti ammessi: tag Git annotato `v1.1.0`, riferimenti remoti ed evidenze
+documentali del solo task.
 
-Esclusioni: tag, release remota, Apps Script, servizi reali, modifica o merge di
-`main` e cambiamenti funzionali.
+Esclusioni: release GitHub, Apps Script, servizi reali, modifica o merge di
+`main`, altri tag e cambiamenti funzionali.
 
-Condizione di blocco: build non riproducibile dal commit pulito o prerequisito
-locale indispensabile assente e non ripristinabile senza decisione umana.
+Condizione di blocco: tag locale o remoto preesistente, commit candidato mutato,
+upstream divergente o impossibilita` di verificare il riferimento remoto.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-R03-AC1` build parte dal commit candidato pulito e identifica `1.1.0`. | manifest e build-info |
-| `CONS-R03-AC2` installer ufficiale e` prodotto con nome e payload coerenti. | smoke build |
-| `CONS-R03-AC3` installazione controllata supera lo smoke senza perdita dati. | smoke installer |
-| `CONS-R03-AC4` SHA-256, dimensione, commit e Build ID sono registrati. | confronto artefatto/manifest |
-| `CONS-R03-AC5` tree, segreti e puntatori sono coerenti. | diff, scansione e stato Git |
+| `CONS-R04-AC1` nessun `v1.1.0` locale o remoto preesiste. | elenco tag e `ls-remote` |
+| `CONS-R04-AC2` il commit candidato coincide con branch e manifest release. | confronto SHA |
+| `CONS-R04-AC3` il tag annotato contiene identita` e riferimenti release. | `git show` del tag |
+| `CONS-R04-AC4` il push crea solo `refs/tags/v1.1.0`. | push esplicito e fetch |
+| `CONS-R04-AC5` riferimenti locale/remoto, tree e puntatori coincidono. | rev-parse, diff e stato Git |
 
 ## SUCCESSIVO
 
-`CONS-R04` - tag annotato `v1.1.0` e relativi riferimenti remoti verificati.
+`CONS-D01` - inventario documentale `KEEP/MERGE/HISTORY/REMOVE` completo.

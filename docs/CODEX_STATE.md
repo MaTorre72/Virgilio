@@ -5,8 +5,12 @@
   un commit per run; Git usa solo fetch/pull fast-forward e push non forzato.
 - Iniziativa corrente: `CONS - Pubblicazione, pulizia e consegna 1.1`, definita
   in `docs/CONSOLIDATION_PROGRAM.md`.
-- Task corrente: `CONS-R03`, build release, installer, manifest e checksum dal
-  commit candidato.
+- Task corrente: `CONS-R04`, tag annotato `v1.1.0` e relativi riferimenti remoti.
+- `CONS-R03` e` `DONE`: dal commit pulito `68f3b90` sono stati prodotti
+  `CaronteSetup-1.1.0-68f3b90.exe` e manifest; build e smoke installer `PASS`.
+  Artefatto: 30.699.894 byte, SHA-256
+  `8CD723E3DF14DFB30DE1E17D5BDDC29C81E3C87558DCBC85CA33828AE40DDE92`,
+  Build ID `8268f442-8066-45c3-a9bc-0b32f6acdc76`; OAuth incluso.
 - `CONS-R02` e` `DONE`: README e changelog presentano il percorso desktop 1.1
   collaudato, prerequisiti e limiti reali; `1.1.0` e` distinta dalle RC storiche
   `0.11.0-<commit>`. Prove: controlli documentali e smoke locale `600 passed`.

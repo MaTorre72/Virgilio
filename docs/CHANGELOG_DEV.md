@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-R03`: prodotta dal commit pulito `68f3b90`
+  la release desktop `CaronteSetup-1.1.0-68f3b90.exe` (30.699.894 byte),
+  SHA-256 `8CD723E3DF14DFB30DE1E17D5BDDC29C81E3C87558DCBC85CA33828AE40DDE92`,
+  Build ID `8268f442-8066-45c3-a9bc-0b32f6acdc76`. Manifest e OAuth inclusi;
+  build e smoke installer `PASS`, dati utente preservati.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-R01`: versione prodotto corrente `1.1.0`;
   package metadata, runtime e build leggono l'unica fonte autorevole
   `virgilio_connector._version.__version__`, con `VERSION` come marcatore

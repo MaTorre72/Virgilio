@@ -40,6 +40,18 @@ Stato: `DONE` (2026-07-28).
 | `AC4` | versioni e formulazioni | `1.1.0` e` ufficiale; `0.11.0-<commit>` e` dichiarata RC storica | `PASS` |
 | `AC5` | Git e segreti | link e diff verificati; smoke locale e scansione segreti `600 passed` | `PASS` |
 
+### CONS-R03 - Build release 1.1.0
+
+Stato: `DONE` (2026-07-28).
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `AC1` | manifest e build-info | build pulita da `68f3b90`, versione `1.1.0`, OAuth incluso | `PASS` |
+| `AC2` | smoke build | prodotto `CaronteSetup-1.1.0-68f3b90.exe`; smoke build `PASS` | `PASS` |
+| `AC3` | smoke installer | installazione, Informazioni e disinstallazione controllate `PASS`, dati preservati | `PASS` |
+| `AC4` | confronto artefatto/manifest | 30.699.894 byte; SHA-256 `8CD723E3DF14DFB30DE1E17D5BDDC29C81E3C87558DCBC85CA33828AE40DDE92`; Build ID `8268f442-8066-45c3-a9bc-0b32f6acdc76` | `PASS` |
+| `AC5` | diff, scansione e stato Git | artefatti ignorati; puntatori, diff e segreti verificati | `PASS` |
+
 ## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,
