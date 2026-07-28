@@ -156,13 +156,18 @@ sola coda. Il punto 2 e` stato completato con reset
 `reset-r05-20260727-t09-final`: backup locale/Registro/Limbo verificati, dati
 operativi e coda Gmail `da-traghettare` azzerati, anagrafiche `Clienti_Siti`,
 `Team`, `TipiPratica` invariate con conteggi `4/4/13`. Caronte e avvio automatico
-restano fermi. Resta il punto 3 e l'esito umano, mai compilato da Codex.
+restano fermi. Il punto 3 e` stato chiuso dal collaudatore il 2026-07-28.
 
 Il collaudo successivo ha confermato tutte le funzioni salvo la rimozione
 dell'etichetta Gmail di ingresso; T10 ha chiuso quel caso. T11 aggiunge il parser
 MIME annidato, la deduplicazione e il reporting osservabile ed e` installato
 nella RC identificata sopra. Resta la conferma umana focalizzata sulla mail MIME
 reale e sul passaggio `da-traghettare` -> `traghettate`.
+
+Esito umano finale del 2026-07-28: `PASS` esplicito sulla RC
+`CaronteSetup-0.11.0-7e18277.exe`. L'esito e` dichiarato dal collaudatore e
+registrato da Codex senza deduzione o approvazione autonoma. `GUI-U-R05` e
+`GATE U-H3` sono chiusi `PASS`.
 
 ## Esiti e regole di giudizio
 

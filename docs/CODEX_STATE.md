@@ -2,8 +2,9 @@
 
 - Branch attesa: `codex/v1.1-development`.
 - Modalita`: run autonoma ogni 30 minuti, seriale, un task e massimo un commit per run.
-- Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`WAITING_HUMAN_REVIEW`).
-- Task corrente: `GUI-U-R05-T11` `DONE`, correttivo nato dal caso reale
+- Iniziativa: `GUI-U-R05 - Chiusura strutturale del percorso operativo` (`PASS`
+  umano esplicito del 2026-07-28). `GUI-U` e `GATE U-H3` sono chiusi `PASS`.
+- Task corrente: nessuno. `GUI-U-R05-T11` e` `DONE`, correttivo nato dal caso reale
   del 2026-07-28: allegati annidati in `multipart/mixed` dentro
   `multipart/alternative`, identita` IMAP duplicate tra cicli e report senza
   avviso quando una mail rilevata produce zero allegati. Parser ricorsivo,
@@ -44,8 +45,7 @@
   Prove finali dopo l'allineamento live: mirati reset `13 passed`, regressione e
   smoke `589 passed`.
 - Sequenza automatica residua: nessuna. La RC contenente T11 e` installata;
-  Apps Script `40` resta invariato. Resta il collaudo umano focalizzato sul caso
-  MIME reale e sul completamento Gmail.
+  Apps Script `40` resta invariato e il collaudo umano finale e` `PASS`.
 - Pubblicazione Apps Script autorizzata e completata il 2026-07-27: push dei
   14 file canonici e deployment web esistente aggiornato alla versione `40`,
   senza cambiare URL. Il tab Registro e` canonico `bucoliche`; il reset usa il
@@ -69,7 +69,8 @@
   `Virgilio_Inbox`, Limbo e coda Gmail `da-traghettare` sono vuoti. Le tre
   anagrafiche sono rimaste `4/4/13`; configurazione, credenziali e machine ID
   locali sono preservati. Caronte e avvio automatico restano fermi.
-- Gate residuo: solo collaudo finale umano. Codex non puo` approvarlo.
+- Gate residuo: nessuno. Il collaudatore ha dichiarato `PASS` il 2026-07-28;
+  Codex ha soltanto registrato l'esito umano.
 - La RC installata `0.11.0-7e18277` contiene T10 e T11 ed e` valida per il
   collaudo focalizzato sul caso MIME reale e sul completamento Gmail.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.

@@ -641,9 +641,10 @@ tecnici o richiede configurazioni amministrative non disponibili.
 
 ### GATE U-H3 — Collaudo umano di distribuzione
 
-Stato: `DONE`.
+Stato: `PASS`.
 
-Codex non puo` dichiararlo `PASS`.
+Codex non puo` dichiararlo autonomamente `PASS`; lo stato corrente deriva
+dall'esito umano esplicito registrato il 2026-07-28.
 
 Prerequisiti verificati: `GUI-U-E3-T01` - `GUI-U-E3-T06 = DONE`; test mirati
 installer `9 passed`, suite local connector `442 passed`, smoke locale
@@ -678,9 +679,14 @@ validata nel percorso percepito dall'utente. L'EPIC GUI-U resta `BLOCKED`; non
 sono autorizzati nuovi correttivi autonomi finche` non viene definito un nuovo
 piano di recupero con scenari osservabili e criteri di accettazione umani.
 
+Esito umano finale del 2026-07-28: `PASS` esplicito sulla RC
+`CaronteSetup-0.11.0-7e18277.exe` al termine del percorso di recupero R01-R05.
+Codex registra l'esito dichiarato dal collaudatore; i due `FAIL` precedenti
+restano conservati come storico.
+
 ## GUI-U-R - Recupero prodotto e collaudo osservabile
 
-Stato iniziativa: `GUI-U = RECOVERY_ACTIVE`.
+Stato iniziativa: `GUI-U = PASS`.
 
 La classificazione `IMPLEMENTED_NOT_ACCEPTED` di `GUI-U-E3-T07` - `T14`
 significa che il codice e` implementato e i test sintetici sono superati, ma il
@@ -1288,7 +1294,7 @@ successivo collaudo reale della RC resta una decisione umana.
 
 ## GUI-U-R05 - Chiusura strutturale del percorso operativo
 
-Stato: `WAITING_HUMAN_REVIEW`.
+Stato: `PASS`.
 Origine: collaudo umano del 2026-07-26. Il percorso CLI/GAS e i suoi contratti
 restano canonici; i correttivi riguardano regressioni e composizione nella build
 Desktop, non una nuova implementazione del flusso.
@@ -1623,3 +1629,7 @@ Distribuzione autorizzata del 2026-07-28: generata e installata la RC
 Identita` e hash del payload installato, registrazione, collegamenti e
 preservazione di configurazione/database verificati. Caronte e` fermo; Apps
 Script, Gmail e stato TEST invariati.
+
+Esito umano del 2026-07-28: `PASS` esplicito sulla RC T11 identificata sopra.
+Il gate finale e il percorso di recupero prodotto sono chiusi; nessun task R05
+resta aperto.

@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - `PASS` umano esplicito sul collaudo finale della RC
+  `CaronteSetup-0.11.0-7e18277.exe`: chiusi `GUI-U-R05`, il recupero prodotto e
+  `GATE U-H3`. I precedenti `FAIL` restano conservati come storico; nessun esito
+  e` stato dedotto o approvato da Codex.
+
 - 2026-07-28 +02:00 - Distribuita la RC T11
   `CaronteSetup-0.11.0-7e18277.exe`, Build ID
   `04736b60-fca3-49d6-b09d-af3a3640bc8c`, SHA-256
