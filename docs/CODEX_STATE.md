@@ -43,17 +43,17 @@
   e `TipiPratica`, ripristinabili solo da backup esplicito senza sovrascritture.
   Prove finali dopo l'allineamento live: mirati reset `13 passed`, regressione e
   smoke `589 passed`.
-- Sequenza automatica residua: nessuna. La RC installata contiene T10 ma non T11;
-  Apps Script `40` resta invariato. Una nuova RC richiede task esplicito, poi
-  resta il collaudo umano focalizzato sul caso MIME reale.
+- Sequenza automatica residua: nessuna. La RC contenente T11 e` installata;
+  Apps Script `40` resta invariato. Resta il collaudo umano focalizzato sul caso
+  MIME reale e sul completamento Gmail.
 - Pubblicazione Apps Script autorizzata e completata il 2026-07-27: push dei
   14 file canonici e deployment web esistente aggiornato alla versione `40`,
   senza cambiare URL. Il tab Registro e` canonico `bucoliche`; il reset usa il
   fallback canonico `Virgilio_Inbox` se la proprieta` legacy e` assente.
-- RC desktop installata dal commit `e9e0949`: installer
-  `CaronteSetup-0.11.0-e9e0949.exe`, Build ID
-  `11924c13-22c8-4a0c-ab59-20faf2751d75`, SHA-256
-  `CA87D016EA122EA8A3B5091A01FA7339839146808FE57DAEEBC427381FD14AB6`;
+- RC desktop installata dal commit `7e18277`: installer
+  `CaronteSetup-0.11.0-7e18277.exe`, Build ID
+  `04736b60-fca3-49d6-b09d-af3a3640bc8c`, SHA-256
+  `BF7573ABD07B354142E1A3D7664A6D6C7FC123099EA4C524718C1A1D362CA9E6`;
   build e smoke installer `PASS`, payload installato verificato e dati preservati.
 - Topologia TEST riallineata senza nuovi asset: GAS e Local connector usano lo
   stesso Registro umano append-only `bucoliche` con le stesse 17 colonne;
@@ -69,9 +69,9 @@
   `Virgilio_Inbox`, Limbo e coda Gmail `da-traghettare` sono vuoti. Le tre
   anagrafiche sono rimaste `4/4/13`; configurazione, credenziali e machine ID
   locali sono preservati. Caronte e avvio automatico restano fermi.
-- Gate residuo: nuova RC T11 e successivo collaudo finale umano. Codex non puo`
-  approvare il gate umano.
-- La RC installata `0.11.0-e9e0949` contiene T10 ma non il correttivo T11.
+- Gate residuo: solo collaudo finale umano. Codex non puo` approvarlo.
+- La RC installata `0.11.0-7e18277` contiene T10 e T11 ed e` valida per il
+  collaudo focalizzato sul caso MIME reale e sul completamento Gmail.
 - `gui`/`gui_*` sono `ABANDONED_LEGACY`; target ammessi: `user_app` e `maintenance_gui`.
 - Le RC precedenti non sono valide per il collaudo finale; le evidenze storiche restano in
   `docs/GUI_U_BACKLOG.md`.

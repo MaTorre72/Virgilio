@@ -1,5 +1,13 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Distribuita la RC T11
+  `CaronteSetup-0.11.0-7e18277.exe`, Build ID
+  `04736b60-fca3-49d6-b09d-af3a3640bc8c`, SHA-256
+  `BF7573ABD07B354142E1A3D7664A6D6C7FC123099EA4C524718C1A1D362CA9E6`.
+  Build e smoke installer `PASS`; payload installato, registrazione, collegamenti
+  e preservazione esatta di configurazione/database verificati. Caronte lasciato
+  fermo; Apps Script, Gmail e stato TEST invariati.
+
 - 2026-07-28 +02:00 - Completato `GUI-U-R05-T11`: estrazione ricorsiva degli
   allegati nominati o espliciti anche in `multipart/alternative ->
   multipart/mixed`, riuso dell'identita` IMAP tra scanner/processor e cicli,

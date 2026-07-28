@@ -8,21 +8,21 @@ segnala esplicitamente le mail trovate senza allegati acquisibili. Prove solo
 sintetiche: mirati `132 passed`, suite e smoke `599 passed`. Nessuna operazione
 su Gmail, Google o dati reali.
 
-## SUCCESSIVO
+## SUCCESSIVO - WAITING_HUMAN_REVIEW
 
-Generare e installare una nuova RC contenente T11 solo su richiesta esplicita;
-poi ripetere il collaudo umano focalizzato sulla mail MIME reale. La RC corrente
-`0.11.0-e9e0949` non contiene T11.
+La RC `0.11.0-7e18277` contenente T11 e` stata generata, verificata e installata.
+Ripetere il collaudo umano focalizzato sulla mail MIME reale e verificare l'intero
+percorso fino a `traghettate`.
 
 ## GATE - WAITING_HUMAN_REVIEW
 
-`GUI-U-R05-T10` e` `DONE`: follow-up persistente senza nuova acquisizione e
-rimozione sicura dell'etichetta Gmail dalla cartella destinazione sono coperti
-da suite e smoke `595 passed`. Il caso reale ha completato quattro mail e la
-coda `da-traghettare` e` vuota. La RC `0.11.0-e9e0949` e` stata generata,
-verificata e installata; Apps Script resta al deployment `40`.
+`GUI-U-R05-T10` e `GUI-U-R05-T11` sono `DONE`. La RC installata
+`0.11.0-7e18277` include completamento Gmail, parser MIME annidato,
+deduplicazione dei messaggi e reporting esplicito. Apps Script resta al
+deployment `40`.
 
 ## CODA
 
-Successore unico: eseguire il collaudo umano focalizzato sul passaggio finale
-`da-traghettare` -> `traghettate`. Codex non compila o approva l'esito.
+Successore unico: eseguire il collaudo umano dalla mail MIME reale fino al
+passaggio finale `da-traghettare` -> `traghettate`. Codex non compila o approva
+l'esito.

@@ -1615,3 +1615,11 @@ allegati nominati/candidati da normali parti corpo senza ampliare la policy file
 Il delta e` solo locale e usa esclusivamente fixture sintetiche. Nessuna mail,
 etichetta, risorsa Google o configurazione reale e` stata modificata. L'RC
 installata `0.11.0-e9e0949` non contiene T11; nuova distribuzione non eseguita.
+
+Distribuzione autorizzata del 2026-07-28: generata e installata la RC
+`CaronteSetup-0.11.0-7e18277.exe` dal commit pulito T11. Build e smoke installer
+`PASS`; Build ID `04736b60-fca3-49d6-b09d-af3a3640bc8c`, SHA-256 setup
+`BF7573ABD07B354142E1A3D7664A6D6C7FC123099EA4C524718C1A1D362CA9E6`.
+Identita` e hash del payload installato, registrazione, collegamenti e
+preservazione di configurazione/database verificati. Caronte e` fermo; Apps
+Script, Gmail e stato TEST invariati.

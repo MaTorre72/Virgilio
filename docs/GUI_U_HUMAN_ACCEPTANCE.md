@@ -146,10 +146,10 @@ vengono ripetuti:
 3. eseguire il collaudo reale della RC identificata sul percorso completo e
    registrare esplicitamente l'esito umano.
 
-Stato al 2026-07-27: il correttivo e` pubblicato come versione Apps Script `40`.
-La RC desktop installata e` `CaronteSetup-0.11.0-e9e0949.exe`, Build ID
-`11924c13-22c8-4a0c-ab59-20faf2751d75`, SHA-256
-`CA87D016EA122EA8A3B5091A01FA7339839146808FE57DAEEBC427381FD14AB6`.
+Stato al 2026-07-28: il correttivo e` pubblicato come versione Apps Script `40`.
+La RC desktop installata e` `CaronteSetup-0.11.0-7e18277.exe`, Build ID
+`04736b60-fca3-49d6-b09d-af3a3640bc8c`, SHA-256
+`BF7573ABD07B354142E1A3D7664A6D6C7FC123099EA4C524718C1A1D362CA9E6`.
 GAS e Local connector scrivono nello stesso `bucoliche` umano a 17 colonne; i
 tre `Bucoliche_*` non sono registri cloud paralleli e `Virgilio_Inbox` e` la
 sola coda. Il punto 2 e` stato completato con reset
@@ -159,12 +159,10 @@ operativi e coda Gmail `da-traghettare` azzerati, anagrafiche `Clienti_Siti`,
 restano fermi. Resta il punto 3 e l'esito umano, mai compilato da Codex.
 
 Il collaudo successivo ha confermato tutte le funzioni salvo la rimozione
-dell'etichetta Gmail di ingresso. Il correttivo `GUI-U-R05-T10` ha chiuso il caso
-reale ed e` installato nella RC `CaronteSetup-0.11.0-e9e0949.exe`, Build ID
-`11924c13-22c8-4a0c-ab59-20faf2751d75`, SHA-256
-`CA87D016EA122EA8A3B5091A01FA7339839146808FE57DAEEBC427381FD14AB6`.
-Resta la conferma umana focalizzata sul passaggio
-`da-traghettare` -> `traghettate`.
+dell'etichetta Gmail di ingresso; T10 ha chiuso quel caso. T11 aggiunge il parser
+MIME annidato, la deduplicazione e il reporting osservabile ed e` installato
+nella RC identificata sopra. Resta la conferma umana focalizzata sulla mail MIME
+reale e sul passaggio `da-traghettare` -> `traghettate`.
 
 ## Esiti e regole di giudizio
 
