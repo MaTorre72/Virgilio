@@ -23,16 +23,17 @@ Stato: `IN_PROGRESS`.
 | `CONS-G02` | `DONE` | GUI legacy e test esclusivi rimossi; target supportati verdi |
 | `CONS-G03` | `DONE` | spike AI/LiteLLM/Docling e superfici esclusive rimossi |
 | `CONS-G04` | `DONE` | 4 asset/script storici ritirati; mirati `26 passed`, smoke `533 passed` |
+| `CONS-C01` | `DONE` | root API limitata a `__version__`; mirati `17 passed`, smoke `535 passed` |
 
 I task successivi restano chiusi finche` non diventano il successore immediato
 in `docs/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
 
-### Evidenze CONS-G04
+### Evidenze CONS-C01
 
 | Criterio | Evidenza ottenuta | Esito |
 | --- | --- | --- |
-| `AC1` | inventario e ricerca statica: 2 probe standalone e 2 immagini 1.0 senza riferimenti correnti | `PASS` |
-| `AC2` | `git cat-file` conferma recuperabilita` `4/4` dal commit precedente | `PASS` |
-| `AC3` | riferimenti correnti `0`; test packaging/build/CLI mirati `26 passed` | `PASS` |
-| `AC4` | immagini correnti e strumenti `scripts/dev` preservati; contratti mirati verdi | `PASS` |
-| `AC5` | smoke locale `533 passed`; diff, segreti e puntatori verificati | `PASS` |
+| `AC1` | inventario motivato: solo `__version__` e` API stabile del root | `PASS` |
+| `AC2` | rimosse le riesportazioni operative; nessun import diretto corrente dipende da esse | `PASS` |
+| `AC3` | root, metadata e build puntano a `_version.__version__`; test versione verdi | `PASS` |
+| `AC4` | moduli `__main__`, `build_entry`, `maintenance_gui` e `user_app` importabili | `PASS` |
+| `AC5` | test mirati `17 passed`, smoke locale `535 passed`; diff, segreti e puntatori verificati | `PASS` |

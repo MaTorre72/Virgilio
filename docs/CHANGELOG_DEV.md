@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-C01`: il package root espone soltanto
+  `__version__`, dalla stessa fonte autorevole usata da metadata e build. Le
+  riesportazioni operative accidentali sono rimosse; moduli di ingresso e
+  import supportati restano invariati e coperti da contratto. Test mirati
+  `17 passed`; smoke locale `535 passed`.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-G04`: ritirati due probe standalone storici
   non raggiungibili e due copie congelate della grafica 1.0. Gli asset correnti,
   gli script di sviluppo supportati, build, test, runbook e contratti CLI/import

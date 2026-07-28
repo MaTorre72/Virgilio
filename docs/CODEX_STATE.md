@@ -9,9 +9,9 @@
   annotato `v1.1.0` pubblicato sul commit sorgente `68f3b90`.
 - Documentazione corrente: `README.md`, `docs/ARCHITETTURA_UNIFICATA.md` e
   `docs/RUNBOOKS.md`; classificazione in `docs/DOCUMENT_INVENTORY.md`.
-- Ultimo task: `CONS-G04` `DONE`; due probe standalone e due copie grafiche 1.0
-  non raggiungibili rimossi, asset correnti e strumenti supportati preservati.
-- Task corrente: `CONS-C01`, riduzione delle esportazioni del package root e
-  fonte versione unica.
+- Ultimo task: `CONS-C01` `DONE`; il package root espone intenzionalmente solo
+  `__version__`, dalla fonte autorevole gia` usata da metadata e build.
+- Task corrente: `CONS-C02`, classificazione dei comandi CLI supportati, interni
+  o rimossi.
 - Contesto normale per una run: `AGENTS.md`, questo file e
   `docs/NEXT_CODEX_TASKS.md`.

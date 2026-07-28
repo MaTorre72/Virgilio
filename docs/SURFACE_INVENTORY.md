@@ -54,8 +54,11 @@ Tutti i parser elencati hanno un ramo esplicito in `__main__.main`.
 - Nessuno dei due target GUI importa moduli della presentazione legacy rimossa
   in `CONS-G02`; gli ingressi supportati usano soltanto `user_app` e
   `maintenance_gui`.
-- Il package root `virgilio_connector.__init__` riesporta una API ampia; la sua
-  riduzione e` riservata a `CONS-C01`.
+- Il package root `virgilio_connector.__init__` espone intenzionalmente soltanto
+  `__version__`: e` metadata stabile del prodotto e proviene dalla fonte unica
+  `_version.py`. Classi, funzioni e costanti operative si importano dai moduli
+  che le possiedono; gli ingressi supportati restano moduli importabili e non
+  sono riesportazioni del root.
 
 ## Contenuto di package e build
 
