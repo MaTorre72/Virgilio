@@ -9,10 +9,10 @@
   annotato `v1.1.0` pubblicato sul commit sorgente `68f3b90`.
 - Documentazione corrente: `README.md`, `docs/ARCHITETTURA_UNIFICATA.md` e
   `docs/RUNBOOKS.md`; classificazione in `docs/DOCUMENT_INVENTORY.md`.
-- Ultimo task: `CONS-C04` `DONE`; dal modulo operativo `multi_account` e` stato
-  estratto il parser YAML locale coeso, senza cicli e senza cambiare API, errori
-  o comportamento osservabile.
-- Task corrente: `CONS-C05`, organizzazione dei test per unita`, contratti,
-  integrazione offline e smoke.
+- Ultimo task: `CONS-C05` `DONE`; i 546 test sono inventariati una sola volta
+  come unita`, contratti o integrazione offline, eseguibili separatamente; lo
+  smoke resta il gate completo senza duplicazioni.
+- Task corrente: `CONS-H01`, guida di onboarding e prova ripetibile da clone
+  pulito.
 - Contesto normale per una run: `AGENTS.md`, questo file e
   `docs/NEXT_CODEX_TASKS.md`.

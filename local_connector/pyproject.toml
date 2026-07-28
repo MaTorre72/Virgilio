@@ -35,3 +35,8 @@ version = { attr = "virgilio_connector._version.__version__" }
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --basetemp=.pytest-tmp"
+markers = [
+  "unit: comportamento isolato di un singolo componente",
+  "contract: confini pubblici, formati, superfici e compatibilita`",
+  "integration_offline: flussi tra componenti con soli fake e risorse locali",
+]

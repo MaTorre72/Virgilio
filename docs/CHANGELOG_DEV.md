@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-C05`: i 546 test locali sono classificati
+  una sola volta come unita` (171), contratti (99) o integrazione offline (276).
+  I livelli hanno ingressi separati e vincolanti; lo smoke continua a eseguire
+  l'intera suite una sola volta, senza servizi reali.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-C03`: `__main__` e` ridotto al bootstrap;
   `cli.py` contiene costruzione isolata del parser, dispatch e implementazioni
   esistenti. Help, errori, codici di uscita e ingressi conservati; test area CLI

@@ -1,42 +1,42 @@
 # Next Codex Task
 
-## CORRENTE - CONS-C05 - Test organizzati per livello
+## CORRENTE - CONS-H01 - Onboarding da clone pulito
 
 Stato: `TODO`. Priorita`: `P1`.
 
-Risultato: la suite distingue in modo ripetibile test di unita`, contratti,
-integrazione offline e smoke, preservando copertura e comportamento.
+Risultato: una persona parte da un clone pulito, prepara l'ambiente locale e
+raggiunge uno smoke verde seguendo un solo percorso breve e verificato.
 
-Dipendenze: `CONS-C04` chiuso `DONE`; primo confine operativo estratto e
-caratterizzato.
+Dipendenze: `CONS-C05` chiuso `DONE`; livelli e gate completo della suite sono
+espliciti e ripetibili.
 
-Componenti ammessi: configurazione e organizzazione dei test locali, marcatori,
-script smoke e relativi puntatori.
+Componenti ammessi: guida di onboarding corrente, script di bootstrap/smoke,
+configurazione di sviluppo e relativi puntatori.
 
-Esclusioni: refactor applicativi, nuovi comportamenti, servizi reali, deploy,
-modifica o merge di `main`.
+Esclusioni: refactor applicativi, servizi reali, credenziali, deploy, modifica o
+merge di `main`.
 
-Condizione di blocco: i livelli non sono separabili senza perdere test o
-duplicare esecuzioni, oppure upstream diverge.
+Condizione di blocco: il percorso non e` riproducibile in un ambiente isolato
+senza credenziali o dipendenze non dichiarate, oppure upstream diverge.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-C05-AC1` ogni livello ha confini e criteri espliciti. | inventario suite |
-| `CONS-C05-AC2` unita` e contratti sono eseguibili separatamente. | comandi mirati |
-| `CONS-C05-AC3` integrazione offline non usa servizi reali. | esecuzione isolata |
-| `CONS-C05-AC4` lo smoke resta ingresso completo e ripetibile. | smoke locale |
-| `CONS-C05-AC5` copertura, diff, segreti e puntatori sono verificati. | confronto raccolta e controlli Git |
+| `CONS-H01-AC1` prerequisiti e percorso unico sono brevi ed espliciti. | revisione guida |
+| `CONS-H01-AC2` bootstrap installa tutte e sole le dipendenze dichiarate. | ambiente isolato |
+| `CONS-H01-AC3` clone pulito raggiunge help e test senza dati reali. | prova fresh clone |
+| `CONS-H01-AC4` lo smoke completo passa nell'ambiente appena creato. | smoke fresh clone |
+| `CONS-H01-AC5` diff, segreti e puntatori sono verificati. | controlli Git |
 
 ## SUCCESSIVO
 
-`CONS-H01` - guida di onboarding e prova da clone pulito ripetibile.
+`CONS-H02` - audit finale di struttura, documenti, segreti, build e release.
 
-## EVIDENZA CONS-C04
+## EVIDENZA CONS-C05
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | --- | --- | --- | --- |
-| `CONS-C04-AC1` | inventario circoscritto | `multi_account.py` primo operativo non GUI: 766 righe; parser YAML identificato come responsabilita` sintattica autonoma | `PASS` |
-| `CONS-C04-AC2` | ispezione import e struttura | `local_config_yaml.py` non importa moduli operativi; dipendenza unidirezionale da `multi_account` | `PASS` |
-| `CONS-C04-AC3` | test di caratterizzazione | errori pubblici e messaggi caratterizzati; test area `80 passed` | `PASS` |
-| `CONS-C04-AC4` | test mirati offline | configurazione, multi-account e migrazioni locali `80 passed` senza servizi reali | `PASS` |
-| `CONS-C04-AC5` | test a scalare e controlli Git | smoke locale `546 passed`; diff, segreti e puntatori verificati | `PASS` |
+| `CONS-C05-AC1` | inventario suite | inventario vincolante per modulo; nuovi, duplicati o riferimenti obsoleti bloccano la raccolta | `PASS` |
+| `CONS-C05-AC2` | comandi mirati | `unit`: 171 passed; `contract`: 99 passed, con script unico parametrico | `PASS` |
+| `CONS-C05-AC3` | esecuzione isolata | `integration_offline`: 276 passed con fake, fixture sintetiche e risorse locali | `PASS` |
+| `CONS-C05-AC4` | smoke locale | gate completo esegue tutti i 546 test una sola volta e conserva i controlli esistenti | `PASS` |
+| `CONS-C05-AC5` | confronto raccolta e controlli Git | 171 + 99 + 276 = 546; diff, segreti e puntatori verificati | `PASS` |

@@ -1,7 +1,14 @@
 $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
-$VenvPython = Join-Path $Root "local_connector\.venv\Scripts\python.exe"
-$Python = if (Test-Path -LiteralPath $VenvPython) { $VenvPython } else { "python" }
+$RootVenvPython = Join-Path $Root ".venv\Scripts\python.exe"
+$PackageVenvPython = Join-Path $Root "local_connector\.venv\Scripts\python.exe"
+$Python = if (Test-Path -LiteralPath $RootVenvPython) {
+    $RootVenvPython
+} elseif (Test-Path -LiteralPath $PackageVenvPython) {
+    $PackageVenvPython
+} else {
+    "python"
+}
 
 Push-Location $Root
 try {
