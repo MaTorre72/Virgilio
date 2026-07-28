@@ -345,7 +345,16 @@ def test_user_gui_help_and_dispatch(monkeypatch, capsys, tmp_path):
     with pytest.raises(SystemExit) as exc_info:
         cli.main()
     assert exc_info.value.code == 0
-    assert "user-gui" in capsys.readouterr().out
+    help_text = capsys.readouterr().out
+    assert "user-gui" in help_text
+    assert all(command not in help_text for command in (
+        "litellm-gateway-dry-run",
+        "classify-manifest-dry-run",
+        "review-classification-dry-run",
+        "classification-feedback-dry-run",
+        "compare-parser-fixtures",
+        "extract-local-fixtures",
+    ))
 
     seen = {}
 

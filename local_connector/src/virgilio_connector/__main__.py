@@ -14,13 +14,6 @@ from time import monotonic, sleep
 from .caronte_http import CaronteDryRunClientError, CaronteDryRunHttpClient
 from .bucoliche import (BucolicheAppendOnlyAdapter, BucolicheError,
                         GoogleOAuthLogin, load_bucoliche_config)
-from .classification import (AttachmentClassificationProposer,
-                             classification_feedback_human_summary,
-                             ClassificationProposalError,
-                             classification_human_summary,
-                             classification_review_human_summary,
-                             record_classification_feedback,
-                             review_classification_proposal)
 from .completion import CompletionError, ControlledAckRunner, LocalCompletionRunner
 from .staging_transport import (
     LocalDriveStagingConfig,
@@ -56,9 +49,6 @@ from .application.windows_credentials import create_account_credential_service
 from .local_paths import LocalDataPaths
 from .reset_local_state import ResetLocalStateError, reset_local_state
 from .operation_lock import LocalOperationBusyError
-from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
-                              LiteLLMGatewayConfig, LiteLLMGatewayError,
-                              LiteLLMRequest)
 from .readonly_state import ReadonlyStateStore
 from .multi_account import (
     LocalStorageConfig,
@@ -69,9 +59,6 @@ from .multi_account import (
     load_storage_config,
     load_multi_account_config,
 )
-from .parser_spike import (compare_parser_fixtures, extract_local_fixtures,
-                           extracted_fixtures_human_summary,
-                           parser_spike_human_summary)
 from .pipeline import LocalPipelineRunner
 from .operational_handoff import OperationalHandoffRunner
 from .pilot_readiness import (BucolicheDoctor, BucolicheSheetSetup, PilotCheck,
@@ -483,55 +470,6 @@ def main() -> int:
     da_archiviare.add_argument("--drive-file-id", required=True)
     da_archiviare.add_argument("--manifest-file-id", required=True)
     da_archiviare.add_argument("--form-url", default="")
-    litellm_gateway = commands.add_parser("litellm-gateway-dry-run")
-    litellm_gateway.add_argument("--prompt-file", type=Path, required=True)
-    litellm_gateway.add_argument("--system-prompt-file", type=Path)
-    litellm_gateway.add_argument("--provider", default=os.environ.get("VIRGILIO_LITELLM_PROVIDER", "mock"))
-    litellm_gateway.add_argument("--model", default=os.environ.get("VIRGILIO_LITELLM_MODEL", "gpt-4o-mini"))
-    litellm_gateway.add_argument("--budget-tokens", type=int,
-                                 default=int(os.environ.get("VIRGILIO_LITELLM_BUDGET_TOKENS", "2000")))
-    litellm_gateway.add_argument("--max-output-tokens", type=int,
-                                 default=int(os.environ.get("VIRGILIO_LITELLM_MAX_OUTPUT_TOKENS", "400")))
-    litellm_gateway.add_argument("--max-prompt-chars", type=int,
-                                 default=int(os.environ.get("VIRGILIO_LITELLM_MAX_PROMPT_CHARS", "12000")))
-    litellm_gateway.add_argument("--max-cost-eur", type=float,
-                                 default=float(os.environ.get("VIRGILIO_LITELLM_MAX_COST_EUR", "0.5")))
-    litellm_gateway.add_argument("--cost-per-1k-eur", type=float,
-                                 default=float(os.environ.get("VIRGILIO_LITELLM_COST_PER_1K_EUR", "0.002")))
-    classify_manifest = commands.add_parser("classify-manifest-dry-run")
-    classify_manifest.add_argument("--manifest", type=Path, required=True)
-    classify_manifest.add_argument("--provider", default=os.environ.get("VIRGILIO_LITELLM_PROVIDER", "mock"))
-    classify_manifest.add_argument("--model", default=os.environ.get("VIRGILIO_LITELLM_MODEL", "gpt-4o-mini"))
-    classify_manifest.add_argument("--budget-tokens", type=int,
-                                   default=int(os.environ.get("VIRGILIO_LITELLM_BUDGET_TOKENS", "2000")))
-    classify_manifest.add_argument("--max-output-tokens", type=int,
-                                   default=int(os.environ.get("VIRGILIO_LITELLM_MAX_OUTPUT_TOKENS", "400")))
-    classify_manifest.add_argument("--max-prompt-chars", type=int,
-                                   default=int(os.environ.get("VIRGILIO_LITELLM_MAX_PROMPT_CHARS", "12000")))
-    classify_manifest.add_argument("--max-cost-eur", type=float,
-                                   default=float(os.environ.get("VIRGILIO_LITELLM_MAX_COST_EUR", "0.5")))
-    classify_manifest.add_argument("--cost-per-1k-eur", type=float,
-                                   default=float(os.environ.get("VIRGILIO_LITELLM_COST_PER_1K_EUR", "0.002")))
-    classify_manifest.add_argument("--human", action="store_true")
-    review_classification = commands.add_parser("review-classification-dry-run")
-    review_classification.add_argument("--proposal-file", type=Path, required=True)
-    review_classification.add_argument("--decision", choices=("approve", "reject"), required=True)
-    review_classification.add_argument("--reviewer", required=True)
-    review_classification.add_argument("--notes", default="")
-    review_classification.add_argument("--human", action="store_true")
-    classification_feedback = commands.add_parser("classification-feedback-dry-run")
-    classification_feedback.add_argument("--review-file", type=Path, required=True)
-    classification_feedback.add_argument("--final-classification", required=True)
-    classification_feedback.add_argument("--notes", default="")
-    classification_feedback.add_argument("--human", action="store_true")
-    parser_spike = commands.add_parser("compare-parser-fixtures")
-    parser_spike.add_argument("--catalog", type=Path, required=True)
-    parser_spike.add_argument("--snapshots-dir", type=Path, required=True)
-    parser_spike.add_argument("--human", action="store_true")
-    extract_parser = commands.add_parser("extract-local-fixtures")
-    extract_parser.add_argument("--catalog", type=Path, required=True)
-    extract_parser.add_argument("--source-root", type=Path)
-    extract_parser.add_argument("--human", action="store_true")
     scanner = commands.add_parser("scan-imap-accounts")
     scanner.add_argument("--config", type=Path, required=True)
     scanner.add_argument("--dry-run", action="store_true")
@@ -731,97 +669,6 @@ def main() -> int:
             _record_da_archiviare_intake_event(local_root, payload, result=result)
         print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.ok else 1
-    if args.command == "litellm-gateway-dry-run":
-        try:
-            prompt = args.prompt_file.read_text(encoding="utf-8")
-            system_prompt = (args.system_prompt_file.read_text(encoding="utf-8")
-                             if args.system_prompt_file else "")
-            prompt_tokens = max(1, (len(prompt.strip()) + 3) // 4) if prompt.strip() else 0
-            prompt_tokens += max(1, (len(system_prompt.strip()) + 3) // 4) if system_prompt.strip() else 0
-            max_output_tokens = max(1, min(args.max_output_tokens, args.budget_tokens - prompt_tokens))
-            result = LiteLLMGateway(LiteLLMGatewayConfig(
-                provider=args.provider,
-                model=args.model,
-                max_total_tokens=args.budget_tokens,
-                max_output_tokens=max_output_tokens,
-                max_prompt_chars=args.max_prompt_chars,
-                max_cost_eur=args.max_cost_eur,
-                estimated_cost_per_1k_tokens_eur=args.cost_per_1k_eur,
-            )).run(LiteLLMRequest(prompt=prompt, system_prompt=system_prompt))
-        except (OSError, ValueError, LiteLLMGatewayError, LiteLLMBudgetError) as exc:
-            parser.exit(2, f"error: {exc}\n")
-        print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
-        return 0
-    if args.command == "classify-manifest-dry-run":
-        try:
-            prompt_chars = len(args.manifest.read_text(encoding="utf-8").strip())
-            prompt_tokens = max(1, (prompt_chars + 3) // 4) if prompt_chars else 0
-            max_output_tokens = max(1, min(args.max_output_tokens, args.budget_tokens - prompt_tokens))
-            result = AttachmentClassificationProposer(LiteLLMGatewayConfig(
-                provider=args.provider,
-                model=args.model,
-                max_total_tokens=args.budget_tokens,
-                max_output_tokens=max_output_tokens,
-                max_prompt_chars=args.max_prompt_chars,
-                max_cost_eur=args.max_cost_eur,
-                estimated_cost_per_1k_tokens_eur=args.cost_per_1k_eur,
-            )).propose_from_manifest(args.manifest)
-        except (ClassificationProposalError, ValueError, LiteLLMGatewayError, LiteLLMBudgetError) as exc:
-            parser.exit(2, f"error: {exc}\n")
-        if args.human:
-            _print_human(classification_human_summary(result))
-        else:
-            print(json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":")))
-        return 0
-    if args.command == "review-classification-dry-run":
-        try:
-            result = review_classification_proposal(
-                args.proposal_file,
-                decision=args.decision,
-                reviewer=args.reviewer,
-                review_notes=args.notes,
-            )
-        except ClassificationProposalError as exc:
-            parser.exit(2, f"error: {exc}\n")
-        if args.human:
-            _print_human(classification_review_human_summary(result))
-        else:
-            print(json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":")))
-        return 0
-    if args.command == "classification-feedback-dry-run":
-        try:
-            result = record_classification_feedback(
-                args.review_file,
-                final_classification=args.final_classification,
-                feedback_notes=args.notes,
-            )
-        except ClassificationProposalError as exc:
-            parser.exit(2, f"error: {exc}\n")
-        if args.human:
-            _print_human(classification_feedback_human_summary(result))
-        else:
-            print(json.dumps(result.to_dict(), ensure_ascii=False, separators=(",", ":")))
-        return 0
-    if args.command == "compare-parser-fixtures":
-        try:
-            report = compare_parser_fixtures(args.catalog, args.snapshots_dir)
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
-            parser.exit(2, f"error: {exc}\n")
-        if args.human:
-            _print_human(parser_spike_human_summary(report))
-        else:
-            print(json.dumps(report, ensure_ascii=False, separators=(",", ":")))
-        return 0
-    if args.command == "extract-local-fixtures":
-        try:
-            report = extract_local_fixtures(args.catalog, args.source_root)
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
-            parser.exit(2, f"error: {exc}\n")
-        if args.human:
-            _print_human(extracted_fixtures_human_summary(report))
-        else:
-            print(json.dumps(report, ensure_ascii=False, separators=(",", ":")))
-        return 0
     if args.command == "scan-imap-accounts":
         try:
             accounts = ConfigurationService.for_file(args.config).load().accounts

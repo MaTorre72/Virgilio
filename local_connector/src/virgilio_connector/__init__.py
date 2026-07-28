@@ -65,16 +65,6 @@ from .caronte_http import (
     CaronteDryRunHttpClient,
     CaronteDryRunUrlNotConfigured,
 )
-from .classification import (AttachmentClassificationProposer,
-                             ClassificationFeedback,
-                             ClassificationProposal,
-                             ClassificationProposalError,
-                             ClassificationReview,
-                             classification_feedback_human_summary,
-                             classification_human_summary,
-                             classification_review_human_summary,
-                             record_classification_feedback,
-                             review_classification_proposal)
 from .staging_transport import (
     LocalDriveStagingConfig,
     LocalDriveStagingTransport,
@@ -126,10 +116,6 @@ from .storage_adapter import (
 )
 from .pipeline import LocalPipelineRunner, PipelineResult
 from .doctor import DoctorResult, LocalDoctor
-from .litellm_gateway import (LiteLLMBudgetError, LiteLLMGateway,
-                              LiteLLMGatewayConfig, LiteLLMGatewayError,
-                              LiteLLMRequest, LiteLLMResponse,
-                              MockLiteLLMProvider)
 
 __all__ = [
     "AckDecision",
@@ -142,10 +128,6 @@ __all__ = [
     "CaronteDryRunHttpClient",
     "CaronteDryRunUrlNotConfigured",
     "CaronteResponse",
-    "ClassificationProposal",
-    "ClassificationProposalError",
-    "ClassificationReview",
-    "ClassificationFeedback",
     "CommandAttemptRecord",
     "CommandAttemptStatus",
     "ContractValidationError",
@@ -178,7 +160,6 @@ __all__ = [
     "DaArchiviareStatusHttpClient",
     "DA_ARCHIVIARE_STATUS_ACTION",
     "build_da_archiviare_intake_payload",
-    "AttachmentClassificationProposer",
     "LocalImapAccount",
     "LocalStorageConfig",
     "MultiAccountAttachmentResult",
@@ -200,13 +181,6 @@ __all__ = [
     "PipelineResult",
     "DoctorResult",
     "LocalDoctor",
-    "LiteLLMBudgetError",
-    "LiteLLMGateway",
-    "LiteLLMGatewayConfig",
-    "LiteLLMGatewayError",
-    "LiteLLMRequest",
-    "LiteLLMResponse",
-    "MockLiteLLMProvider",
     "LocalScanResult",
     "LocalScanner",
     "MessageStatus",
@@ -235,13 +209,8 @@ __all__ = [
     "StagingTransportError",
     "UnsupportedSchemaError",
     "command_from_json",
-    "classification_human_summary",
-    "classification_feedback_human_summary",
-    "classification_review_human_summary",
     "command_to_json",
     "evaluate_ack",
-    "review_classification_proposal",
-    "record_classification_feedback",
     "response_from_json",
     "response_to_json",
 ]

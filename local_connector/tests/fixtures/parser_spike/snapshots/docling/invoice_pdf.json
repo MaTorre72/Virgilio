@@ -1,8 +1,0 @@
-{
-  "fixture_id": "invoice_pdf",
-  "text": "Invoice 42 Customer ACME Total 120.00",
-  "tables": [
-    [["Item", "Qty", "Price"], ["Widget", "2", "60.00"]]
-  ],
-  "warnings": []
-}

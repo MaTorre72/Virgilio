@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-G03`: rimossi i tre moduli sperimentali di
+  classificazione AI/LiteLLM e confronto parser, i sei comandi CLI collegati,
+  tre test, cinque fixture e il report Docling esclusivi. GUI, pipeline,
+  packaging e CLI supportate conservano i contratti; i file restano
+  recuperabili dal commit precedente `2481617`.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-G02`: rimossi i sette moduli della GUI
   legacy, i sette test esclusivi e l'alias CLI deprecato `gui`. Gli ingressi
   supportati `user-gui` e `maintenance-gui`, la build e l'installer conservano

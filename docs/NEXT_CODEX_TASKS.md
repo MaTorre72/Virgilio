@@ -1,33 +1,32 @@
 # Next Codex Task
 
-## CORRENTE - CONS-G03 - Rimozione spike sperimentali
+## CORRENTE - CONS-G04 - Pulizia asset e script storici
 
 Stato: `TODO`. Priorita`: `P1`.
 
-Risultato: spike AI, LiteLLM, Docling e superfici sperimentali non supportate
-sono rimossi senza modificare i percorsi documentali e operativi supportati.
+Risultato: asset e script storici non necessari sono rimossi oppure collocati
+nelle release senza alterare build, test e operazioni supportate.
 
-Dipendenze: `CONS-G02` chiuso `DONE`; inventario delle superfici disponibile in
+Dipendenze: `CONS-G03` chiuso `DONE`; inventario delle superfici disponibile in
 `docs/SURFACE_INVENTORY.md`.
 
-Componenti ammessi: spike AI/LiteLLM/Docling, parser e dispatch sperimentali,
-test e riferimenti esclusivi, inventario e test CLI/import mirati.
+Componenti ammessi: asset generati o storici, script non raggiungibili, relativi
+riferimenti, inventario e test di packaging/link mirati.
 
-Esclusioni: nuova funzionalita`, sostituzioni AI, refactor dei percorsi
-supportati, servizi reali, build/deploy reale, modifica o merge di `main`.
+Esclusioni: codice operativo raggiungibile, artefatti ufficiali 1.1, nuova
+funzionalita`, servizi reali, deploy, modifica o merge di `main`.
 
-Condizione di blocco: un percorso supportato dipende da una superficie
-sperimentale, un test esclusivo copre un contratto corrente non trasferibile, o
-upstream divergente.
+Condizione di blocco: un target candidato e` richiesto da build, test, runbook o
+operazioni supportate, non e` recuperabile da Git/release, o upstream diverge.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-G03-AC1` nessun target supportato dipende dagli spike. | inventario G01 e ricerca statica |
-| `CONS-G03-AC2` moduli, comandi e test esclusivi sono rimossi e recuperabili da Git. | elenco target, storia e ricerca riferimenti |
-| `CONS-G03-AC3` CLI e percorsi supportati conservano import e contratti. | test CLI/import mirati |
-| `CONS-G03-AC4` dipendenze e packaging non includono AI/LiteLLM/Docling. | metadata, build test e ricerca statica |
-| `CONS-G03-AC5` suite richiesta, diff, segreti e puntatori sono verificati. | test a scalare e controlli Git |
+| `CONS-G04-AC1` ogni target rimosso e` storico, non raggiungibile e inventariato. | ricerca statica e inventario G01 |
+| `CONS-G04-AC2` ogni rimozione e` recuperabile da Git o dalla release ufficiale. | storia e riferimenti release |
+| `CONS-G04-AC3` build, test e runbook non conservano riferimenti rotti. | test packaging e controllo link |
+| `CONS-G04-AC4` ingressi e operazioni supportati conservano i contratti. | test CLI/import mirati |
+| `CONS-G04-AC5` suite richiesta, diff, segreti e puntatori sono verificati. | test a scalare e controlli Git |
 
 ## SUCCESSIVO
 
-`CONS-G04` - asset e script storici non necessari rimossi o spostati nelle release.
+`CONS-C01` - `__init__.py` espone solo API intenzionali e una sola fonte versione.

@@ -1,6 +1,0 @@
-{
-  "fixture_id": "minutes_docx",
-  "text": "Meeting notes with Decisions listed, but actions are merged into prose.",
-  "tables": [],
-  "warnings": ["list structure flattened"]
-}

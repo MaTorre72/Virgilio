@@ -1,8 +1,8 @@
 # Inventario delle superfici raggiungibili
 
-Stato verificato per `CONS-G01` il 2026-07-28. L'inventario descrive la
-raggiungibilita` statica della release 1.1.0; non dichiara supportate le
-superfici sperimentali o deprecate che risultano ancora collegate al parser.
+Stato verificato per `CONS-G01` il 2026-07-28 e riallineato da `CONS-G03` dopo
+la rimozione degli spike sperimentali. L'inventario descrive la
+raggiungibilita` statica della release 1.1.0.
 
 ## Ingressi
 
@@ -27,9 +27,6 @@ Tutti i parser elencati hanno un ramo esplicito in `__main__.main`.
 | --- | --- |
 | `send-caronte-dry-run` | `CaronteDryRunHttpClient.send_ready_attachment` |
 | `stage-ready-files`, `verify-drive-staging`, `intake-drive-staging-test`, `intake-da-archiviare` | rispettivamente `LocalDriveStagingTransport`, `DriveStagingVerifyClient`, `DriveStagingIntakeTestClient`, `DaArchiviareIntakeHttpClient` |
-| `litellm-gateway-dry-run` | `LiteLLMGateway.complete` (sperimentale; `CONS-G03`) |
-| `classify-manifest-dry-run`, `review-classification-dry-run`, `classification-feedback-dry-run` | funzioni di proposta, revisione e feedback in `classification` (sperimentali; `CONS-G03`) |
-| `compare-parser-fixtures`, `extract-local-fixtures` | funzioni in `parser_spike` (sperimentali; `CONS-G03`) |
 | `scan-imap-accounts`, `process-imap-accounts`, `stage-ready-attachments` | scanner/processore multi-account e `LocalFilesystemStorageAdapter` |
 | `complete-staged-messages`, `ack-completed-messages` | `LocalCompletionRunner`, `ControlledAckRunner` |
 | `run-local-pipeline` | `LocalPipelineRunner.run` |
