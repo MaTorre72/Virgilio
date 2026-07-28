@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-G04`: ritirati due probe standalone storici
+  non raggiungibili e due copie congelate della grafica 1.0. Gli asset correnti,
+  gli script di sviluppo supportati, build, test, runbook e contratti CLI/import
+  restano invariati; i quattro file sono recuperabili dalla storia Git.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-G03`: rimossi i tre moduli sperimentali di
   classificazione AI/LiteLLM e confronto parser, i sei comandi CLI collegati,
   tre test, cinque fixture e il report Docling esclusivi. GUI, pipeline,

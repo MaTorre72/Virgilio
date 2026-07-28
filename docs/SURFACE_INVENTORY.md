@@ -1,7 +1,7 @@
 # Inventario delle superfici raggiungibili
 
-Stato verificato per `CONS-G01` il 2026-07-28 e riallineato da `CONS-G03` dopo
-la rimozione degli spike sperimentali. L'inventario descrive la
+Stato verificato per `CONS-G01` il 2026-07-28 e riallineato da `CONS-G04` dopo
+la pulizia degli asset e degli script storici. L'inventario descrive la
 raggiungibilita` statica della release 1.1.0.
 
 ## Ingressi
@@ -68,3 +68,17 @@ Tutti i parser elencati hanno un ramo esplicito in `__main__.main`.
 Le prove di packaging correnti sono `test_caronte_build.py`,
 `test_caronte_installer.py`, `test_build_info.py` e lo smoke locale. Le build
 reali restano fuori da questo task.
+
+## Asset e script ritirati
+
+`CONS-G04` ha verificato e ritirato quattro file non raggiungibili dalle
+superfici sopra inventariate:
+
+- `local_connector/scripts/generate_caronte_dry_run.py` e
+  `local_connector/scripts/imap_readonly_probe.py`, probe standalone storici
+  senza entry point, riferimenti correnti o inclusione in wheel/build;
+- `Virgilio_1.0.png` e `VirgilioBN_1.0.png`, copie congelate della grafica 1.0
+  non referenziate; `Virgilio.png` e `VirgilioBN.png` restano gli asset correnti.
+
+I quattro file sono recuperabili dalla storia Git precedente a `CONS-G04`; gli
+script di build, test e operazione sotto `scripts/dev` restano supportati.

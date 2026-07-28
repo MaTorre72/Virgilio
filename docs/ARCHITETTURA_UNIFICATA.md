@@ -75,7 +75,7 @@ Dopo il collaudo, il profilo da usare resta quello coerente con la superficie de
 | Profilo | Moduli canonici | Snapshot / supporto | Nota |
 |---|---|---|---|
 | Google-only | `apps_script/src/*.gs`, `apps_script/src/virgilio.html`, `apps_script/src/appsscript.json` | `.clasp.json`, `clasp` CLI | la sorgente canonica e` in `apps_script/src`; `clasp` sincronizza direttamente quella cartella |
-| Local connector | `local_connector/src/virgilio_connector/*.py` | `local_connector/tests/`, `local_connector/tests/fixtures/`, `local_connector/scripts/` | resta locale, offline e testabile senza servizi reali |
+| Local connector | `local_connector/src/virgilio_connector/*.py` | `local_connector/tests/`, `local_connector/tests/fixtures/`, `scripts/dev/` | resta locale, offline e testabile senza servizi reali |
 
 ## Presentazioni e servizi condivisi
 
@@ -192,7 +192,7 @@ dallo snapshot `clasp`.
 | Acquisizione e scan | `caronteTraghetta()`, `_processaMailUtente(utente)`, `_salvaAllegatoInLimbo()`, `èAllegatoReale(allegato)` | `MultiAccountReadonlyScanner`, `MultiAccountImapProcessor`, `LocalDriveStagingTransport` | preservare i gate e l'idempotenza dei passaggi |
 | Setup e diagnostica | `caronteSetupTrigger()`, `caronteStopTrigger()`, `caronteStatoTrigger()`, `caronteSetupCredenziali()`, `generaToken()`, `caronteStatoConfigurazione()`, `caronteStatoCredenziali()` | `doctor`, `pilot-check`, `pilot-preview`, `pilot-run`, `init-config` | entrambi devono restare verificabili in dry-run |
 | Audit e notifiche | `registraSuBucoliche()`, `aggiornaRigheAllegati()`, `registraErrore()`, `registraConflitto()`, `avvisaTeam()`, `avvisaArchiviazioneVirgilioInbox()`, `avvisaChat()`, `avvisaTelegram()` | `BucolicheAppendOnlyAdapter`, `LocalConflictChecker`, `audit_entry()`, `export_central_events()`, `export_registro_events()` | l'audit ufficiale resta unico; il resto e` tecnico |
-| Test e harness | `testVirgilioSenzaDeploy()`, `testVirgilioInboxSchema()`, `testCaronteInboxArchiviazione()`, `testBucolicheRegistroEventi()`, `testDriveStagingCloudVerify()`, `testNotificheArchiviazioneInbox()` | suite `pytest`, fixture sintetiche, `compare_parser_fixtures()`, `extract_local_fixtures()` | non perdere i test che proteggono il contratto |
+| Test e harness | `testVirgilioSenzaDeploy()`, `testVirgilioInboxSchema()`, `testCaronteInboxArchiviazione()`, `testBucolicheRegistroEventi()`, `testDriveStagingCloudVerify()`, `testNotificheArchiviazioneInbox()` | suite `pytest`, fixture sintetiche e smoke sotto `scripts/dev/` | non perdere i test che proteggono il contratto |
 
 ## Cosa resta tecnico o legacy
 

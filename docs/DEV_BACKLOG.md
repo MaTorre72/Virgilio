@@ -21,16 +21,18 @@ Stato: `IN_PROGRESS`.
 | `CONS-D04` | `DONE` | storia 1.1 condensata; fascicoli chiusi ritirati dal percorso corrente |
 | `CONS-G01` | `DONE` | inventario di entry point, comandi, import e file di build |
 | `CONS-G02` | `DONE` | GUI legacy e test esclusivi rimossi; target supportati verdi |
+| `CONS-G03` | `DONE` | spike AI/LiteLLM/Docling e superfici esclusive rimossi |
+| `CONS-G04` | `DONE` | 4 asset/script storici ritirati; mirati `26 passed`, smoke `533 passed` |
 
 I task successivi restano chiusi finche` non diventano il successore immediato
 in `docs/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
 
-### Evidenze CONS-G02
+### Evidenze CONS-G04
 
 | Criterio | Evidenza ottenuta | Esito |
 | --- | --- | --- |
-| `AC1` | ricerca statica e inventario: nessun target supportato importava il legacy | `PASS` |
-| `AC2` | rimossi 7 moduli e 7 test esclusivi, recuperabili dai commit sorgente Git | `PASS` |
-| `AC3` | test mirati GUI utente e Manutenzione verdi | `PASS` |
-| `AC4` | alias CLI legacy rimosso; help e test packaging verdi | `PASS` |
-| `AC5` | suite locale, diff, segreti e puntatori verificati | `PASS` |
+| `AC1` | inventario e ricerca statica: 2 probe standalone e 2 immagini 1.0 senza riferimenti correnti | `PASS` |
+| `AC2` | `git cat-file` conferma recuperabilita` `4/4` dal commit precedente | `PASS` |
+| `AC3` | riferimenti correnti `0`; test packaging/build/CLI mirati `26 passed` | `PASS` |
+| `AC4` | immagini correnti e strumenti `scripts/dev` preservati; contratti mirati verdi | `PASS` |
+| `AC5` | smoke locale `533 passed`; diff, segreti e puntatori verificati | `PASS` |
