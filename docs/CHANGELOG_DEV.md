@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-C02`: classificati tutti i comandi CLI con
+  motivazione. L'help principale espone soltanto `init-config`, `doctor` e
+  `watch`; gli ingressi e i comandi tecnici necessari restano raggiungibili ma
+  interni. Rimosso l'alias di sviluppo senza consumer `local-watch`, mantenendo
+  invariato `watch`. Test CLI mirati `64 passed`; smoke locale verde.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-C01`: il package root espone soltanto
   `__version__`, dalla stessa fonte autorevole usata da metadata e build. Le
   riesportazioni operative accidentali sono rimosse; moduli di ingresso e

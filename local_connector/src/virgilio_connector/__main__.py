@@ -456,7 +456,11 @@ def _record_da_archiviare_intake_event(local_root: Path, payload: dict[str, obje
 def main() -> int:
     _load_env_file(Path(".env"))
     parser = argparse.ArgumentParser(prog=_prog_name())
-    commands = parser.add_subparsers(dest="command", required=True)
+    commands = parser.add_subparsers(
+        dest="command",
+        required=True,
+        metavar="{init-config,doctor,watch}",
+    )
     sender = commands.add_parser("send-caronte-dry-run")
     sender.add_argument("--command-file", type=Path, required=True)
     staging = commands.add_parser("stage-ready-files")
@@ -491,7 +495,6 @@ def main() -> int:
     pipeline.add_argument("--human", action="store_true")
     watch = commands.add_parser(
         "watch",
-        aliases=("local-watch",),
         help="Mantiene attiva la pipeline locale con polling controllato",
     )
     watch.add_argument("--config", type=Path, required=True)
@@ -504,7 +507,7 @@ def main() -> int:
     watch.add_argument("--completion-poll-seconds", type=int, default=30,
                        help=argparse.SUPPRESS)
     watch.add_argument("--progress-events", action="store_true", help=argparse.SUPPRESS)
-    doctor = commands.add_parser("doctor")
+    doctor = commands.add_parser("doctor", help="Verifica la configurazione locale")
     doctor.add_argument("--config", type=Path, required=True)
     doctor.add_argument("--human", action="store_true")
     conflicts = commands.add_parser("check-local-conflicts")
@@ -544,7 +547,7 @@ def main() -> int:
     pilot_preview.add_argument("--human", action="store_true")
     oauth_login = commands.add_parser("google-oauth-login")
     oauth_login.add_argument("--config", type=Path, required=True)
-    init_config = commands.add_parser("init-config")
+    init_config = commands.add_parser("init-config", help="Crea una configurazione locale")
     init_config.add_argument("--output", type=Path, required=True)
     init_config.add_argument("--email", required=True)
     init_config.add_argument("--staging-dir", type=Path, required=True)
@@ -751,7 +754,7 @@ def main() -> int:
         else:
             print(json.dumps(asdict(result), ensure_ascii=False, separators=(",", ":")))
         return 0 if result.status in {"completed", "completed_with_warnings"} else 1
-    if args.command in {"watch", "local-watch"}:
+    if args.command == "watch":
         if args.interval_seconds <= 0:
             parser.exit(2, "error: --interval-seconds must be greater than 0\n")
         if args.max_cycles < 0:

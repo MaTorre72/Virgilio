@@ -1,32 +1,34 @@
 # Next Codex Task
 
-## CORRENTE - CONS-C02 - Comandi CLI classificati
+## CORRENTE - CONS-C03 - Parser e dispatch separati dal bootstrap
 
 Stato: `TODO`. Priorita`: `P1`.
 
-Risultato: ogni comando CLI e` classificato come supportato, interno o da
-rimuovere, con help coerente e senza cambiare il comportamento supportato.
+Risultato: `__main__` resta un bootstrap minimo mentre costruzione del parser e
+dispatch CLI sono separati per responsabilita`, senza cambiare output, codici di
+uscita o comportamento dei comandi conservati.
 
-Dipendenze: `CONS-C01` chiuso `DONE`; dispatch inventariato in
-`docs/SURFACE_INVENTORY.md`.
+Dipendenze: `CONS-C02` chiuso `DONE`; classificazione e help intenzionale
+registrati in `docs/SURFACE_INVENTORY.md`.
 
-Componenti ammessi: parser/dispatch CLI, snapshot help, test CLI e relativi
-puntatori.
+Componenti ammessi: bootstrap `__main__`, parser/dispatch CLI, test di
+caratterizzazione per gruppo e relativi puntatori.
 
-Esclusioni: implementazioni operative, nuova funzionalita`, GUI, servizi reali,
-deploy, modifica o merge di `main`.
+Esclusioni: modifica della classificazione o semantica dei comandi,
+implementazioni operative, GUI, servizi reali, deploy, modifica o merge di
+`main`.
 
-Condizione di blocco: la classificazione richiede una decisione di prodotto non
-documentata oppure upstream diverge.
+Condizione di blocco: non e` possibile preservare un contratto CLI osservabile
+con test di caratterizzazione oppure upstream diverge.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-C02-AC1` ogni comando e` classificato con motivazione. | inventario dispatch aggiornato |
-| `CONS-C02-AC2` l'help mostra soltanto la superficie intenzionale. | snapshot help |
-| `CONS-C02-AC3` comandi interni restano raggiungibili solo dagli ingressi necessari. | test dispatch mirati |
-| `CONS-C02-AC4` comandi non supportati sono rimossi senza cambiare quelli supportati. | ricerca e test CLI |
-| `CONS-C02-AC5` suite richiesta, diff, segreti e puntatori sono verificati. | test a scalare e controlli Git |
+| `CONS-C03-AC1` il bootstrap contiene solo composizione e uscita. | ispezione struttura e test import |
+| `CONS-C03-AC2` la costruzione del parser e` isolata e conserva l'help. | snapshot help |
+| `CONS-C03-AC3` il dispatch e` separato per gruppi coerenti. | test comando per gruppo |
+| `CONS-C03-AC4` output, errori e codici di uscita restano invariati. | test di caratterizzazione CLI |
+| `CONS-C03-AC5` suite richiesta, diff, segreti e puntatori sono verificati. | test a scalare e controlli Git |
 
 ## SUCCESSIVO
 
-`CONS-C03` - parser e dispatch CLI separati dal bootstrap `__main__`.
+`CONS-C04` - primo modulo operativo monolitico separato per responsabilita`.

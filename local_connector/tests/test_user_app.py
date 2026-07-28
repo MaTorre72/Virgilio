@@ -346,7 +346,7 @@ def test_user_gui_help_and_dispatch(monkeypatch, capsys, tmp_path):
         cli.main()
     assert exc_info.value.code == 0
     help_text = capsys.readouterr().out
-    assert "user-gui" in help_text
+    assert "user-gui" not in help_text
     assert all(command not in help_text for command in (
         "litellm-gateway-dry-run",
         "classify-manifest-dry-run",

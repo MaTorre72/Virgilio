@@ -526,7 +526,7 @@ def test_cli_commands_exist_and_missing_config_blocked(tmp_path, monkeypatch, ca
 def test_new_cli_commands_are_registered(tmp_path, monkeypatch):
     from virgilio_connector.__main__ import main
     for command in ("setup-bucoliche-test-sheet", "pilot-preview", "google-oauth-login",
-                    "watch", "local-watch"):
+                    "watch",):
         monkeypatch.setattr(sys, "argv", ["virgilio_connector", command,
                                           "--config", str(tmp_path / "missing.yaml")])
         with pytest.raises(SystemExit) as exc:

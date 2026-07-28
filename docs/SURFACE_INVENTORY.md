@@ -21,26 +21,24 @@ utente genera lo stesso comando tramite `maintenance_launch_command`.
 
 ## Comandi CLI e dispatch
 
-Tutti i parser elencati hanno un ramo esplicito in `__main__.main`.
+La CLI installata mostra soltanto i tre comandi supportati destinati a uso
+diretto. I comandi interni restano nel parser per gli ingressi applicativi, i
+test offline e le procedure di manutenzione che li invocano esplicitamente;
+non costituiscono interfaccia pubblica e non compaiono nell'help principale.
 
-| Comandi | Dispatch diretto |
-| --- | --- |
-| `send-caronte-dry-run` | `CaronteDryRunHttpClient.send_ready_attachment` |
-| `stage-ready-files`, `verify-drive-staging`, `intake-drive-staging-test`, `intake-da-archiviare` | rispettivamente `LocalDriveStagingTransport`, `DriveStagingVerifyClient`, `DriveStagingIntakeTestClient`, `DaArchiviareIntakeHttpClient` |
-| `scan-imap-accounts`, `process-imap-accounts`, `stage-ready-attachments` | scanner/processore multi-account e `LocalFilesystemStorageAdapter` |
-| `complete-staged-messages`, `ack-completed-messages` | `LocalCompletionRunner`, `ControlledAckRunner` |
-| `run-local-pipeline` | `LocalPipelineRunner.run` |
-| `watch`, `local-watch` | ciclo su pipeline locale; `local-watch` e` alias di sviluppo |
-| `doctor`, `check-local-conflicts` | `LocalDoctor.run`, `LocalConflictChecker.run` |
-| `export-central-events`, `export-registro-events` | funzioni omonime in `traceability` |
-| `export-to-bucoliche`, `refresh-bucoliche-state`, `doctor-bucoliche` | `BucolicheAppendOnlyAdapter` e `BucolicheDoctor` |
-| `pilot-check`, `pilot-run-safe`, `pilot-run`, `pilot`, `pilot-preview` | servizi `PilotCheck`, `PilotSafeRunner`, `PilotRunV11Runner`, `PilotPreview` |
-| `setup-bucoliche-test-sheet`, `google-oauth-login` | `BucolicheSheetSetup`, `GoogleOAuthLogin` |
-| `init-config` | `scaffold_local_config` |
-| `install-windows-task`, `status-windows-task`, `uninstall-windows-task` | funzioni in `windows_task` |
-| `reset-local-state` | `reset_local_state` |
-| `user-gui` | `user_app.launch_user_app` |
-| `maintenance-gui` | `maintenance_gui.launch_gui` |
+| Classificazione | Comandi | Motivazione |
+| --- | --- | --- |
+| supportato | `init-config`, `doctor`, `watch` | bootstrap, diagnosi e ciclo locale sono le azioni stabili della CLI tecnica |
+| interno - pipeline | `scan-imap-accounts`, `process-imap-accounts`, `stage-ready-attachments`, `complete-staged-messages`, `ack-completed-messages`, `run-local-pipeline`, `check-local-conflicts` | stadi granulari coperti dai test e composti dai servizi applicativi |
+| interno - integrazione | `send-caronte-dry-run`, `stage-ready-files`, `verify-drive-staging`, `intake-drive-staging-test`, `intake-da-archiviare` | adapter e probe controllati, non workflow utente autonomi |
+| interno - Registro | `export-central-events`, `export-registro-events`, `export-to-bucoliche`, `refresh-bucoliche-state`, `doctor-bucoliche` | operazioni tecniche del Registro richiamate da manutenzione e prove offline |
+| interno - collaudo | `pilot-check`, `pilot-run-safe`, `pilot-run`, `pilot`, `pilot-preview`, `setup-bucoliche-test-sheet` | orchestrazione e predisposizione della baseline collaudata |
+| interno - piattaforma | `google-oauth-login`, `install-windows-task`, `status-windows-task`, `uninstall-windows-task`, `reset-local-state` | setup e manutenzione esposti dalle presentazioni tramite servizi condivisi |
+| interno - ingresso | `user-gui`, `maintenance-gui` | target necessari a eseguibile, collegamenti Start e test di packaging |
+| rimosso | `local-watch` | alias di sviluppo ridondante, senza consumer corrente; `watch` preserva lo stesso comportamento |
+
+Ogni comando conservato ha un parser e un ramo esplicito in `__main__.main`.
+L'alias rimosso resta recuperabile dalla storia Git precedente a `CONS-C02`.
 
 ## Import diretti dei target supportati
 
