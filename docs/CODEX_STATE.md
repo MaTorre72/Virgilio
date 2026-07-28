@@ -9,9 +9,10 @@
   annotato `v1.1.0` pubblicato sul commit sorgente `68f3b90`.
 - Documentazione corrente: `README.md`, `docs/ARCHITETTURA_UNIFICATA.md` e
   `docs/RUNBOOKS.md`; classificazione in `docs/DOCUMENT_INVENTORY.md`.
-- Ultimo task: `CONS-C03` `DONE`; `__main__` e` un bootstrap minimo, mentre il
-  modulo `cli` isola costruzione del parser e dispatch senza cambiare contratti.
-- Task corrente: `CONS-C04`, separazione behavior-preserving del primo modulo
-  operativo monolitico per responsabilita`.
+- Ultimo task: `CONS-C04` `DONE`; dal modulo operativo `multi_account` e` stato
+  estratto il parser YAML locale coeso, senza cicli e senza cambiare API, errori
+  o comportamento osservabile.
+- Task corrente: `CONS-C05`, organizzazione dei test per unita`, contratti,
+  integrazione offline e smoke.
 - Contesto normale per una run: `AGENTS.md`, questo file e
   `docs/NEXT_CODEX_TASKS.md`.

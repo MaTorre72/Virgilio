@@ -605,3 +605,4 @@ Registro avanzamento storico spostato fuori dal backlog attivo.
   fuorviante di `Cartella completati`. Pianificati quattro task autonomi
   `GUI-U-R04-R03`--`R04-R06` e due gate umani finali (pubblicazione Apps Script
   e pilota reale).
+- 2026-07-28 - Completato `CONS-C04`: selezionato con metriche `multi_account.py` come primo modulo operativo monolitico non GUI ed estratto il parser YAML locale in `local_config_yaml.py`. Dipendenza unidirezionale, API ed errori pubblici invariati; test mirati `80 passed`, smoke locale `546 passed`. Successore `CONS-C05`.

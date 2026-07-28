@@ -1744,6 +1744,22 @@ def test_doctor_env_and_storage_missing_blocked(tmp_path):
     assert any("storage.staging_dir" in item for item in result.suggested_fixes)
 
 
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        ("orphan: value\n", "unsupported content before a section at line 1"),
+        ("accounts:\n  malformed\n", "account item expected at line 2"),
+        ("accounts:\n  - malformed\n", "expected key: value at line 2"),
+    ],
+)
+def test_local_yaml_syntax_keeps_public_error_contract(tmp_path, content, message):
+    path = tmp_path / "accounts.local.yaml"
+    path.write_text(content, encoding="utf-8")
+
+    with pytest.raises(MultiAccountConfigError, match=message):
+        load_multi_account_config(path)
+
+
 def test_doctor_imap_error_does_not_block_other_account(tmp_path):
     staging = tmp_path / "staging"
     staging.mkdir()
