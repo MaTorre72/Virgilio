@@ -1,234 +1,90 @@
-# Virgilio
+# Virgilio 1.1
 
-Virgilio e' il progetto interno Sigma+ per guidare apertura pratiche, presa in carico allegati e tracciamento operativo.
+Virgilio acquisisce documenti dalle caselle configurate, li porta nel Limbo,
+li espone in **Da archiviare**, raccoglie la decisione umana e li archivia nella
+pratica finale registrando ogni transizione nel Registro.
 
-## Stato v1.1 sperimentale
+La release ufficiale corrente e` **1.1.0**. Il percorso desktop e` stato
+collaudato con esito umano `PASS` il 28 luglio 2026; la branch
+`codex/v1.1-development` ne prepara la pubblicazione senza modificare `main`.
 
-La v1.0 resta l'MVP Google Workspace mono-utente. La linea v1.1 consolida il lavoro sperimentale sul Local IMAP Connector e prepara un'architettura meno dipendente da Google Apps Script:
+## Percorso utente
 
-- **Virgilio**: interfaccia, guida e supervisione umana;
-- **Caronte Locale**: motore operativo locale, multi-casella e provider-agnostico;
-- **Apps Script**: adattatore Google opzionale, non nucleo definitivo;
-- **Persistenza locale**: registro operativo primario del connettore locale;
-- **Bucoliche**: output adapter ispezionabile, non database primario;
-- **Drive Desktop**: storage adapter iniziale di test, non architettura definitiva.
+1. In **Caronte Manutenzione** si configurano caselle, collegamento a Virgilio,
+   Limbo e preferenze operative.
+2. In **Caronte** si avvia il controllo manuale oppure quello continuo.
+3. Gli allegati ammessi passano dalla quarantena locale al Limbo Drive unico.
+4. Virgilio crea una voce in **Da archiviare** e invia la notifica prevista.
+5. L'utente apre il form, sceglie pratica e destinazione e conferma.
+6. Il documento viene archiviato, il Registro riceve l'esito e solo allora la
+   mail viene completata secondo la strategia configurata.
 
-La branch `codex/v1.1-development` serve a consolidare componenti gia' testati. Non introduce nuove funzioni operative.
+Riprese, retry e deduplicazione preservano lo stesso documento e non anticipano
+il completamento della mail. `Virgilio_Inbox` e` il nome tecnico della coda
+**Da archiviare**; `bucoliche` e` l'unico Registro cloud umano append-only.
 
-## Profili operativi
+## Componenti supportati
 
-| Profilo | Quando usarlo | Superficie | Vincoli |
-|---|---|---|---|
-| Google-only | se il task tocca `apps_script/src`, GmailApp o `clasp` | Apps Script canonico in `apps_script/src`, mono-account | resta nel perimetro Google Workspace |
-| Local connector | se il task tocca `local_connector/src/virgilio_connector` o i test locali | motore locale, fixture e CLI, multi-casella via IMAP | resta offline, senza servizi reali |
+| Componente | Ruolo |
+| --- | --- |
+| `virgilio_connector.user_app` | applicazione utente **Caronte** |
+| `virgilio_connector.maintenance_gui` | applicazione separata **Caronte Manutenzione** |
+| `local_connector/src/virgilio_connector/` | servizi applicativi condivisi e connettore locale |
+| `apps_script/src/` | adattatore Google canonico per form, coda, archivio e Registro |
+| `local_connector/tests/` | test offline con fixture sintetiche |
 
-Se il task passa da Apps Script o dal progetto Google, il profilo attivo e` Google-only. Se passa dal motore locale o dai test, il profilo attivo e` Local connector.
-Dopo il collaudo, vale la stessa regola: Google-only per Apps Script e Google Workspace; Local connector per lavoro locale, offline e di test.
+Le implementazioni `gui` e `gui_*` sono legacy abbandonato: non sono superfici
+supportate e non devono essere importate dalle nuove applicazioni.
 
-## Stato architetturale
+## Prerequisiti operativi
 
-Virgilio ha due ingressi tecnici e un solo flusso operativo: Acquisizione -> Quarantena locale eventuale -> Limbo Drive unico -> Da archiviare -> Form -> Pratica finale -> Registro. Nella UX la coda si chiama `Da archiviare`; `Virgilio_Inbox` resta il nome tecnico del tab. Google-only resta mono-account; Local connector puo` essere multi-casella e leggere anche una casella Google Workspace via IMAP. La sorgente canonica Apps Script vive in `apps_script/src` e `clasp` sincronizza direttamente quella cartella; il local connector resta separato, locale e testabile senza servizi reali.
-Il riferimento condiviso per lessico e flusso e` [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md).
+- Windows 11 e un'installazione identificata di Caronte 1.1.0;
+- Google Drive per desktop sincronizzato con il Limbo configurato;
+- casella IMAP dedicata e credenziali salvate nel deposito protetto locale;
+- client OAuth Desktop autorizzato quando la casella e` Google Workspace;
+- collegamento al deployment Apps Script previsto e relativa chiave salvata
+  localmente, mai nel repository;
+- tab canonici `bucoliche`, `Virgilio_Inbox`, `Clienti_Siti`, `Team` e
+  `TipiPratica` presenti e coerenti.
 
-## Componenti
+Configurazione, credenziali e dati locali non sono versionati. Test e sviluppo
+non devono usare mail, account Google, credenziali o servizi reali.
 
-| Area | Percorso | Ruolo |
-|---|---|---|
-| Google-only sorgente | `apps_script/src/` | moduli Apps Script canonici, incluso `appsscript.json` |
-| Google-only sync | `.clasp.json`, `clasp` | collega e pubblica direttamente `apps_script/src/` |
-| Local connector | `local_connector/src/virgilio_connector/` | motore locale, offline e testabile |
-| Test local connector | `local_connector/tests/` | fixture e test automatici |
-| Documentazione | `docs/` | riferimento condiviso e backlog |
-| Documenti storici | `docs/archive/` | conservati per audit |
+## Limiti della 1.1.0
 
-## Confini v1.1
+- la sincronizzazione del Limbo dipende da Google Drive per desktop e puo`
+  richiedere retry limitati prima della presa in carico;
+- Apps Script resta l'adattatore necessario al percorso Google pubblicato;
+- il Registro cloud espone eventi umani; stato e conflitti tecnici restano
+  locali;
+- gli allegati macro-enabled, gli archivi compressi e gli eseguibili restano
+  bloccati; i formati Office ammessi richiedono scansione;
+- nessuna AI, RAG, Docling, LiteLLM, database remoto o server web fa parte della
+  release;
+- il completamento Gmail usa le estensioni IMAP del provider; per altri provider
+  valgono le capacita` dichiarate dalla configurazione;
+- reset, pubblicazioni Apps Script e operazioni reali richiedono procedure e
+  autorizzazioni dedicate: non sono azioni ordinarie della GUI utente.
 
-In questa fase non sono abilitati come comportamento produttivo:
+## Sviluppo e verifica
 
-- ack IMAP automatico;
-- upload reale generalizzato;
-- spostamento messaggi;
-- scrittura Bucoliche reale dal flusso locale senza fase controllata;
-- notifiche operative;
-- multi-account completo;
-- AI.
-
-## Test locali
-
-```powershell
-$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m pytest local_connector
-```
-
-I test del connettore non devono usare credenziali reali, Gmail reale, Drive reale o Bucoliche reale.
-Nel checkout verificato il runtime giusto e` `local_connector\.venv\Scripts\python.exe`; `.\.venv\Scripts\python.exe` non e` disponibile qui.
-Su questa macchina i binari locali trovati sono `C:\Program Files (x86)\nodejs\node.exe`, `C:\Program Files (x86)\nodejs\npm.cmd` e `C:\Users\Marco\AppData\Roaming\npm\clasp.cmd`. Se il PATH non li risolve, usa i percorsi completi.
-Se carichi `local_connector\.env` dal repo root, risolvi i path relativi rispetto a `local_connector` prima di lanciare i comandi: vale per `VIRGILIO_LOCAL_DATA_DIR` e per i path OAuth.
-
-Se serve l'install editable:
-
-```powershell
-local_connector\.venv\Scripts\python.exe -m pip install -e .\local_connector
-```
-
-Offline questo comando richiede `setuptools` gia` presente nel venv locale. Se `setuptools.build_meta` manca, per test e smoke resta piu` robusto usare `PYTHONPATH=local_connector\src` e il comando smoke ufficiale.
-
-## Avvio rapido locale
-
-Sequenza minima per partire senza Gmail reale, Drive reale o deploy Google:
+Il riferimento architetturale e` [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md).
+Setup e test sono in [Setup e test](docs/SETUP_AND_TEST.md); il flusso locale e`
+descritto in [Caronte Locale](docs/LOCAL_CARONTE.md). Il gate locale completo e`:
 
 ```powershell
-$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
-$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
-
-local_connector\.venv\Scripts\python.exe -m virgilio_connector init-config --output local_connector\accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
-local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config $config --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot --config $config --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config $config --dry-run --human
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
 ```
 
-Ordine operativo:
+La sorgente Apps Script canonica vive in `apps_script/src`; `clasp push` e deploy
+non fanno parte delle verifiche locali e richiedono un task esplicito.
 
-- `init-config` crea il file locale senza scrivere segreti.
-- `doctor` controlla env, storage e prerequisiti.
-- `pilot` mostra il percorso completo senza effetti operativi.
-- `pilot-run --dry-run` prova la sequenza controllata fino all'export simulato.
-- Lo smoke locale resta il gate finale prima di qualunque collaudo reale.
+## Versioni e storia
 
-## Uso quotidiano locale
-
-Per il lavoro giornaliero sul profilo locale:
-
-```powershell
-$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
-$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
-
-local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config $config --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-preview --config $config --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector watch --config $config --dry-run --human --max-cycles 1
-local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --dry-run
-```
-
-- `pilot-preview` riassume account, eventi esportabili e conflitti senza eseguire la pipeline.
-- `watch --dry-run --max-cycles 1` verifica il loop operativo locale in un solo ciclo.
-- `install-windows-task --dry-run` mostra il task `Virgilio Local Watch` senza registrarlo.
-- Solo dopo il dry-run puoi usare `install-windows-task --force` per l'avvio automatico su Windows 11.
-- `status-windows-task --human` mostra stato, ultima esecuzione e ultimo esito senza modifiche.
-- `uninstall-windows-task --confirm --human` rimuove l'avvio automatico con conferma esplicita.
-
-La precedente implementazione GUI (`gui`, `gui_*`) e` abbandonata e non
-costituisce un percorso supportato. Le applicazioni desktop target sono `Caronte`
-e `Caronte Manutenzione`, entrambe con nuove presentazioni separate dal legacy e
-basate sui servizi condivisi. Finche` i rispettivi entry point non sono separati
-dal codice storico, le verifiche locali restano affidate ai comandi documentati
-sopra.
-
-## Troubleshooting rapido
-
-- Se `doctor` segnala `storage.staging_dir`, usa un path assoluto gia` esistente come `C:\Virgilio\staging`.
-- Se `init-config` rifiuta `--staging-dir`, il path non e` assoluto: correggilo prima di proseguire.
-- Se `pip install -e .\local_connector` fallisce offline, continua con `PYTHONPATH=local_connector\src` e smoke ufficiale.
-- Se `clasp` non e` nel PATH, usa i percorsi completi documentati sotto invece di inventare alias o copiare token.
-- Se devi azzerare il solo stato locale, usa `reset-local-state --backup --confirm`; non cancellare `.local_data` a mano.
-
-## Documentazione principale
-
-- [Architettura](docs/ARCHITECTURE.md)
-- [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md)
-- [Caronte Locale](docs/LOCAL_CARONTE.md)
-- [Setup e test](docs/SETUP_AND_TEST.md)
-- [Roadmap v1.1](docs/ROADMAP_V1_1.md)
-- [Decisioni](docs/DECISIONS.md)
-
-## Principio operativo
+`1.1.0` e` la release ufficiale. Gli installer `0.11.0-<commit>` citati nei
+documenti di collaudo sono release candidate storiche e non sostituiscono la
+release: la RC baseline `0.11.0-7e18277` conserva l'evidenza del `PASS` umano.
+La storia pubblica e` in [CHANGELOG.md](CHANGELOG.md); le evidenze di sviluppo
+restano nella documentazione interna fino al successivo consolidamento.
 
 **L'AI propone. Il tecnico valida. Il sistema registra.**
-
-Ogni automazione critica deve restare verificabile, reversibile e tracciata.
-
-## Sviluppo autonomo con Codex
-
-Il ciclo autonomo e` governato da:
-
-- `AGENTS.md`: regole permanenti e limiti operativi;
-- `docs/DEV_BACKLOG.md`: ordine dei task e stato di avanzamento;
-- `docs/DEFINITION_OF_DONE.md`: gate obbligatori;
-- `docs/AUTONOMOUS_DEVELOPMENT.md`: protocollo di scelta, esecuzione e stop;
-- `.github/codex/prompts/advance.md`: prompt per avanzare un task;
-- `scripts/dev/smoke_local_connector.ps1`: suite, CLI e controllo segreti;
-- `.github/workflows/local-connector-ci.yml`: verifica senza servizi reali.
-
-Per il prossimo task autonomo usare il prompt `advance.md`, oppure chiedere "vai avanti".
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
-```
-
-Verifica locale e test controllati:
-
-```powershell
-$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector init-config --output accounts.local.yaml --email nome@azienda.it --staging-dir C:\Virgilio\staging
-local_connector\.venv\Scripts\python.exe -m virgilio_connector doctor --config local_connector\accounts.local.yaml --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot --config local_connector\accounts.local.yaml --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector run-local-pipeline --config local_connector\accounts.local.yaml --dry-run --human
-local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --dry-run --human
-$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
-$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --dry-run
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
-```
-
-`Caronte Manutenzione` resta un'applicazione tecnica target, con comando
-`maintenance-gui` ed eventuale `CaronteManutenzione.exe`. La sua implementazione
-corrente, ancora collegata a `gui`/`gui_*`, e` legacy abbandonato: la nuova
-presentazione dovra` sostituirla senza riusarne widget, tab o controller.
-
-`--staging-dir` deve essere un path assoluto, per esempio `C:\Virgilio\staging`; i path relativi vengono rifiutati dal CLI.
-- `init-config` prepara il profilo locale.
-- `doctor` controlla la configurazione.
-- `pilot` mostra il flusso senza effetti operativi.
-- `run-local-pipeline --dry-run` e `pilot-run --dry-run` restano test controllati.
-- `install-windows-task` prepara o registra l'avvio automatico locale con Utilita` di Pianificazione su Windows 11.
-- Lo smoke locale resta la verifica finale minima.
-- Sul mailbox di test sono stati verificati anche `doctor-bucoliche --human`, `pilot-preview --human`, `setup-bucoliche-test-sheet --dry-run` e due `pilot-run --human` consecutivi per confermare l'idempotenza.
-
-Per attivare l'avvio automatico dopo il dry-run:
-
-```powershell
-$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-$config = (Resolve-Path 'local_connector\accounts.local.yaml').Path
-$python = (Resolve-Path 'local_connector\.venv\Scripts\python.exe').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector install-windows-task --config $config --python-exe $python --force
-```
-
-Il comando registra un task utente `ONLOGON` chiamato `Virgilio Local Watch`, avvia `watch` in finestra nascosta e resta limitato al profilo locale corrente; non installa servizi Windows e non richiede deploy Google.
-
-Collaudi reali:
-
-```powershell
-$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector pilot-run --config local_connector\accounts.local.yaml --human
-```
-
-`pilot-run` senza `--dry-run` va usato solo su configurazioni di test gia' verificate.
-
-Per ripulire lo stato locale senza perdere una copia automatica:
-
-```powershell
-$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
-local_connector\.venv\Scripts\python.exe -m virgilio_connector reset-local-state --backup --confirm
-```
-
-Il comando crea un backup sibling di `.local_data`, poi ricrea il layout base e preserva `machine_id` quando presente. Senza `--backup` e `--confirm` il reset non parte.
-
-Per verificare lo snapshot Apps Script locale senza deploy:
-
-```powershell
-& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' --version
-& 'C:\Program Files (x86)\nodejs\node.exe' 'C:\Users\Marco\AppData\Roaming\npm\node_modules\@google\clasp\build\src\index.js' status
-```
-
-`clasp status` conferma l'allineamento locale del progetto in `apps_script/src` e non richiede deploy.

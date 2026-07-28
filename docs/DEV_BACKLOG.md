@@ -28,6 +28,18 @@ Stato: `DONE` (2026-07-28).
 | `AC4` | regressione | `22 passed`; smoke locale `600 passed` | `PASS` |
 | `AC5` | Git e segreti | diff circoscritto, scansione e puntatori verificati | `PASS` |
 
+### CONS-R02 - README e changelog release 1.1
+
+Stato: `DONE` (2026-07-28).
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `AC1` | sezioni e link | README presenta il percorso desktop collaudato da configurazione ad archiviazione | `PASS` |
+| `AC2` | confronto con stato | changelog 1.1.0 riassume funzioni e correzioni della baseline | `PASS` |
+| `AC3` | termini e riferimenti | prerequisiti, sincronizzazione, allegati e confini operativi sono espliciti | `PASS` |
+| `AC4` | versioni e formulazioni | `1.1.0` e` ufficiale; `0.11.0-<commit>` e` dichiarata RC storica | `PASS` |
+| `AC5` | Git e segreti | link e diff verificati; smoke locale e scansione segreti `600 passed` | `PASS` |
+
 ## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,

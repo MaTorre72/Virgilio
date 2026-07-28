@@ -1,31 +1,31 @@
 # Next Codex Task
 
-## CORRENTE - CONS-R02 - README e changelog release 1.1
+## CORRENTE - CONS-R03 - Build release 1.1.0
 
 Stato: `TODO`. Priorita`: `P0`.
 
-Risultato: README e changelog descrivono la release ufficiale 1.1, il percorso
-utente realmente collaudato e i limiti operativi correnti senza dettagli obsoleti.
+Risultato: installer, manifest e checksum della release ufficiale `1.1.0` sono
+prodotti dal commit candidato e superano gli smoke previsti.
 
-Dipendenze: `CONS-R01` chiuso `DONE`.
+Dipendenze: `CONS-R02` chiuso `DONE`.
 
-Componenti ammessi: README, changelog ufficiale e link/documentazione
-strettamente necessari a renderli coerenti.
+Componenti ammessi: pipeline di build e release, artefatti locali ignorati,
+manifest, checksum e documentazione delle sole evidenze del task.
 
-Esclusioni: codice, nuova build, tag, release remota, Apps Script, servizi reali,
-riscrittura dei runbook e modifica di `main`.
+Esclusioni: tag, release remota, Apps Script, servizi reali, modifica o merge di
+`main` e cambiamenti funzionali.
 
-Condizione di blocco: informazioni pubbliche indispensabili contraddittorie e
-non risolvibili dalle evidenze correnti senza una decisione umana.
+Condizione di blocco: build non riproducibile dal commit pulito o prerequisito
+locale indispensabile assente e non ripristinabile senza decisione umana.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-R02-AC1` README presenta il percorso utente 1.1 corrente. | verifica sezioni e link |
-| `CONS-R02-AC2` changelog ufficiale riassume funzioni e correzioni pubblicate. | confronto con stato collaudato |
-| `CONS-R02-AC3` prerequisiti e limiti reali sono espliciti e coerenti. | ricerca termini e riferimenti |
-| `CONS-R02-AC4` storico RC resta distinguibile dalla release ufficiale. | ricerca versioni e formulazioni |
-| `CONS-R02-AC5` tree, segreti e puntatori sono coerenti. | diff, scansione e stato Git |
+| `CONS-R03-AC1` build parte dal commit candidato pulito e identifica `1.1.0`. | manifest e build-info |
+| `CONS-R03-AC2` installer ufficiale e` prodotto con nome e payload coerenti. | smoke build |
+| `CONS-R03-AC3` installazione controllata supera lo smoke senza perdita dati. | smoke installer |
+| `CONS-R03-AC4` SHA-256, dimensione, commit e Build ID sono registrati. | confronto artefatto/manifest |
+| `CONS-R03-AC5` tree, segreti e puntatori sono coerenti. | diff, scansione e stato Git |
 
 ## SUCCESSIVO
 
-`CONS-R03` - build release, installer, manifest e checksum dal commit candidato.
+`CONS-R04` - tag annotato `v1.1.0` e relativi riferimenti remoti verificati.

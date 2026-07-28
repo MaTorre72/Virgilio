@@ -5,7 +5,11 @@
   un commit per run; Git usa solo fetch/pull fast-forward e push non forzato.
 - Iniziativa corrente: `CONS - Pubblicazione, pulizia e consegna 1.1`, definita
   in `docs/CONSOLIDATION_PROGRAM.md`.
-- Task corrente: `CONS-R02`, README e changelog della release ufficiale 1.1.
+- Task corrente: `CONS-R03`, build release, installer, manifest e checksum dal
+  commit candidato.
+- `CONS-R02` e` `DONE`: README e changelog presentano il percorso desktop 1.1
+  collaudato, prerequisiti e limiti reali; `1.1.0` e` distinta dalle RC storiche
+  `0.11.0-<commit>`. Prove: controlli documentali e smoke locale `600 passed`.
 - `CONS-R01` e` `DONE`: `virgilio_connector._version.__version__` e` la sola
   fonte autorevole `1.1.0` letta da package metadata, runtime e build; `VERSION`
   e` il marcatore verificato. Prove: mirati `22 passed`, smoke `600 passed`.
