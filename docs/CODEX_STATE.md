@@ -13,5 +13,7 @@
   finale `#1` verso `main` pronta per revisione umana, senza merge automatico.
 - Task corrente: nessuno. L'automazione deve restare in pausa; approvazione e
   merge della pull request sono gate esclusivamente umani.
+- Pulizia successiva alla consegna: documentazione corrente ridotta a 19 file
+  con `RUNBOOKS.md` unico; archivi e duplicati restano recuperabili da Git.
 - Contesto normale per una run: `AGENTS.md`, questo file e
   `docs/NEXT_CODEX_TASKS.md`.

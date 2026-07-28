@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Pulizia post-consolidamento: cinque runbook specialistici
+  assorbiti in `RUNBOOKS.md`, rimossi archivi e duplicati documentali, mappa
+  corrente ridotta a 19 file. Rimossi checkout Codex storici e cache/build
+  locali rigenerabili; preservati dati, credenziali e configurazioni operative.
+  Le tre branch remote obsolete indicate dall'utente risultavano gia` assenti;
+  rimossa la copia locale confluita `connector/local-state-db`.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-H03` e il programma `CONS`: pubblicato
   l'handoff verificabile della release 1.1 e aperta la pull request `#1` da
   `codex/v1.1-development` verso `main`. Branch pubblicata, merge non eseguito;

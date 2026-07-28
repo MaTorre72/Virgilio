@@ -41,7 +41,8 @@ Riferimento architetturale condiviso: `docs/ARCHITETTURA_UNIFICATA.md`.
 - Usare `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md` come fonti operative primarie.
 - Usare `docs/DEV_BACKLOG.md` solo per il task selezionato.
 - Usare `docs/ARCHITETTURA_UNIFICATA.md` solo per dubbi architetturali.
-- Usare `docs/CLASP_WORKFLOW.md` solo per task Apps Script o `clasp`.
+- Usare la sezione Apps Script di `docs/RUNBOOKS.md` solo per task Apps Script
+  o `clasp`.
 - Tenere i cambi piccoli, reversibili e coerenti con il lessico ufficiale.
 
 ## Test
