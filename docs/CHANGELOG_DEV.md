@@ -1,5 +1,9 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-R04`: creato e pubblicato il tag annotato
+  `v1.1.0` sul commit sorgente release `68f3b90`; annotazione con installer,
+  SHA-256 e Build ID e riferimenti locale/remoto verificati coincidenti.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-R03`: prodotta dal commit pulito `68f3b90`
   la release desktop `CaronteSetup-1.1.0-68f3b90.exe` (30.699.894 byte),
   SHA-256 `8CD723E3DF14DFB30DE1E17D5BDDC29C81E3C87558DCBC85CA33828AE40DDE92`,

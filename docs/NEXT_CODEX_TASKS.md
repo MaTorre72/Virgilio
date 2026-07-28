@@ -1,32 +1,31 @@
 # Next Codex Task
 
-## CORRENTE - CONS-R04 - Tag release v1.1.0
+## CORRENTE - CONS-D01 - Inventario documentale
 
-Stato: `TODO`. Priorita`: `P0`.
+Stato: `TODO`. Priorita`: `P1`.
 
-Risultato: il tag annotato `v1.1.0` identifica senza ambiguita` il commit release
-e il riferimento remoto coincide con quello locale.
+Risultato: ogni documento versionato e` classificato senza ambiguita` come
+`KEEP`, `MERGE`, `HISTORY` o `REMOVE`, con destinazione o motivazione esplicita.
 
-Dipendenze: `CONS-R03` chiuso `DONE`; installer e manifest verificati dal commit
-`68f3b90`.
+Dipendenze: `CONS-R04` chiuso `DONE`; tag release `v1.1.0` pubblicato e verificato.
 
-Componenti ammessi: tag Git annotato `v1.1.0`, riferimenti remoti ed evidenze
-documentali del solo task.
+Componenti ammessi: documenti versionati, inventario documentale ed evidenze del
+solo task.
 
-Esclusioni: release GitHub, Apps Script, servizi reali, modifica o merge di
-`main`, altri tag e cambiamenti funzionali.
+Esclusioni: rimozione o fusione effettiva di file, codice, Apps Script, servizi
+reali, modifica o merge di `main`.
 
-Condizione di blocco: tag locale o remoto preesistente, commit candidato mutato,
-upstream divergente o impossibilita` di verificare il riferimento remoto.
+Condizione di blocco: perimetro documentale non enumerabile, classificazione
+ambigua senza fonte autorevole o upstream divergente.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-R04-AC1` nessun `v1.1.0` locale o remoto preesiste. | elenco tag e `ls-remote` |
-| `CONS-R04-AC2` il commit candidato coincide con branch e manifest release. | confronto SHA |
-| `CONS-R04-AC3` il tag annotato contiene identita` e riferimenti release. | `git show` del tag |
-| `CONS-R04-AC4` il push crea solo `refs/tags/v1.1.0`. | push esplicito e fetch |
-| `CONS-R04-AC5` riferimenti locale/remoto, tree e puntatori coincidono. | rev-parse, diff e stato Git |
+| `CONS-D01-AC1` ogni documento versionato compare una sola volta. | elenco Git e confronto inventario |
+| `CONS-D01-AC2` ogni voce usa una delle quattro classi ammesse. | validazione categorie |
+| `CONS-D01-AC3` `MERGE` e `REMOVE` indicano destinazione o motivazione. | controllo campi obbligatori |
+| `CONS-D01-AC4` documenti canonici e storici sono distinguibili. | confronto link e fonti operative |
+| `CONS-D01-AC5` inventario, diff, segreti e puntatori sono verificati. | controlli Git e scansione |
 
 ## SUCCESSIVO
 
-`CONS-D01` - inventario documentale `KEEP/MERGE/HISTORY/REMOVE` completo.
+`CONS-D02` - architettura corrente unificata in un solo documento canonico.

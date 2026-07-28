@@ -52,6 +52,18 @@ Stato: `DONE` (2026-07-28).
 | `AC4` | confronto artefatto/manifest | 30.699.894 byte; SHA-256 `8CD723E3DF14DFB30DE1E17D5BDDC29C81E3C87558DCBC85CA33828AE40DDE92`; Build ID `8268f442-8066-45c3-a9bc-0b32f6acdc76` | `PASS` |
 | `AC5` | diff, scansione e stato Git | artefatti ignorati; puntatori, diff e segreti verificati | `PASS` |
 
+### CONS-R04 - Tag release v1.1.0
+
+Stato: `DONE` (2026-07-28).
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `AC1` | elenco tag e `ls-remote` | `v1.1.0` assente localmente e su `origin` prima della creazione | `PASS` |
+| `AC2` | confronto SHA | tag sul commit sorgente `68f3b90`, coincidente con branch e manifest release | `PASS` |
+| `AC3` | `git show` del tag | annotazione registra versione, installer, SHA-256 e Build ID | `PASS` |
+| `AC4` | push esplicito e fetch | pubblicato esclusivamente `refs/tags/v1.1.0` | `PASS` |
+| `AC5` | rev-parse, diff e stato Git | riferimenti locale/remoto coincidenti e puntatori aggiornati | `PASS` |
+
 ## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,

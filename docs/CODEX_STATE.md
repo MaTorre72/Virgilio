@@ -5,7 +5,11 @@
   un commit per run; Git usa solo fetch/pull fast-forward e push non forzato.
 - Iniziativa corrente: `CONS - Pubblicazione, pulizia e consegna 1.1`, definita
   in `docs/CONSOLIDATION_PROGRAM.md`.
-- Task corrente: `CONS-R04`, tag annotato `v1.1.0` e relativi riferimenti remoti.
+- Task corrente: `CONS-D01`, inventario documentale completo
+  `KEEP/MERGE/HISTORY/REMOVE`.
+- `CONS-R04` e` `DONE`: il tag annotato `v1.1.0` identifica il commit sorgente
+  release `68f3b90`; annotazione, riferimento locale e riferimento remoto sono
+  stati verificati e coincidono.
 - `CONS-R03` e` `DONE`: dal commit pulito `68f3b90` sono stati prodotti
   `CaronteSetup-1.1.0-68f3b90.exe` e manifest; build e smoke installer `PASS`.
   Artefatto: 30.699.894 byte, SHA-256
