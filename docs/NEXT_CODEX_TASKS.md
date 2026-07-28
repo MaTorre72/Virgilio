@@ -1,31 +1,31 @@
 # Next Codex Task
 
-## CORRENTE - CONS-D02 - Architettura corrente canonica
+## CORRENTE - CONS-D03 - Runbook correnti brevi
 
 Stato: `TODO`. Priorita`: `P1`.
 
-Risultato: l'architettura corrente e` descritta senza contraddizioni in
-`docs/ARCHITETTURA_UNIFICATA.md`, unica fonte canonica.
+Risultato: setup, sviluppo, test, operazioni e release hanno percorsi brevi,
+non duplicati e basati su comandi verificati.
 
-Dipendenze: `CONS-D01` chiuso `DONE`; inventario documentale completo.
+Dipendenze: `CONS-D02` chiuso `DONE`; architettura corrente canonica.
 
-Componenti ammessi: `docs/ARCHITETTURA_UNIFICATA.md`, documenti classificati
-`MERGE` verso l'architettura, link ed evidenze del solo task.
+Componenti ammessi: documenti classificati `KEEP` o `MERGE` pertinenti ai
+runbook, link, comandi ed evidenze del solo task.
 
 Esclusioni: rimozione di file, modifica funzionale di codice o Apps Script,
-servizi reali, modifica o merge di `main`.
+servizi reali, build/deploy reali, modifica o merge di `main`.
 
-Condizione di blocco: contraddizione non risolvibile dalla baseline collaudata o
-upstream divergente.
+Condizione di blocco: comando essenziale non verificabile offline o upstream
+divergente.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-D02-AC1` componenti e confini correnti sono univoci. | confronto con baseline e inventario |
-| `CONS-D02-AC2` flusso end-to-end e contratti condivisi sono coerenti. | ricerca termini e link |
-| `CONS-D02-AC3` GUI utente, manutenzione, CLI e GAS hanno responsabilita` distinte. | verifica sezioni canoniche |
-| `CONS-D02-AC4` i documenti architetturali `MERGE` non restano fonti concorrenti. | confronto e aggiornamento link |
-| `CONS-D02-AC5` diff, segreti, prove e puntatori sono verificati. | controlli Git e documentali |
+| `CONS-D03-AC1` setup e sviluppo hanno una sequenza minima univoca. | esecuzione comandi offline |
+| `CONS-D03-AC2` test e smoke indicano ambito e ordine corretti. | prove mirate e smoke |
+| `CONS-D03-AC3` operazioni distinguono uso utente e manutenzione. | confronto con architettura |
+| `CONS-D03-AC4` release documenta build, verifica e vincoli senza deploy. | verifica comandi e link |
+| `CONS-D03-AC5` fonti `MERGE`, diff, segreti e puntatori sono verificati. | controlli Git e documentali |
 
 ## SUCCESSIVO
 
-`CONS-D03` - runbook brevi per setup, sviluppo, test, operazioni e release.
+`CONS-D04` - storia 1.1 condensata e documenti storici fuori dal percorso corrente.

@@ -1,5 +1,8 @@
 # Architettura v1.1
 
+> Documento storico assorbito in
+> `docs/ARCHITETTURA_UNIFICATA.md`. Non e` una fonte architetturale corrente.
+
 ## Visione
 
 Virgilio deve separare guida utente, motore operativo e adattatori esterni.

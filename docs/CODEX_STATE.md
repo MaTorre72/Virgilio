@@ -5,8 +5,12 @@
   un commit per run; Git usa solo fetch/pull fast-forward e push non forzato.
 - Iniziativa corrente: `CONS - Pubblicazione, pulizia e consegna 1.1`, definita
   in `docs/CONSOLIDATION_PROGRAM.md`.
-- Task corrente: `CONS-D02`, architettura corrente unificata in un solo
-  documento canonico.
+- Task corrente: `CONS-D03`, runbook brevi e verificati per setup, sviluppo,
+  test, operazioni e release.
+- `CONS-D02` e` `DONE`: `docs/ARCHITETTURA_UNIFICATA.md` e` l'unica fonte
+  architetturale corrente; profili, risorse condivise, presentazioni, servizi,
+  CLI e GAS hanno confini univoci. Le quattro fonti `MERGE` assorbite sono
+  marcate storiche e non concorrenti.
 - `CONS-D01` e` `DONE`: i 59 documenti versionati sono classificati una sola
   volta in `docs/DOCUMENT_INVENTORY.md` come `KEEP`, `MERGE`, `HISTORY` o
   `REMOVE`; destinazioni e motivazioni obbligatorie sono complete.

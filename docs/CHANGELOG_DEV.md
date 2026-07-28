@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-D02`: consolidata l'architettura corrente
+  in `docs/ARCHITETTURA_UNIFICATA.md`, con confini univoci tra profili,
+  risorse condivise, GUI utente, Manutenzione, CLI, servizi e GAS. Le quattro
+  fonti architetturali `MERGE` sono marcate storiche e non concorrenti.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-D01`: inventariati una sola volta tutti i
   59 documenti versionati in `docs/DOCUMENT_INVENTORY.md`, usando esclusivamente
   `KEEP`, `MERGE`, `HISTORY` e `REMOVE`; destinazioni e motivazioni obbligatorie

@@ -1,5 +1,9 @@
 # Decisioni v1.1
 
+> Documento storico assorbito in
+> `docs/ARCHITETTURA_UNIFICATA.md`. Stati e decisioni qui sotto fotografano una
+> fase precedente e non sono una fonte corrente.
+
 ## Decisioni assunte
 
 | ID | Decisione | Stato |

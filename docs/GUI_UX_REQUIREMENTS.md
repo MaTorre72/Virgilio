@@ -1,5 +1,9 @@
 # Requisiti UX GUI Caronte locale
 
+> Documento storico assorbito in
+> `docs/ARCHITETTURA_UNIFICATA.md`. Il collaudo negativo e i target descritti
+> qui sono evidenze pregresse, non lo stato corrente del prodotto.
+
 ## Stato e obiettivo
 
 Il collaudo manuale del 2026-07-14 e` negativo. La GUI corrente dimostra il

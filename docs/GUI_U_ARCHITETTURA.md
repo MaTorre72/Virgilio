@@ -1,5 +1,9 @@
 # Architettura Caronte Desktop utente
 
+> Documento storico assorbito in
+> `docs/ARCHITETTURA_UNIFICATA.md`. I confini ancora validi sono mantenuti nel
+> documento canonico; stati `target` e percorsi futuri qui restano storici.
+
 ## Scopo e stato
 
 Questo documento fissa i confini della nuova applicazione desktop `Caronte`.

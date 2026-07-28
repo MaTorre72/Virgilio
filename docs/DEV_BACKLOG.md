@@ -76,6 +76,18 @@ Stato: `DONE` (2026-07-28).
 | `AC4` | confronto link e fonti operative | fonti correnti, report datati e `docs/archive/` sono distinti esplicitamente | `PASS` |
 | `AC5` | controlli Git e scansione | inventario, diff, segreti e puntatori verificati | `PASS` |
 
+### CONS-D02 - Architettura corrente canonica
+
+Stato: `DONE` (2026-07-28).
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `AC1` | confronto con baseline e inventario | componenti condivisi, profili e confini sono univoci nel documento canonico | `PASS` |
+| `AC2` | ricerca termini e link | flusso documento/mail, Registro e contratti metadata-only sono coerenti | `PASS` |
+| `AC3` | verifica sezioni canoniche | `user_app`, Manutenzione, CLI, servizi e GAS hanno responsabilita` distinte | `PASS` |
+| `AC4` | confronto documenti `MERGE` | quattro fonti assorbite dichiarano esplicitamente lo stato storico | `PASS` |
+| `AC5` | controlli Git e documentali | link, diff, segreti, puntatori e verifiche mirate risultano verdi | `PASS` |
+
 ## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
 
 Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,

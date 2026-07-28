@@ -4,12 +4,46 @@ Virgilio ha due ingressi tecnici e un solo flusso operativo.
 
 Frase guida: "Virgilio ha due ingressi tecnici e un solo flusso operativo."
 
-Questo documento e` il riferimento condiviso per lessico, ruoli e flusso operativo.
-README, AGENTS e backlog rimandano qui quando serve allineare il modello comune.
+Questo documento e` l'unica fonte canonica dell'architettura corrente. README,
+AGENTS, runbook e backlog rimandano qui; i documenti architetturali precedenti
+sono fonti storiche e non introducono decisioni concorrenti.
+
+Baseline descritta: Virgilio `1.1.0`, commit funzionale collaudato `7e18277`,
+collaudo umano `PASS` del 2026-07-28 e Apps Script deployment `40`.
 
 ## Flusso unico
 
 Acquisizione -> Quarantena locale eventuale -> Limbo Drive unico -> Da archiviare -> Form -> Pratica finale -> Registro
+
+Il documento e` l'unita` del flusso. `Da archiviare` contiene una riga per
+documento, mentre una mail e` completata soltanto quando tutti i documenti
+correlati risultano `archiviato`. Il profilo locale puo` aggiungere l'etichetta
+di completamento e rimuovere la sola etichetta di ingresso dopo aver verificato
+la post-condizione, senza `DELETE`, `MOVE` o `EXPUNGE`.
+
+## Confini dei componenti
+
+```text
+GmailApp ---------------------> Apps Script ----+
+IMAP -> quarantena -> scan -> servizi locali ---+-> Limbo -> Da archiviare
+                                                  -> Form -> pratica -> Registro
+
+user_app ---------+
+maintenance_gui --+-> servizi applicativi condivisi -> dominio/porte -> adapter
+CLI ---------------+
+```
+
+- Apps Script e` l'adattatore del profilo Google-only e conserva form, coda,
+  archiviazione e integrazioni Google; non viene sostituito da Python.
+- Il Local connector acquisisce da IMAP, applica i gate locali e coordina gli
+  adapter Drive, Registro e completamento senza inviare byte, base64 o path
+  locali ad Apps Script.
+- Il Limbo Drive, `Da archiviare`, il Form, la pratica finale e il Registro sono
+  risorse condivise del flusso, non implementazioni alternative per profilo.
+- SQLite conserva stato tecnico locale, ripresa e correlazioni del connettore;
+  non sostituisce il Registro umano cloud e non e` esposto nella UX ordinaria.
+- Bucoliche e` il contratto append-only del Registro condiviso, non un database
+  applicativo parallelo.
 
 ## Profili operativi
 
@@ -42,6 +76,32 @@ Dopo il collaudo, il profilo da usare resta quello coerente con la superficie de
 |---|---|---|---|
 | Google-only | `apps_script/src/*.gs`, `apps_script/src/virgilio.html`, `apps_script/src/appsscript.json` | `.clasp.json`, `clasp` CLI | la sorgente canonica e` in `apps_script/src`; `clasp` sincronizza direttamente quella cartella |
 | Local connector | `local_connector/src/virgilio_connector/*.py` | `local_connector/tests/`, `local_connector/tests/fixtures/`, `local_connector/scripts/` | resta locale, offline e testabile senza servizi reali |
+
+## Presentazioni e servizi condivisi
+
+Le sole presentazioni desktop target sono `virgilio_connector.user_app` per
+`Caronte` e `virgilio_connector.maintenance_gui` per `Caronte Manutenzione`.
+La CLI in `virgilio_connector.__main__` e` un terzo adapter degli stessi servizi.
+
+| Superficie | Responsabilita` | Non possiede |
+|---|---|---|
+| `user_app` | primo avvio, Home, caselle, attivita` e impostazioni in linguaggio utente | regole operative, output CLI grezzo o dettagli tecnici |
+| `maintenance_gui` | configurazione tecnica, diagnostica, backup, integrita` e reset controllato | flusso ordinario o implementazione GUI legacy |
+| CLI | parsing, dispatch, output e codici di ritorno per sviluppo e automazione | copie dei casi d'uso |
+| servizi `application` | configurazione, account, operazioni, attivita`, manutenzione e avvio Windows | widget, toolkit grafici o parsing CLI |
+| dominio, porte e adapter | invarianti e accessi concreti a filesystem, credenziali, mail, Drive e Registro | navigazione e decisioni di presentazione |
+
+Le dipendenze procedono dalle tre superfici verso i servizi, quindi verso
+dominio/porte e adapter. I servizi non importano presentazioni o `__main__`.
+`user_app` e `maintenance_gui` non importano `gui` o `gui_*`: questi moduli sono
+legacy abbandonato, non sono target di sviluppo o packaging e saranno rimossi
+solo dal task di pulizia dedicato.
+
+I risultati dei servizi sono strutturati e gli errori sono tipizzati: la GUI
+utente li traduce in indicazioni azionabili, Manutenzione espone il dettaglio
+tecnico pertinente e la CLI sceglie testo e return code, senza duplicare la
+regola operativa. Il controllo continuo e` coordinato da un runner non
+bloccante, con esclusione dei doppi avvii e arresto controllato.
 
 ## Lessico ufficiale
 
