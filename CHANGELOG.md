@@ -49,6 +49,8 @@ Prima release ufficiale del percorso desktop consolidato di Virgilio.
 Gli artefatti `0.11.0-<commit>` erano RC identificabili usate durante il
 collaudo. La RC baseline `0.11.0-7e18277` ha ricevuto `PASS` umano il 2026-07-28;
 resta un'evidenza storica e non e` la release ufficiale `1.1.0`.
+Il percorso approvato usa Apps Script deployment `40`; backlog, prove intermedie
+e report datati restano recuperabili dalla storia Git precedente a `CONS-D04`.
 
 ## 1.0
 

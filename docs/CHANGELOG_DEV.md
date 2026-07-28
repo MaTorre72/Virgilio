@@ -1,5 +1,12 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-D04`: storia e baseline 1.1 condensate nel
+  changelog pubblico e in questo registro cronologico; 17 backlog, roadmap,
+  report e guide assorbite sono stati ritirati dal percorso corrente, dopo
+  verifica dei link, e restano recuperabili dal commit `45a19f4`. README,
+  runbook e puntatori operativi rimandano soltanto a fonti correnti; smoke
+  locale `600 passed`.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-D03`: `docs/RUNBOOKS.md` offre percorsi
   brevi e univoci per setup, sviluppo, test, operazioni e release. Le tre fonti
   `MERGE` pertinenti sono assorbite e marcate storiche; nessun deploy o servizio

@@ -1,263 +1,35 @@
 # Backlog di sviluppo
 
-Nota: lo storico, i completamenti chiusi e le milestone finite sono stati spostati in
-`docs/DEV_BACKLOG_ARCHIVE.md`; il registro datato e` in `docs/CHANGELOG_DEV.md`.
-Le fonti operative leggere restano `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md`.
+Le fonti operative sono `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md`;
+l'ordine completo del consolidamento e` in `docs/CONSOLIDATION_PROGRAM.md`.
+Lo storico di sviluppo e` condensato in `CHANGELOG.md` e registrato
+cronologicamente in `docs/CHANGELOG_DEV.md`.
 
 ## Programma CONS - Pubblicazione, pulizia e consegna 1.1
 
-Stato: `IN_PROGRESS`. Programma e ordine vincolante sono in
-`docs/CONSOLIDATION_PROGRAM.md`. Il collaudo umano finale e` `PASS`; la coda
-parte da `CONS-R01` e termina con una pull request pronta verso `main`, senza
-merge automatico. Ogni task resta atomico, seriale e con massimo un commit.
+Stato: `IN_PROGRESS`.
 
-Stati operativi: `TODO`, `IN_PROGRESS`, `DONE`, `BLOCKED`. La classificazione speciale
-`ABANDONED_LEGACY` identifica un'implementazione storica non supportata, non
-distribuita e non piu` sviluppata, senza chiudere l'eventuale applicazione target
-che la sostituisce.
+| Task | Stato | Evidenza sintetica |
+| --- | --- | --- |
+| `CONS-R01` | `DONE` | versione prodotto unica `1.1.0`; mirati `22 passed`, smoke `600 passed` |
+| `CONS-R02` | `DONE` | README e changelog ufficiale 1.1 verificati; smoke `600 passed` |
+| `CONS-R03` | `DONE` | installer ufficiale verificato, SHA-256 e Build ID registrati |
+| `CONS-R04` | `DONE` | tag annotato `v1.1.0` pubblicato e verificato |
+| `CONS-D01` | `DONE` | inventario documentale completo |
+| `CONS-D02` | `DONE` | architettura corrente resa canonica |
+| `CONS-D03` | `DONE` | runbook correnti brevi e verificati |
+| `CONS-D04` | `DONE` | storia 1.1 condensata; fascicoli chiusi ritirati dal percorso corrente |
+| `CONS-G01` | `TODO` | inventario di entry point, comandi, import e file di build |
 
-### CONS-R01 - Versione prodotto unica 1.1.0
+I task successivi restano chiusi finche` non diventano il successore immediato
+in `docs/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
 
-Stato: `DONE` (2026-07-28).
+### Evidenze CONS-D04
 
-| Criterio | Prova prevista | Evidenza ottenuta | Esito |
-| --- | --- | --- | --- |
-| `AC1` | ricerca versioni correnti | sorgenti e test correnti usano `1.1.0`; `0.11.0` resta nelle evidenze RC | `PASS` |
-| `AC2` | metadata e build | setuptools, runtime e build leggono `_version.__version__` | `PASS` |
-| `AC3` | build-info/about | test mirati verificano esposizione `1.1.0` | `PASS` |
-| `AC4` | regressione | `22 passed`; smoke locale `600 passed` | `PASS` |
-| `AC5` | Git e segreti | diff circoscritto, scansione e puntatori verificati | `PASS` |
-
-### CONS-R02 - README e changelog release 1.1
-
-Stato: `DONE` (2026-07-28).
-
-| Criterio | Prova prevista | Evidenza ottenuta | Esito |
-| --- | --- | --- | --- |
-| `AC1` | sezioni e link | README presenta il percorso desktop collaudato da configurazione ad archiviazione | `PASS` |
-| `AC2` | confronto con stato | changelog 1.1.0 riassume funzioni e correzioni della baseline | `PASS` |
-| `AC3` | termini e riferimenti | prerequisiti, sincronizzazione, allegati e confini operativi sono espliciti | `PASS` |
-| `AC4` | versioni e formulazioni | `1.1.0` e` ufficiale; `0.11.0-<commit>` e` dichiarata RC storica | `PASS` |
-| `AC5` | Git e segreti | link e diff verificati; smoke locale e scansione segreti `600 passed` | `PASS` |
-
-### CONS-R03 - Build release 1.1.0
-
-Stato: `DONE` (2026-07-28).
-
-| Criterio | Prova prevista | Evidenza ottenuta | Esito |
-| --- | --- | --- | --- |
-| `AC1` | manifest e build-info | build pulita da `68f3b90`, versione `1.1.0`, OAuth incluso | `PASS` |
-| `AC2` | smoke build | prodotto `CaronteSetup-1.1.0-68f3b90.exe`; smoke build `PASS` | `PASS` |
-| `AC3` | smoke installer | installazione, Informazioni e disinstallazione controllate `PASS`, dati preservati | `PASS` |
-| `AC4` | confronto artefatto/manifest | 30.699.894 byte; SHA-256 `8CD723E3DF14DFB30DE1E17D5BDDC29C81E3C87558DCBC85CA33828AE40DDE92`; Build ID `8268f442-8066-45c3-a9bc-0b32f6acdc76` | `PASS` |
-| `AC5` | diff, scansione e stato Git | artefatti ignorati; puntatori, diff e segreti verificati | `PASS` |
-
-### CONS-R04 - Tag release v1.1.0
-
-Stato: `DONE` (2026-07-28).
-
-| Criterio | Prova prevista | Evidenza ottenuta | Esito |
-| --- | --- | --- | --- |
-| `AC1` | elenco tag e `ls-remote` | `v1.1.0` assente localmente e su `origin` prima della creazione | `PASS` |
-| `AC2` | confronto SHA | tag sul commit sorgente `68f3b90`, coincidente con branch e manifest release | `PASS` |
-| `AC3` | `git show` del tag | annotazione registra versione, installer, SHA-256 e Build ID | `PASS` |
-| `AC4` | push esplicito e fetch | pubblicato esclusivamente `refs/tags/v1.1.0` | `PASS` |
-| `AC5` | rev-parse, diff e stato Git | riferimenti locale/remoto coincidenti e puntatori aggiornati | `PASS` |
-
-### CONS-D01 - Inventario documentale
-
-Stato: `DONE` (2026-07-28).
-
-| Criterio | Prova prevista | Evidenza ottenuta | Esito |
-| --- | --- | --- | --- |
-| `AC1` | elenco Git e confronto inventario | tutti i 59 documenti versionati compaiono una sola volta in `docs/DOCUMENT_INVENTORY.md` | `PASS` |
-| `AC2` | validazione categorie | ogni riga usa solo `KEEP`, `MERGE`, `HISTORY` o `REMOVE` | `PASS` |
-| `AC3` | controllo campi obbligatori | tutte le voci `MERGE` e `REMOVE` hanno destinazione o motivazione esplicita | `PASS` |
-| `AC4` | confronto link e fonti operative | fonti correnti, report datati e `docs/archive/` sono distinti esplicitamente | `PASS` |
-| `AC5` | controlli Git e scansione | inventario, diff, segreti e puntatori verificati | `PASS` |
-
-### CONS-D02 - Architettura corrente canonica
-
-Stato: `DONE` (2026-07-28).
-
-| Criterio | Prova prevista | Evidenza ottenuta | Esito |
-| --- | --- | --- | --- |
-| `AC1` | confronto con baseline e inventario | componenti condivisi, profili e confini sono univoci nel documento canonico | `PASS` |
-| `AC2` | ricerca termini e link | flusso documento/mail, Registro e contratti metadata-only sono coerenti | `PASS` |
-| `AC3` | verifica sezioni canoniche | `user_app`, Manutenzione, CLI, servizi e GAS hanno responsabilita` distinte | `PASS` |
-| `AC4` | confronto documenti `MERGE` | quattro fonti assorbite dichiarano esplicitamente lo stato storico | `PASS` |
-| `AC5` | controlli Git e documentali | link, diff, segreti, puntatori e verifiche mirate risultano verdi | `PASS` |
-
-### CONS-D03 - Runbook correnti brevi
-
-Stato: `DONE` (2026-07-28).
-
-| Criterio | Prova prevista | Evidenza ottenuta | Esito |
-| --- | --- | --- | --- |
-| `AC1` | esecuzione comandi offline | setup e sviluppo hanno un ingresso unico in `docs/RUNBOOKS.md`; help CLI verificato | `PASS` |
-| `AC2` | prove mirate e smoke | ordine mirati -> area -> smoke esplicito; smoke locale verde | `PASS` |
-| `AC3` | confronto con architettura | Caronte, Manutenzione e CLI hanno responsabilita` distinte e coerenti | `PASS` |
-| `AC4` | verifica comandi e link | build, installer, manifest, smoke e vincoli di pubblicazione sono collegati senza deploy | `PASS` |
-| `AC5` | controlli Git e documentali | tre fonti `MERGE` assorbite e marcate storiche; diff, segreti e puntatori verificati | `PASS` |
-
-## Milestone v1.1.4 - Rifinitura collaudo, setup e hardening
-
-Obiettivo: consolidare collaudo, setup e hardening prima di qualunque rifinitura di UX,
-mantenendo task piccoli, seriali, verificabili e doc-first.
-
-Nota operativa: il collaudo UX manuale del 2026-07-14 non e` stato superato.
-`V114-T17` e` classificato `ABANDONED_LEGACY`: la vecchia implementazione non
-rappresenta ne` la GUI utente finale ne` la nuova suite `Caronte Manutenzione`.
-
-| ID | Stato | Pri | Obiettivo | Ambito | Criteri di accettazione | Vincoli |
-|---|---|---|---|---|---|---|
-| V114-T02 | DONE | P0 | Flusso unico e cartelle | `docs/ARCHITETTURA_UNIFICATA.md`, `README.md` | il flusso `Acquisizione -> Quarantena locale eventuale -> Limbo Drive unico -> Da archiviare -> Form -> Pratica finale -> Registro` e` univoco e non ambiguo | non introdurre un secondo Limbo; non confondere Quarantena locale con la cartella condivisa |
-| V114-T02-bis | DONE | P0 | Pulizia configurazione extra post-allineamento | `local_connector/.env.example`, `local_connector/accounts.example.yaml`, `local_connector/src/virgilio_connector/`, `apps_script/src/` | gli esempi principali sono solo multi-account, il sync locale del Limbo e` distinto ma non alternativo al Limbo Drive, e Bucoliche non dipende piu` dal tab generico `bucoliche` | task extra fuori sequenza v1.1.4; non cambia il prossimo task regolare |
-| V114-T03 | DONE | P0 | Modi operativi supportati | `docs/ARCHITETTURA_UNIFICATA.md`, `README.md` | Google-only risulta mono-account; Local connector risulta multi-casella; una casella Google Workspace puo` essere letta via IMAP dal Local connector | non mischiare i profili; non aprire un flusso parallelo; non usare servizi reali |
-| V114-T04 | DONE | P1 | Configurazione multi-account neutra | `local_connector/.env.example`, `docs/ARCHITETTURA_UNIFICATA.md` | esempi e alias sono neutri, almeno due account generici sono previsti e non compaiono riferimenti personali | niente dati personali; niente indirizzi reali; niente alias instabili |
-| V114-T05 | DONE | P1 | Secrets hardening locale | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | `.env`, password, token e log sono trattati in modo sicuro; la configurazione viene validata senza esporre segreti | segreti mai nel sorgente; log mascherati; no servizi reali |
-| V114-T06 | DONE | P1 | Secrets e setup GAS | `apps_script/src/`, `docs/CLASP_WORKFLOW.md`, `README.md` | nessuna procedura chiede di scrivere segreti nei `.gs`; il setup usa Script Properties e verifica configurazione | non mettere segreti nel codice; non cambiare il form; non usare `clasp push` fuori dal task |
-| V114-T07 | DONE | P1 | Office attachments policy | `docs/ARCHITETTURA_UNIFICATA.md`, `apps_script/src/`, `local_connector/` | `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx` sono ammessi solo con scansione obbligatoria; macro-enabled, archivi compressi ed eseguibili restano bloccati | non indebolire i gate di scan; non introdurre nuove categorie di file |
-| V114-T08 | DONE | P1 | Timestamp Europe/Rome only | `apps_script/src/`, `local_connector/`, `docs/ARCHITETTURA_UNIFICATA.md` | tutti i timestamp operativi usano `Europe/Rome`; non compaiono campi UTC, nemmeno interni, in SQLite, manifest, log o Google Sheet | no UTC; no conversioni ambigue; no campi tecnici duplicati |
-| V114-T09 | DONE | P1 | GAS setup e trigger Caronte | `apps_script/src/`, `docs/CLASP_WORKFLOW.md` | la sequenza setup properties -> verifica configurazione -> setup trigger -> stato trigger -> stop trigger -> test minimo e` lineare e distinguibile da produzione | non confondere test e produzione; non saltare la verifica configurazione |
-| V114-T10 | DONE | P1 | Setup CLI ready-to-run | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | i comandi CLI di setup, validazione percorsi, cartelle locali, Limbo e Sheet sono chiari e pronti all'uso per un utente non tecnico | la GUI non precede la CLI; no servizi reali; no nuovi tool inutili |
-| V114-T11 | DONE | P2 | GUI installazione locale fase 1 | `local_connector/`, `README.md` | la GUI resta solo un wrapper controllato della CLI per configurazione iniziale, test, stato e messaggi | non creare una nuova applicazione parallela; non riscrivere la CLI |
-| V114-T12 | DONE | P3 | Reset locale sicuro | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | esiste `reset-local-state --backup --confirm`, con backup automatico, conferma esplicita e messaggi chiari | priorita` bassa; backup obbligatorio; nessuna cancellazione implicita |
-| V114-T13 | DONE | P3 | Migrazione installazione locale | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | export/import configurazione funzionano senza segreti in chiaro e supportano cambio PC o cartelle | priorita` bassa; nessun segreto in chiaro; nessun dato personale |
-| V114-T14 | DONE | P2 | Avvio Caronte locale | `local_connector/`, CLI utente finale, `README.md` | esiste `virgilio watch` o `virgilio local-watch` che avvia il connettore e resta in attesa controllando la mail con polling controllato | un solo comando utente finale; niente GUI nuova; niente polling fuori controllo |
-| V114-T15 | DONE | P3 | Installazione automatica Win11 | `local_connector/`, `README.md`, `docs/SETUP_AND_TEST.md` | esiste un comando per l'esecuzione automatica su Windows 11 tramite Utilita di Pianificazione | solo Windows 11; niente servizi residenti; niente installazioni silenziose ambigue |
-| V114-T16 | DONE | P2 | Documentazione utente finale | `README.md`, `docs/SETUP_AND_TEST.md`, `docs/CLASP_WORKFLOW.md` | installazione minima, primo avvio, test, uso quotidiano e troubleshooting sono spiegati in modo operativo | niente segreti, niente termini macchina superflui, niente nuove procedure non testate |
-| V114-T17 | ABANDONED_LEGACY | P1 | Implementazione GUI legacy | `local_connector/`, documentazione GUI | `gui`/`gui_*` non sono supportati, distribuiti o sviluppati; `Caronte Manutenzione` resta target con una nuova presentazione | nessun import legacy da `user_app` o `maintenance_gui`; nessun legacy nel packaging |
-| V114-T17.1 | DONE | P0 | Modello unico configurazione GUI | servizi configurazione, YAML, valori locali, test | API applicative indipendenti dalla GUI leggono, validano e scrivono il modello unico; una sola fonte autorevole per dato; aggiornamenti coerenti e recuperabili | primo task; niente segreti nel YAML/log; nessuna modifica manuale richiesta all'utente |
-| V114-T17.2 | DONE | P0 | Wizard primo avvio | GUI setup, servizi di T17.1 | procedura Cartelle -> Caselle -> Registro condiviso -> Verifica finale, riapribile e guidata | dipende da T17.1; niente termini tecnici nella vista ordinaria |
-| V114-T17.3 | DONE | P0 | Gestione multi-account completa | servizi account e GUI | elenco, aggiunta, modifica, abilita/disabilita, rimozione e test read-only separato per almeno due caselle | dipende da T17.2; account e server distinti; niente servizi reali nei test |
-| V114-T17.4 | DONE | P0 | Gestione sicura credenziali | archivio locale e GUI account | password mascherate, mostra/nascondi, persistenza locale, nomi stabili e redazione log | dipende da T17.3; nessun segreto versionato o nel sorgente |
-| V114-T17.5 | DONE | P0 | Avvio e arresto non bloccanti | runner/worker e GUI | controllo singolo, continuo e stop funzionano senza blocchi, doppi avvii o processi orfani | dipende da T17.4; riusare servizi applicativi; niente `subprocess.run` continuo nel thread GUI |
-| V114-T17.6 | DONE | P1 | Home operativa | stato e metriche GUI | stato, contatori, ultima/prossima verifica e tre azioni primarie sono leggibili | dipende da T17.5; niente output CLI grezzo |
-| V114-T17.7 | DONE | P1 | Vista Attivita` leggibile | eventi locali e GUI | tabella Europe/Rome filtrabile per casella, esito, data ed errore, con messaggi comprensibili | dipende da T17.6; niente JSON ordinario o segreti |
-| V114-T17.8 | DONE | P1 | Impostazioni contestuali | GUI impostazioni | rimosso il pannello globale `Parametri azioni`; ogni campo appare solo nel proprio contesto | dipende da T17.7; dettagli tecnici solo in diagnostica avanzata |
-| V114-T17.9 | DONE | P1 | Automazione Windows completa | servizi Task Scheduler e GUI | installazione, stato, ultimo esito e rimozione sono gestibili senza terminale | dipende da T17.8; Windows 11, CLI-first condivisa, niente servizi residenti |
-
-### Decisione formale su V114-T17
-
-`V114-T17` e` classificato `ABANDONED_LEGACY`: i moduli `gui` e `gui_*` non
-vengono piu` sviluppati, documentati come percorso d'uso, distribuiti o inclusi
-nel packaging. `Caronte Manutenzione` resta invece un'applicazione target: la sua
-entry point `maintenance_gui` dovra` comporre una nuova presentazione separata e
-condividere i servizi applicativi con `user_app` e CLI, senza importare il legacy.
-
-## Iniziativa GUI-U - Caronte Desktop utente
-
-Fase corrente: `GUI-U-E1 - Fondazioni applicative`.
-
-Nomi definitivi:
-
-- prodotto utente: `Caronte`;
-- modulo utente: `virgilio_connector.user_app`;
-- comando di sviluppo utente: `user-gui`;
-- eseguibile utente: `Caronte.exe`;
-- applicazione tecnica: `Caronte Manutenzione`;
-- entry point tecnica: `virgilio_connector.maintenance_gui`;
-- comando tecnico: `maintenance-gui`;
-- eventuale eseguibile tecnico: `CaronteManutenzione.exe`.
-
-Il comando `gui` e i moduli `gui`/`gui_*` appartengono all'implementazione legacy
-abbandonata. `maintenance_gui` mantiene l'identita` target, ma deve essere
-separata dal legacy nella nuova presentazione.
-
-Il backlog operativo, le dipendenze, le prove previste e i tre gate umani sono definiti in
-`docs/GUI_U_BACKLOG.md`. Questo file non ne duplica il contenuto.
-
-| ID | Stato | Pri | Obiettivo | Ambito | Esito |
-|---|---|---|---|---|---|
-| GUI-U-B01 | DONE | P0 | Backlog operativo e Definition of Done | sola governance documentale | creato `docs/GUI_U_BACKLOG.md`; riscritta la Definition of Done con criteri misurabili e regole anti-loop |
-
-### V114-T17.1 - Modello unico configurazione GUI
-
-- **Obiettivo:** creare servizi indipendenti dalla GUI per un modello unico che coordini YAML e file locale.
-- **Dipendenze:** nessuna; e` il fondamento obbligatorio di tutta la sequenza.
-- **Ambito:** load/validate/save atomico, migrazione doppioni, alias e nomi env stabili, API CRUD testabili.
-- **Criteri di accettazione:** round-trip multi-account senza perdite; `account_alias` solo nel YAML; `storage.staging_dir` unica fonte Limbo; credenziali solo locali; errori recuperabili.
-- **Test:** unitari con fixture sintetiche per create/update/remove, duplicati, rollback, redazione e migrazione.
-- **Vincoli:** nessun segreto versionato o nei log; compatibilita` con i loader e servizi operativi esistenti.
-- **Esclusioni:** layout GUI, wizard, monitoraggio e servizi reali.
-
-### V114-T17.2 - Wizard primo avvio
-
-- **Obiettivo:** guidare Cartelle, Caselle, Registro condiviso e Verifica finale.
-- **Dipendenze:** V114-T17.1.
-- **Ambito:** rilevamento primo avvio, navigazione, validazioni, riepilogo, salvataggio e riapertura.
-- **Criteri di accettazione:** nessun YAML/env/Python richiesto; cartelle verificate; almeno due account inseribili; Bucoliche facoltativo; problemi azionabili.
-- **Test:** test UI/servizi con filesystem temporaneo e provider fake, inclusi avanti/indietro e configurazione incompleta.
-- **Vincoli:** linguaggio utente; nessuna rete automatica; nessun nuovo Spreadsheet o tab.
-- **Esclusioni:** CRUD ordinario completo, hardening finale credenziali e monitoraggio continuo.
-
-### V114-T17.3 - Gestione multi-account completa
-
-- **Obiettivo:** gestire l'intero ciclo di vita delle caselle dalla GUI.
-- **Dipendenze:** V114-T17.2.
-- **Ambito:** tabella, parte semplice/avanzata, add/edit/enable/disable/remove e test IMAP per account.
-- **Criteri di accettazione:** due account con host e credenziali distinti persistono; Gmail ha default; generico e` personalizzabile; test separato read-only.
-- **Test:** unitari CRUD e UI con almeno due account sintetici, alias duplicati, rimozione e fake IMAP.
-- **Vincoli:** accesso prudente `BODY.PEEK`; nessun ack o mutazione remota nel test collegamento.
-- **Esclusioni:** vault remoto, import massivo e modifica del form Apps Script.
-
-### V114-T17.4 - Gestione sicura credenziali
-
-- **Obiettivo:** rendere trasparente e sicuro l'intero ciclo delle credenziali locali.
-- **Dipendenze:** V114-T17.3.
-- **Ambito:** password mascherata, mostra/nascondi, scrittura locale, aggiornamento, cancellazione e redazione.
-- **Criteri di accettazione:** credenziali ritrovate dopo riapertura, mai esposte in YAML, log, errori, export o repository; nomi env deterministici senza collisioni.
-- **Test:** persistenza temporanea, permessi/errore scrittura, update/remove, scanner di output e controllo file vietati.
-- **Vincoli:** `.env` e file locali restano ignorati da Git; nessun secret manager remoto.
-- **Esclusioni:** sincronizzazione credenziali tra PC e autenticazione Google live.
-
-### V114-T17.5 - Avvio e arresto non bloccanti
-
-- **Obiettivo:** distinguere controllo singolo e automatico con controllo completo del ciclo di vita.
-- **Dipendenze:** V114-T17.4.
-- **Ambito:** worker/processo gestito, coda eventi, stato, stop, chiusura finestra e prevenzione doppi avvii.
-- **Criteri di accettazione:** GUI reattiva; stop deterministico; stato attivo/fermo/errore; nessun processo orfano.
-- **Test:** runner fake lento, start/stop/restart, doppio start, eccezione worker e chiusura finestra.
-- **Vincoli:** riusare il runner applicativo; niente processo continuo con `subprocess.run` sul thread principale.
-- **Esclusioni:** Task Scheduler e dashboard completa.
-
-### V114-T17.6 - Home operativa
-
-- **Obiettivo:** rendere immediati stato e azioni quotidiane.
-- **Dipendenze:** V114-T17.5.
-- **Ambito:** stato, ultima/prossima verifica, caselle attive, contatori, problemi e tre azioni primarie.
-- **Criteri di accettazione:** stato coerente col worker e aggiornato senza blocchi; azioni principali sempre riconoscibili.
-- **Test:** transizioni di stato e contatori con eventi sintetici, inclusi errore e assenza configurazione.
-- **Vincoli:** Europe/Rome; niente termini o output CLI nella Home.
-- **Esclusioni:** analisi storica avanzata e metriche remote.
-
-### V114-T17.7 - Vista Attivita` leggibile
-
-- **Obiettivo:** mostrare attivita` ed errori in linguaggio comprensibile.
-- **Dipendenze:** V114-T17.6.
-- **Ambito:** proiezione eventi, tabella e filtri per casella, esito, data ed errore.
-- **Criteri di accettazione:** righe con data/ora, casella, messaggio, allegato, azione, esito e problema; filtri combinabili; errori azionabili.
-- **Test:** proiezioni e filtri su eventi sintetici, timezone e redazione dati sensibili.
-- **Vincoli:** niente JSON grezzo nella vista ordinaria; SQLite resta dettaglio interno.
-- **Esclusioni:** dashboard web, analytics remoto e modifica dello schema Registro Google.
-
-### V114-T17.8 - Impostazioni contestuali
-
-- **Obiettivo:** sostituire il pannello globale con impostazioni collocate nel contesto corretto.
-- **Dipendenze:** V114-T17.7.
-- **Ambito:** Limbo, dati locali, intervallo, scanner, Bucoliche, avvio Windows e impostazioni generali.
-- **Criteri di accettazione:** `Parametri azioni` rimosso; nessun campo irrilevante simultaneo; dettagli tecnici confinati alla diagnostica.
-- **Test:** visibilita` condizionale, validazioni e persistenza per ciascuna sezione.
-- **Vincoli:** una fonte autorevole per dato; parola `staging` assente dall'interfaccia ordinaria.
-- **Esclusioni:** nuove preferenze non richieste e redesign del form Apps Script.
-
-### V114-T17.9 - Automazione Windows completa
-
-- **Obiettivo:** amministrare l'avvio automatico interamente dalla GUI.
-- **Dipendenze:** V114-T17.8.
-- **Ambito:** servizi condivisi per install, query stato/ultimo esito e remove; pannello GUI dedicato.
-- **Criteri di accettazione:** stato reale leggibile, installazione/rimozione confermate e nessuna scelta manuale di Python.
-- **Test:** comandi Task Scheduler simulati, parsing stato/errori, idempotenza e conferme distruttive.
-- **Vincoli:** solo Windows 11 e Utilita` di Pianificazione; niente servizio residente o finestra visibile.
-- **Esclusioni:** supporto scheduler di altri sistemi e modifiche al monitoraggio operativo.
+| Criterio | Evidenza ottenuta | Esito |
+| --- | --- | --- |
+| `AC1` | `CHANGELOG.md` conserva funzioni, correzioni, baseline `7e18277`, `PASS` umano e deployment `40` | `PASS` |
+| `AC2` | backlog corrente ridotto a CONS; fascicoli chiusi assenti dal tree corrente | `PASS` |
+| `AC3` | riferimenti esclusivamente storici verificati; 17 file recuperabili da `45a19f4` | `PASS` |
+| `AC4` | README, runbook e puntatori operativi non collegano i fascicoli ritirati | `PASS` |
+| `AC5` | inventario, link, diff e segreti verificati; smoke locale `600 passed` | `PASS` |

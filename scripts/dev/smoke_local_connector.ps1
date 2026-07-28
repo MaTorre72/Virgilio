@@ -22,8 +22,8 @@ try {
     }
     if ($forbidden) { throw "Tracked secret/local files: $($forbidden -join ', ')" }
 
-    $required = @("AGENTS.md", "docs\DEV_BACKLOG.md", "docs\DEFINITION_OF_DONE.md",
-                  "docs\AUTONOMOUS_DEVELOPMENT.md")
+    $required = @("AGENTS.md", "docs\CODEX_STATE.md", "docs\NEXT_CODEX_TASKS.md",
+                  "docs\DEV_BACKLOG.md", "docs\DEFINITION_OF_DONE.md", "docs\RUNBOOKS.md")
     foreach ($item in $required) {
         if (-not (Test-Path -LiteralPath (Join-Path $Root $item))) { throw "Missing $item" }
     }

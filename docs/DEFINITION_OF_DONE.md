@@ -29,14 +29,14 @@ Se manca uno di questi elementi, il task non entra in `IN_PROGRESS`.
 
 ## Evidenze
 
-Le evidenze devono essere registrate direttamente nella scheda del task in
-`docs/GUI_U_BACKLOG.md` con questo formato:
+Le evidenze devono essere registrate direttamente nella scheda del task nel
+backlog operativo corrente con questo formato:
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | -------- | -------------- | ----------------- | ----- |
 
-Non creare `GUI_U_EVIDENCE.md`. Una suite genericamente verde non sostituisce
-l'evidenza specifica associata a ciascun criterio.
+Una suite genericamente verde non sostituisce l'evidenza specifica associata a
+ciascun criterio.
 
 ## Verifica umana
 
