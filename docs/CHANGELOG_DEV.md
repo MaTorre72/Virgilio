@@ -1,5 +1,11 @@
 # Changelog sviluppo
 
+- 2026-07-28 +02:00 - Chiuso `CONS-H02`: audit finale integrato su 208 file
+  tracciati e 44/44 documenti inventariati, senza superfici legacy o segreti
+  operativi versionati. Smoke offline `548 passed`; build Caronte e installer
+  1.1.0 con smoke build/installer `OK`; tag annotato locale/remoto e metadati
+  pubblicati della release coerenti. Successore `CONS-H03`.
+
 - 2026-07-28 +02:00 - Chiuso `CONS-C05`: i 546 test locali sono classificati
   una sola volta come unita` (171), contratti (99) o integrazione offline (276).
   I livelli hanno ingressi separati e vincolanti; lo smoke continua a eseguire

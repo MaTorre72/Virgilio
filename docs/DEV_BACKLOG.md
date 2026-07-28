@@ -25,6 +25,8 @@ Stato: `IN_PROGRESS`.
 | `CONS-G04` | `DONE` | 4 asset/script storici ritirati; mirati `26 passed`, smoke `533 passed` |
 | `CONS-C01` | `DONE` | root API limitata a `__version__`; mirati `17 passed`, smoke `535 passed` |
 | `CONS-C03` | `DONE` | bootstrap minimo e parser/dispatch isolati; area CLI `173 passed` |
+| `CONS-H02` | `DONE` | audit finale integrato; smoke `548 passed`, build e release coerenti |
+| `CONS-H03` | `TODO` | branch pubblicata e pull request verso `main` pronta per revisione umana |
 
 I task successivi restano chiusi finche` non diventano il successore immediato
 in `docs/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
