@@ -4,20 +4,31 @@ Questa e` la mappa operativa breve di Virgilio 1.1. Per architettura e confini
 usa [ARCHITETTURA_UNIFICATA.md](ARCHITETTURA_UNIFICATA.md); le procedure sotto
 non autorizzano servizi reali, deploy o modifiche a `main`.
 
-## Setup e sviluppo locale
+## Onboarding da clone pulito
 
-Da PowerShell, nella radice del repository:
+Prerequisiti: Windows 11, Git e Python 3.11 o successivo raggiungibili dal
+`PATH`. Da PowerShell, usa questo unico percorso; non servono credenziali,
+configurazioni o dati reali:
 
 ```powershell
+git clone <URL-DEL-REPOSITORY> Virgilio
+cd Virgilio
+git switch codex/v1.1-development
 git branch --show-current
 git status --short
-$env:PYTHONPATH=(Resolve-Path 'local_connector\src').Path
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\bootstrap_local_connector.ps1
 local_connector\.venv\Scripts\python.exe -m virgilio_connector --help
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1
 ```
 
+Il bootstrap crea `local_connector\.venv` e installa il package con l'extra
+`dev` dichiarato in `local_connector\pyproject.toml`; non mantiene un secondo
+elenco di dipendenze. Se `python` non identifica il runtime corretto, passalo
+esplicitamente con `-Python C:\percorso\python.exe`.
+
 La branch deve essere `codex/v1.1-development` o una derivata e il tree deve
-essere compreso prima di modificarlo. Configurazioni, credenziali e dati reali
-restano fuori dal repository. Per creare una configurazione sintetica locale:
+essere compreso prima di modificarlo. Per creare in seguito una configurazione
+sintetica locale:
 
 ```powershell
 local_connector\.venv\Scripts\python.exe -m virgilio_connector init-config --output local_connector\accounts.local.yaml --email test@example.invalid --staging-dir C:\Virgilio\Limbo

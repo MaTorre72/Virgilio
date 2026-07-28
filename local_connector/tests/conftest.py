@@ -15,6 +15,7 @@ CONTRACT_MODULES = {
     "test_contract.py",
     "test_files_policy.py",
     "test_no_network.py",
+    "test_onboarding_contract.py",
     "test_package_api.py",
     "test_registry_configuration.py",
     "test_traceability.py",

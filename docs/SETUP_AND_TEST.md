@@ -2,29 +2,21 @@
 
 ## Setup locale
 
-```powershell
-cd "$env:USERPROFILE\Documents\Virgilio"
-local_connector\.venv\Scripts\python.exe --version
-```
-
-Nel checkout verificato il runtime affidabile e` `local_connector\.venv\Scripts\python.exe`.
-Il path `.\.venv\Scripts\python.exe` non e` presente in questo workspace e non va assunto come default.
-Su questa macchina i binari locali trovati sono `C:\Program Files (x86)\nodejs\node.exe`, `C:\Program Files (x86)\nodejs\npm.cmd` e `$env:APPDATA\npm\clasp.cmd`. Se il PATH non li risolve, usa i percorsi completi.
-
-Per l'install editable:
+Il percorso autorevole da clone pulito e` breve e non dipende dalla macchina:
 
 ```powershell
-local_connector\.venv\Scripts\python.exe -m pip install -e .\local_connector
+git clone <URL-DEL-REPOSITORY> Virgilio
+cd Virgilio
+git switch codex/v1.1-development
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\bootstrap_local_connector.ps1
+local_connector\.venv\Scripts\python.exe -m virgilio_connector --help
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev\smoke_local_connector.ps1
 ```
 
-Nota offline importante:
-
-- il comando sopra richiede che il venv abbia gia` `setuptools` disponibile;
-- in questo workspace `setuptools` non e` installato nel venv locale, quindi `pip install -e .\local_connector` non e` autosufficiente offline;
-- `--no-build-isolation` non basta se `setuptools.build_meta` manca nel venv.
-
-Per i test offline non e` necessario forzare l'install editable se si usa il percorso verificato sotto con `PYTHONPATH`.
-Se carichi `local_connector\.env` dal repo root, normalizza `VIRGILIO_LOCAL_DATA_DIR` e i path OAuth rispetto a `local_connector` prima di lanciare i comandi.
+Servono Windows 11, Git e Python 3.11 o successivo. Il bootstrap crea il venv e
+installa runtime e test dalla sola dichiarazione `local_connector\pyproject.toml`.
+Puo` usare la rete per risolvere pacchetti non presenti nella cache di `pip`.
+Per un Python non presente nel `PATH`, aggiungi `-Python C:\percorso\python.exe`.
 
 Configurazioni reali devono stare solo in `.env` o in variabili ambiente locali, mai nel repository.
 

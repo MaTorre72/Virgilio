@@ -1,42 +1,42 @@
 # Next Codex Task
 
-## CORRENTE - CONS-H01 - Onboarding da clone pulito
+## CORRENTE - CONS-H02 - Audit finale del consolidamento
 
 Stato: `TODO`. Priorita`: `P1`.
 
-Risultato: una persona parte da un clone pulito, prepara l'ambiente locale e
-raggiunge uno smoke verde seguendo un solo percorso breve e verificato.
+Risultato: struttura, documentazione, segreti, suite, build e release sono
+verificati insieme contro lo stato consolidato 1.1, senza modifiche funzionali.
 
-Dipendenze: `CONS-C05` chiuso `DONE`; livelli e gate completo della suite sono
-espliciti e ripetibili.
+Dipendenze: `CONS-H01` chiuso `DONE`; onboarding fresh-clone e smoke sono
+ripetibili.
 
-Componenti ammessi: guida di onboarding corrente, script di bootstrap/smoke,
-configurazione di sviluppo e relativi puntatori.
+Componenti ammessi: inventari e documenti correnti, controlli Git, suite
+offline, pipeline di build e metadati della release pubblicata.
 
-Esclusioni: refactor applicativi, servizi reali, credenziali, deploy, modifica o
+Esclusioni: nuove funzionalita`, servizi reali, credenziali, deploy, modifica o
 merge di `main`.
 
-Condizione di blocco: il percorso non e` riproducibile in un ambiente isolato
-senza credenziali o dipendenze non dichiarate, oppure upstream diverge.
+Condizione di blocco: un gate finale non e` riproducibile o contraddice la
+release pubblicata, oppure upstream diverge.
 
 | Criterio | Prova prevista |
 | --- | --- |
-| `CONS-H01-AC1` prerequisiti e percorso unico sono brevi ed espliciti. | revisione guida |
-| `CONS-H01-AC2` bootstrap installa tutte e sole le dipendenze dichiarate. | ambiente isolato |
-| `CONS-H01-AC3` clone pulito raggiunge help e test senza dati reali. | prova fresh clone |
-| `CONS-H01-AC4` lo smoke completo passa nell'ambiente appena creato. | smoke fresh clone |
-| `CONS-H01-AC5` diff, segreti e puntatori sono verificati. | controlli Git |
+| `CONS-H02-AC1` struttura e superfici correnti coincidono con gli inventari. | audit repository |
+| `CONS-H02-AC2` documenti correnti, link e puntatori sono coerenti. | audit documentale |
+| `CONS-H02-AC3` file vietati e segreti versionati sono assenti. | scansione Git |
+| `CONS-H02-AC4` suite offline e build consolidate sono verdi. | smoke e build |
+| `CONS-H02-AC5` versione, tag, installer e checksum pubblicati coincidono. | audit release |
 
 ## SUCCESSIVO
 
-`CONS-H02` - audit finale di struttura, documenti, segreti, build e release.
+`CONS-H03` - branch pubblicata e pull request verso `main` pronta per revisione umana.
 
-## EVIDENZA CONS-C05
+## EVIDENZA CONS-H01
 
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | --- | --- | --- | --- |
-| `CONS-C05-AC1` | inventario suite | inventario vincolante per modulo; nuovi, duplicati o riferimenti obsoleti bloccano la raccolta | `PASS` |
-| `CONS-C05-AC2` | comandi mirati | `unit`: 171 passed; `contract`: 99 passed, con script unico parametrico | `PASS` |
-| `CONS-C05-AC3` | esecuzione isolata | `integration_offline`: 276 passed con fake, fixture sintetiche e risorse locali | `PASS` |
-| `CONS-C05-AC4` | smoke locale | gate completo esegue tutti i 546 test una sola volta e conserva i controlli esistenti | `PASS` |
-| `CONS-C05-AC5` | confronto raccolta e controlli Git | 171 + 99 + 276 = 546; diff, segreti e puntatori verificati | `PASS` |
+| `CONS-H01-AC1` | revisione guida | prerequisiti e sequenza unica clone/bootstrap/help/smoke in `RUNBOOKS.md` | `PASS` |
+| `CONS-H01-AC2` | ambiente isolato | bootstrap crea il venv e installa `local_connector[dev]` dalla sola dichiarazione `pyproject.toml` | `PASS` |
+| `CONS-H01-AC3` | prova fresh clone | clone locale isolato, bootstrap e help completati senza configurazioni o credenziali | `PASS` |
+| `CONS-H01-AC4` | smoke fresh clone | ambiente appena creato: `548 passed`, help CLI e controlli repository verdi | `PASS` |
+| `CONS-H01-AC5` | controlli Git | test contratto `2 passed`; diff, segreti e puntatori verificati | `PASS` |

@@ -592,6 +592,10 @@ Registro avanzamento storico spostato fuori dal backlog attivo.
 - 2026-07-03 23:15 +02:00 - Completato `V113-E5-T03`: `doPost` espone ora `inbox_status=archiviato`, la notifica archiviazione include lo stato finale e la schermata di successo mostra l'esito inbox; backlog, next tasks e state riallineati su `V113-E6-T01`; test mirati Apps Script e parsing HTML locale verdi.
 # 2026-07-28
 
+- Completato `CONS-H01`: onboarding unico da clone pulito con bootstrap del
+  venv dalla dichiarazione `pyproject.toml`; prova isolata senza credenziali,
+  help CLI e smoke completo `548 passed`.
+
 - Completato `CONS-R02`: README e changelog ufficiale descrivono la release
   `1.1.0`, il percorso desktop collaudato, prerequisiti e limiti correnti;
   gli artefatti `0.11.0-<commit>` restano distinti come RC storiche. Controlli
