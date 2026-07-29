@@ -88,7 +88,7 @@ riserva logica, senza inventare conteggi:
 
 ## Specifica del task corrente
 
-`docs/NEXT_CODEX_TASKS.md` contiene sempre la scheda completa del solo task
+`docs/sviluppo/NEXT_CODEX_TASKS.md` contiene sempre la scheda completa del solo task
 corrente: risultato, massimo cinque criteri binari, prove, dipendenze, componenti
 ammessi, esclusioni e condizione di blocco. Alla chiusura la run copia dal
 programma soltanto il successore immediato e non apre un secondo task.

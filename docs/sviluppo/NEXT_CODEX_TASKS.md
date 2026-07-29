@@ -4,9 +4,11 @@
 
 Stato: `DONE`. Priorita`: `P1`.
 
-Risultato: la branch consolidata e` pubblicata e una pull request verso `main`
-presenta la release 1.1, le prove finali e i gate riservati alla revisione
-umana, senza eseguire il merge.
+Risultato alla chiusura: la branch consolidata e` stata pubblicata e una pull
+request verso `main` ha presentato la release 1.1, le prove finali e i gate
+riservati alla revisione umana, senza merge automatico. Successivamente la PR
+`#1` e` stata revisionata e unita da un umano; `main` e` ora la release
+ufficiale 1.1.0.
 
 Dipendenze: `CONS-H02` chiuso `DONE`; tutti i gate finali sono verdi.
 
@@ -38,7 +40,7 @@ uscire senza modifiche.
 | Criterio | Prova prevista | Evidenza ottenuta | Esito |
 | --- | --- | --- | --- |
 | `CONS-H03-AC1` | confronto puntatori Git | fetch iniziale: HEAD e `origin/codex/v1.1-development` coincidenti a `244dd5b`, ahead/behind `0/0`; fetch finale richiesto dopo il commit | `PASS` |
-| `CONS-H03-AC2` | revisione documentale | `docs/HANDOFF_1_1.md` riassume programma, release, prove, limiti e gate umani; inventario riallineato a 45 documenti | `PASS` |
+| `CONS-H03-AC2` | revisione documentale | `docs/sviluppo/HANDOFF_1_1.md` riassume programma, release, prove, limiti e gate umani; inventario riallineato alla consegna | `PASS` |
 | `CONS-H03-AC3` | verifica PR remota | pull request unica [#1](https://github.com/MaTorre72/Virgilio/pull/1), base `main`, head `codex/v1.1-development`, descrizione con prove finali | `PASS` |
 | `CONS-H03-AC4` | audit PR e check | PR non draft aperta per revisione umana; audit remoto finale richiesto dopo il push | `PASS` |
 | `CONS-H03-AC5` | verifica branch e automazione | branch attiva invariata, nessun merge o modifica di `main`; pausa automazione richiesta a chiusura | `PASS` |

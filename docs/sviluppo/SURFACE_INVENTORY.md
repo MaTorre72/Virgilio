@@ -72,8 +72,8 @@ reali restano fuori da questo task.
 
 ## Asset e script
 
-`CONS-G04` ha verificato e ritirato quattro file non raggiungibili dalle
-superfici sopra inventariate:
+`CONS-G04` ha verificato e ritirato sei file non raggiungibili dalle superfici
+sopra inventariate: due script e quattro asset grafici precedenti.
 
 - `local_connector/scripts/generate_caronte_dry_run.py` e
   `local_connector/scripts/imap_readonly_probe.py`, probe standalone storici

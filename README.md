@@ -1,47 +1,97 @@
 # Virgilio 1.1
 
-Virgilio acquisisce documenti dalle email, li porta nel **Limbo**, li presenta
-in **Da archiviare**, raccoglie la decisione umana e li archivia nella pratica
-finale registrando ogni passaggio nel **Registro**.
+![Icona Virgilio 1.1](icone/Virgilio_1.1.png)
 
-La versione ufficiale corrente e` **1.1.0**. La versione 1.0 resta disponibile
-come rilascio storico nel tag `v1.0`.
+Virgilio organizza il percorso dei documenti ricevuti via email: li acquisisce
+in modo controllato, li porta nel **Limbo**, li presenta in **Da archiviare**,
+raccoglie la scelta della pratica e registra l'esito nel **Registro**.
+
+La versione ufficiale corrente e` **1.1.0**. La versione 1.0 e` storica e resta
+recuperabile dal tag `v1.0`.
+
+## Cosa risolve
+
+Senza Virgilio, allegati, cartelle Drive e decisioni sulla pratica possono
+restare separati e difficili da ricostruire. Virgilio mantiene un unico flusso:
+
+```text
+Email
+  -> acquisizione Google-only oppure IMAP locale
+  -> quarantena e controllo, quando si usa Caronte Locale
+  -> Limbo Drive
+  -> Da archiviare
+  -> decisione umana nel form
+  -> pratica finale
+  -> Registro
+  -> completamento della mail di origine
+```
+
+Il documento e` l'unita` di lavoro. Una mail con piu` allegati e` conclusa solo
+quando tutti i documenti ammessi hanno raggiunto la pratica finale.
+
+## Applicazioni e componenti
+
+| Nome | A chi serve | Responsabilita` |
+| --- | --- | --- |
+| **Caronte** | utente | controllare le caselle e seguire le attivita` |
+| **Caronte Manutenzione** | amministratore | configurare, diagnosticare, fare backup e reset controllati |
+| **Caronte Locale** | sistema | IMAP multi-account, quarantena, scan, stato e consegna |
+| **Virgilio / form** | utente | scegliere cliente, sito, pratica e destinazione |
+| **Apps Script** | integrazione | Drive, Da archiviare, form, Registro e notifiche Google |
+
+La CLI e` una superficie per sviluppo e automazione. Usa gli stessi servizi
+applicativi delle GUI e non rappresenta una terza applicazione utente.
+
+## Due ingressi, un solo flusso
+
+- **Google-only:** GmailApp acquisisce dalla casella dell'esecutore.
+- **Local connector:** Caronte Locale legge una o piu` caselle IMAP, isola e
+  scansiona gli allegati e completa la mail sulla casella di origine.
+
+Entrambi usano lo stesso Limbo, la stessa coda Da archiviare, lo stesso form e
+lo stesso Registro. SQLite conserva soltanto lo stato tecnico locale; non
+sostituisce il Registro umano.
 
 ## Documentazione
 
-La documentazione e` separata per pubblico. L'indice completo e` in
-[docs/README.md](docs/README.md).
+L'[indice completo](docs/README.md) separa tre percorsi.
 
-- [Manuale utente](docs/utente/MANUALE.md): uso quotidiano di Caronte e
-  Caronte Manutenzione.
-- [Documentazione tecnica](docs/tecnica/ARCHITETTURA.md): architettura,
-  componenti, requisiti e confini.
-- [Installazione e comandi](docs/tecnica/INSTALLAZIONE_E_COMANDI.md): setup,
-  dipendenze, test, build e manutenzione.
-- [Roadmap 1.1](docs/sviluppo/ROADMAP_1_1.md): obiettivi originari, stato
-  raggiunto e sviluppi successivi.
-- [Documentazione di sviluppo](docs/sviluppo/README.md): file Codex, backlog,
-  evidenze e regole per contribuire.
+- [Manuale utente](docs/utente/README.md): primo avvio, lavoro quotidiano e
+  problemi comuni.
+- [Documentazione tecnica](docs/tecnica/README.md): architettura, dati,
+  configurazione, comandi, sicurezza e manutenzione.
+- [Documentazione per lo sviluppo](docs/sviluppo/README.md): roadmap,
+  decisioni, workflow, backlog ed evidenze Codex.
 
-## Architettura in una frase
+Per orientarsi tecnicamente, iniziare da
+[Architettura](docs/tecnica/ARCHITETTURA.md) e
+[Modello dati e stati](docs/tecnica/MODELLO_DATI_E_STATI.md).
 
-```text
-Virgilio = interfaccia, guida e supervisione
-Caronte Locale = motore operativo locale multi-casella
-Apps Script = adapter Google per form, Drive, Da archiviare e Registro
-```
+## Prerequisiti essenziali
 
-## Componenti supportati
+- Windows 11 x64;
+- Git e Python 3.11 o successivo per sviluppo;
+- Google Drive per desktop per il Limbo della configurazione 1.1;
+- account IMAP e autorizzazioni Google configurati fuori dal repository;
+- deployment Apps Script previsto dall'ambiente operativo.
 
-| Componente | Ruolo |
-| --- | --- |
-| Caronte | applicazione utente per controllo e attivita` |
-| Caronte Manutenzione | configurazione tecnica, diagnostica, backup e reset |
-| Caronte Locale | acquisizione IMAP, quarantena, scansione, stato e consegna |
-| Apps Script | adapter Google canonico |
-| Limbo | cartella condivisa dei documenti acquisiti non ancora archiviati |
-| Da archiviare | coda operativa umana |
-| Registro | audit append-only degli eventi rilevanti |
+La procedura completa e` in
+[Installazione e comandi](docs/tecnica/INSTALLAZIONE_E_COMANDI.md).
 
-Le credenziali, le configurazioni reali e i dati locali non sono versionati.
-Test e sviluppo usano esclusivamente fixture sintetiche e servizi simulati.
+## Confini di sicurezza
+
+- nessuna credenziale, token o configurazione reale e` versionata;
+- gli allegati locali passano da quarantena, policy e scansione;
+- Apps Script riceve metadati e ID, mai byte, base64 o percorsi locali;
+- test e smoke usano soltanto fixture sintetiche e servizi simulati;
+- ack, reset e deploy richiedono post-condizioni o autorizzazioni esplicite;
+- AI, RAG, database remoti e server web non fanno parte della 1.1.
+
+## Stato della release
+
+La baseline collaudata e` il commit `7e18277`; il collaudo umano ha dato `PASS`
+il 28 luglio 2026 e il deployment Apps Script associato e` `40`. Build,
+installer e suite offline della 1.1.0 sono stati verificati prima della
+pubblicazione.
+
+Licenza: proprietaria, come dichiarato nel package locale.

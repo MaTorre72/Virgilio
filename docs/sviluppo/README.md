@@ -1,35 +1,65 @@
 # Documentazione per lo sviluppo
 
-Questa sezione e` destinata a sviluppatori e automazioni. Non serve per usare
-Virgilio.
+Questa cartella contiene tutto cio` che serve a sviluppatori, manutentori e
+automazioni. Non e` documentazione per l'uso quotidiano e non va citata come
+prerequisito per l'utente finale.
 
-## Da leggere per contribuire
+## Inizio rapido per un nuovo sviluppatore
 
-1. `AGENTS.md`: regole permanenti del repository.
-2. `docs/DEFINITION_OF_DONE.md`: criteri verificabili di chiusura.
-3. [ROADMAP_1_1.md](ROADMAP_1_1.md): lessico, fasi e stato raggiunto.
-4. `docs/CODEX_STATE.md`: fotografia operativa corrente.
-5. `docs/NEXT_CODEX_TASKS.md`: eventuale task Codex corrente.
+1. Leggi [`AGENTS.md`](../../AGENTS.md): vincoli permanenti e workflow.
+2. Comprendi l'[architettura](../tecnica/ARCHITETTURA.md) e il
+   [modello dati](../tecnica/MODELLO_DATI_E_STATI.md).
+3. Prepara l'ambiente con
+   [Installazione e comandi](../tecnica/INSTALLAZIONE_E_COMANDI.md).
+4. Segui [Come contribuire](CONTRIBUIRE.md).
+5. Prima di iniziare un task, leggi `CODEX_STATE.md` e
+   `NEXT_CODEX_TASKS.md`.
 
-## Documenti interni
+## Roadmap e decisioni
 
-| File | Scopo |
+| Documento | Uso |
 | --- | --- |
-| `DEV_BACKLOG.md` | backlog storico/operativo dello sviluppo |
-| `CONSOLIDATION_PROGRAM.md` | programma concluso di pubblicazione e pulizia 1.1 |
-| `CHANGELOG_DEV.md` | cronologia tecnica dettagliata |
-| `SURFACE_INVENTORY.md` | audit di entry point, packaging e asset |
-| `HANDOFF_1_1.md` | evidenze della consegna finale |
-| `DOCUMENT_INVENTORY.md` | mappa delle fonti documentali |
+| [ROADMAP_1_1.md](ROADMAP_1_1.md) | roadmap originale A-H, stato raggiunto e direzioni successive |
+| [DECISIONI_E_RISCHI.md](DECISIONI_E_RISCHI.md) | decisioni consolidate, temi aperti e rischi da rivalutare |
+| [CONTRIBUIRE.md](CONTRIBUIRE.md) | workflow, test, struttura dei task e review |
 
-Questi file non devono essere citati come manuale utente o come prerequisito
-operativo. Il changelog pubblico resta `CHANGELOG.md`.
+## Documenti operativi Codex
 
-## Flusso Git
+| Documento | Autorita` | Quando leggerlo |
+| --- | --- | --- |
+| `CODEX_STATE.md` | fotografia corrente di branch, baseline e programma | all'inizio di una run |
+| `NEXT_CODEX_TASKS.md` | unico task Codex corrente e criteri binari | prima di modificare |
+| `DEV_BACKLOG.md` | dettagli del solo programma/task selezionato | se richiamato dal task |
+| `DEFINITION_OF_DONE.md` | gate di chiusura comuni | prima del commit |
+| `CHANGELOG_DEV.md` | cronologia tecnica dettagliata | ricerca storica mirata |
 
-- partire da `main` aggiornato e creare una branch dedicata;
-- un task misurabile e un commit atomico;
-- usare fixture sintetiche e nessun servizio reale nei test;
-- eseguire test mirati e poi lo smoke richiesto;
-- verificare diff, segreti e tree prima del push;
-- aprire una pull request e lasciare approvazione e merge alla revisione umana.
+Questi documenti sono intenzionalmente separati dalla documentazione tecnica:
+descrivono come e` stato governato lo sviluppo, non il funzionamento del
+prodotto.
+
+## Consolidamento e handoff 1.1
+
+| Documento | Contenuto |
+| --- | --- |
+| `CONSOLIDATION_PROGRAM.md` | programma seriale CONS che ha chiuso la 1.1 |
+| `HANDOFF_1_1.md` | release, prove, limiti e consegna verso main |
+| `DOCUMENT_INVENTORY.md` | classificazione delle fonti correnti |
+| `SURFACE_INVENTORY.md` | audit di entry point, package, script e asset |
+
+Sono evidenze storiche ancora utili per audit. Nuovi sviluppi non devono
+riaprire CONS: devono creare un programma e criteri nuovi.
+
+## Cronologia e recuperabilita`
+
+Non esiste una sottocartella `archive`. La cronologia Git conserva documenti,
+report e piani rimossi; quando serve una prova storica si usa il commit o il tag
+che la conteneva. Questo evita che fonti superate appaiano valide accanto alla
+documentazione corrente.
+
+Riferimenti di rilascio:
+
+- `v1.0`: versione storica Google-only;
+- `v1.1.0`: release ufficiale corrente;
+- commit funzionale collaudato `7e18277`;
+- collaudo umano `PASS` del 28 luglio 2026;
+- deployment Apps Script `40`.

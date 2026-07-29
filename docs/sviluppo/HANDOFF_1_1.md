@@ -1,8 +1,9 @@
 # Handoff Virgilio 1.1.0
 
-Questo documento chiude il programma `CONS` e accompagna la pull request
+Questo documento registra la chiusura del programma `CONS`. La pull request
 finale [#1](https://github.com/MaTorre72/Virgilio/pull/1) da
-`codex/v1.1-development` verso `main`. Non autorizza ne` esegue il merge.
+`codex/v1.1-development` e` stata revisionata e unita da un umano: `main`
+contiene ora la release ufficiale 1.1.0 al merge commit `77730b3`.
 
 ## Consegna
 
@@ -14,7 +15,9 @@ finale [#1](https://github.com/MaTorre72/Virgilio/pull/1) da
 - tag annotato remoto `v1.1.0`, oggetto `096f195`, sul commit sorgente release
   `68f3b90`;
 - documentazione, superfici supportate, repository, API package, CLI,
-  configurazione e livelli di test consolidati dal programma `CONS`.
+  configurazione e livelli di test consolidati dal programma `CONS`;
+- documentazione corrente organizzata sotto `docs/utente`, `docs/tecnica` e
+  `docs/sviluppo`, con la storia precedente recuperabile da Git.
 
 ## Prove finali
 
@@ -29,7 +32,9 @@ finale [#1](https://github.com/MaTorre72/Virgilio/pull/1) da
 
 ## Rischi residui e gate umani
 
-I limiti operativi restano quelli canonici del `README.md`: in particolare la
+I limiti operativi restano quelli descritti in
+[Operazioni e manutenzione](../tecnica/OPERAZIONI_E_MANUTENZIONE.md): in particolare la
 sincronizzazione del Limbo dipende da Google Drive per desktop e puo` richiedere
-retry limitati. La revisione deve verificare il diff complessivo e i check
-remoti. Approvazione e merge in `main` restano esclusivamente umani.
+retry limitati. Per una nuova release, revisione e merge in `main` restano
+esclusivamente umani; il merge gia` avvenuto non autorizza modifiche dirette
+future.

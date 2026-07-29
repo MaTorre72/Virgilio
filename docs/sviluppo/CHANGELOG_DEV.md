@@ -1,9 +1,12 @@
 # Changelog sviluppo
 
-- 2026-07-29 +02:00 - Riorganizzata la documentazione della 1.1 per pubblico:
-  manuale utente, documentazione tecnica e documentazione di sviluppo hanno
-  indici e cartelle distinti. La roadmap local-first originale e` aggiornata
-  con le fasi A-H completate; gli asset grafici correnti sono solo in `icone/`.
+- 2026-07-29 +02:00 - Riorganizzata fisicamente la documentazione della 1.1:
+  al livello `docs/` resta il solo indice; manuale, architettura, modello dati,
+  configurazione, manutenzione, comandi, roadmap e documenti Codex sono nelle
+  aree `utente`, `tecnica` e `sviluppo`. Rimossi puntatori e archivio
+  concorrenti, aggiornati contratti dei percorsi e assorbita la roadmap
+  local-first originale nelle fonti correnti. Gli asset grafici correnti
+  restano esclusivamente in `icone/`.
 
 - 2026-07-28 +02:00 - Pulizia post-consolidamento: cinque runbook specialistici
   assorbiti in `RUNBOOKS.md`, rimossi archivi e duplicati documentali, mappa

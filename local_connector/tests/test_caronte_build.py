@@ -52,7 +52,9 @@ def test_build_configuration_defines_one_folder_caronte() -> None:
     assert "oauth_client_included" in build_text
     assert "CARONTE_BUILD_MANIFEST_PATH" in spec
     assert (REPO_ROOT / "scripts" / "dev" / "smoke_caronte_build.ps1").is_file()
-    assert (REPO_ROOT / "docs" / "RUNBOOKS.md").is_file()
+    assert (
+        REPO_ROOT / "docs" / "tecnica" / "INSTALLAZIONE_E_COMANDI.md"
+    ).is_file()
 
 
 def test_windows_timezone_data_is_declared_for_standalone_runtime() -> None:
