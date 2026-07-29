@@ -1,6 +1,7 @@
 Avanza Virgilio di un solo task chiudibile in questa run di 30 minuti.
 
-1. Leggi solo `AGENTS.md`, `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md`.
+1. Leggi solo `AGENTS.md`, `docs/sviluppo/CODEX_STATE.md` e
+   `docs/sviluppo/NEXT_CODEX_TASKS.md`.
 2. Verifica branch `codex/v1.1-development` e working tree pulito; altrimenti fermati.
 3. Esegui esclusivamente il task `CORRENTE` indicato in `NEXT_CODEX_TASKS.md`.
 4. Prima di scrivere codice, individua e riusa le funzioni CLI, GAS e i test gia` citati dal task. Non reimplementare capacita` esistenti; correggi solo il collegamento o la regressione provata.

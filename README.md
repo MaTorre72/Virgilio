@@ -1,90 +1,97 @@
 # Virgilio 1.1
 
-Virgilio acquisisce documenti dalle caselle configurate, li porta nel Limbo,
-li espone in **Da archiviare**, raccoglie la decisione umana e li archivia nella
-pratica finale registrando ogni transizione nel Registro.
+![Icona Virgilio 1.1](icone/Virgilio_1.1.png)
 
-La release ufficiale corrente e` **1.1.0**. Il percorso desktop e` stato
-collaudato con esito umano `PASS` il 28 luglio 2026; la branch
-`codex/v1.1-development` ne prepara la pubblicazione senza modificare `main`.
+Virgilio organizza il percorso dei documenti ricevuti via email: li acquisisce
+in modo controllato, li porta nel **Limbo**, li presenta in **Da archiviare**,
+raccoglie la scelta della pratica e registra l'esito nel **Registro**.
 
-## Percorso utente
+La versione ufficiale corrente e` **1.1.0**. La versione 1.0 e` storica e resta
+recuperabile dal tag `v1.0`.
 
-1. In **Caronte Manutenzione** si configurano caselle, collegamento a Virgilio,
-   Limbo e preferenze operative.
-2. In **Caronte** si avvia il controllo manuale oppure quello continuo.
-3. Gli allegati ammessi passano dalla quarantena locale al Limbo Drive unico.
-4. Virgilio crea una voce in **Da archiviare** e invia la notifica prevista.
-5. L'utente apre il form, sceglie pratica e destinazione e conferma.
-6. Il documento viene archiviato, il Registro riceve l'esito e solo allora la
-   mail viene completata secondo la strategia configurata.
+## Cosa risolve
 
-Riprese, retry e deduplicazione preservano lo stesso documento e non anticipano
-il completamento della mail. `Virgilio_Inbox` e` il nome tecnico della coda
-**Da archiviare**; `bucoliche` e` l'unico Registro cloud umano append-only.
+Senza Virgilio, allegati, cartelle Drive e decisioni sulla pratica possono
+restare separati e difficili da ricostruire. Virgilio mantiene un unico flusso:
 
-## Componenti supportati
-
-| Componente | Ruolo |
-| --- | --- |
-| `virgilio_connector.user_app` | applicazione utente **Caronte** |
-| `virgilio_connector.maintenance_gui` | applicazione separata **Caronte Manutenzione** |
-| `local_connector/src/virgilio_connector/` | servizi applicativi condivisi e connettore locale |
-| `apps_script/src/` | adattatore Google canonico per form, coda, archivio e Registro |
-| `local_connector/tests/` | test offline con fixture sintetiche |
-
-Le implementazioni `gui` e `gui_*` sono legacy abbandonato: non sono superfici
-supportate e non devono essere importate dalle nuove applicazioni.
-
-## Prerequisiti operativi
-
-- Windows 11 e un'installazione identificata di Caronte 1.1.0;
-- Google Drive per desktop sincronizzato con il Limbo configurato;
-- casella IMAP dedicata e credenziali salvate nel deposito protetto locale;
-- client OAuth Desktop autorizzato quando la casella e` Google Workspace;
-- collegamento al deployment Apps Script previsto e relativa chiave salvata
-  localmente, mai nel repository;
-- tab canonici `bucoliche`, `Virgilio_Inbox`, `Clienti_Siti`, `Team` e
-  `TipiPratica` presenti e coerenti.
-
-Configurazione, credenziali e dati locali non sono versionati. Test e sviluppo
-non devono usare mail, account Google, credenziali o servizi reali.
-
-## Limiti della 1.1.0
-
-- la sincronizzazione del Limbo dipende da Google Drive per desktop e puo`
-  richiedere retry limitati prima della presa in carico;
-- Apps Script resta l'adattatore necessario al percorso Google pubblicato;
-- il Registro cloud espone eventi umani; stato e conflitti tecnici restano
-  locali;
-- gli allegati macro-enabled, gli archivi compressi e gli eseguibili restano
-  bloccati; i formati Office ammessi richiedono scansione;
-- nessuna AI, RAG, Docling, LiteLLM, database remoto o server web fa parte della
-  release;
-- il completamento Gmail usa le estensioni IMAP del provider; per altri provider
-  valgono le capacita` dichiarate dalla configurazione;
-- reset, pubblicazioni Apps Script e operazioni reali richiedono procedure e
-  autorizzazioni dedicate: non sono azioni ordinarie della GUI utente.
-
-## Sviluppo e verifica
-
-Il riferimento architetturale e` [Architettura unificata](docs/ARCHITETTURA_UNIFICATA.md).
-I percorsi brevi per setup, sviluppo, test, operazioni e release sono nei
-[Runbook correnti](docs/RUNBOOKS.md). Il gate locale completo e`:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/smoke_local_connector.ps1
+```text
+Email
+  -> acquisizione Google-only oppure IMAP locale
+  -> quarantena e controllo, quando si usa Caronte Locale
+  -> Limbo Drive
+  -> Da archiviare
+  -> decisione umana nel form
+  -> pratica finale
+  -> Registro
+  -> completamento della mail di origine
 ```
 
-La sorgente Apps Script canonica vive in `apps_script/src`; `clasp push` e deploy
-non fanno parte delle verifiche locali e richiedono un task esplicito.
+Il documento e` l'unita` di lavoro. Una mail con piu` allegati e` conclusa solo
+quando tutti i documenti ammessi hanno raggiunto la pratica finale.
 
-## Versioni e storia
+## Applicazioni e componenti
 
-`1.1.0` e` la release ufficiale. Gli installer `0.11.0-<commit>` citati nei
-documenti di collaudo sono release candidate storiche e non sostituiscono la
-release: la RC baseline `0.11.0-7e18277` conserva l'evidenza del `PASS` umano.
-La storia pubblica e` in [CHANGELOG.md](CHANGELOG.md); le evidenze di sviluppo
-restano nella documentazione interna fino al successivo consolidamento.
+| Nome | A chi serve | Responsabilita` |
+| --- | --- | --- |
+| **Caronte** | utente | controllare le caselle e seguire le attivita` |
+| **Caronte Manutenzione** | amministratore | configurare, diagnosticare, fare backup e reset controllati |
+| **Caronte Locale** | sistema | IMAP multi-account, quarantena, scan, stato e consegna |
+| **Virgilio / form** | utente | scegliere cliente, sito, pratica e destinazione |
+| **Apps Script** | integrazione | Drive, Da archiviare, form, Registro e notifiche Google |
 
-**L'AI propone. Il tecnico valida. Il sistema registra.**
+La CLI e` una superficie per sviluppo e automazione. Usa gli stessi servizi
+applicativi delle GUI e non rappresenta una terza applicazione utente.
+
+## Due ingressi, un solo flusso
+
+- **Google-only:** GmailApp acquisisce dalla casella dell'esecutore.
+- **Local connector:** Caronte Locale legge una o piu` caselle IMAP, isola e
+  scansiona gli allegati e completa la mail sulla casella di origine.
+
+Entrambi usano lo stesso Limbo, la stessa coda Da archiviare, lo stesso form e
+lo stesso Registro. SQLite conserva soltanto lo stato tecnico locale; non
+sostituisce il Registro umano.
+
+## Documentazione
+
+L'[indice completo](docs/README.md) separa tre percorsi.
+
+- [Manuale utente](docs/utente/README.md): primo avvio, lavoro quotidiano e
+  problemi comuni.
+- [Documentazione tecnica](docs/tecnica/README.md): architettura, dati,
+  configurazione, comandi, sicurezza e manutenzione.
+- [Documentazione per lo sviluppo](docs/sviluppo/README.md): roadmap,
+  decisioni, workflow, backlog ed evidenze Codex.
+
+Per orientarsi tecnicamente, iniziare da
+[Architettura](docs/tecnica/ARCHITETTURA.md) e
+[Modello dati e stati](docs/tecnica/MODELLO_DATI_E_STATI.md).
+
+## Prerequisiti essenziali
+
+- Windows 11 x64;
+- Git e Python 3.11 o successivo per sviluppo;
+- Google Drive per desktop per il Limbo della configurazione 1.1;
+- account IMAP e autorizzazioni Google configurati fuori dal repository;
+- deployment Apps Script previsto dall'ambiente operativo.
+
+La procedura completa e` in
+[Installazione e comandi](docs/tecnica/INSTALLAZIONE_E_COMANDI.md).
+
+## Confini di sicurezza
+
+- nessuna credenziale, token o configurazione reale e` versionata;
+- gli allegati locali passano da quarantena, policy e scansione;
+- Apps Script riceve metadati e ID, mai byte, base64 o percorsi locali;
+- test e smoke usano soltanto fixture sintetiche e servizi simulati;
+- ack, reset e deploy richiedono post-condizioni o autorizzazioni esplicite;
+- AI, RAG, database remoti e server web non fanno parte della 1.1.
+
+## Stato della release
+
+La baseline collaudata e` il commit `7e18277`; il collaudo umano ha dato `PASS`
+il 28 luglio 2026 e il deployment Apps Script associato e` `40`. Build,
+installer e suite offline della 1.1.0 sono stati verificati prima della
+pubblicazione.
+
+Licenza: proprietaria, come dichiarato nel package locale.

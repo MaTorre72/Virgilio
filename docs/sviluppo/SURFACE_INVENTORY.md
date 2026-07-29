@@ -70,16 +70,20 @@ Le prove di packaging correnti sono `test_caronte_build.py`,
 `test_caronte_installer.py`, `test_build_info.py` e lo smoke locale. Le build
 reali restano fuori da questo task.
 
-## Asset e script ritirati
+## Asset e script
 
-`CONS-G04` ha verificato e ritirato quattro file non raggiungibili dalle
-superfici sopra inventariate:
+`CONS-G04` ha verificato e ritirato sei file non raggiungibili dalle superfici
+sopra inventariate: due script e quattro asset grafici precedenti.
 
 - `local_connector/scripts/generate_caronte_dry_run.py` e
   `local_connector/scripts/imap_readonly_probe.py`, probe standalone storici
   senza entry point, riferimenti correnti o inclusione in wheel/build;
-- `Virgilio_1.0.png` e `VirgilioBN_1.0.png`, copie congelate della grafica 1.0
-  non referenziate; `Virgilio.png` e `VirgilioBN.png` restano gli asset correnti.
+- `Virgilio_1.0.png`, `VirgilioBN_1.0.png`, `Virgilio.png` e `VirgilioBN.png`,
+  copie precedenti non piu` correnti.
+
+Gli unici asset grafici correnti sono gli otto PNG 1.1 sotto `icone/`, nominati
+per la rispettiva presentazione o personaggio. `icone/Virgilio_1.1.png` e`
+l'asset indicato per il form Virgilio.
 
 I quattro file sono recuperabili dalla storia Git precedente a `CONS-G04`; gli
 script di build, test e operazione sotto `scripts/dev` restano supportati.

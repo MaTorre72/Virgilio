@@ -14,8 +14,10 @@ def test_bootstrap_uses_the_declared_development_extra() -> None:
     assert "pip install pytest" not in script
 
 
-def test_current_runbook_exposes_one_fresh_clone_path() -> None:
-    runbook = (ROOT / "docs/RUNBOOKS.md").read_text(encoding="utf-8")
+def test_current_installation_guide_exposes_one_fresh_clone_path() -> None:
+    runbook = (
+        ROOT / "docs/tecnica/INSTALLAZIONE_E_COMANDI.md"
+    ).read_text(encoding="utf-8")
 
     assert "bootstrap_local_connector.ps1" in runbook
     assert "git clone" in runbook

@@ -1,9 +1,10 @@
 # Backlog di sviluppo
 
-Le fonti operative sono `docs/CODEX_STATE.md` e `docs/NEXT_CODEX_TASKS.md`;
-l'ordine completo del consolidamento e` in `docs/CONSOLIDATION_PROGRAM.md`.
+Le fonti operative sono `docs/sviluppo/CODEX_STATE.md` e
+`docs/sviluppo/NEXT_CODEX_TASKS.md`; l'ordine completo del consolidamento e` in
+`docs/sviluppo/CONSOLIDATION_PROGRAM.md`.
 Lo storico di sviluppo e` condensato in `CHANGELOG.md` e registrato
-cronologicamente in `docs/CHANGELOG_DEV.md`.
+cronologicamente in `docs/sviluppo/CHANGELOG_DEV.md`.
 
 ## Programma CONS - Pubblicazione, pulizia e consegna 1.1
 
@@ -29,7 +30,7 @@ Stato: `DONE`.
 | `CONS-H03` | `DONE` | handoff pubblicato; PR `#1` verso `main` pronta per revisione umana |
 
 I task successivi restano chiusi finche` non diventano il successore immediato
-in `docs/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
+in `docs/sviluppo/NEXT_CODEX_TASKS.md`; non vengono duplicati qui.
 
 ### Evidenze CONS-C01
 
