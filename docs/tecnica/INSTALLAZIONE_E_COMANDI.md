@@ -33,7 +33,7 @@ pertinenti.
 ## Clone e orientamento
 
 ```powershell
-git clone <URL-DEL-REPOSITORY> Virgilio
+git clone https://github.com/MaTorre72/Virgilio.git Virgilio
 cd Virgilio
 git status --short
 git branch --show-current
@@ -42,7 +42,11 @@ git branch --show-current
 `main` contiene la release ufficiale 1.1.0 e va trattata come sola lettura. Il
 workflow del repository richiede `codex/v1.1-development` o una branch derivata
 per le modifiche. Prima di cambiare branch verificare sempre che il working
-tree sia pulito.
+tree sia pulito. Per un task ordinario creare una branch derivata con prefisso
+`codex/`; la pipeline dell'installer di accettazione e` piu` restrittiva e
+accetta esattamente `codex/v1.1-development`, non una derivata. Il release
+manager deve quindi preparare quella branch sul commit approvato prima del
+build, senza spostare tag esistenti.
 
 La struttura essenziale e`:
 
@@ -173,9 +177,13 @@ Prima di pubblicare verificare:
 - smoke dell'eseguibile e dell'installer;
 - assenza di credenziali e configurazioni locali.
 
-Il client OAuth Desktop per una build operativa viene fornito da un percorso
-protetto tramite il parametro previsto dallo script. Non va copiato nel
-repository o incorporato manualmente.
+La distribuzione pubblica si costruisce senza client OAuth incorporato. Per
+Gmail Workspace e Registro Google l'amministratore fornisce dopo
+l'installazione un proprio client Desktop esterno tramite
+`CARONTE_GOOGLE_OAUTH_CLIENT_PATH`, come descritto in
+[Configurazione e integrazioni](CONFIGURAZIONE_E_INTEGRAZIONI.md). Il parametro
+di build resta disponibile per distribuzioni controllate autorizzate; il JSON
+non va mai copiato nel repository o negli artefatti di supporto.
 
 ## Apps Script per sviluppatori
 

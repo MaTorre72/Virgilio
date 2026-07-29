@@ -544,9 +544,9 @@ dell'esecuzione.
 ### Clone pulita, solo sviluppo offline
 
 ```powershell
-git clone <URL-DEL-REPOSITORY> Virgilio
+git clone https://github.com/MaTorre72/Virgilio.git Virgilio
 Set-Location Virgilio
-git switch codex/v1.1-development
+git switch -c codex/v1.1-development
 git status --short
 powershell -NoProfile -ExecutionPolicy Bypass `
   -File scripts\dev\bootstrap_local_connector.ps1

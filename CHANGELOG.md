@@ -4,6 +4,21 @@
 
 Prima release ufficiale del percorso desktop consolidato di Virgilio.
 
+### Distribuzione ufficiale
+
+La [Release GitHub v1.1.0](https://github.com/MaTorre72/Virgilio/releases/tag/v1.1.0)
+distribuisce `CaronteSetup-1.1.0-68f3b90-build-20260729.exe` con manifest e
+checksum separati. L'asset e` stato riprodotto dal tag immutato `v1.1.0`, commit
+`68f3b90`, perche` il primo artefatto di collaudo non era stato conservato ne`
+pubblicato. La versione applicativa resta `1.1.0`.
+
+- dimensione: 30.704.281 byte;
+- SHA-256: `A6C87E6748ACC8C72970353B4686F219B28412D444847E7E436C818FB07DDB11`;
+- Build ID: `254daca5-af1d-4951-85dd-f1119a3f0437`;
+- build, smoke applicazione e smoke installer: `PASS`;
+- client OAuth non incorporato nella distribuzione pubblica; provisioning
+  esterno riservato all'amministratore.
+
 ### Funzioni
 
 - Applicazioni separate **Caronte** e **Caronte Manutenzione**, basate sugli

@@ -119,8 +119,9 @@ Le sezioni hanno responsabilità diverse:
 Per `gmail_workspace` i valori iniziali sono `imap.gmail.com:993` e le cartelle
 `Virgilio/da-traghettare`, `Virgilio/traghettate`, `Virgilio/errore`. Caronte
 usa il consenso OAuth Desktop, autentica IMAP con XOAUTH2 e conserva il token
-nel deposito protetto Windows. Il client OAuth Desktop è predisposto da chi
-costruisce la distribuzione; l'utente non deve scegliere un file JSON.
+nel deposito protetto Windows. L'installer pubblico non incorpora un client
+OAuth. L'amministratore predispone sul PC un proprio client Desktop esterno in
+un percorso protetto; l'utente non deve scegliere o modificare file JSON.
 
 Per un server `generic_imap` l'amministratore deve confermare host, porta e
 nomi effettivi delle cartelle. La password o password applicativa resta nel
@@ -227,10 +228,36 @@ alla normale configurazione della GUI:
   `VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH` e
   `VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH` appartengono al percorso CLI storico per
   Google Sheets. La GUI installata usa invece il Registro scelto nel YAML e il
-  token OAuth protetto in Gestione credenziali Windows;
-- `CARONTE_GOOGLE_OAUTH_CLIENT_PATH` indica, durante build o sviluppo
-  controllato, il client OAuth Desktop fornito dall'amministratore. Il file
-  deve chiamarsi `google_oauth_client.json` e restare fuori dal repository.
+  token OAuth protetto in Gestione credenziali Windows.
+
+### Client OAuth esterno della GUI installata
+
+`CARONTE_GOOGLE_OAUTH_CLIENT_PATH` indica, durante build, sviluppo o uso
+installato, il client OAuth Desktop fornito dall'amministratore. Deve essere un
+client OAuth 2.0 Google Cloud di tipo **Desktop app**; il JSON scaricato deve
+chiamarsi `google_oauth_client.json` e contenere l'oggetto principale
+`installed`. Caronte lo usa per gli scope Gmail IMAP
+`https://mail.google.com/` e Google Sheets
+`https://www.googleapis.com/auth/spreadsheets`.
+
+Per la distribuzione pubblica 1.1.0 l'amministratore conserva il file con ACL
+limitate all'utente interessato e registra soltanto il percorso nell'ambiente
+utente Windows, prima di avviare Caronte:
+
+```powershell
+[Environment]::SetEnvironmentVariable(
+  "CARONTE_GOOGLE_OAUTH_CLIENT_PATH",
+  "C:\percorso-protetto\google_oauth_client.json",
+  "User"
+)
+```
+
+Dopo la modifica chiudere tutte le istanze di Caronte e riaprirle dal menu
+Start. Se il processo avviato da Start non vede ancora la variabile,
+disconnettere e riconnettere l'utente Windows. Non inserire il contenuto del
+JSON nel comando, nei log o nel repository. La variabile indica il client
+dell'applicazione; token e consensi dell'utente continuano a essere conservati
+nel deposito protetto Windows.
 
 Non stampare il contenuto delle variabili sensibili. Nei report indicare solo
 `configurata`, `mancante` o il nome simbolico della variabile.

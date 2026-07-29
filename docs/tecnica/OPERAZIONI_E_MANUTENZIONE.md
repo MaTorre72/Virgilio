@@ -296,8 +296,8 @@ esatto: un nome diverso non identifica lo stesso task.
 Gli artefatti seguenti sono rigenerabili e non appartengono ai dati operativi:
 
 - `.pytest-tmp-*`, `.pytest-tmp` e `.pytest_cache` dopo la fine dei test;
-- `local_connector/build-output` dopo aver conservato gli artefatti release
-  necessari;
+- `local_connector/build-output` soltanto dopo aver caricato installer e
+  manifest nella Release e averne verificato download, dimensione e SHA-256;
 - `__pycache__` e file `.pyc`;
 - ambienti `.venv` soltanto se si accetta di reinstallare le dipendenze.
 
@@ -405,7 +405,27 @@ Il client OAuth Desktop opzionale si passa alla build con
 `-GoogleOAuthClientPath` da un percorso protetto e deve chiamarsi
 `google_oauth_client.json`. Non va mai copiato nel repository o negli artefatti
 di supporto. La sua inclusione è registrata nel manifest senza esporne il
-contenuto.
+contenuto. La distribuzione pubblica 1.1.0 non lo incorpora: l'amministratore
+usa invece `CARONTE_GOOGLE_OAUTH_CLIENT_PATH` sul PC installato, seguendo
+[Configurazione e integrazioni](CONFIGURAZIONE_E_INTEGRAZIONI.md).
+
+### Pubblicazione GitHub Release
+
+Per pubblicare una build di una versione gia` taggata:
+
+1. verificare che il tag remoto esista e punti al commit sorgente previsto,
+   senza riscriverlo o spostarlo;
+2. caricare installer, manifest e file SHA-256 nella stessa Release, non draft
+   e non prerelease;
+3. distinguere nelle note l'identita` della sorgente (tag e commit) da quella
+   del singolo build (Build ID, data, dimensione e SHA-256);
+4. riscaricare tutti gli asset dalla Release e confrontarli byte per byte con
+   quelli prodotti localmente;
+5. soltanto dopo la verifica remota eliminare `build-output` e gli staging.
+
+Se un artefatto precedente non e` piu` disponibile, non riutilizzarne in modo
+silenzioso nome e checksum: pubblicare il rebuild con identita` distinta e
+conservare nel changelog l'evidenza storica del primo build.
 
 Checklist release:
 
@@ -474,7 +494,7 @@ esecuzioni attive.
 
 Per consegnare il sistema a un altro amministratore, fornire separatamente:
 
-- installer e relativo manifest/SHA-256;
+- URL della Release ufficiale, installer e relativo manifest/SHA-256;
 - manuale utente e questa guida tecnica;
 - inventario degli asset Google per nome e responsabile, senza segreti;
 - procedura aziendale per concedere accesso a Registro, Limbo, Empireo e Adamo;

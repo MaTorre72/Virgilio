@@ -10,7 +10,7 @@ documenti fino a **Da archiviare**.
 | Se devi... | Leggi... |
 | --- | --- |
 | capire che cosa fa il sistema e chi svolge ogni attività | [Manuale](MANUALE.md) |
-| preparare Caronte per la prima volta | [Primo avvio](PRIMO_AVVIO.md) |
+| scaricare, installare e preparare Caronte | [Primo avvio](PRIMO_AVVIO.md) |
 | controllare le email e archiviare i documenti ogni giorno | [Uso quotidiano](USO_QUOTIDIANO.md) |
 | interpretare un messaggio o risolvere un blocco | [Risoluzione problemi](RISOLUZIONE_PROBLEMI.md) |
 

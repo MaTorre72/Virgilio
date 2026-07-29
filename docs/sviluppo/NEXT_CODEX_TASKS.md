@@ -2,7 +2,40 @@
 
 Stato corrente: nessun task operativo. Il workflow disabilitato
 `local-connector-ci` e` stato rimosso; le verifiche restano affidate allo smoke
-locale canonico. Il programma `CONS` resta chiuso.
+locale canonico. Il programma `CONS` resta chiuso. Anche il task straordinario
+`REL-1.1.0-DIST` e` completato; non aprire automaticamente un successore.
+
+## COMPLETATO - REL-1.1.0-DIST - Distribuzione installer ufficiale
+
+Stato: `DONE`. Priorita`: `P1`.
+
+Risultato: il tag immutato `v1.1.0` dispone di una Release GitHub pubblica con
+installer Windows autonomo, manifest e checksum. Il build pubblico non contiene
+il client OAuth; l'amministratore puo` fornirne uno esterno tramite la
+configurazione supportata.
+
+Dipendenze: tag remoto `v1.1.0`, sorgente `68f3b90`, ambiente Python locale e
+autenticazione GitHub del proprietario.
+
+Componenti ammessi: clone temporanea del tag, script di build/smoke esistenti,
+asset GitHub Release e documentazione ufficiale. Esclusioni: modifiche al
+codice o alla versione, spostamento del tag, client OAuth nella distribuzione
+pubblica, servizi Google/mail reali e deploy Apps Script.
+
+Condizione di blocco: tag divergente, tree sorgente sporco, smoke non verde,
+checksum remoto diverso o impossibilita` di pubblicare senza credenziali.
+
+| Criterio | Prova prevista | Evidenza ottenuta | Esito |
+| --- | --- | --- | --- |
+| `REL-AC1` sorgente certa | confronto tag, commit e tree | tag remoto `096f195` sul commit `68f3b90`; clone di build pulita | `PASS` |
+| `REL-AC2` build verificato | manifest e smoke isolati | versione 1.1.0; build e smoke applicazione/installer `PASS`; `oauth_client_included=false` | `PASS` |
+| `REL-AC3` Release completa | audit Release remoto | Release non draft e non prerelease con EXE, manifest e SHA-256 | `PASS` |
+| `REL-AC4` asset remoto integro | download e confronto locale | tre asset riscaricati: nomi, dimensioni e hash identici ai locali | `PASS` |
+| `REL-AC5` consegna ordinata | diff, commit e verifica pulizia | documentazione/handoff e test verificati; staging e residui rimossi; chiusura nel presente commit atomico | `PASS` |
+
+## SUCCESSIVO REL-1.1.0-DIST
+
+Nessuno. Nuovo sviluppo o nuova versione richiedono un task esplicito.
 
 ## COMPLETATO - CONS-H03 - Pull request finale verso main
 
