@@ -53,5 +53,3 @@ Vai alla [documentazione di sviluppo](sviluppo/README.md).
   sviluppo.
 - `docs/tecnica/` descrive la release ufficiale 1.1 e i suoi vincoli reali.
 - `docs/sviluppo/` contiene governance, roadmap, backlog, evidenze e storia.
-- Non esiste una cartella `docs/archive`: i documenti superati restano
-  recuperabili dalla cronologia Git senza competere con le fonti correnti.
