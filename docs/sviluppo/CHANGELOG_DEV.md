@@ -1,5 +1,18 @@
 # Changelog sviluppo
 
+- 2026-07-29 +02:00 - Pubblicata la
+  [Release GitHub `v1.1.0`](https://github.com/MaTorre72/Virgilio/releases/tag/v1.1.0)
+  dal tag immutato sul commit `68f3b90`. Poiche` il primo installer certificato
+  non era stato conservato ne` pubblicato, prodotto il build distinto
+  `CaronteSetup-1.1.0-68f3b90-build-20260729.exe` (30.704.281 byte), SHA-256
+  `A6C87E6748ACC8C72970353B4686F219B28412D444847E7E436C818FB07DDB11`,
+  Build ID `254daca5-af1d-4951-85dd-f1119a3f0437`. Build, smoke applicazione,
+  installazione, due GUI e disinstallazione `PASS`; manifest
+  `oauth_client_included=false`. Verificato con fixture sintetica il
+  provisioning esterno via `CARONTE_GOOGLE_OAUTH_CLIENT_PATH`, senza Google o
+  rete. I tre asset riscaricati dalla Release coincidono con i locali; identita`
+  e metadati del build originario restano conservati come evidenza storica.
+
 - 2026-07-29 +02:00 - Rimosso il workflow GitHub Actions disabilitato
   `local-connector-ci`; nessun CI automatico resta configurato nel repository.
   Lo smoke locale canonico resta il gate completo. Riallineato lo stato alla

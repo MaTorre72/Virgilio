@@ -4,6 +4,26 @@ Questa procedura prepara un nuovo utente all'uso ordinario di Virgilio. La
 configurazione condivisa del Registro e del servizio di consegna deve essere
 fornita dall'amministratore.
 
+## Scaricare e installare Caronte
+
+1. Apri la [Release ufficiale 1.1.0](https://github.com/MaTorre72/Virgilio/releases/tag/v1.1.0).
+2. Scarica `CaronteSetup-1.1.0-68f3b90-build-20260729.exe`. Gli archivi
+   **Source code** non sono l'installer.
+3. Verifica che il comando PowerShell seguente restituisca
+   `A6C87E6748ACC8C72970353B4686F219B28412D444847E7E436C818FB07DDB11`:
+
+   ```powershell
+   Get-FileHash .\CaronteSetup-1.1.0-68f3b90-build-20260729.exe -Algorithm SHA256
+   ```
+
+4. Chiudi eventuali istanze precedenti di Caronte ed esegui l'installer. Non
+   occorre installare Python: e` gia` compreso nella distribuzione.
+5. Avvia **Caronte** dal menu Start.
+
+L'installer non ha una firma Authenticode. Windows puo` quindi mostrare un
+avviso reputazionale: controlla provenienza e SHA-256 e, se l'origine non e`
+quella ufficiale indicata sopra, non procedere e contatta l'amministratore.
+
 ## Prima di iniziare
 
 Occorrono:
@@ -12,6 +32,8 @@ Occorrono:
 - Google Drive per desktop attivo e la cartella Limbo già sincronizzata;
 - almeno una casella email accessibile;
 - per Gmail o Google Workspace, un account autorizzato nel browser;
+- per Gmail o Google Workspace e Registro Google, il client OAuth Desktop
+  esterno gia` predisposto sul PC dall'amministratore;
 - per altra Posta IMAP, le informazioni di accesso fornite dal gestore della
   casella;
 - un amministratore disponibile per completare Registro e consegna a Virgilio.
@@ -37,6 +59,10 @@ condivisa predisposta. Non creare una cartella omonima in un'altra posizione.
 ## 3. Configura almeno una casella
 
 ### Gmail o Google Workspace
+
+Se Caronte mostra **Collegamento Google non configurato**, non scegliere file
+tecnici e non tentare configurazioni casuali: chiedi all'amministratore di
+predisporre il client OAuth Desktop esterno.
 
 1. Mantieni **Usa Gmail o Workspace**.
 2. Inserisci un nome riconoscibile per la casella.

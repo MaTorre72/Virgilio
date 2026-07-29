@@ -6,6 +6,12 @@
   2026-07-28 e Apps Script deployment `40`.
 - Pubblicazione: la pull request `#1` da `codex/v1.1-development` e` stata unita
   su `main` con revisione umana; merge commit `77730b3`.
+- Distribuzione GitHub: la [Release `v1.1.0`](https://github.com/MaTorre72/Virgilio/releases/tag/v1.1.0)
+  pubblica il build Windows `20260729` dal commit `68f3b90`, SHA-256
+  `A6C87E6748ACC8C72970353B4686F219B28412D444847E7E436C818FB07DDB11`,
+  Build ID `254daca5-af1d-4951-85dd-f1119a3f0437`; installer, manifest e
+  checksum riscaricati coincidono con gli originali locali. Il client OAuth non
+  e` incorporato e viene predisposto esternamente dall'amministratore.
 - Programma `CONS`: completato. Non esistono task CONS correnti e l'automazione
   di consolidamento deve restare in pausa.
 - Branch di sviluppo attesa per nuovi task: `codex/v1.1-development` o una

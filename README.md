@@ -9,6 +9,34 @@ raccoglie la scelta della pratica e registra l'esito nel **Registro**.
 La versione ufficiale corrente e` **1.1.0**. La versione 1.0 e` storica e resta
 recuperabile dal tag `v1.0`.
 
+## Download e installazione
+
+La distribuzione ufficiale e` nella
+[Release Virgilio 1.1.0](https://github.com/MaTorre72/Virgilio/releases/tag/v1.1.0).
+Per installare Caronte su Windows 11 x64 scaricare
+[`CaronteSetup-1.1.0-68f3b90-build-20260729.exe`](https://github.com/MaTorre72/Virgilio/releases/download/v1.1.0/CaronteSetup-1.1.0-68f3b90-build-20260729.exe),
+non gli archivi automatici **Source code**. L'installer e` per utente e include
+Python e le dipendenze necessarie: Python non deve essere installato sul PC
+dell'utente.
+
+SHA-256 dell'installer:
+
+```text
+A6C87E6748ACC8C72970353B4686F219B28412D444847E7E436C818FB07DDB11
+```
+
+Il valore si controlla prima dell'avvio con:
+
+```powershell
+Get-FileHash .\CaronteSetup-1.1.0-68f3b90-build-20260729.exe -Algorithm SHA256
+```
+
+Il [manifest pubblicato](https://github.com/MaTorre72/Virgilio/releases/download/v1.1.0/CaronteSetup-1.1.0-68f3b90-build-20260729.manifest.json)
+identifica versione, commit, build e smoke. La distribuzione pubblica non
+incorpora client OAuth: per Gmail Workspace e Registro Google l'amministratore
+predispone un proprio client Desktop esterno come descritto nella
+[configurazione tecnica](docs/tecnica/CONFIGURAZIONE_E_INTEGRAZIONI.md).
+
 ## Cosa risolve
 
 Senza Virgilio, allegati, cartelle Drive e decisioni sulla pratica possono
@@ -69,14 +97,15 @@ Per orientarsi tecnicamente, iniziare da
 
 ## Prerequisiti essenziali
 
-- Windows 11 x64;
-- Git e Python 3.11 o successivo per sviluppo;
-- Google Drive per desktop per il Limbo della configurazione 1.1;
-- account IMAP e autorizzazioni Google configurati fuori dal repository;
-- deployment Apps Script previsto dall'ambiente operativo.
+- Per l'uso: Windows 11 x64, Google Drive per desktop per il Limbo, una casella
+  IMAP e il deployment Apps Script dell'ambiente operativo.
+- Per Gmail Workspace o Registro Google: client OAuth Desktop predisposto
+  dall'amministratore fuori dal repository e dall'installer pubblico.
+- Solo per lo sviluppo dal codice sorgente: Git e Python 3.11 o successivo.
 
-La procedura completa e` in
-[Installazione e comandi](docs/tecnica/INSTALLAZIONE_E_COMANDI.md).
+Per l'utente la procedura completa e` in
+[Primo avvio](docs/utente/PRIMO_AVVIO.md); clone, test e build sono descritti
+separatamente in [Installazione e comandi](docs/tecnica/INSTALLAZIONE_E_COMANDI.md).
 
 ## Confini di sicurezza
 
@@ -92,6 +121,8 @@ La procedura completa e` in
 La baseline collaudata e` il commit `7e18277`; il collaudo umano ha dato `PASS`
 il 28 luglio 2026 e il deployment Apps Script associato e` `40`. Build,
 installer e suite offline della 1.1.0 sono stati verificati prima della
-pubblicazione.
+pubblicazione. La build distribuita e` identificata dal commit `68f3b90`, dal
+Build ID `254daca5-af1d-4951-85dd-f1119a3f0437` e dalla
+[Release ufficiale](https://github.com/MaTorre72/Virgilio/releases/tag/v1.1.0).
 
 Licenza: proprietaria, come dichiarato nel package locale.
