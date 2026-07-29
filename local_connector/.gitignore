@@ -1,0 +1,5 @@
+# Runtime database and SQLite sidecar files.
+state.db
+state.db-*
+*.sqlite
+*.sqlite-*

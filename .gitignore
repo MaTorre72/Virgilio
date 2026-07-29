@@ -2,10 +2,19 @@
 .env
 .env.*
 !.env.example
+.local_data/
+quarantine/
+logs/
+*.db
+*.db-wal
+*.db-shm
+*.attachment.tmp
+*.part
 *.secret
 *service-account*.json
 *credentials*.json
 *token*.json
+*oauth_client*.json
 
 # Google Apps Script / local tooling
 .clasp.json
@@ -14,9 +23,15 @@
 # Python caches and virtual environments
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
+.pytest-tmp/
+.pytest-tmp*/
 .venv/
 venv/
+local_connector/build-output/
+artifacts/
+local_connector/.build-python*/
 
 # Editor and OS noise
 .DS_Store
@@ -29,9 +44,11 @@ _old/
 *.zip
 *.tmp
 *.bak
+gas_push.bat
 
 # Keep generated office/PDF material local unless explicitly added later.
 # Source code, README, images, and SVG architecture files remain trackable.
 *.pdf
 *.docx
 *.ipynb
+_staging/

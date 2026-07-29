@@ -1,0 +1,63 @@
+accounts:
+  - account_alias: account_1
+    email: account.1@example.invalid
+    provider_hint: gmail_workspace
+    imap_host: imap.gmail.com
+    imap_port: 993
+    username_env: VIRGILIO_IMAP_ACCOUNT_1_USERNAME
+    password_env: VIRGILIO_IMAP_ACCOUNT_1_PASSWORD
+    input_folder: Virgilio/da-traghettare
+    done_folder: Virgilio/traghettate
+    error_folder: Virgilio/errore
+    enabled: true
+    max_messages: 25
+    ack_enabled: false
+    ack_strategy: add_done_label_only
+  - account_alias: account_2
+    email: account.2@example.invalid
+    provider_hint: generic_imap
+    imap_host: imap.example.invalid
+    imap_port: 993
+    username_env: VIRGILIO_IMAP_ACCOUNT_2_USERNAME
+    password_env: VIRGILIO_IMAP_ACCOUNT_2_PASSWORD
+    input_folder: INBOX
+    done_folder: done
+    error_folder: error
+    enabled: false
+    max_messages: 25
+    ack_enabled: false
+    ack_strategy: no_ack_manual
+
+storage:
+  adapter: local_filesystem
+  staging_dir: 'C:\Percorso\Drive Desktop\Virgilio Limbo'
+  use_account_subfolders: false
+  copy_manifest: true
+  overwrite: false
+  create_staging_dir: false
+
+rules:
+  default_action: include
+  include:
+    - name: pdf_invoices
+      subject_contains: ["fattura", "invoice", "acconto"]
+      filename_extensions: [".pdf", ".p7m"]
+  exclude:
+    - name: newsletters
+      from_contains: ["newsletter", "noreply"]
+    - name: small_signatures
+      max_attachment_size_bytes: 10239
+
+bucoliche:
+  enabled: false
+  adapter: google_sheets_append_only
+  spreadsheet_id_env: VIRGILIO_BUCOLICHE_SPREADSHEET_ID
+  events_sheet: bucoliche
+  # Pilota locale consigliato quando le chiavi service account sono bloccate.
+  credentials_mode: user_oauth_local
+  # Alternativa ammessa: credentials_mode: service_account_json_env
+  service_account_json_env: VIRGILIO_GOOGLE_SERVICE_ACCOUNT_JSON
+  oauth_client_secrets_path_env: VIRGILIO_GOOGLE_OAUTH_CLIENT_SECRETS_PATH
+  oauth_token_path_env: VIRGILIO_GOOGLE_OAUTH_TOKEN_PATH
+  append_only: true
+  dry_run_default: true

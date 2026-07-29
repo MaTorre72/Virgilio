@@ -1,92 +1,47 @@
-# Virgilio
+# Virgilio 1.1
 
-Virgilio e' il progetto interno Sigma+ per guidare apertura pratiche, presa in carico allegati e tracciamento operativo.
+Virgilio acquisisce documenti dalle email, li porta nel **Limbo**, li presenta
+in **Da archiviare**, raccoglie la decisione umana e li archivia nella pratica
+finale registrando ogni passaggio nel **Registro**.
 
-Il progetto nasce come MVP Google Workspace mono-utente, ma la direzione v1.1 e' ora piu' chiara: evolvere verso **Caronte Locale**, un motore operativo locale, multi-casella e meno dipendente da Google Workspace.
-
-## Stato attuale
-
-### v1.0 - MVP Google Workspace mono-utente
-
-La v1.0 usa Google Apps Script, Google Drive, Google Sheets, Gmail, Google Chat e Telegram.
-
-Ha validato il flusso di base:
-
-1. il tecnico compila un form o marca una email da lavorare;
-2. Apps Script esegue la logica Caronte;
-3. gli allegati vengono depositati nel Limbo;
-4. le operazioni vengono registrate in Bucoliche;
-5. il team riceve una notifica.
-
-La v1.0 resta utile come prototipo funzionante, ma non risolve il multi-casella: `GmailApp` opera solo sulla casella dell'account che esegue lo script.
-
-### v1.1 - Evoluzione verso Caronte Locale
-
-La v1.1 sposta il baricentro verso un nucleo locale:
-
-- **Virgilio**: interfaccia, guida e supervisione umana;
-- **Caronte Locale**: motore operativo locale, multi-casella e provider-agnostico;
-- **Apps Script**: adapter Google opzionale;
-- **SQLite locale**: registro operativo primario;
-- **Bucoliche**: output adapter ispezionabile, non database definitivo;
-- **Drive Desktop / filesystem**: storage adapter iniziale, non architettura definitiva.
-
-## Sviluppi gia' completati nella linea locale
-
-Sono stati sviluppati e testati i seguenti blocchi:
-
-- lettura IMAP read-only;
-- uso di `BODY.PEEK` senza marcare automaticamente le mail come lette;
-- quarantena/staging locale degli allegati;
-- scansione locale opzionale;
-- manifest JSON per allegato;
-- SQLite locale per stato e tracciamento;
-- staging verso cartella locale sincronizzata con Drive Desktop;
-- verifica cloud read-only tramite Apps Script;
-- intake test su tab `Staging_Local_Test`;
-- P4 chiuso solo sul contesto Gmail visto da Apps Script/GmailApp.
-
-Questi sviluppi non vanno buttati: vanno ricondotti dentro la linea v1.1 come laboratorio e base tecnica di Caronte Locale.
-
-## Punto chiave emerso
-
-Il test P4 ha confermato il limite strutturale di Apps Script/GmailApp: lo script vede solo la casella dell'account esecutore. Per questo, il multi-casella reale non puo' dipendere da GmailApp come nucleo.
-
-La direzione corretta e':
-
-```text
-Caronte Locale legge N caselle IMAP
-  -> gestisce quarantena e scansione
-  -> registra stato locale
-  -> archivia tramite storage adapter
-  -> invia notifiche tramite adapter
-  -> esegue ack IMAP sulla casella di origine
-```
-
-Apps Script resta utile per compatibilita' Google, ma non e' piu' il centro dell'architettura futura.
-
-## Prossime priorita'
-
-1. Consolidare su `codex/v1.1-development` solo il codice stabile.
-2. Implementare configurazione multi-account IMAP.
-3. Eseguire scan read-only su due caselle.
-4. Implementare ack IMAP locale sulla casella di origine.
-5. Consolidare SQLite come registro primario.
-6. Rendere Bucoliche un adapter opzionale.
-7. Preparare storage adapter per cartelle pratica.
-8. Fare pilota con due utenti/caselle e dati non critici.
+La versione ufficiale corrente e` **1.1.0**. La versione 1.0 resta disponibile
+come rilascio storico nel tag `v1.0`.
 
 ## Documentazione
 
-- [Architettura e roadmap](docs/01_ARCHITETTURA_E_ROADMAP.md)
-- [Decisioni e rischi](docs/02_DECISIONI_E_RISCHI.md)
-- [Sicurezza e test](docs/03_SICUREZZA_E_TEST.md)
-- [Ricognizione e connettori](docs/04_RICOGNIZIONE_E_CONNETTORI.md)
-- [Workflow Git](docs/GIT_WORKFLOW.md)
-- [Struttura repository](docs/REPO_STRUCTURE.md)
+La documentazione e` separata per pubblico. L'indice completo e` in
+[docs/README.md](docs/README.md).
 
-## Principio operativo
+- [Manuale utente](docs/utente/MANUALE.md): uso quotidiano di Caronte e
+  Caronte Manutenzione.
+- [Documentazione tecnica](docs/tecnica/ARCHITETTURA.md): architettura,
+  componenti, requisiti e confini.
+- [Installazione e comandi](docs/tecnica/INSTALLAZIONE_E_COMANDI.md): setup,
+  dipendenze, test, build e manutenzione.
+- [Roadmap 1.1](docs/sviluppo/ROADMAP_1_1.md): obiettivi originari, stato
+  raggiunto e sviluppi successivi.
+- [Documentazione di sviluppo](docs/sviluppo/README.md): file Codex, backlog,
+  evidenze e regole per contribuire.
 
-**L'AI propone. Il tecnico valida. Il sistema registra.**
+## Architettura in una frase
 
-Nessuna automazione critica deve archiviare, notificare, spostare o chiudere una mail senza stato tracciabile, idempotenza e possibilita' di verifica o rollback.
+```text
+Virgilio = interfaccia, guida e supervisione
+Caronte Locale = motore operativo locale multi-casella
+Apps Script = adapter Google per form, Drive, Da archiviare e Registro
+```
+
+## Componenti supportati
+
+| Componente | Ruolo |
+| --- | --- |
+| Caronte | applicazione utente per controllo e attivita` |
+| Caronte Manutenzione | configurazione tecnica, diagnostica, backup e reset |
+| Caronte Locale | acquisizione IMAP, quarantena, scansione, stato e consegna |
+| Apps Script | adapter Google canonico |
+| Limbo | cartella condivisa dei documenti acquisiti non ancora archiviati |
+| Da archiviare | coda operativa umana |
+| Registro | audit append-only degli eventi rilevanti |
+
+Le credenziali, le configurazioni reali e i dati locali non sono versionati.
+Test e sviluppo usano esclusivamente fixture sintetiche e servizi simulati.
