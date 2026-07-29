@@ -1,5 +1,9 @@
 # Next Codex Task
 
+Stato corrente: nessun task operativo. Il workflow disabilitato
+`local-connector-ci` e` stato rimosso; le verifiche restano affidate allo smoke
+locale canonico. Il programma `CONS` resta chiuso.
+
 ## COMPLETATO - CONS-H03 - Pull request finale verso main
 
 Stato: `DONE`. Priorita`: `P1`.

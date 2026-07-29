@@ -1,5 +1,10 @@
 # Changelog sviluppo
 
+- 2026-07-29 +02:00 - Rimosso il workflow GitHub Actions disabilitato
+  `local-connector-ci`; nessun CI automatico resta configurato nel repository.
+  Lo smoke locale canonico resta il gate completo. Riallineato lo stato alla
+  fusione della PR documentale `#2` e alla rimozione della relativa branch.
+
 - 2026-07-29 +02:00 - Riorganizzata fisicamente la documentazione della 1.1:
   al livello `docs/` resta il solo indice; manuale, architettura, modello dati,
   configurazione, manutenzione, comandi, roadmap e documenti Codex sono nelle

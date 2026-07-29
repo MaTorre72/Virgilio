@@ -14,8 +14,11 @@
   `docs/utente/`, `docs/tecnica/` e `docs/sviluppo/`.
 - Documentazione storica: recuperabile dalla cronologia Git; nessuna cartella
   `docs/archive` e nessun puntatore compatibile al livello principale.
-- Riordino documentale: branch `docs/roadmap-architettura-modulare`, pull
-  request `#2` verso `main`; nessun cambiamento al comportamento applicativo.
+- Riordino documentale: pull request `#2` unita su `main` con commit di squash
+  `a17419c`; la branch documentale locale e remota e` stata rimossa.
+- CI repository: il workflow GitHub Actions disabilitato `local-connector-ci`
+  e` stato rimosso. Il gate completo resta lo smoke locale
+  `scripts/dev/smoke_local_connector.ps1`.
 - Fonti operative per una futura run: `AGENTS.md`, questo file e
   `docs/sviluppo/NEXT_CODEX_TASKS.md`.
 
